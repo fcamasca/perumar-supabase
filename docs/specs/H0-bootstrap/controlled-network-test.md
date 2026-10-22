@@ -1,5 +1,7 @@
 # CHG-H0-001 — Registro del ensayo controlado
 
+**Decisión final posterior:** CHG-H0-001 ACCEPTED; DEF-H0-001 RESOLVED BY APPROVED MITIGATION. `54322/TCP: NO VERIFICADO DE FORMA INDEPENDIENTE`, riesgo residual aceptado humanamente para H0. Ver [enmienda](approved-isolation-amendment.md) y [resultado técnico vigente](technical-results.md). Las rondas y estados intermedios siguientes se conservan como evidencia histórica.
+
 Fecha: 21/10/2026. Rama: `feature/h0-bootstrap`. Base documental: `3bceb2f`.
 
 ## Decisión humana y evidencia recibida

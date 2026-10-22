@@ -1,5 +1,7 @@
 # CHG-H0-001 — Aislamiento del entorno local Windows
 
+**Documento histórico de propuesta.** Posteriormente la persona creó la regla, confirmó el ensayo y aprobó la mitigación y revisión del guard. Estado vigente: [approved-isolation-amendment.md](approved-isolation-amendment.md); evidencia: [controlled-network-test.md](controlled-network-test.md) y [technical-results.md](technical-results.md). Las indicaciones NO APLICADA/PENDIENTE de este texto corresponden a su emisión original.
+
 **Fecha:** 21/10/2026. **Estado:** PROPUESTA PARA REVISIÓN HUMANA — NO APLICADA.
 
 El usuario autorizó preparar un cambio concreto del entorno, sin aplicarlo. Este documento no modifica el Spec aprobado ni autoriza continuar su construcción. No se ejecutaron los comandos de modificación que figuran más abajo.

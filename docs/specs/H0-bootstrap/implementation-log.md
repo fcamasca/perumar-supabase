@@ -1,5 +1,7 @@
 # H0 — Registro de implementación y evidencia parcial
 
+**Registro histórico de la fase bloqueada.** Estado vigente, tareas completadas y recorrido humano: [technical-results.md](technical-results.md). La aprobación final de CHG-H0-001 está en [approved-isolation-amendment.md](approved-isolation-amendment.md); los estados parciales siguientes se conservan como historia, no como estado actual.
+
 Fecha: 21/10/2026. Ejecutor técnico: Codex. No contiene aprobación de pruebas humanas.
 
 ```text
