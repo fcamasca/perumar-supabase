@@ -91,7 +91,7 @@ try {
     verifyIsolation()
     // Explicit local-only flag; no user-supplied database URL, link or project ref.
     run('docker', ['inspect', 'supabase_db_perumar-supabase'])
-    run(process.execPath, [cli, 'db', 'reset', '--local', '--no-seed', '--yes'])
+    run(process.execPath, [cli, 'db', 'reset', '--local', '--no-seed', '--network-id', network, '--yes'])
     verifyIsolation()
   } else if (action === 'stop') {
     run(process.execPath, [cli, 'stop'])

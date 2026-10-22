@@ -15,7 +15,7 @@ Este registro documental se incorpora en la rama Spec antes de construir; no mod
 
 OQ-H0-002 quedó resuelta por indicación explícita del usuario: `https://github.com/fcamasca/perumar-supabase.git`. Se comprobó que ese repositorio ya existe, es privado y está vacío; no se creó ni publicó contenido allí.
 
-H0 conserva estado EN CONSTRUCCIÓN, con trabajo dependiente bloqueado en TASK-H0-003: Docker Desktop publicó Supabase fuera de loopback pese a la red local configurada. El stack se detuvo. El usuario autorizó únicamente preparar una propuesta de cambio del entorno para revisión, sin aplicarla. Véanse la [evidencia](specs/H0-bootstrap/implementation-log.md) y la [propuesta pendiente](specs/H0-bootstrap/environment-change-proposal.md). Gate 2, acceptance y merge siguen bloqueados. No se modifica el alcance ni se comienza H1.
+H0 conserva estado EN CONSTRUCCIÓN. Tras el ensayo controlado, el usuario aprobó CHG-H0-001 y la continuación de TASK-H0-003 y siguientes. DEF-H0-001 queda RESOLVED BY APPROVED MITIGATION: aislamiento efectivo mediante la regla exacta de Windows Firewall, sin afirmar binding exclusivo a loopback. `54322/TCP: NO VERIFICADO DE FORMA INDEPENDIENTE`; limitación aceptada como riesgo residual de H0 local sin datos reales. Véanse la [enmienda autorizada](specs/H0-bootstrap/approved-isolation-amendment.md), las [rondas](specs/H0-bootstrap/controlled-network-test.md) y la [evidencia de construcción](specs/H0-bootstrap/implementation-log.md). Gate 2, acceptance y merge siguen bloqueados. No se comienza H1.
 
 ---
 
