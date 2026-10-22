@@ -102,12 +102,13 @@ async function main() {
       record('controlled-extra-assignment', 'O', 'ok', { before: ['OPERADOR'], after: ['OPERADOR', 'ADMIN'] })
     }
     const allIds = Object.entries(entries).filter(([actor]) => actor !== 'F').map(([, entry]) => entry.id).sort()
+    // The negative CI trial must fail on ordinary-user visibility, not merely fixture counts.
+    assert.deepEqual((await rows('app_users', 'O')).map(row => row.id), [entries.O.id], 'OPERADOR recibió directorio ampliado.')
     for (const actor of ['A', 'B', 'M']) {
       assert.deepEqual((await rows('app_users', actor)).map(row => row.id).sort(), allIds)
       assert.equal((await rows('app_user_roles', actor)).length, 6)
       assert.equal((await rows('app_roles', actor)).length, 2)
     }
-    assert.deepEqual((await rows('app_users', 'O')).map(row => row.id), [entries.O.id], 'OPERADOR recibió directorio ampliado.')
     assert.deepEqual((await rows('app_user_roles', 'O')).map(row => row.role_code), ['OPERADOR'])
     assert.equal((await rows('app_roles', 'O')).length, 2)
     assert.equal((await rows('app_users', 'O', `?id=eq.${entries.A.id}`)).length, 0)
