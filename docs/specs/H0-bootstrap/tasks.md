@@ -109,7 +109,7 @@ El orden es deliberadamente secuencial para un mantenedor. OQ-H0-002 se resuelve
 - **Requisitos:** REQ-H0-009, REQ-H0-011, REQ-H0-012, REQ-H0-013.
 - **Diseños:** DES-H0-008, DES-H0-009, DES-H0-010.
 - **Dependencias:** TASK-H0-007.
-- **Alcance:** ejecutar suite completa, revisar secretos/exclusiones, realizar pruebas humanas de README y pantalla; corregir defectos dentro del Spec y repetir comprobaciones afectadas.
+- **Alcance:** ejecutar la suite técnica y revisar secretos/exclusiones; preparar el recorrido y la evidencia para las pruebas humanas de README y pantalla, y registrar los resultados confirmados por el revisor humano. Corregir defectos dentro del Spec y repetir las comprobaciones afectadas, con nueva confirmación humana cuando corresponda.
 - **Componentes previstos:** código/configuración aprobados si hay defectos, evidencia adjunta de pruebas sin secretos. No crear acceptance anticipada.
 - **Resultado esperado:** commit candidato y resultados técnicos/humanos identificables; defectos críticos cerrados.
 - **Criterio de finalización:** TEST-H0-001 a TEST-H0-014 con evidencia prevista disponible y resultados satisfactorios; si hay cambio de diseño/alcance, detener hasta decisión humana.
