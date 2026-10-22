@@ -21,3 +21,15 @@ Comandos: local-supabase start; reset (Node 24.19.0 del runtime existente, guard
 Correcciones: CSV INEI cp1252 contiene 20 filas de notas/pie, filtradas por IDDIST de seis dígitos conservando 1891 registros; reset heredado usaba --no-seed y no cargaba referencias, retirado solo ese flag sin alterar guard. Repetición de reset e inventario: satisfactorios. Estos son checks del modelo/carga, no aprobación de los TEST funcionales completos, que requieren TASK-003/004.
 
 Archivos: migración 20261022150000_h2_academic_model.sql, seed.sql, reference/ con snapshots públicos derivados y sources.json, configuración de seed y ruta reset del wrapper. No migración histórica reescrita. TASK-003 pendiente; modelo H2 permanece cerrado a producto hasta sus policies/RPC. No TASK-004 ni UI iniciadas.
+
+## TASK-H2-003 — Bloque de comandos y autorización
+
+Implementación: 7 RPC concretas, RLS de lectura funcional/referencial y auditoría, directorio ADMIN_SISTEMA, helpers internos cerrados, triggers de versión/auditoría y mínimo diferido. Las escrituras ordinarias directas quedan sin grants; actor auth.uid(), motivos sensibles y JSONB acotado. Restricciones de entidades futuras no se simulan.
+
+Comprobaciones reales previas a TASK-004: Auth/Data API con Director, Coordinador y Admin Sistema sintéticos; normalización Materia, creación Carrera, rechazo de inactivar última materia, Ciclo, exclusión inclusiva, denegación de transición a Coordinador, ANULADO/liberación de rango, DELETE denegado, directorio solo Admin Sistema, auditoría visible a roles funcionales. Identidades limpiadas al finalizar.
+
+Defecto detectado: Carrera concurrente con inactivación de su única Materia podía producir mínimo inválido bajo READ COMMITTED. Se corrigió con configuración SERIALIZABLE por RPC, elevada al inicio de la transacción por PostgREST (documentación oficial transactions/isolation-level); sin locks de formulario, reserva, nueva capa o reintento automático con nueva versión. Repetición 12 carreras concurrentes, más repetición tras reset: invariant preservada; solicitudes incompatibles rechazadas. Los fallos 40001 son conflictos que exigen recarga.
+
+Validaciones finales añadidas: tipos JSON cerrados, fechas calendario ISO y rechazo de nuevas referencias inactivas conservando históricas. Aplicación local de los últimos validadores requirió UTF-8 explícito al usar psql desde Python Windows; primer intento de ese ajuste falló antes de aplicarlo por encoding, corregido y repetido. No se expusieron credenciales.
+
+La verificación anterior es smoke de TASK-003, no equivale a cobertura completa TEST-H2 ni TASK-004 terminado. Fixtures de negocio del smoke permanecen solo en base desechable hasta próximo reset; no datos reales. TASK-004 inicia después de este bloque. TASK-005 a 008 no iniciadas.
