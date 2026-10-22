@@ -11,6 +11,12 @@ Se autoriza construir exclusivamente H0, conservando alcance, diseño y tareas a
 
 Este registro documental se incorpora en la rama Spec antes de construir; no modifica el contenido de los cuatro documentos aprobados. La implementación nace del commit exacto aprobado y recibe después este registro documental.
 
+### Seguimiento de construcción — 21/10/2026
+
+OQ-H0-002 quedó resuelta por indicación explícita del usuario: `https://github.com/fcamasca/perumar-supabase.git`. Se comprobó que ese repositorio ya existe, es privado y está vacío; no se creó ni publicó contenido allí.
+
+H0 conserva estado EN CONSTRUCCIÓN, con trabajo dependiente bloqueado en TASK-H0-003: Docker Desktop publicó Supabase fuera de loopback pese a la red local configurada. El stack se detuvo. El usuario autorizó únicamente preparar una propuesta de cambio del entorno para revisión, sin aplicarla. Véanse la [evidencia](specs/H0-bootstrap/implementation-log.md) y la [propuesta pendiente](specs/H0-bootstrap/environment-change-proposal.md). Gate 2, acceptance y merge siguen bloqueados. No se modifica el alcance ni se comienza H1.
+
 ---
 
 ## 1. Objetivo

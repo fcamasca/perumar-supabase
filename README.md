@@ -4,9 +4,21 @@ Base documental de una nueva implementación candidata con React, TypeScript, Su
 
 ## Estado
 
-Preparación documental autorizada. No existe todavía aplicación, proyecto Supabase ni repositorio GitHub. No se ha aprobado la construcción de H0.
+PLAN 1.0 y Spec H0 aprobados humanamente el 21/10/2026 (Gate 1). H0 está EN CONSTRUCCIÓN en `feature/h0-bootstrap` y bloqueado en TASK-H0-003 por aislamiento de red de Docker Desktop. El frontend técnico ya existe; Supabase local fue detenido al comprobar publicación fuera de loopback.
 
-La jerarquía es: `docs/PLAN_MVP.md`, historias vigentes, Spec aprobado del hito e informes arquitectónicos como sustento técnico. El PLAN conserva su estado DRAFT; preparar un Spec no constituye su aprobación.
+La jerarquía es: `docs/PLAN_MVP.md`, historias vigentes, Spec aprobado del hito e informes arquitectónicos como sustento técnico. El Spec aprobado se conserva sin cambios de requisitos/diseño/tareas. El registro posterior de aprobación está en el PLAN.
+
+El remoto autorizado `fcamasca/perumar-supabase` existe y se verificó privado, pero aún no se vinculó ni recibió pushes: TASK-H0-005 depende de completar el entorno local y la configuración. No existe proyecto Supabase alojado, autenticación funcional ni esquema de negocio.
+
+La evidencia, las tareas pendientes y las limitaciones están en [implementation-log.md](docs/specs/H0-bootstrap/implementation-log.md). El [cambio propuesto de aislamiento](docs/specs/H0-bootstrap/environment-change-proposal.md) es solo una propuesta; no se aplicó.
+
+## Verificación técnica disponible del frontend
+
+Runtime fijado: Node 24.19.0 y npm 10.9.0. Un paquete y un lockfile. Con esas versiones activas, ejecutar `npm ci`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run build` y `npm run dev`. El frontend de desarrollo escucha únicamente en `http://127.0.0.1:5173` y no requiere .env mientras TASK-H0-004 siga pendiente.
+
+En este equipo, Node global es 22.12.0; las verificaciones se ejecutaron con Node 24.19.0 ya disponible en `C:/Users/Rodrigo/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node.exe` y npm CLI 10.9.0 de `C:/Program Files/nodejs/node_modules/npm/bin/npm-cli.js`. No se modificó la instalación global. Para reproducir aquí sin cambiarla, anteponer la carpeta de ese Node al PATH de la sesión e invocar ese ejecutable con la ruta de npm CLI y los argumentos indicados.
+
+La pantalla muestra explícitamente conexión Supabase pendiente: no representa una integración completa. El README operativo integral y la CI siguen pendientes según sus dependencias. No ejecutar pruebas humanas completas de H0 ni considerar aceptado el hito con este resultado parcial.
 
 ## Spec-Driven Development
 
@@ -25,4 +37,4 @@ Para cada hito se crea `feature/<hito>-spec` desde main. Solo después del Gate 
 
 La historia de usuario aportada como `Historias_de_Usuario_export.md` se normalizó de Windows-1252 a UTF-8 y se renombró a `Historias_de_Usuario.md`, sin reinterpretar ni corregir sus requisitos. Los informes son contexto; sus referencias antiguas no sustituyen al PLAN vigente. No se incorporan scripts, configuraciones ni código de implementaciones anteriores.
 
-Los comandos de instalación, ejecución, migraciones y CI se definirán en el Spec de H0 y se documentarán de forma ejecutable durante su construcción aprobada. Esta base no anticipa esas tareas.
+Los scripts `supabase:start`, `supabase:status`, `supabase:stop` y `supabase:reset` son exclusivamente locales. El arranque comprueba las publicaciones y se detiene si no son loopback. No reactivar el stack ni eludir esta protección hasta decidir el hallazgo de entorno. La reconstrucción local y las comprobaciones completas de conectividad están pendientes; no sustituyen backups/restauración productivos de H9.
