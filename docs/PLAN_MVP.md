@@ -13,7 +13,7 @@ Este registro documental se incorpora en la rama Spec antes de construir; no mod
 
 ### Estado vigente de H0 — cierre del 21/10/2026
 
-H0 ACEPTADO humanamente y Gate 2 aprobado el 21/10/2026 sobre `9523e2e0e1b1889dd12ed3902fa3fe23f7c52141`. La [aceptación](specs/H0-bootstrap/acceptance.md) quedó registrada y la implementación se integró y publicó en main mediante el merge `b491b556353d60e0a925b293ea214cd4d5d88e07`. H1 continúa NO INICIADO.
+H0 ACEPTADO humanamente y Gate 2 aprobado el 21/10/2026 sobre `9523e2e0e1b1889dd12ed3902fa3fe23f7c52141`. La [aceptación](specs/H0-bootstrap/acceptance.md) quedó registrada y la implementación se integró y publicó en main mediante el merge `b491b556353d60e0a925b293ea214cd4d5d88e07`. H1 está EN CONSTRUCCIÓN bajo su Gate 1 posterior, sin aceptación final.
 
 ### Seguimiento histórico de H0 — estado anterior al cierre
 
@@ -666,19 +666,6 @@ El PLAN vigente debe reflejar el estado real del proyecto.
 
 # 14. Próximo paso
 
-**Actualización de construcción H1:** Spec aprobado humanamente sobre `3cf847451690d320f1fce39b2992f8a2e53be925`; se autoriza construir exclusivamente H1 según [Gate 1](specs/H1-security/gate-1.md). Los pasos siguientes conservan el antecedente de preparación del Spec. Gate 2, aceptación, merge y H2 siguen bloqueados.
+Completar exclusivamente H1 — Seguridad base desde el Spec aprobado humanamente `3cf847451690d320f1fce39b2992f8a2e53be925`, según [Gate 1](specs/H1-security/gate-1.md).
 
-Generar exclusivamente el Spec de:
-
-**H1 — Seguridad base**
-
-compuesto por:
-
-- `requirements.md`
-- `design.md`
-- `tasks.md`
-- `test-plan.md`
-
-Después detenerse para revisión y aprobación humana.
-
-No iniciar construcción de H1 sin esa aprobación.
+Presentar candidato, pruebas técnicas y recorridos TEST-H1-018/019; detenerse para revisión humana de sesión/acceso y mantenibilidad Auth/RLS. Gate 2, acceptance, merge a main y H2 permanecen bloqueados hasta decisión humana posterior. No ampliar alcance ni autoaprobar la arquitectura por resultados técnicos verdes.
