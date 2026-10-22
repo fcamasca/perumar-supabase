@@ -8,3 +8,12 @@ section { margin: 2rem 0; border-top: 1px solid #c7d7de; padding-top: 1rem; }
 h2 { font-size: 1.2rem; }
 p { line-height: 1.65; }
 .scope { color: #52666f; font-size: .9rem; }
+form { display: grid; gap: 1rem; max-width: 26rem; }
+label { display: grid; gap: .3rem; }
+input, button { font: inherit; padding: .55rem; }
+button { cursor: pointer; }
+button:disabled { cursor: wait; }
+nav { margin: 1rem 0; }
+table { border-collapse: collapse; margin-top: 1rem; }
+td, th { border: 1px solid #aaa; padding: .5rem; text-align: left; }
+[role="alert"] { color: #982727; }
