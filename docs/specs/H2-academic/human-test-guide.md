@@ -53,6 +53,10 @@ Si ya existe configuración local, seguir README sin sobrescribirla automáticam
 
 Registrar cada fallo con pasos, alias, entidad sintética y SHA; no marcar PASSED si una etapa no se ejecutó. Las pruebas automatizadas de concurrencia/rollback complementan este recorrido; no se atribuyen a la persona automáticamente.
 
+## Cambios de presentación para el candidato de revisión UX
+
+Ver ux-review.md. Los listados comienzan sin formulario: usar Crear Materia/Carrera/Ciclo o Editar/Consultar en una fila. Cancelar vuelve al listado; el editor muestra la identidad del registro. Los Ciclos terminales muestran ficha de consulta, no campos deshabilitados. La selección de Materias de Carrera tiene filtro local que conserva selecciones. Auditoría muestra cambios legibles con IDs/JSON completos en detalle secundario. Estos cambios no alteran reglas funcionales.
+
 ## TEST-H2-019 — Visual, teclado y sistema
 
 Mantener fixtures durante esta revisión. Revisar login, listas, formularios, auditoría, estados de error/conflicto, seleccionado y deshabilitado en Sistema, Claro, Oscuro y Alto contraste. Comprobar persistencia al recargar y fallback tolerante a storage inválido/bloqueado.

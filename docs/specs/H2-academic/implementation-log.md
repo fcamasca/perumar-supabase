@@ -1,6 +1,6 @@
 # H2 — Evidencia de construcción
 
-Estado vigente: TASK-H2-001 a 008 COMPLETADAS. TEST-H2-018 confirmado PASSED humanamente sobre e2f2db9; correcciones UI posteriores implementadas y verificadas (106 unitarias). TEST-H2-019/020 y revisión del nuevo candidato pendientes; TASK-009 requiere persona y TASK-010 bloqueada por Gate 2. No acceptance ni merge.
+Estado vigente: TASK-H2-001 a 008 COMPLETADAS. TEST-H2-018 confirmado PASSED humanamente sobre e2f2db9; correcciones UI y revisión UX posteriores implementadas y verificadas (112 unitarias; ver ux-review.md). TEST-H2-019/020 y revisión del nuevo candidato pendientes; TASK-009 requiere persona y TASK-010 bloqueada por Gate 2. No acceptance ni merge.
 
 Los bloques siguientes conservan estados históricos de cada etapa; sus pendientes intermedios no son el estado vigente.
 
@@ -93,3 +93,7 @@ technical-results.md publica matriz TEST, commits/comandos/defectos/correcciones
 ## Correcciones UX/UI autorizadas tras TEST-H2-018 humano
 
 El usuario confirmó PASSED humano en e2f2db9365b4c46fd6932caba3d47a17324ebe29 y solicitó correcciones antes de TEST-019. Código 96437d3ca8c22c872748119f4093412fa62f762d: diálogo accesible propio, validación inline, previabilidad y confirmaciones consistentes, código+nombre, relaciones integradas, límites visibles, mensajes seguros, sigla sugerida y advertencias de propagación, presentación ligera. 106 unitarias y lint/tipos/build/safety/local/seguridad14/academic11 PASSED; reset/local/stop completados. Registro detallado y defecto de foco corregido en ui-corrections.md. Sin cambios DB/RLS/RPC/Spec ni nuevas dependencias. TEST-019/020 y Gate 2 pendientes; no acceptance, merge ni H3.
+
+## Revisión UX/UI previa a TEST-H2-019
+
+Base 51b73ba5c6b18c9436a7e087f4110f3c10d91f18; código 0f8096097c7cfa5426ee84a55b56d4bc0e1fc551. Revisión pantalla por pantalla y correcciones de jerarquía/navegación, listado/editor/consulta, relaciones de Ciclo y auditoría legible; reporte de problemas/cambios/beneficio en ux-review.md. 112 unitarias, lint/tipos/build/safety y regresión real local/seguridad14/academic11 PASSED; reset/local/stop y Vite detenidos. Browser integrado falló antes de abrir página; no inspección visual real ni TEST-019/020 humano aprobado. Sin cambios en DB/RLS/RPC/permisos/Spec/PLAN/dependencias/host. Estado de CI del candidato documental se presenta en la entrega. Gate 2, acceptance y merge siguen bloqueados; H3 no iniciado.
