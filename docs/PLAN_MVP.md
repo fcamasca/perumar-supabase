@@ -600,6 +600,34 @@ Los controles se aplicarán conforme al riesgo y no como una lista de infraestru
 
 ---
 
+## 9.1 Criterio transversal de interfaz — aprobado el 22/10/2026
+
+Aplicable desde H2 en adelante. Cambio documental aprobado por el usuario; no modifica la evidencia histórica ni la implementación aceptada de H0/H1. Todo futuro Spec con interfaz debe considerar estos criterios. Se implementarán dentro del primer hito cuya UI los necesite, bajo su Spec aprobado.
+
+### Preferencias y prioridad del sistema
+
+PERÚ MAR soportará cuatro preferencias: **Sistema** (predeterminada), **Claro**, **Oscuro** y **Alto contraste**. Su representación conceptual será `system`, `light`, `dark` y `high-contrast`; el Spec definirá su selección y persistencia de manera simple.
+
+Sistema sigue la preferencia clara u oscura del sistema operativo y sus preferencias visuales y de accesibilidad. Claro y Oscuro seleccionan explícitamente las respectivas paletas propias. Alto contraste selecciona una paleta propia orientada a mayor legibilidad incluso sin alto contraste del sistema; no reemplaza las funciones de accesibilidad del sistema operativo.
+
+Si el sistema activa `forced-colors`, alto contraste equivalente o una función equivalente de accesibilidad, esa configuración tiene prioridad sobre las paletas propias, incluida Alto contraste. No reemplazar ni competir con los colores forzados del sistema.
+
+### Contraste, estados y tokens
+
+Las paletas propias cumplirán como mínimo los criterios de contraste aplicables de **WCAG 2.2 AA**: texto normal 4.5:1, texto grande 3:1 y contraste no textual de controles, indicadores y bordes necesarios conforme a AA. No afirmar que cumplir solo estas ratios demuestra conformidad completa con WCAG.
+
+Los estados éxito, error, advertencia, información, foco, seleccionado y deshabilitado deben resultar distinguibles y legibles en Claro, Oscuro y Alto contraste. No transmitir información exclusivamente por color: acompañar con texto, icono con significado accesible o estado visible; por ejemplo, deuda/pagado con etiqueta legible.
+
+Gestionar colores mediante tokens semánticos compartidos, no colores dispersos en componentes. Considerar conceptos equivalentes a: `background`, `surface`, `surface-elevated`, `text-primary`, `text-secondary`, `text-disabled`, `border`, `border-strong`, `primary`, `primary-contrast`, `focus`, `success`, `warning`, `error` e `info`. Los nombres pueden ajustarse en diseño; el componente consume significado, sin conocer una paleta concreta.
+
+### Persistencia y simplicidad
+
+La elección explícita podrá persistirse localmente en el navegador. No llevarla a PostgreSQL, Auth, RLS ni backend sin un requisito posterior real de sincronización entre dispositivos. No crear un framework propio de temas cuando CSS y React actuales sean suficientes; no agregar skins ni personalización avanzada.
+
+Este cambio no implementa selector, CSS, componentes, hooks, contextos, almacenamiento local ni dependencias. Esos elementos solo se construirán dentro del hito y Spec que los aprueben.
+
+---
+
 # 10. AWS Well-Architected
 
 Aunque la arquitectura candidata no se ejecute íntegramente sobre AWS, se utilizarán como criterios de diseño:

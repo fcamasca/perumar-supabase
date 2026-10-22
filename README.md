@@ -19,8 +19,8 @@ Git con acceso legítimo al repositorio privado, Node **24.19.0**, npm **10.9.0*
 Antes de arrancar en Windows, revisar la [regla aprobada y su alcance](docs/specs/H0-bootstrap/environment-change-proposal.md) junto con la enmienda. Si los bindings no son loopback, debe existir la regla exacta habilitada y efectiva y todos los perfiles activos. El script solo consulta: no crea ni cambia reglas. La creación es una operación administrativa explícita; no se configura firewall para todos los desarrolladores automáticamente. No reutilizar estos puertos para otros servicios mientras la regla esté activa.
 
 ```powershell
-git clone --branch feature/h1-security https://github.com/fcamasca/perumar-supabase.git perumar-h1-review
-Set-Location perumar-h1-review
+git clone --branch main https://github.com/fcamasca/perumar-supabase.git perumar-supabase
+Set-Location perumar-supabase
 node --version
 npm --version
 npm ci
