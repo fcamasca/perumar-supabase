@@ -1,7 +1,15 @@
 # PLAN MVP — PERÚ MAR Supabase
 
-**Versión:** 0.1  
-**Estado:** DRAFT — PENDIENTE DE APROBACIÓN HUMANA
+**Versión:** 1.0
+**Estado:** APROBADO
+
+## Registro de aprobación humana — 21/10/2026
+
+El usuario aprobó explícitamente el PLAN y el Spec de H0 el 21/10/2026 y autorizó el Gate 1 de H0 — Bootstrap. El commit final del Spec aprobado es `dff3c1c94683e5767c5837203d6910a6f25f43e3`, en `feature/h0-bootstrap-spec`.
+
+Se autoriza construir exclusivamente H0, conservando alcance, diseño y tareas aprobadas. OQ-H0-001 queda resuelta. OQ-H0-002 (owner GitHub) sigue pendiente hasta contar con evidencia humana explícita. La aprobación del Gate 1 no sustituye pruebas humanas, Gate 2, acceptance ni autorización de merge a main.
+
+Este registro documental se incorpora en la rama Spec antes de construir; no modifica el contenido de los cuatro documentos aprobados. La implementación nace del commit exacto aprobado y recibe después este registro documental.
 
 ---
 
@@ -630,7 +638,7 @@ El PLAN vigente debe reflejar el estado real del proyecto.
 
 | Hito | Estado |
 |---|---|
-| H0 Bootstrap | PENDIENTE DE SPEC |
+| H0 Bootstrap | EN CONSTRUCCIÓN |
 | H1 Seguridad base | NO INICIADO |
 | H2 Base académica | NO INICIADO |
 | H3 Alumno y Matrícula | NO INICIADO |
