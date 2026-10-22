@@ -4,6 +4,8 @@ import App from '../src/App'
 import { checkConnection } from '../src/lib/supabase'
 
 vi.mock('../src/lib/supabase', () => ({ checkConnection: vi.fn() }))
+vi.mock('../src/security/SessionProvider', () => ({ SessionProvider: ({ children }: { children: import('react').ReactNode }) => children }))
+vi.mock('../src/security/SecurityRoutes', () => ({ SecurityRoutes: () => null }))
 afterEach(() => { vi.unstubAllEnvs(); vi.clearAllMocks() })
 
 describe('pantalla técnica H0', () => {

@@ -4,11 +4,11 @@ Base documental de una nueva implementación candidata con React, TypeScript, Su
 
 ## Estado
 
-PLAN 1.0 y Spec H0 aprobados humanamente el 21/10/2026 (Gate 1). H0 y Gate 2 aprobados humanamente el mismo día sobre `9523e2e0e1b1889dd12ed3902fa3fe23f7c52141`; [aceptación y autorización de integración a main](docs/specs/H0-bootstrap/acceptance.md). H1 no iniciado. La pantalla y el diagnóstico son exclusivamente técnicos.
+H0 está aceptado e integrado en main: [aceptación histórica](docs/specs/H0-bootstrap/acceptance.md). H1 está aceptado e integrado en main tras Gate 2 humano del 22/10/2026 sobre el candidato `7c15f6c382c43b08b900f00a793fd590205ab618`: [aceptación de H1](docs/specs/H1-security/acceptance.md). H2 permanece NO INICIADO, sin Spec generado en este cierre. [Evidencia y recorrido humano de H1](docs/specs/H1-security/implementation-log.md).
 
 La jerarquía es: `docs/PLAN_MVP.md`, historias vigentes, Spec aprobado del hito e informes arquitectónicos como sustento técnico. El Spec aprobado se conserva sin cambios de requisitos/diseño/tareas. El registro posterior de aprobación está en el PLAN.
 
-El remoto autorizado `fcamasca/perumar-supabase` se verificó privado y está vinculado como origin. main recibe el bootstrap aceptado mediante la integración autorizada de `feature/h0-bootstrap`; la rama Spec conserva la aprobación original. No existe proyecto Supabase alojado, autenticación funcional ni esquema de negocio.
+El remoto autorizado `fcamasca/perumar-supabase` es privado y está vinculado como origin. main integra H0 y H1 aceptados; la rama `feature/h1-security` conserva la trazabilidad de construcción y cierre. No existe proyecto Supabase alojado, esquema de negocio ni hosting. H1 tiene únicamente Auth local y tres tablas de seguridad.
 
 La evidencia histórica está en [implementation-log.md](docs/specs/H0-bootstrap/implementation-log.md) y las verificaciones finales en [technical-results.md](docs/specs/H0-bootstrap/technical-results.md). La [enmienda CHG-H0-001](docs/specs/H0-bootstrap/approved-isolation-amendment.md) fue aprobada humanamente: Windows puede usar aislamiento efectivo mediante la regla exacta creada administrativamente. No se afirma que Docker tenga binding exclusivo a loopback. **54322/TCP: NO VERIFICADO DE FORMA INDEPENDIENTE**; riesgo residual aceptado para H0 local sin datos reales.
 
@@ -19,8 +19,8 @@ Git con acceso legítimo al repositorio privado, Node **24.19.0**, npm **10.9.0*
 Antes de arrancar en Windows, revisar la [regla aprobada y su alcance](docs/specs/H0-bootstrap/environment-change-proposal.md) junto con la enmienda. Si los bindings no son loopback, debe existir la regla exacta habilitada y efectiva y todos los perfiles activos. El script solo consulta: no crea ni cambia reglas. La creación es una operación administrativa explícita; no se configura firewall para todos los desarrolladores automáticamente. No reutilizar estos puertos para otros servicios mientras la regla esté activa.
 
 ```powershell
-git clone --branch feature/h0-bootstrap https://github.com/fcamasca/perumar-supabase.git perumar-h0-review
-Set-Location perumar-h0-review
+git clone --branch feature/h1-security https://github.com/fcamasca/perumar-supabase.git perumar-h1-review
+Set-Location perumar-h1-review
 node --version
 npm --version
 npm ci
@@ -41,6 +41,7 @@ En ese caso sustituir cada `npm <argumentos>` de esta guía por `node 'C:/Progra
 ```powershell
 npm run supabase:start
 npm run supabase:status
+npm run supabase:reset
 npm run supabase:env
 npm run test:local
 npm run dev
@@ -48,7 +49,25 @@ npm run dev
 
 `supabase:env` se ejecuta solo al preparar el clon: crea `.env.local` con los dos campos documentados en `.env.example`, tomando únicamente URL y clave publicable/anon del stack local. Nunca imprime valores ni sobrescribe un archivo existente. Revisar el ejemplo permite conocer los nombres y placeholders sin copiar credenciales administrativas. No ejecutar `supabase status` sin filtrar ni copiar su salida completa.
 
-Abrir `http://127.0.0.1:5173`. Pulsar **Comprobar conexión local**: debe informar Data API disponible. No hay sondeo automático, login, tablas, formularios ni funciones de negocio. El diagnóstico usa OpenAPI del SDK sobre el esquema público vacío, sin consultas a entidades. Vite y preview escuchan solo en loopback.
+El reset de la secuencia anterior corresponde a la preparación inicial del clon/ensayo; no ejecutarlo en cada arranque ni mientras hay fixtures humanos. Solo opera sobre la base local desechable. No usar dos clones simultáneamente contra el mismo project_id ni los mismos puertos.
+
+Abrir `http://127.0.0.1:5173`. **Comprobar conexión local** verifica Data API sin enumerar recursos protegidos antes del login. Las rutas H1 son `/login`, `/seguridad` y `/seguridad/usuarios`; no hay funciones de negocio. Vite y preview escuchan solo en loopback.
+
+## Ensayo humano con identidades sintéticas
+
+En una segunda terminal del mismo clon, con el runtime compatible y el stack activo:
+
+```powershell
+npm run fixtures:human
+```
+
+Elegir una contraseña exclusivamente de ensayo de al menos ocho caracteres mediante la entrada oculta. No aparece en pantalla, logs, VITE, archivos ni chat. El comando imprime los emails sintéticos e identificadores A/B (ADMIN), O (OPERADOR), M (ambos), N (sin rol), F (sin app_user), I (inactivo). La persona conoce la contraseña que suministró; no se imprime para recuperarla. Si se equivocó al escribirla, terminar el fixture con Enter y crearlo de nuevo.
+
+Mantener esa terminal abierta durante el recorrido; al terminar, pulsar Enter para limpiar solo esas identidades. Ctrl+C intenta la misma limpieza; si el proceso se mata forzosamente, la guía de recuperación es reset local desechable, sin datos reales. No ejecutar test:security, test:expiry o reset mientras este ensayo humano esté activo. Los fixtures no son alta administrativa del producto y no se envía correo real.
+
+Login A permite directorio de seguridad de solo lectura; O solo sus datos/asignaciones y catálogo activo. N/F/I se autentican pero quedan sin acceso de aplicación. No hay edición de usuarios/roles, signup, MFA ni recuperación. Auth local verifica credenciales; la habilitación real la deciden grants/RLS con el estado vigente en PostgreSQL. Cambiar React, metadata o almacenamiento no concede permisos de DB.
+
+El SDK persiste la sesión y renueva tokens; tras recarga se confirma identidad contra Auth antes de mostrar datos. Logout limpia datos propios y solicita cierre de la sesión actual. Un JWT copiado puede seguir válido hasta expirar; no se promete revocación instantánea ni cierre de otros dispositivos. Tokens en almacenamiento del SDK son accesibles ante XSS: no renderizar HTML arbitrario ni copiar el almacenamiento a la evidencia. Esta es una prueba local, sin política institucional definitiva de sesiones/contraseñas.
 
 Los campos son `VITE_SUPABASE_URL` (API HTTP de loopback, puerto 54321) y `VITE_SUPABASE_PUBLISHABLE_KEY` (publicable o anon legacy local). **Todo VITE_* es visible al navegador.** Nunca usar secret/service_role, SQL, PAT ni claves privadas. `.env.local` está ignorado por Git; los placeholders del ejemplo no constituyen configuración válida. El build rechaza configuración faltante/remota/privilegiada antes de generar artefactos; no hay fallback remoto.
 
@@ -63,11 +82,18 @@ npm test
 npm run build
 npm run test:build-safety
 npm run test:local
+npm run test:security
+npm run test:expiry
 npm run supabase:reset
 npm run test:local
+npm run test:security
 ```
 
-El reset destruye únicamente la base local desechable de este proyecto y usa la misma red del arranque. Nunca usar con datos reales. Rechaza link remoto o flags adicionales. H0 no tiene SQL propio; la CLI puede avisar que ignora `migrations/README.md`. El historial de aplicación puede no existir todavía: no se crea una tabla vacía para simularlo. [Disciplina de migraciones](supabase/migrations/README.md).
+El reset destruye únicamente la base local desechable y usa la misma red del arranque. Nunca usar con datos reales. Rechaza link remoto o flags adicionales. H1 aplica `20261022041000_h1_security.sql` y exige el inventario exacto de tres tablas, seis policies y un helper; no se deshabilitó el control de inventario H0 para aceptar cualquier objeto. La CLI puede avisar que ignora `migrations/README.md`. [Disciplina de migraciones](supabase/migrations/README.md).
+
+`test:security` crea siete actores en memoria, prueba login y Data API con clave pública/JWT ordinario por actor y limpia sus identidades al terminar. El privilegio administrativo se usa solo para preparación, cambios de estado del ensayo y observación separada. Los logs contienen IDs sintéticos, casos/resultados y cambios de estado; no contraseñas/tokens. No equivalen a auditoría productiva.
+
+`test:expiry` requiere que no haya usuarios Auth previos: para el proyecto, cambia temporalmente solo jwt_expiry de 3600 a 60, vuelve a iniciar, usa un JWT real y espera exp + 35 segundos de tolerancia técnica. Después retira fixtures, restaura el archivo exacto y reinicia el perfil original. Puede tardar varios minutos; no ejecutar otras pruebas de plataforma en paralelo. Si se interrumpe forzosamente, comprobar que config.toml vuelva a jwt_expiry=3600 antes de reiniciar. No se fabrica una firma ni se cambia configuración global. El valor corto no es una política institucional.
 
 Para parar: Ctrl+C en la terminal de Vite y `npm run supabase:stop`. Conserva volúmenes locales; no para otros proyectos ni Docker Desktop. Para comprobar recreación: parar, volver a iniciar y repetir `test:local`.
 
@@ -79,12 +105,15 @@ Para parar: Ctrl+C en la terminal de Vite y `npm run supabase:stop`. Conserva vo
 - Configuración faltante o inválida: mensaje con el nombre del campo, sin su valor. Corregir solo configuración pública local y reiniciar Vite. Un build inválido debe fallar.
 - Puerto ocupado: identificar el proceso; no detener servicios ajenos ni cambiar puertos o reglas silenciosamente.
 - Reset falla: el script detiene el stack; revisar salud y red del proyecto antes de repetir. No ocultar el fallo ni usar un destino remoto.
+- Login informa proveedor email deshabilitado: en esta CLI `auth.email.enable_signup=true` mantiene habilitado el proveedor; `auth.enable_signup=false` bloquea el registro público. No habilitar signup global para solucionar login. La suite prueba el rechazo directo.
+- Auth válido sin fila/rol activo o usuario inactivo: acceso no habilitado es el resultado esperado; no autoasignar ADMIN. Para preparar usuarios usar exclusivamente fixtures locales.
+- Fallo de cierre remoto: se retiran datos de UI y se muestra el fallo, sin afirmar revocación inmediata. Reintentar con el servicio local disponible.
 
 ## CI y revisión humana
 
-Un workflow con permisos `contents: read` ejecuta instalación, lint, tipos, pruebas, integración local, build seguro y reset; siempre intenta detener el stack. Acciones fijadas por SHA y sin deployment ni secretos de producción. La rama `feature/h0-bootstrap-ci-negative` es un ensayo deliberado: su build debe fallar por configuración inválida. La rama candidata normal debe pasar. No usar el ensayo fallido como commit a aceptar. El dispatch opcional depende de la disponibilidad del workflow en la rama predeterminada; en H0 se usó la rama de ensayo sin modificar main.
+Un workflow con permisos `contents: read` ejecuta instalación, lint, tipos, pruebas, Auth/RLS real, build seguro, expiración y reset con repetición; siempre intenta detener el stack. Acciones fijadas por SHA y sin deployment ni secretos remotos de Supabase. El ensayo negativo temporal introduce ADMIN indebidamente al fixture O y debe fallar en la matriz de filas, limpiar identidades y detener el stack. Se elimina su rama después de conservar runs/commits; no es un candidato alternativo. No hay rama negativa permanente. El mecanismo de fallo de build H0 se retiró del workflow actual; la evidencia histórica permanece en sus documentos/runs.
 
-Los recorridos humanos TEST-H0-012 y TEST-H0-014 están en [technical-results.md](docs/specs/H0-bootstrap/technical-results.md), que conserva la evidencia presentada antes del Gate 2. La aprobación humana global posterior del resultado se registra en [acceptance.md](docs/specs/H0-bootstrap/acceptance.md); Codex no se atribuye ejecución ni aprobación humana.
+Los recorridos humanos TEST-H1-018 y TEST-H1-019 se conservan en [implementation-log.md](docs/specs/H1-security/implementation-log.md). El usuario confirmó ambos como PASSED y aprobó Gate 2 el 22/10/2026: [registro de aceptación](docs/specs/H1-security/acceptance.md). Codex registra esa decisión; no se atribuye la ejecución ni aprobación humana. H2 permanece NO INICIADO.
 
 ## Spec-Driven Development
 
@@ -103,4 +132,4 @@ Para cada hito se crea `feature/<hito>-spec` desde main. Solo después del Gate 
 
 La historia de usuario aportada como `Historias_de_Usuario_export.md` se normalizó de Windows-1252 a UTF-8 y se renombró a `Historias_de_Usuario.md`, sin reinterpretar ni corregir sus requisitos. Los informes son contexto; sus referencias antiguas no sustituyen al PLAN vigente. No se incorporan scripts, configuraciones ni código de implementaciones anteriores.
 
-Los scripts operativos son exclusivamente locales. El guard acepta loopback estricto o la mitigación exacta aprobada y rechaza cualquier otra situación. La reconstrucción local no sustituye backups/restauración productivos de H9. Las limitaciones aceptadas de red no autorizan datos reales, alojamiento LAN/Internet ni funciones de H1.
+Los scripts operativos son exclusivamente locales. El guard acepta loopback estricto o la mitigación exacta aprobada y rechaza cualquier otra situación. La reconstrucción local no sustituye backups/restauración productivos de H9. Las limitaciones aceptadas de red no autorizan datos reales, alojamiento LAN/Internet ni funciones de H2 o posteriores.

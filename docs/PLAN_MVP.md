@@ -13,7 +13,13 @@ Este registro documental se incorpora en la rama Spec antes de construir; no mod
 
 ### Estado vigente de H0 — cierre del 21/10/2026
 
-H0 ACEPTADO humanamente y Gate 2 aprobado el 21/10/2026 sobre `9523e2e0e1b1889dd12ed3902fa3fe23f7c52141`. La [aceptación](specs/H0-bootstrap/acceptance.md) quedó registrada y la implementación se integró y publicó en main mediante el merge `b491b556353d60e0a925b293ea214cd4d5d88e07`. H1 continúa NO INICIADO.
+H0 ACEPTADO humanamente y Gate 2 aprobado el 21/10/2026 sobre `9523e2e0e1b1889dd12ed3902fa3fe23f7c52141`. La [aceptación](specs/H0-bootstrap/acceptance.md) quedó registrada y la implementación se integró y publicó en main mediante el merge `b491b556353d60e0a925b293ea214cd4d5d88e07`. H1 está ACEPTADO e integrado en main bajo su Gate 2 humano del 22/10/2026; véase el registro de cierre siguiente.
+
+### Estado vigente de H1 — cierre del 22/10/2026
+
+H1 — Seguridad base: **ACEPTADO / INTEGRADO**. El usuario aprobó Gate 2 sobre el candidato exacto `7c15f6c382c43b08b900f00a793fd590205ab618`, confirmó TEST-H1-018 y TEST-H1-019 satisfactorios y autorizó su integración a main conservando trazabilidad. La [aceptación](specs/H1-security/acceptance.md) registra Gate 1, evidencia técnica, pruebas humanas y riesgo residual aceptado. Este cierre es exclusivamente documental; no altera implementación ni los cuatro documentos del Spec aprobado.
+
+H2 — Base académica: **NO INICIADO**. No se genera su Spec ni se autoriza su construcción en este cierre.
 
 ### Seguimiento histórico de H0 — estado anterior al cierre
 
@@ -646,12 +652,12 @@ El PLAN vigente debe reflejar el estado real del proyecto.
 
 ---
 
-# 13. Estado inicial
+# 13. Estado vigente
 
 | Hito | Estado |
 |---|---|
 | H0 Bootstrap | ACEPTADO — Gate 2 aprobado 21/10/2026 |
-| H1 Seguridad base | NO INICIADO |
+| H1 Seguridad base | ACEPTADO / INTEGRADO — Gate 2 aprobado 22/10/2026 |
 | H2 Base académica | NO INICIADO |
 | H3 Alumno y Matrícula | NO INICIADO |
 | H4 Pagos | NO INICIADO |
@@ -666,17 +672,13 @@ El PLAN vigente debe reflejar el estado real del proyecto.
 
 # 14. Próximo paso
 
-Generar exclusivamente el Spec de:
+El siguiente hito es **H2 — Base académica**, todavía **NO INICIADO**.
 
-**H1 — Seguridad base**
+En una ejecución posterior autorizada, generar exclusivamente su Spec:
 
-compuesto por:
+- requirements.md
+- design.md
+- tasks.md
+- test-plan.md
 
-- `requirements.md`
-- `design.md`
-- `tasks.md`
-- `test-plan.md`
-
-Después detenerse para revisión y aprobación humana.
-
-No iniciar construcción de H1 sin esa aprobación.
+Después detenerse para revisión y aprobación humana. No iniciar construcción de H2 sin esa aprobación. El cierre actual de H1 no genera el Spec de H2 ni inicia trabajo de ese hito.

@@ -21,12 +21,16 @@
     "supabase:reset": "node scripts/local-supabase.mjs reset",
     "supabase:env": "node scripts/check-local.mjs env",
     "test:local": "node scripts/check-local.mjs",
-    "test:build-safety": "node scripts/check-build-safety.mjs"
+    "test:build-safety": "node scripts/check-build-safety.mjs",
+    "fixtures:human": "node scripts/h1-fixtures.mjs human",
+    "test:security": "node scripts/test-security.mjs",
+    "test:expiry": "node scripts/test-expiry.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.118.0",
     "react": "19.3.1",
-    "react-dom": "19.3.1"
+    "react-dom": "19.3.1",
+    "react-router-dom": "7.18.4"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

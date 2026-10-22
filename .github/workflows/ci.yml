@@ -1,4 +1,4 @@
-name: H0 verification
+name: H1 security verification
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
-      configuration-failure:
-        description: 'Ensayo controlado: el build debe fallar por configuración inválida'
+      security-failure:
+        description: 'Ensayo temporal: detectar una asignación ADMIN indebida a OPERADOR'
         type: boolean
         default: false
 
@@ -42,18 +42,26 @@ jobs:
         run: npm run supabase:start
       - name: Local configuration and integration
         run: |
+          npm run supabase:reset
           npm run supabase:env
           npm run test:local
-      - name: Build (including controlled failure when requested)
+      - name: Real Auth and RLS actor matrix
         env:
-          H0_CONFIG_FAILURE: ${{ inputs.configuration-failure || github.ref_name == 'feature/h0-bootstrap-ci-negative' }}
-        run: node scripts/ci-build.mjs
+          H1_PRIVILEGE_FAILURE: ${{ inputs.security-failure || github.ref_name == 'feature/h1-security-privilege-trial' }}
+        run: npm run test:security
+      - name: Frontend build
+        run: npm run build
       - name: Privileged configuration rejected safely
         run: npm run test:build-safety
+      - name: Real token expiry and profile restoration
+        run: |
+          npm run test:expiry
+          git diff --exit-code -- supabase/config.toml
       - name: Rebuild local database and repeat integration
         run: |
           npm run supabase:reset
           npm run test:local
+          npm run test:security
       - name: Stop local platform
         if: always()
         run: npm run supabase:stop
