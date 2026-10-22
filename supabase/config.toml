@@ -43,5 +43,18 @@ enabled = false
 [edge_runtime]
 enabled = false
 
+[auth]
+enabled = true
+site_url = "http://127.0.0.1:5173"
+additional_redirect_urls = []
+jwt_expiry = 3600
+enable_signup = false
+enable_anonymous_sign_ins = false
+
+[auth.email]
+# CLI maps this flag to enabling the email provider; global auth.enable_signup=false
+# still blocks public registration. Password login must remain available.
+enable_signup = true
+
 [analytics]
 enabled = false
