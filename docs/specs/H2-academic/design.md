@@ -1,80 +1,116 @@
 # H2 — Base académica: design
 
-**Versión:** 0.1 · **Fecha:** 22/10/2026 (America/Lima)
+**Versión:** 0.2 · **Fecha:** 22/10/2026 (America/Lima)
 **H2 SPEC: PENDING HUMAN APPROVAL** · **IMPLEMENTATION: BLOCKED**
 
-Diseño propuesto, sin SQL, migraciones ni implementación. Precedencia, alcance y decisiones funcionales pendientes: [requirements.md](requirements.md). Base: main `32f38ff9ea1bf576bde54735e4a6879f4faf7e35`, con H0/H1 aceptados y cambio transversal documental integrado. La rama Spec nace de esa referencia exacta.
+Diseño documental revisado con OQ-H2-001 a 010 resueltas humanamente, no Gate 1 aprobado. [requirements.md](requirements.md) contiene decisiones, sustituciones de HU y detalles residuales R-H2-001 a 006. Base de rama: main `32f38ff9ea1bf576bde54735e4a6879f4faf7e35`; Spec previo `a8490c3bf78f1a37a73a1a19bbfcb49cc3079bec`. Sin SQL ni implementación.
 
-## DES-H2-001 — Recorrido mínimo y responsabilidades
+## DES-H2-001 — Recorrido y evolución de seguridad
 
-**REQ:** 001, 007, 008, 010, 015, 016.
+**REQ:** 001, 007, 008, 010, 014–016.
 
-React → SDK único existente → Data API/RPC → grants/RLS → constraints/operación PostgreSQL → auditoría en la misma transacción. Auth y sesión H1 se reutilizan; no se duplican perfiles, roles o clientes. La interfaz presenta estados y permisos efectivos sin ser autoridad. Un módulo concreto por pantalla/caso basta; sin repositorio genérico, capa ceremonial, motor de formularios, API adicional ni infraestructura nueva.
+React → cliente SDK único → Data API de lectura / RPC específica de mutación necesaria → autorización vigente → constraints y operación PostgreSQL → auditoría transaccional. React presenta, Auth identifica, RLS protege acceso, PostgreSQL garantiza invariantes. Sin backend, Edge Functions, Redux, repositorios genéricos ni motor de permisos.
 
-Lecturas con proyección explícita y filtros básicos de nombre/código/estado propuestos para localizar registros; no cargar toda la base para filtrar permisos en cliente. Sin realtime, buscador avanzado o motor de reportes. Errores de autenticación/autorización, duplicado, referencia inválida, validación y conflicto se distinguen para diagnóstico, con mensajes seguros para usuario.
+La migración futura evoluciona explícitamente el catálogo H1 (incluida su restricción a dos códigos), semillas, fixtures, consultas y políticas que dependían de ADMIN/OPERADOR. Roles funcionales: DIRECTOR_ACADEMICO, COORDINADOR_ACADEMICO, ADMIN_SISTEMA. No convertir automáticamente asignaciones técnicas existentes en permisos reales ni dar derechos por metadata/nombre. Propuesta para entorno local: retirar fixtures de ensayo H1 de forma controlada y crear fixtures sintéticos funcionales nuevos; cualquier asignación a usuario real requiere R-H2-006. Los códigos técnicos no conceden permisos académicos ni de auditoría, aunque aparezcan en una prueba de compatibilidad.
 
-## DES-H2-002 — Modelo relacional conceptual
+Se conservan app_users, app_roles, app_user_roles, multirol y comprobación de usuario/rol activo; no reemplazar Auth ni crear perfiles paralelos. Reutilizar la propiedad del helper H1 de sujeto auth.uid() y estado vigente, revisando referencias concretas al catálogo. Evolucionar pruebas/rutas de seguridad solo con la decisión expresa sobre su acceso (R-H2-006); no otorgar a ADMIN_SISTEMA directorio de usuarios o administración de identidad por su nombre. No reescribir migración ni aceptación/evidencia histórica H1. La regresión prueba propiedades de seguridad, no exige mantener los roles técnicos como producto.
 
-**REQ:** 002–007. Nombres orientativos, sujetos a Gate 1; no DDL ni scripts.
+## DES-H2-002 — Modelo relacional y catálogos
 
-| Entidad | Datos conceptuales | Invariantes y decisiones pendientes |
-|---|---|---|
-| Materia | ID estable, código, nombre, descripción opcional, activo, fecha de creación/modificación | PK, código único, no vacío, estados válidos; OQ-005/006 |
-| Carrera | ID estable, código, nombre, descripción, modalidad, activo, fechas | Modalidad con/sin experiencia; obligatoriedad y normalización OQ-005 |
-| Carrera–Materia | Referencia carrera + referencia materia | Clave compuesta única, FK; misma materia reutilizable entre carreras; mínimo/baja OQ-006 |
-| Ciclo | ID estable, carrera, nombre, inicio/fin, estado y campos mínimos que apruebe OQ-002 | FK, fechas, estados; superposición OQ-003, correlativo OQ-007, ubicación/desierto OQ-008 |
-| Ciclo–Materia, si se aprueba selección propia | Referencia ciclo + referencia materia | Relación única/FK; semántica de copia/cambios OQ-004, sin versionado académico anticipado |
-| Evento de auditoría H2 | ID, entidad/registro, acción, actor, instante, antes/después de campos cambiados, motivo si corresponde | Apendice transaccional protegido; OQ-009 |
+**REQ:** 002–007, 009. Nombres conceptuales, no DDL. Toda entidad tiene UUID técnico generado/controlado por DB; FK por UUID, nunca nombre/código.
 
-IDs y tiempos son generados/controlados por DB; propuesta de IDs UUID coherente con H1. No admitir actor, created_at o auditoría confiados al payload. Propuesta: fechas académicas de calendario, auditoría con instante y zona; formato visual local sin alterar el instante. Longitudes/límites se fijan con OQ-005 antes de migrar, compartiendo el contrato UI/DB sin generador de esquemas.
+| Entidad | Datos / reglas |
+|---|---|
+| Materia | UUID, código trim/MAYÚSCULAS UNIQUE ≤30, nombre trim/MAYÚSCULAS UNIQUE ≤150, descripción opcional ≤500, active BOOLEAN, created_at y updated_at DB |
+| Carrera | Mismas reglas de UUID/código/nombre/descripción/active/tiempos, sigla persistida trim/MAYÚSCULAS editable, modalidad FK a catálogo; R-H2-004 fija límites de sigla |
+| Carrera–Materia | UUID técnico para auditoría de la asociación y FK UUID carrera/materia, par UNIQUE; sin duplicados ni huérfanos; versión de agregado controlada en Carrera |
+| Ciclo | UUID, carrera UUID, año de creación fijo, correlativo global anual fijo, codigo_ciclo derivado no editable, inicio/fin, promoción, ubicación, estado_codigo, motivo sensible cuando aplica, tiempos DB |
+| Ciclo–Materia | UUID propio, FK UUID ciclo/materia, par UNIQUE, procedencia heredada/adicional distinguible; propuesta de marcas de origen para preservar un adicional que también exista en carrera, su semántica final requiere R-H2-003 |
+| Departamento / Provincia / Distrito | UUID, identificador oficial de origen, nombre, active; Provincia referencia Departamento y Distrito referencia Provincia |
+| Capitanía | UUID, código/nombre de catálogo controlado, active; referencia estable para superposición, no texto libre |
+| Modalidad de Carrera / Motivo de Ciclo Desierto | UUID, código/nombre controlado y active; solo catálogos necesarios para H2, sin módulo universal de maestras |
+| Evento de auditoría | UUID, entidad, UUID registro afectado, acción, actor UUID auth.uid(), timestamp DB, motivo nullable, old_values JSONB y new_values JSONB |
 
-Se propone baja lógica de entidades para preservar referencias; no DELETE de entidades desde navegador. Reactivación, tratamiento de inactivos y bajas de asociaciones requieren OQ-006. No añadir alumnos, matrícula, costos o tablas geográficas para cerrar preguntas pendientes. La auditoría de ciclo en HU3 menciona carreras: se interpreta como probable errata, a confirmar al aprobar OQ-009, no como exención de auditoría de ciclos.
+Ciclo guarda referencias geográficas coherentes con Departamento → Provincia → Distrito, comprobadas en DB; Capitanía es referencia independiente salvo relación adicional aprobada. No deducir jerarquía Capitanía→Distrito no documentada. Fuente/versionado/cobertura de catálogo y obligatoriedad fina de ubicación se cierran en R-H2-002/005. Cargas iniciales futuras controladas/versionadas del sistema, no creación manual de catálogos por cada usuario. La modalidad conserva los significados con/sin experiencia de HU2. No inventar nombres/valores de Capitanías o motivos en el Spec.
 
-## DES-H2-003 — Constraints, atomicidad y concurrencia
+Normalización/unicidad de Materia/Carrera en PostgreSQL incluso para inactivos; códigos/nombres editables sin conflicto, relaciones UUID estables. No prometer equivalencia sin acentos no solicitada. active no se aplica a Ciclo; maestras pueden reactivarse y no se borran físicamente. Materia inactiva sigue relacionada, deja de precargarse, no se elimina de ciclos por cascada. Carrera inactiva no es seleccionable al crear ciclo y conserva referencias existentes. Descripción opcional también en Carrera es decisión humana 005.
 
-**REQ:** 004–007, 009, 014. La DB rechaza duplicados/referencias inválidas incluso con requests directas y concurrencia. UI valida para ayudar, PostgreSQL decide. No consultas previas como única garantía de unicidad.
+## DES-H2-003 — Operaciones compuestas, código, propagación y concurrencia
 
-Materia y cambios simples de estado pueden usar una única escritura Data API bajo RLS, con auditoría automática; no requieren RPC por ser CRUD. Carrera + conjunto de materias y, si se aprueba, ciclo + selección/correlativo, requieren un comando RPC específico para confirmar todo o nada. No secuencia de guardados independientes coordinada por React. No RPC genérica que reciba tabla, SQL, actor o permiso.
+**REQ:** 002–007, 009, 014. Constraints DB para claves, unicidad normalizada, tipos, longitudes, FK, jerarquía, fechas y estados. No precheck de navegador como garantía.
 
-Los comandos validan whitelist de campos, autorización vigente y todas las relaciones, incluidas las reglas aprobadas de estado; sustitución de asociaciones y auditoría se confirman o revierten juntas. Sin propagación retroactiva de materias a ciclos hasta resolver OQ-004. Para correlativo aprobado, asignación serializada en DB por carrera/año, no máximo+1 desde cliente. El mecanismo concreto (contador acotado/bloqueo) se fija después de OQ-007, con prueba concurrente y sin prometer numeración sin huecos.
+### Contratos de escritura propuestos
 
-La exclusión de superposiciones deberá ser constraint o validación transaccional con protección concurrente según el universo de OQ-003. No elegir extensión, índice o función antes de conocer esa regla. Rechazar fecha fin anterior al inicio; igualdad y extremos según decisión humana. El tratamiento de pérdida de cambios entre editores se cierra en OQ-010 antes de aprobar contrato de actualización.
+RPC concretas para guardar materia, guardar carrera con selección/sigla, guardar ciclo con materias, cambiar active de maestra con motivo si se inactiva y transición de ciclo. No endpoint genérico ni parámetro tabla/SQL/actor. Las RPC de escritura se justifican por compare-and-update obligatorio, motivo sensible y/o invariantes compuestas con auditoría; consultas/listados siguen Data API bajo RLS. No capa adicional que replique CRUD.
 
-## DES-H2-004 — Matriz de acceso y límites de privilegio
+Todos los comandos de edición reciben UUID y expected_updated_at del registro leído, no un timestamp de sustitución. La DB compara atómicamente versión vigente, autoriza actor/operación, valida whitelist, muta y asigna updated_at de servidor que cambia al modificar. Desajuste rechaza toda la operación con mensaje equivalente a «El registro fue modificado por otro usuario. Actualiza la información antes de volver a guardar». Sin última escritura gana, merge automático, reserva de pantalla ni locks pesimistas de edición. El INSERT no exige versión previa.
 
-**REQ:** 008, 014. Reutilizar comprobación de usuario/rol activo H1, metadata sin autoridad, sin motores de permisos ni nuevas jerarquías. H1 ADMIN solo tenía lecturas de seguridad, no permisos CRUD académicos implícitos.
+Carrera y Ciclo son raíces de edición: cualquier cambio de sus asociaciones avanza updated_at del padre; operaciones automáticas que modifican ciclos por propagación/sigla también avanzan su versión. Un formulario abierto antes de esa operación debe entrar en conflicto al guardar, no revertir los cambios automáticos. Comparación real en DB y número de filas afectadas, no check separado en React. Actualización de hijo, padre y auditoría es una única transacción. Inactivaciones/reactivaciones y transiciones también verifican versión.
 
-| Actor | Lectura/escritura académica | Auditoría | Estado |
-|---|---|---|---|
-| Anónimo, JWT inválido/vencido sin renovación | Denegada | Denegada | Definido |
-| Auth sin app_user, inactivo, sin rol activo | Denegada | Denegada | Definido |
-| ADMIN activo | Pendiente OQ-001 por entidad y operación | Pendiente OQ-009 | No inferir director |
-| OPERADOR activo | Pendiente OQ-001 por entidad y operación | Pendiente OQ-009 | No inferir coordinador |
-| Ambos roles | Unión de capacidades explícitamente aprobadas, sin ampliar permisos por otras policies | Según matriz aprobada | Conservar principio H1 |
+### Materias heredadas y adicionales
 
-Antes de Gate 1 completar matriz de consultar/alta/editar/estado/asociar por recurso y lectura de auditoría, incluidas reglas de desierto si entra en H2. Grants explícitos y policies por operación; INSERT/UPDATE incluyen comprobación de fila final además de acceso a fila previa. Ninguna policy FOR ALL amplia ni tablas de dominio públicas. Probar composición OR y FK sin filtración innecesaria.
+Nuevo ciclo precarga automáticamente solo materias ACTIVAS de carrera. Director/Coordinador pueden agregar otras materias; no se obliga a que pertenezcan a la carrera. Heredadas y adicionales se distinguen sin duplicar el par ciclo/materia. Un adicional no desaparece al retirar la materia de Carrera–Materia. Al inactivar materia no se ejecuta propagación que la quite de ciclos existentes; un usuario autorizado puede retirarla si el ciclo permite edición.
 
-Regla de asociación compuesta: bloquear escrituras directas a tablas de relación si permiten saltarse el comando atómico. Propuesta de RPC con privilegios de invocador cuando RLS/grants basten. Si para impedir bypass es necesario un comando SECURITY DEFINER, tratarlo como frontera privilegiada de diseño: propietario confiable fijo, search_path vacío, nombres calificados, parámetros cerrados, auth.uid() y autorización vigente explícita, EXECUTE solo al rol necesario, nada de SQL dinámico, sin confiar en RLS del owner. No ampliar silenciosamente los privilegios del helper H1. El patrón debe quedar resuelto al cerrar OQ-001/004/006, revisado en Gate 1; si exige otro diseño, detener la tarea afectada.
+Cambios ordinarios de Carrera–Materia propagan solo componentes heredados de ciclos modificables, preservando adicionales; ciclos CERRADO/DESIERTO/ANULADO no se reescriben. Guardar carrera + asociaciones + ciclos afectados + auditoría se confirma o revierte en conjunto. R-H2-001/003 cierra qué ciclos son modificables, retiros explícitos, doble origen y cambio de carrera antes de construir. No implementar una sincronización que reintroduzca silenciosamente materias retiradas por el usuario. Prohibido almacenar una lista de ciclos afectados suministrada por cliente como autoridad: DB calcula conjunto vigente.
 
-## DES-H2-005 — Auditoría básica que no puede omitir el cliente
+### Correlativo y cambio de sigla
 
-**REQ:** 009, 014. Propuesta: registro H2 append-only mediante trigger de tablas académicas y asociaciones, cubriendo escrituras permitidas directas y vía RPC en la misma transacción. Fallo de auditoría revierte el cambio; rollback no deja un evento de éxito. No endpoint de React para crear eventos después del guardado.
+Código AÑO-CORRELATIVO-SIGLA_CARRERA; ejemplo 2026-015-NAV, no pauta aprobada de ancho máximo. Año tomado de creación DB en zona que acuerde R-H2-004, no fecha de inicio editable; año y correlativo inmutables. Contador transaccional interno por año para asignación global anual concurrente; UNIQUE del par año/correlativo, sin MAX+1 desde navegador y sin promesa de numeración sin huecos. No contador por carrera. Código no editable desde UI/API; no mantener un nombre manual alternativo como bypass de decisión 007.
 
-Actor desde auth.uid(), tiempo DB, acción y entidad/PK, cambios de campos de negocio antes/después; no registrar contraseña, token, secretos ni payload completo indiscriminado. Preparación administrativa de fixtures separada, identificada como técnica y sin atribuirla a usuario humano; actor nulo no se acepta para escrituras de producto. Browser no puede insertar/editar/borrar/truncar eventos. El mecanismo interno privilegiado solo escribe auditoría acotada y no se expone por RPC. Revisar owner, grants y search_path.
+Sigla de Carrera es dato persistido, no se recalcula al cambiar nombre. UI puede sugerir valor inicial y usuario editarlo. Antes de confirmar cambio, advertir existencia de ciclos afectados; la DB recalcula el conjunto vigente al ejecutar. Cambiar sigla, sufijo de códigos de ciclos modificables y auditoría de todos los cambios es atómico; año/correlativo permanecen iguales y los códigos terminales intactos. Ejemplo: 2026-015-NAV → 2026-015-NVA. Cambiar código/nombre de Carrera no rompe FK UUID ni cambia por sí solo la sigla. Actualizaciones automáticas no omiten optimistic concurrency del padre ni las versiones de ciclos.
 
-Sin CDC, cola, base adicional ni módulo de auditoría completo. Lectura básica protegida para verificar trazabilidad según OQ-009; sin exportación/reporte general. No definir retención legal, motivos universales o historial académico completo sin fuente. Si se exige motivo, su transporte y vinculación al cambio deben formar parte del mismo comando, sin confiar en un campo de actor editable ni dejar una segunda llamada opcional.
+### Superposición y estados
 
-## DES-H2-006 — UI concreta y estados
+Rechazar dos ciclos de misma carrera UUID y Capitanía UUID con intersección de rangos inclusivos de fechas, incluso al editar fecha/carrera/Capitanía y en peticiones concurrentes. Distinta carrera o Capitanía puede coincidir. En misma carrera/Capitanía, uno termina el día que otro inicia → existe cruce. Propuesta de garantía declarativa de exclusión de PostgreSQL sobre ambos UUID y rango inclusivo; revisar operadores/soporte necesarios al aprobar diseño, sin escribir DDL ni instalar extensión en este paso. No validación check-then-insert sin garantía concurrente. Descartar índices/extensiones adicionales si no necesarios al mecanismo aprobado.
 
-**REQ:** 002–006, 010, 012. Propuesta: rutas bajo `/academico` para materias, carreras y ciclos, reutilizando protección H1. Listado y formulario por entidad; carrera permite selección de materias; ciclo muestra precarga/edición solo según OQ-004. Sin framework configurable.
+Decisión 003 no excluye estados del control: no añadir por cuenta propia una excepción para DESIERTO/ANULADO; confirmar interpretación residual R-H2-001 antes de construir. Fin anterior a inicio es inválido; igualdad y campos obligatorios finos deben fijarse en revisión, sin inventar duración mínima.
 
-Etiquetas, instrucciones y errores asociados a campos; tablas con encabezados y estado visible; botones con nombre accesible; operación de guardar refleja cargando/éxito/error sin perder datos ingresados ante fallo. Cambios de estado requieren confirmación comprensible y preservación de foco. Navegación y selección por teclado; no usar el color de fila como único estado. No dibujar acciones sin permiso como control de seguridad: además deben ser rechazadas por API/DB.
+Ciclo se crea PROGRAMADO. Solo Director transiciona manualmente: PROGRAMADO→EN_CURSO, EN_CURSO→CERRADO; DESIERTO y ANULADO requieren motivo. CERRADO/DESIERTO/ANULADO conservan historia y no se utilizan en nuevas operaciones; sin scheduler ni cascada de estado a hijos. No inferir orígenes universales de flechas «→ DESIERTO/ANULADO»; tabla completa y edición ordinaria de EN_CURSO requiere R-H2-001. Propuesta conservadora: terminales inmutables, sin reapertura no autorizada.
 
-En cambio de identidad/logout, cancelar o ignorar respuestas tardías y vaciar datos/formularios de la identidad anterior mediante el patrón validado en H1. No conservar caché académica compartida que exponga datos entre actores. Preferencia visual no contiene datos académicos ni de identidad y se conserva localmente según DES-007.
+Restricciones evolutivas: si existen matrículas se deniega ANULADO y se comunica alternativa DESIERTO cuando corresponda; con facturación también se deniega ANULADO. Implementar comprobación DB efectiva en hitos donde existan esos movimientos, antes de habilitarlos; H2 no crea tablas futuras ni acepta flags cliente «sin matrículas». Condición HU3 con matrículas: solo Director puede editar promoción/fechas, a aplicar cuando H3 exista, no simular prueba ahora.
+
+## DES-H2-004 — Permisos reales, grants y frontera de comandos
+
+**REQ:** 001, 008, 014. H1 ADMIN/OPERADOR son históricos; ninguna policy H2 los admite como roles de producto. Estado de usuario/rol y asignaciones vigentes con auth.uid(), no metadata/JWT de permisos del navegador.
+
+| Rol activo | Materias | Carreras y asociaciones | Ciclos | Auditoría |
+|---|---|---|---|---|
+| DIRECTOR_ACADEMICO | Consultar/crear/modificar/activar/inactivar | Consultar/crear/modificar/activar/inactivar y gestionar materias/sigla | Consultar, crear, editar ordinario y transiciones manuales expresas | Consultar/listar y filtros |
+| COORDINADOR_ACADEMICO | Sin mantenimiento; lectura mínima para seleccionar ciclo es propuesta R-H2-005 | Sin mantenimiento; consulta referencial mínima propuesta R-H2-005 | Consultar/crear/editar ordinario en ciclos modificables; sin transición manual de estado | Consultar/listar y filtros |
+| ADMIN_SISTEMA | Sin CRUD académico implícito | Sin CRUD académico implícito | Sin CRUD académico implícito | Consultar/listar y filtros |
+| Multirol | Unión solo de capacidades funcionales activas asignadas | Igual | Igual, rol Director necesario para estados | Según rol activo |
+| Anónimo, JWT inválido/vencido, usuario inactivo/sin fila/sin rol activo | Denegado | Denegado | Denegado | Denegado |
+| Solo roles técnicos ADMIN/OPERADOR | Sin permiso funcional | Sin permiso funcional | Sin permiso funcional | Sin permiso funcional |
+
+Nadie puede modificar auditoría ni asignar roles desde cliente. Catálogos iniciales sin mantenimiento UI implícito; lectura necesaria debe aprobarse explícitamente. No FOR ALL permisivo ni permiso transversal «authenticated escribe». Policies SELECT de dominio y auditoría concretas por capacidades; grants mínimos, RLS habilitado en cada tabla expuesta. Datos de ubicación y motivos no se usan para inferir permisos.
+
+Para comandos que deben cerrar bypass, propuesta de RPC SECURITY DEFINER acotadas: propietario confiable fijo, search_path vacío, referencias calificadas, auth.uid() y autorización vigente por operación, whitelist de campos, sin SQL dinámico ni actor arbitrario. Revocar EXECUTE por defecto a PUBLIC/anon y limitar a authenticated; autorización dentro del cuerpo, no solo grant de ejecución. Retirar grants de escritura directa al navegador para tablas gestionadas por comando, asociaciones, versiones/códigos internos y auditoría. Lectura sigue RLS. Justificación explícita: el owner puede eludir RLS, por lo que cada comando debe comprobar autorización y todo ID/estado dentro de la misma operación; los nombres o parámetros no son garantía. Privilegios no se heredan implícitamente del helper H1.
+
+Probar llamada directa de toda RPC, composición OR de policies, grants, funciones privadas/alternativas, inactivación/revocación con el mismo JWT y metadata manipulada. Ningún comando expuesto para cambiar catálogo de roles o hacer CRUD genérico. Si revisar el patrón exige ampliar alcance o tecnología, detener tarea afectada.
+
+## DES-H2-005 — Auditoría PostgreSQL relacional append-only
+
+**REQ:** 009, 014. Evento UUID con entidad, UUID afectado, acción, actor de auth.uid(), timestamp DB, motivo nullable y old_values/new_values JSONB de campos de negocio pertinentes. JSONB es contenido flexible dentro de tabla PostgreSQL, no adopción documental/NoSQL ni payload completo. CREATE registra nuevo estado; UPDATE antes/después; asociaciones, estados, inactivación/reactivación, ANULADO y cambios automáticos de sigla/heredadas dejan eventos identificables. Asociación tiene UUID estable para cumplir UUID afectado.
+
+Propuesta de triggers internos de tablas/relaciones para captar cambios directos internos y RPC, nunca callback posterior de React. Mutación y auditoría en misma transacción: si falla auditoría, todo revierte; rollback no deja evento de éxito. Operación compuesta puede producir eventos por registro realmente cambiado, sin plataforma genérica de correlación. Actor del comando actual también atribuye cambios propagados; DB no acepta actor/fecha del cuerpo. Carga administrativa de catálogo/fixtures separada e identificada como técnica, no inventar humano ni normalizar auth.uid() nulo para tráfico de producto.
+
+Motivo NO requerido para actualización ordinaria ni activación. Obligatorio para DESIERTO, ANULADO, inactivar Materia y Carrera. No añadir otra acción sensible por cuenta propia; cualquier ampliación debe quedar expresamente aprobada. Comando transporta motivo acotado y validado por el servidor, vinculándolo a sus eventos en la misma transacción; el trigger obtiene contexto interno confiable del comando, no de un evento arbitrario enviado por navegador. Resolver catálogo de motivos DESIERTO vs texto en R-H2-002, preservando obligatoriedad del motivo en ambos casos.
+
+Sin INSERT/UPDATE/DELETE/TRUNCATE para cliente en auditoría ni RPC pública para fabricarla. Trigger privilegiado mínimo con owner/search_path/grants revisados, sin EXECUTE público. Lectura RLS para Director, Coordinador y Admin Sistema, solo habilitados; listado básico con filtros fecha/actor/entidad/acción, sin reportes avanzados ni exportador analítico. Excluir contraseñas, JWT, secretos y payload indiscriminado. No prometer retención legal no definida ni introducir CDC, cola, NoSQL, DynamoDB o MongoDB.
+
+## DES-H2-006 — UI, advertencias y conflicto de edición
+
+**REQ:** 002–010, 012. Pantallas concretas bajo `/academico` y consulta básica de auditoría; un formulario/listado por caso, sin motores genéricos. Materias/Carreras muestran active; Ciclo muestra estado_codigo y código generado no editable. Campos de Materia/Carrera y sigla anticipan normalización sin ser autoridad. Ciclo usa selectores de catálogos iniciales, jerarquía geográfica y materias heredadas/adicionales con significado textual.
+
+Advertir al inactivar materia que dejará de cargarse para nuevos ciclos y no se quitará de existentes; inactivar carrera explica indisponibilidad para nuevos ciclos y preservación de referencias. Pedir motivo en ambas, DESIERTO y ANULADO; no pedirlo para toda edición. Antes de cambiar sigla advertir ciclos afectados y mostrar límites terminales; la DB recalcula afectados, UI no decide alcance. Estados manuales solo para Director y sin cambios por fecha.
+
+Al editar, conservar updated_at leído y enviar como versión esperada. Conflicto no reintenta con versión nueva automáticamente ni fusiona: informa «El registro fue modificado por otro usuario. Actualiza la información antes de volver a guardar»; usuario recarga y decide. No reservar pantalla ni crear locks de usuario. Errores/confirmaciones comprensibles, labels/errores asociados, tablas con encabezados, foco visible/restaurado, selección por teclado y estado legible más allá del color.
+
+Conservar patrón H1 contra respuestas tardías: vaciar datos y formularios en cambio de identidad/logout, ignorar resultados de actor previo. Los escenarios de cambio multirol→Coordinador prueban la propiedad histórica M→O sin conservar OPERADOR como producto. Preferencia visual no guarda identidad, roles ni datos académicos.
 
 ## DES-H2-007 — Temas sin infraestructura adicional
 
-**REQ:** 011–013. Preferencia única validada: system/light/dark/high-contrast. Propuesta: selector accesible compartido en el marco de aplicación, estado local React y atributo en raíz; CSS variables semánticas compartidas. No nuevo Context global, dependencia o framework si un estado en la raíz y CSS resuelven el caso. El cambio transversal es aprobado, esta implementación concreta espera Gate 1.
+**REQ:** 010–013. Preferencia única validada: system/light/dark/high-contrast. Propuesta: selector accesible compartido en el marco de aplicación, estado local React y atributo en raíz; CSS variables semánticas compartidas. No nuevo Context global, dependencia o framework si un estado en la raíz y CSS resuelven el caso. El cambio transversal es aprobado, esta implementación concreta espera Gate 1.
 
 Sistema por defecto sin preferencia guardada. En Sistema, seguir cambios en vivo de `prefers-color-scheme`; reconocer preferencias de contraste disponibles sin convertirlas en permisos o datos del perfil. Claro/Oscuro/Alto contraste son paletas propias explícitas. `forced-colors: active` o equivalente soportado por el entorno siempre prevalece, incluso con selección explícita: usar colores del sistema y controles semánticos, conservar bordes/foco; no desactivar globalmente con forced-color-adjust: none. La preferencia elegida se recuerda, sin impedir la prioridad temporal del sistema.
 
@@ -96,7 +132,7 @@ Negativos desde Data API/RPC con JWT ordinario, IDs ajenos/inexistentes, payload
 
 ## DES-H2-009 — Operación, evidencia y pilares
 
-**REQ:** 001, 014–016. Migraciones futuras aditivas propias H2; nunca reescribir H1 aceptado. Adaptar inventario técnico de tres tablas H1 al inventario exacto aprobado H2 conservando checks de seguridad. Reset desde cero, fixtures sintéticos por actor y cleanup exacto; mismos scripts/guard local, sin tocar firewall/Docker/WSL ni levantar entorno durante esta fase documental. CI ampliada solo después de Gate 1, sin deploy/acceptance/merge automático.
+**REQ:** 001, 014–016. Migraciones futuras aditivas propias H2, incluida evolución del catálogo de roles; nunca reescribir H1 aceptado. Carga inicial de catálogos con fuente/versionado controlados, sin exigir carga manual del usuario y sin ejecutar cargas en esta entrega. Adaptar inventario técnico de tres tablas H1 al inventario exacto aprobado H2 conservando checks de seguridad. Reset desde cero, fixtures sintéticos por actor y cleanup exacto; mismos scripts/guard local, sin tocar firewall/Docker/WSL ni levantar entorno durante esta fase documental. Adaptar suites, inventario y fixtures al catálogo funcional sin alterar evidencia histórica ni perder las propiedades H1 de identidad, multirol, revocación, sesión y denegación por defecto. CI ampliada solo después de Gate 1, sin deploy/acceptance/merge automático.
 
 | Pilar del PLAN | Aplicación concreta | Evidencia futura |
 |---|---|---|
