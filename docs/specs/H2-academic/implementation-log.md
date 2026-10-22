@@ -49,3 +49,11 @@ Repetición ampliada test:academic: PASSED, 11 grupos técnicos. Incluye nuevas 
 Selector simple Sistema/Claro/Oscuro/Alto contraste con estado React local y una clave de navegador, sin Context/backend/dependencias. Sistema sigue cambios de color-scheme y prefers-contrast; CSS forced-colors prevalece sobre variables propias con colores del sistema, sin forced-color-adjust:none. Tokens semánticos compartidos; sin color de estado como único significado.
 
 Vitest ThemeSelector: 5 pruebas PASSED (tres paletas con cálculo de contraste por superficie/texto/estado/borde/foco/primario y dos escenarios de sistema/persistencia/corrupción o storage bloqueado). Texto normal ≥4.5:1 y controles necesarios ≥3:1 en pares probados. Typecheck salida 0. Son medidas técnicas, no conformidad WCAG completa ni prueba humana del SO. Montaje en App y comprobación de pantallas se realiza en TASK-006. TEST-019 humano pendiente.
+
+## TASK-H2-006 — UI concreta
+
+Pantallas Materias, Carreras, Ciclos y consulta básica Auditoría, protegidas bajo sesión existente. Coordinador consulta referencias sin mantenimiento; directorio de seguridad solo ADMIN_SISTEMA. Ciclos muestran código no editable, estados textuales, geografía dependiente, heredadas/adicionales, retiro/reactivación explícita, motivos sensibles y catálogo OTRO. No botón Eliminar en persistidos; Cancelar nuevo no llama RPC. Advertencias de inactivación/cambio de sigla/Carrera y conflicto 40001 conservando formulario con recarga explícita. Respuestas de consultas/selecciones tardías protegidas con cancelación/epoch.
+
+Suite completa React/SDK: 88 pruebas PASSED en 8 archivos, incluidos 6 casos UI nuevos (solo lectura, acceso académico, conflicto sin retry, descarte sin RPC, terminal no editable/DELETE/reapertura y OTRO obligatorio). Typecheck/lint se verifican en este bloque y se repiten dentro de CI. No es recorrido humano ni evaluación visual del SO.
+
+Corrección necesaria al integrar UI: modalidad inactiva ya referenciada debe permanecer válida al editar otros campos de la Carrera, pero no en nuevas selecciones. RPC guardar_carrera conserva solo referencia previa idéntica; toda nueva selección sigue validando catálogo activo y pertenencia. Caso técnico incorporado a test:academic para repetición desde reset en TASK-007.

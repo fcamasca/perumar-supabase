@@ -161,6 +161,11 @@ try {
     const disabled = await rpc(D, 'cambiar_active_carrera', { ...fields(careerNow), active: false, motivo: 'Synthetic reason' })
     rejected(await O.rpc('guardar_ciclo', { p: { ...base, carrera_id: carrera.id, capitania_id: capitanias[2].id } }), 'inactive career selected')
     carrera = await rpc(D, 'cambiar_active_carrera', { ...fields(disabled), active: true })
+    try {
+      inspectDatabase("update public.catalogo_valor set activo=false where id=:'value'::uuid;", { value: mode.id })
+      carrera = await rpc(D, 'guardar_carrera', { p: carreraPayload(carrera, { descripcion: 'Existing inactive reference retained' }), materias: [m1.id, m2.id, m3.id] })
+      rejected(await D.rpc('guardar_carrera', { p: { codigo: `IN${tag}`, nombre: `INACTIVE MODE ${tag}`, sigla: `I${tag.slice(0, 5)}`, modalidad_id: mode.id }, materias: [m1.id] }), 'inactive modality selected for new career')
+    } finally { inspectDatabase("update public.catalogo_valor set activo=true where id=:'value'::uuid;", { value: mode.id }) }
     const otro = motivos.find(x => x.codigo === 'OTRO')
     const candidate = await rpc(O, 'guardar_ciclo', { p: { ...base, carrera_id: carrera.id, capitania_id: capitanias[3].id } })
     try {

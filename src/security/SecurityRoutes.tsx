@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { useSession } from './SessionProvider'
+import { AcademicOnly, Materias, Carreras, Ciclos, Auditoria } from '../academic/AcademicPages'
 
 function Login() {
   const { state, signIn, logout } = useSession()
@@ -27,7 +28,7 @@ function Login() {
     </form>
     {(message || state.message) && <p role="alert">{message || state.message}</p>}
     {state.phase === 'error' && <button onClick={() => void logout()}>Cerrar sesión local e intentar de nuevo</button>}
-    <p>Solo cuentas sintéticas del ensayo local. No hay registro público ni recuperación por correo en H1.</p>
+    <p>Solo cuentas sintéticas del ensayo local. No hay registro público ni recuperación por correo en este entorno.</p>
   </section>
 }
 
@@ -42,7 +43,8 @@ function ProtectedArea() {
     <button onClick={() => void logout()}>Cerrar sesión</button>
   </section>
   return <>
-    <nav aria-label="Seguridad"><Link to="/seguridad">Mi acceso</Link>{state.roles?.includes('ADMIN') && <> · <Link to="/seguridad/usuarios">Directorio de seguridad</Link></>}</nav>
+    <nav aria-label="Seguridad"><Link to="/seguridad">Mi acceso</Link>{state.roles?.includes('ADMIN_SISTEMA') && <> · <Link to="/seguridad/usuarios">Directorio de seguridad</Link></>}</nav>
+    <nav aria-label="Académico">{state.roles?.some(r => r === 'DIRECTOR_ACADEMICO' || r === 'COORDINADOR_ACADEMICO') && <><Link to="/academico/materias">Materias</Link><Link to="/academico/carreras">Carreras</Link><Link to="/academico/ciclos">Ciclos</Link></>}<Link to="/academico/auditoria">Auditoría</Link></nav>
     <button onClick={() => void logout()}>Cerrar sesión</button>
     <Outlet />
   </>
@@ -51,14 +53,14 @@ function ProtectedArea() {
 function OwnAccess() {
   const { state } = useSession()
   return <section><h2>Mi acceso</h2><p>Identidad: {state.userId}</p><p>Roles activos: {state.roles?.join(', ')}</p>
-    <p>Estos roles validan H1. PostgreSQL/RLS decide cada acceso real a datos.</p></section>
+    <p>PostgreSQL/RLS decide cada acceso real a datos según los roles funcionales activos.</p></section>
 }
 
 function Directory() {
   const { client, state, refresh } = useSession()
   const [rows, setRows] = useState<{ id: string; active: boolean }[]>([])
   const [message, setMessage] = useState('Cargando directorio…')
-  const admin = state.roles?.includes('ADMIN') ?? false
+  const admin = state.roles?.includes('ADMIN_SISTEMA') ?? false
   useEffect(() => {
     let current = true
     setRows([])
@@ -89,6 +91,10 @@ export function SecurityRoutes() {
     <Route path="/" element={<Navigate to="/seguridad" replace />} />
     <Route path="/login" element={<Login />} />
     <Route element={<ProtectedArea />}>
+      <Route path="/academico/materias" element={<AcademicOnly><Materias /></AcademicOnly>} />
+      <Route path="/academico/carreras" element={<AcademicOnly><Carreras /></AcademicOnly>} />
+      <Route path="/academico/ciclos" element={<AcademicOnly><Ciclos /></AcademicOnly>} />
+      <Route path="/academico/auditoria" element={<Auditoria />} />
       <Route path="/seguridad" element={<OwnAccess />} />
       <Route path="/seguridad/usuarios" element={<Directory />} />
     </Route>

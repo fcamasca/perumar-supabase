@@ -176,7 +176,9 @@ begin
  perform private.authorize(true);
  perform private.assert_fields(p,array['id','expected_updated_at','codigo','nombre','descripcion','sigla','modalidad_id']);
  perform set_config('perumar.audit_reason','',true);
- perform private.require_catalog((p->>'modalidad_id')::uuid,'MODALIDAD_CARRERA');
+ if not exists(select 1 from public.carrera where id=(p->>'id')::uuid and modalidad_id=(p->>'modalidad_id')::uuid) then
+  perform private.require_catalog((p->>'modalidad_id')::uuid,'MODALIDAD_CARRERA');
+ end if;
  if materias is null or cardinality(materias)=0 or
   (select count(distinct x) from unnest(materias) x)<>cardinality(materias) then
   raise exception using errcode='23514',message='Seleccione Materias sin duplicados';

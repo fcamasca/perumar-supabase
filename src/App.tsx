@@ -4,6 +4,7 @@ import { checkConnection } from './lib/supabase'
 import { BrowserRouter } from 'react-router-dom'
 import { SessionProvider } from './security/SessionProvider'
 import { SecurityRoutes } from './security/SecurityRoutes'
+import { ThemeSelector } from './ThemeSelector'
 
 export default function App() {
   const [result, setResult] = useState('Conexión local pendiente de comprobación.')
@@ -19,8 +20,9 @@ export default function App() {
   }
   return (
     <main className="bootstrap">
-      <p className="eyebrow">H1 · Seguridad base</p>
+      <p className="eyebrow">H2 · Base académica</p>
       <h1>PERÚ MAR</h1>
+      <ThemeSelector />
       <p className="intro">Base técnica de la nueva aplicación.</p>
       <section aria-labelledby="environment-title">
         <h2 id="environment-title">Entorno local</h2>
@@ -31,7 +33,7 @@ export default function App() {
         </>}
       </section>
       {!configurationError && <SessionProvider><BrowserRouter><SecurityRoutes /></BrowserRouter></SessionProvider>}
-      <p className="scope">Ensayo local de Auth y RLS. Sin funciones de negocio. H1 pendiente de validación humana.</p>
+      <p className="scope">Entorno local de validación académica. H2 pendiente de pruebas humanas y Gate 2.</p>
     </main>
   )
 }

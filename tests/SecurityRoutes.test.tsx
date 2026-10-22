@@ -29,12 +29,12 @@ describe('rutas de seguridad (UX; RLS se prueba por API real aparte)', () => {
     expect(client.from).not.toHaveBeenCalled()
   })
   it('niega URL ADMIN a OPERADOR sin hacer consulta de directorio', () => {
-    show({ phase: 'authorized', userId: 'operator-id', roles: ['OPERADOR'] }, '/seguridad/usuarios')
+    show({ phase: 'authorized', userId: 'operator-id', roles: ['COORDINADOR_ACADEMICO'] }, '/seguridad/usuarios')
     expect(screen.getByRole('heading', { name: 'Acceso no autorizado' })).toBeVisible()
     expect(client.from).not.toHaveBeenCalled()
   })
   it('ADMIN consulta directorio con cliente ordinario y sin botones de escritura', async () => {
-    show({ phase: 'authorized', userId: 'admin-id', roles: ['ADMIN'] }, '/seguridad/usuarios')
+    show({ phase: 'authorized', userId: 'admin-id', roles: ['ADMIN_SISTEMA'] }, '/seguridad/usuarios')
     expect(await screen.findByText('synthetic-directory-id')).toBeVisible()
     expect(client.from).toHaveBeenCalledWith('app_users')
     expect(screen.queryByText(/Editar|Eliminar|Crear usuario/)).not.toBeInTheDocument()
