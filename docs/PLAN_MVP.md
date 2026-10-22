@@ -651,7 +651,7 @@ El PLAN vigente debe reflejar el estado real del proyecto.
 | Hito | Estado |
 |---|---|
 | H0 Bootstrap | ACEPTADO — Gate 2 aprobado 21/10/2026 |
-| H1 Seguridad base | NO INICIADO |
+| H1 Seguridad base | EN CONSTRUCCIÓN — Gate 1 aprobado 21/10/2026 |
 | H2 Base académica | NO INICIADO |
 | H3 Alumno y Matrícula | NO INICIADO |
 | H4 Pagos | NO INICIADO |
@@ -665,6 +665,8 @@ El PLAN vigente debe reflejar el estado real del proyecto.
 ---
 
 # 14. Próximo paso
+
+**Actualización de construcción H1:** Spec aprobado humanamente sobre `3cf847451690d320f1fce39b2992f8a2e53be925`; se autoriza construir exclusivamente H1 según [Gate 1](specs/H1-security/gate-1.md). Los pasos siguientes conservan el antecedente de preparación del Spec. Gate 2, aceptación, merge y H2 siguen bloqueados.
 
 Generar exclusivamente el Spec de:
 
