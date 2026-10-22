@@ -15,6 +15,8 @@
 
 # Local tools, generated output and temporary files
 node_modules/
+.cache/
+*.tsbuildinfo
 dist/
 coverage/
 supabase/.temp/
