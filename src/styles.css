@@ -1,19 +1,43 @@
-:root { font-family: system-ui, sans-serif; color: #173d52; background: #f5f8fa; font-synthesis: none; }
-body { margin: 0; }
-.bootstrap { max-width: 44rem; margin: 10vh auto; padding: 2rem; }
-.eyebrow { font-size: .8rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
-h1 { font-size: clamp(2.5rem, 7vw, 4rem); margin: .4rem 0; }
-.intro { font-size: 1.25rem; }
-section { margin: 2rem 0; border-top: 1px solid #c7d7de; padding-top: 1rem; }
-h2 { font-size: 1.2rem; }
-p { line-height: 1.65; }
-.scope { color: #52666f; font-size: .9rem; }
-form { display: grid; gap: 1rem; max-width: 26rem; }
-label { display: grid; gap: .3rem; }
-input, button { font: inherit; padding: .55rem; }
-button { cursor: pointer; }
-button:disabled { cursor: wait; }
-nav { margin: 1rem 0; }
-table { border-collapse: collapse; margin-top: 1rem; }
-td, th { border: 1px solid #aaa; padding: .5rem; text-align: left; }
-[role="alert"] { color: #982727; }
+:root {
+ font-family:system-ui,sans-serif; font-synthesis:none;
+ --background:#ffffff; --surface:#f4f4f5; --surface-elevated:#ffffff;
+ --text-primary:#111827; --text-secondary:#374151; --text-disabled:#4b5563;
+ --border:#6b7280; --border-strong:#374151; --primary:#1d4ed8; --primary-contrast:#ffffff;
+ --focus:#6d28d9; --success:#166534; --warning:#854d0e; --error:#991b1b; --info:#1e40af;
+ color:var(--text-primary); background:var(--background);
+}
+body { margin:0; } * { box-sizing:border-box; }
+.bootstrap { max-width:78rem; margin:2rem auto; padding:1.5rem; }
+.eyebrow { font-size:.8rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; }
+h1 { font-size:clamp(2.5rem,7vw,4rem); margin:.4rem 0; }
+.intro { font-size:1.25rem; }
+section { margin:1.5rem 0; border-top:1px solid var(--border); padding-top:1rem; }
+h2 { font-size:1.3rem; } p { line-height:1.65; }
+.scope,small { color:var(--text-secondary); }
+form { display:grid; gap:1rem; max-width:40rem; } label { display:grid; gap:.3rem; }
+fieldset { border:1px solid var(--border); padding:1rem; }
+fieldset label,.checkbox { display:flex; align-items:center; gap:.5rem; }
+input,button,select,textarea { font:inherit; padding:.6rem; border:1px solid var(--border); border-radius:.25rem; }
+input,select,textarea { background:var(--surface); color:var(--text-primary); max-width:100%; }
+input[type=checkbox] { accent-color:var(--primary); width:1.25rem; height:1.25rem; }
+button { cursor:pointer; background:var(--primary); color:var(--primary-contrast); margin:.2rem; }
+button:disabled,input:disabled,select:disabled { color:var(--text-disabled); background:var(--surface); cursor:not-allowed; }
+a { color:var(--primary); text-decoration:underline; }
+:focus-visible { outline:3px solid var(--focus); outline-offset:3px; }
+nav { display:flex; flex-wrap:wrap; gap:1rem; margin:1rem 0; }
+table { border-collapse:collapse; margin-top:1rem; width:100%; background:var(--surface-elevated); }
+td,th { border:1px solid var(--border); padding:.6rem; text-align:left; overflow-wrap:anywhere; }
+caption { text-align:left; font-weight:bold; padding:.5rem 0; }
+.table-scroll { overflow-x:auto; } [role=alert] { color:var(--error); }
+.success { color:var(--success); } .warning { color:var(--warning); } .info { color:var(--info); }
+.selected { border:2px solid var(--border-strong); } .theme-picker { max-width:15rem; margin:1rem 0; }
+@media(max-width:40rem) { .bootstrap { padding:1rem; margin:0; } }
+/* OS accessibility overrides even the explicit application palettes. */
+@media(forced-colors:active) {
+ :root { --background:Canvas!important; --surface:Canvas!important; --surface-elevated:Canvas!important;
+ --text-primary:CanvasText!important; --text-secondary:CanvasText!important; --text-disabled:GrayText!important;
+ --border:ButtonText!important; --border-strong:Highlight!important; --primary:ButtonText!important;
+ --primary-contrast:ButtonFace!important; --focus:Highlight!important; --success:CanvasText!important;
+ --warning:CanvasText!important; --error:CanvasText!important; --info:CanvasText!important; color-scheme:light dark!important; }
+ :focus-visible { outline:3px solid Highlight; } a { color:LinkText; }
+}

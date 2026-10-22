@@ -43,3 +43,9 @@ Primeras ejecuciones: test:security PASSED (14 escenarios, ocho identidades reti
 La suite académica se amplía además con solicitudes concurrentes de correlativo y paso real por 999/1000; requiere repetición antes de cierre de tarea. Las verificaciones de UI/temas aún no existen y no se atribuyen a estos resultados. TEST-018/019/020 humanos y Gate 2 siguen pendientes. El ensayo negativo de CI TASK-007 no ha sido ejecutado.
 
 Repetición ampliada test:academic: PASSED, 11 grupos técnicos. Incluye nuevas selecciones inactivas rechazadas/historia conservada, correlativos con peticiones simultáneas y creación real 999/1000, Lima vs UTC mediante expresión controlada sin cambiar reloj del host. Conflictos SERIALIZABLE 40001 permitidos, nunca duplicados ni retry automático. Lint de scripts: salida 0. Bloque TASK-004 preparado/verificado; comienzan TASK-005 temas y después TASK-006 UI. La regresión de expiración real y reset/CI completos se ejecutan en TASK-007. No se declara UI ni prueba humana realizada.
+
+## TASK-H2-005 — Preferencias visuales
+
+Selector simple Sistema/Claro/Oscuro/Alto contraste con estado React local y una clave de navegador, sin Context/backend/dependencias. Sistema sigue cambios de color-scheme y prefers-contrast; CSS forced-colors prevalece sobre variables propias con colores del sistema, sin forced-color-adjust:none. Tokens semánticos compartidos; sin color de estado como único significado.
+
+Vitest ThemeSelector: 5 pruebas PASSED (tres paletas con cálculo de contraste por superficie/texto/estado/borde/foco/primario y dos escenarios de sistema/persistencia/corrupción o storage bloqueado). Texto normal ≥4.5:1 y controles necesarios ≥3:1 en pares probados. Typecheck salida 0. Son medidas técnicas, no conformidad WCAG completa ni prueba humana del SO. Montaje en App y comprobación de pantallas se realiza en TASK-006. TEST-019 humano pendiente.
