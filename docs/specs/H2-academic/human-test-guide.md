@@ -1,6 +1,6 @@
 # H2 — Recorrido para revisión humana
 
-Estado vigente: TEST-H2-018 confirmado PASSED por el usuario sobre e2f2db9365b4c46fd6932caba3d47a17324ebe29. Correcciones posteriores y alcance de esa confirmación en ui-corrections.md. TEST-H2-019/020 y revisión del candidato corregido PENDIENTES. Codex preparó este recorrido; no realizó ni aprobó las pruebas humanas. Revisar el SHA candidato completo de la entrega, no una rama que haya cambiado. No es acceptance ni Gate 2.
+Estado vigente: TEST-H2-018 confirmado PASSED por el usuario sobre e2f2db9365b4c46fd6932caba3d47a17324ebe29. Correcciones posteriores y alcance de esa confirmación en ui-corrections.md. El usuario comunicó una regresión humana parcial de correcciones UX; ver ux-observations-01-04.md. TEST-H2-019 queda PENDIENTE de regresión corta de esos cuatro puntos y comprobaciones restantes de teclado/forced-colors; TEST-H2-020 y revisión del candidato corregido PENDIENTES. Codex preparó este recorrido; no realizó ni aprobó las pruebas humanas. Revisar el SHA candidato completo de la entrega, no una rama que haya cambiado. No es acceptance ni Gate 2.
 
 ## Preparación reproducible
 
@@ -59,9 +59,17 @@ Ver ux-review.md. Los listados comienzan sin formulario: usar Crear Materia/Carr
 
 ## TEST-H2-019 — Visual, teclado y sistema
 
-La identidad 741f4ac está aprobada humanamente; su integración no lo está. Ver brand-identity.md y brand-integration-preview.html. Incluir login/header y favicon real en Claro, Oscuro, Alto contraste y forced-colors; comprobar ausencia de marca provisional/nombre accesible duplicado y conservación de proporciones. Revisar 16 y 32 px: Codex no pudo verificarlos visualmente por fallo de la herramienta. Si 16 px resulta ilegible, registrar evidencia y detener el rediseño para decisión humana; no simplificar automáticamente. Esta ampliación de la guía no inicia ni aprueba TEST-019.
+La identidad 741f4ac está aprobada humanamente; su integración no lo está. Ver brand-identity.md y brand-integration-preview.html. Incluir login/header y favicon real en Claro, Oscuro, Alto contraste y forced-colors; comprobar ausencia de marca provisional/nombre accesible duplicado y conservación de proporciones. Revisar 16 y 32 px: Codex no pudo verificarlos visualmente por fallo de la herramienta. Si 16 px resulta ilegible, registrar evidencia y detener el rediseño para decisión humana; no simplificar automáticamente. Esta guía no aprueba TEST-019; la integración y la regresión restante se evalúan humanamente en el candidato actual.
 
-Estado humano vigente: NO INICIADO / NO APROBADO. El usuario solicitó primero un refresh visual del shell; ver visual-refresh.md y valorar el acabado del nuevo candidato antes de iniciar formalmente este recorrido. Se limpiaron las cuentas sintéticas locales previas al repetir las suites: recrear fixtures con el procedimiento de preparación, sin reutilizar identidades eliminadas.
+Estado humano vigente: PENDIENTE / NO APROBADO. La persona confirmó los recorridos indicados en ux-observations-01-04.md; no se interpreta como PASSED completo. Sobre el SHA candidato nuevo realizar esta regresión corta:
+
+1. **OBS-UX-01:** D/O ven Editar en PROGRAMADO/EN_CURSO, abren edición; CERRADO/DESIERTO/ANULADO muestran Consultar y ficha sin controles de escritura. Los roles no autorizados conservan su denegación de acceso.
+2. **OBS-UX-02:** comprobar Materias de la Carrera en columnas Código/Nombre; adicionales con código + nombre o mensaje explícito sin opciones. No tira larga separada por comas. Conservar tabla de relaciones/historial y retiro/reactivación por modal.
+3. **OBS-UX-03:** desde el pie de Carrera, dejar Modalidad vacía y Guardar. Debe enfocar y desplazar hasta Modalidad, con “Selecciona una modalidad.” junto al campo y resumen complementario. Repetir obligatorios de Materia y Ciclo. Con teclado/lector comprobar asociación del mensaje, señal no solo de color y corrección sin pérdida de entrada ni saltos de foco durante escritura.
+4. **OBS-UX-04:** Carrera nueva BUZO sugiere BZ; FORMACIÓN NÁUTICA sugiere FN y FORMACIÓN ALTERNA H2 sugiere FAH2. Editar la sugerencia y luego el nombre: no sobrescribir la sigla manual. Editar Carrera existente tampoco reemplaza la sigla persistida.
+5. Completar las comprobaciones restantes de teclado, foco y forced-colors que siguen debajo. La observación humana positiva de temas en Materias no se extiende automáticamente a todas las pantallas. Conservar los flujos de modales ya comprobados; registrar cualquier regresión.
+
+Se restablece la base local de ensayo para las suites técnicas y se limpian sus fixtures; recrear identidades mediante la preparación reproducible para este candidato.
 
 Mantener fixtures durante esta revisión. Revisar login, listas, formularios, auditoría, estados de error/conflicto, seleccionado y deshabilitado en Sistema, Claro, Oscuro y Alto contraste. Comprobar persistencia al recargar y fallback tolerante a storage inválido/bloqueado.
 

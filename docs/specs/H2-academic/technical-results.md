@@ -1,6 +1,6 @@
 # H2 — Resultados técnicos e inventario
 
-Este informe conserva la evidencia del candidato inicial. Renovación visual posterior y evidencia actual: [visual-refresh.md](visual-refresh.md); TEST-H2-019 no iniciado ni aprobado. Revisión UX y evidencia técnica vigente (112 pruebas): [ux-review.md](ux-review.md). Estado posterior: TEST-H2-018 fue confirmado PASSED humanamente en e2f2db9; correcciones UI y resultados actuales (106 pruebas) en [ui-corrections.md](ui-corrections.md). TEST-H2-019/020 y Gate 2 siguen pendientes. Los estados PENDING de la matriz inferior reflejan el momento de la entrega inicial, no revocan la confirmación humana recibida.
+Este informe conserva la evidencia del candidato inicial y sus etapas históricas. Evidencia técnica actual y correcciones posteriores a regresión humana parcial: [ux-observations-01-04.md](ux-observations-01-04.md) (139 unitarias). Antecedentes: [visual-refresh.md](visual-refresh.md), [ux-review.md](ux-review.md), [ui-corrections.md](ui-corrections.md). TEST-H2-018 fue confirmado PASSED humanamente en e2f2db9. TEST-H2-019 queda pendiente de regresión corta OBS-UX-01 a 04 y comprobaciones restantes de teclado/forced-colors; TEST-H2-020 y Gate 2 siguen pendientes. Los estados y conteos inferiores reflejan cada entrega histórica.
 
 Fecha: 22/10/2026 (America/Lima). Construcción autorizada por Gate 1 sobre Spec exacto `5c4f57de6618fb0568c6d8846ed04d9d75a89932`. No es acceptance ni Gate 2.
 

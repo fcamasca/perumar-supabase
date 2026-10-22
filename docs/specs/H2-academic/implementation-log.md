@@ -1,6 +1,6 @@
 # H2 — Evidencia de construcción
 
-Estado vigente: TASK-H2-001 a 008 COMPLETADAS. TEST-H2-018 confirmado PASSED humanamente sobre e2f2db9; correcciones UI y revisión UX posteriores implementadas y verificadas (112 unitarias; ver ux-review.md). Refresh visual posterior implementado (ver visual-refresh.md). TEST-H2-019 NO INICIADO/NO APROBADO; TEST-H2-020 y revisión del nuevo candidato pendientes; TASK-009 requiere persona y TASK-010 bloqueada por Gate 2. No acceptance ni merge.
+Estado vigente: TASK-H2-001 a 008 COMPLETADAS. TEST-H2-018 confirmado PASSED humanamente sobre e2f2db9. La persona comunicó una regresión parcial posterior de modales/temas y cuatro observaciones UX: corrección/evidencia en [ux-observations-01-04.md](ux-observations-01-04.md). TEST-H2-019 PENDIENTE / NO APROBADO: regresión corta OBS-UX-01 a 04 y comprobaciones restantes de teclado/forced-colors. TEST-H2-020 pendiente; TASK-009 requiere persona y TASK-010 bloqueada por Gate 2. Sin acceptance, merge ni H3.
 
 Los bloques siguientes conservan estados históricos de cada etapa; sus pendientes intermedios no son el estado vigente.
 
@@ -105,3 +105,8 @@ Base humana 7f0a5487d4ddb001eadf3d89cfee91cb02c84255. La funcionalidad se consid
 ## Integración de identidad visual aprobada
 
 Aprobación humana explícita limitada al isotipo 741f4ac; código de integración aeafc0f57c4e4470a8016dfa02a75ed649f253ca. BrandMark sustituye ondas por fuente SVG oficial sin cambios de geometría; login/header mantienen su composición y tamaños. Favicon desde la misma fuente, tokens por tema, forced-colors y semántica decorativa. Lint/tipos, 120 unitarias, build/safety PASSED; no ampliación de suites de datos. Fuente de identidad y lockup intactos. Comparación 16/32 preparada, NO VERIFICADA visualmente por fallo de inicialización de herramienta; no simplificación. Detalle en brand-identity.md. Identidad aprobada; integración pendiente de validación visual humana. TEST-019/020 y Gate 2 no aprobados; sin acceptance, merge ni H3.
+
+
+## OBS-UX-01 a 04 — Correcciones posteriores a regresión humana parcial
+
+Sobre HEAD recibido 6d2a9b1, la implementación 86b7924 corrige etiquetas Editar/Consultar, composición de Materias de Ciclo, validación inline con foco/scroll y abreviatura sugerida. Conserva modales ya confirmados por la persona y el lenguaje visual vigente. Alcance, casos, resultados y pendientes en ux-observations-01-04.md. La confirmación humana parcial recibida no se convierte en TEST-H2-019 PASSED ni Gate 2.
