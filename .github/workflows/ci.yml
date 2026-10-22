@@ -46,7 +46,7 @@ jobs:
           npm run test:local
       - name: Build (including controlled failure when requested)
         env:
-          H0_CONFIG_FAILURE: ${{ inputs.configuration-failure || false }}
+          H0_CONFIG_FAILURE: ${{ inputs.configuration-failure || github.ref_name == 'feature/h0-bootstrap-ci-negative' }}
         run: node scripts/ci-build.mjs
       - name: Privileged configuration rejected safely
         run: npm run test:build-safety

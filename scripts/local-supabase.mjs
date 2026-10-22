@@ -25,6 +25,8 @@ export function approvedFirewallState(state) {
     && sameSet(state.localAddresses, approvedAddresses) && sameSet(state.remoteAddresses, ['Any'])
     && state.program === 'Any' && !state.package && state.service === 'Any'
     && sameSet(state.interfaces, ['Any']) && state.interfaceType === 'Any'
+    && state.authentication === 'NotRequired' && state.encryption === 'NotRequired'
+    && state.overrideBlock === 'False' && state.localUser === 'Any' && state.remoteUser === 'Any' && state.remoteMachine === 'Any'
     && sameSet(state.enabledProfiles, ['Domain', 'Private', 'Public'])
 }
 
@@ -45,7 +47,8 @@ if($r.Count -ne 1){throw 'Ambiguous rule'}
 $r=$r[0]; $p=$r|Get-NetFirewallPortFilter; $a=$r|Get-NetFirewallAddressFilter
 $app=$r|Get-NetFirewallApplicationFilter; $s=$r|Get-NetFirewallServiceFilter
 $i=$r|Get-NetFirewallInterfaceFilter; $t=$r|Get-NetFirewallInterfaceTypeFilter
-[pscustomobject]@{name=$r.Name;enabled=$r.Enabled.ToString();direction=$r.Direction.ToString();action=$r.Action.ToString();profile=$r.Profile.ToString();edge=$r.EdgeTraversalPolicy.ToString();status=$r.PrimaryStatus.ToString();protocol=$p.Protocol;localPorts=@($p.LocalPort);remotePorts=@($p.RemotePort);localAddresses=@($a.LocalAddress);remoteAddresses=@($a.RemoteAddress);program=$app.Program;package=$app.Package;service=$s.Service;interfaces=@($i.InterfaceAlias);interfaceType=$t.InterfaceType.ToString();enabledProfiles=@(Get-NetFirewallProfile -PolicyStore ActiveStore|Where-Object {$_.Enabled.ToString() -eq 'True'}|ForEach-Object {$_.Name})}|ConvertTo-Json -Compress`
+$security=$r|Get-NetFirewallSecurityFilter
+[pscustomobject]@{name=$r.Name;enabled=$r.Enabled.ToString();direction=$r.Direction.ToString();action=$r.Action.ToString();profile=$r.Profile.ToString();edge=$r.EdgeTraversalPolicy.ToString();status=$r.PrimaryStatus.ToString();protocol=$p.Protocol;localPorts=@($p.LocalPort);remotePorts=@($p.RemotePort);localAddresses=@($a.LocalAddress);remoteAddresses=@($a.RemoteAddress);program=$app.Program;package=$app.Package;service=$s.Service;interfaces=@($i.InterfaceAlias);interfaceType=$t.InterfaceType.ToString();authentication=$security.Authentication.ToString();encryption=$security.Encryption.ToString();overrideBlock=$security.OverrideBlockRules.ToString();localUser=$security.LocalUser;remoteUser=$security.RemoteUser;remoteMachine=$security.RemoteMachine;enabledProfiles=@(Get-NetFirewallProfile -PolicyStore ActiveStore|Where-Object {$_.Enabled.ToString() -eq 'True'}|ForEach-Object {$_.Name})}|ConvertTo-Json -Compress`
   try { return JSON.parse(run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', command], 30_000)) }
   catch { return null }
 }

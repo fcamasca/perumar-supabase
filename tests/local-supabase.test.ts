@@ -29,6 +29,8 @@ const approvedRule = {
   localAddresses: ['0.0.0.0-126.255.255.255', '128.0.0.0-255.255.255.255', '::2-ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff'],
   remoteAddresses: ['Any'], program: 'Any', package: null, service: 'Any', interfaces: ['Any'], interfaceType: 'Any',
   enabledProfiles: ['Domain', 'Private', 'Public'],
+  authentication: 'NotRequired', encryption: 'NotRequired', overrideBlock: 'False',
+  localUser: 'Any', remoteUser: 'Any', remoteMachine: 'Any',
 }
 
 describe('mitigación CHG-H0-001', () => {
@@ -43,6 +45,8 @@ describe('mitigación CHG-H0-001', () => {
     { remoteAddresses: ['LocalSubnet'] }, { program: 'specific.exe' }, { package: 'package' },
     { service: 'specific' }, { interfaces: ['Wi-Fi'] }, { interfaceType: 'Wireless' },
     { enabledProfiles: ['Private', 'Public'] },
+    { authentication: 'Required' }, { encryption: 'Required' }, { overrideBlock: 'True' },
+    { localUser: 'restricted' }, { remoteUser: 'restricted' }, { remoteMachine: 'restricted' },
   ])('rechaza regla alterada o control incompleto: %j', change => {
     expect(approvedFirewallState({ ...approvedRule, ...change })).toBe(false)
   })
