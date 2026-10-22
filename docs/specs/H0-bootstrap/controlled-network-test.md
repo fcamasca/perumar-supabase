@@ -42,3 +42,13 @@ El usuario aportó capturas desde el celular: 54321 ERR_CONNECTION_ABORTED, 5432
 Tras recibir la primera observación, Codex detuvo el stack (`node scripts/local-supabase.mjs stop`, salida 0). Las capturas finales llegaron después de esa parada en el orden de mensajes. No está confirmada la relación temporal entre los errores capturados y la parada, por lo que no prueban por sí solos aislamiento con servicios activos. Las horas visibles del teléfono no sustituyen esa correlación.
 
 **Resultado:** indicios de inaccesibilidad, validación incompleta. Falta prueba TCP externa de 54322 y confirmar resultados externos mientras el stack está activo; después falta detener/recrear y repetir. IPv6 externo tampoco está validado. No se declara fallo del firewall ni éxito definitivo; no se revierte la regla por una evidencia inconclusa. Stack detenido, regla del ensayo conservada, guard intacto, TASK-H0-004 sin iniciar. DEF-H0-001 sigue confirmado/abierto; aceptación y merge bloqueados.
+
+## Nueva ronda con stack mantenido activo
+
+El usuario descartó las capturas anteriores como evidencia definitiva y autorizó repetir, manteniendo el stack encendido hasta su confirmación de finalización. Se verificaron de nuevo regla habilitada y filtros exactos, IP Wi-Fi 192.168.1.236 y red existente; no se modificaron. Arranque local: salida 0. Loopback inicial: API 404, Studio 307, correo 200 y PostgreSQL TCP correcto.
+
+El usuario aportó tres nuevas capturas, todas con ERR_CONNECTION_TIMED_OUT: puerto 54321 (hora visible 20:19), 54323 (20:21) y 54324 (20:23). Adjuntos originales: 1000293742.jpg, 1000293743.jpg y 1000293744.jpg, respectivamente. Se registra como prueba humana desde el celular de esta ronda, no como ejecución de Codex. Las horas son las visibles del teléfono, sin certificación independiente.
+
+Al recibirlas, Codex comprobó nuevamente respuestas por 127.0.0.1: API HTTP 404, Studio HTTP 307, correo HTTP 200 y PostgreSQL TCP correcto. Todos los contenedores del proyecto seguían activos desde hacía aproximadamente ocho minutos y los que tienen healthcheck estaban saludables. No se detuvo el stack entre el aviso de disponibilidad y esta comprobación.
+
+**Resultado de esta ronda:** inaccesibilidad HTTP observada desde el celular para 54321/54323/54324 mientras los servicios locales permanecen disponibles. Evidencia compatible con el efecto esperado de la regla; no demuestra aislamiento universal ni valida 54322/TCP o IPv6. Persistencia tras recreación pendiente. Se mantiene el stack encendido hasta confirmación humana de finalización, según instrucción expresa. No se modifica guard, no se continúa TASK-H0-004 ni se acepta CHG-H0-001 como solución definitiva. DEF-H0-001 permanece abierto.
