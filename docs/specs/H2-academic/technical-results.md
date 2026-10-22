@@ -1,5 +1,7 @@
 # H2 — Resultados técnicos e inventario
 
+Este informe conserva la evidencia del candidato inicial. Estado posterior: TEST-H2-018 fue confirmado PASSED humanamente en e2f2db9; correcciones UI y resultados actuales (106 pruebas) en [ui-corrections.md](ui-corrections.md). TEST-H2-019/020 y Gate 2 siguen pendientes. Los estados PENDING de la matriz inferior reflejan el momento de la entrega inicial, no revocan la confirmación humana recibida.
+
 Fecha: 22/10/2026 (America/Lima). Construcción autorizada por Gate 1 sobre Spec exacto `5c4f57de6618fb0568c6d8846ed04d9d75a89932`. No es acceptance ni Gate 2.
 
 ## Commits y trazabilidad

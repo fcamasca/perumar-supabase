@@ -1,6 +1,6 @@
 # H2 — Recorrido para revisión humana
 
-Estado: PENDIENTE. Codex preparó este recorrido; no realizó ni aprobó TEST-H2-018, 019 o 020. Revisar el SHA candidato completo de la entrega, no una rama que haya cambiado. No es acceptance ni Gate 2.
+Estado vigente: TEST-H2-018 confirmado PASSED por el usuario sobre e2f2db9365b4c46fd6932caba3d47a17324ebe29. Correcciones posteriores y alcance de esa confirmación en ui-corrections.md. TEST-H2-019/020 y revisión del candidato corregido PENDIENTES. Codex preparó este recorrido; no realizó ni aprobó las pruebas humanas. Revisar el SHA candidato completo de la entrega, no una rama que haya cambiado. No es acceptance ni Gate 2.
 
 ## Preparación reproducible
 
