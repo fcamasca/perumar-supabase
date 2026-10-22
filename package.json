@@ -18,9 +18,13 @@
     "supabase:start": "node scripts/local-supabase.mjs start",
     "supabase:status": "node scripts/local-supabase.mjs status",
     "supabase:stop": "node scripts/local-supabase.mjs stop",
-    "supabase:reset": "node scripts/local-supabase.mjs reset"
+    "supabase:reset": "node scripts/local-supabase.mjs reset",
+    "supabase:env": "node scripts/check-local.mjs env",
+    "test:local": "node scripts/check-local.mjs",
+    "test:build-safety": "node scripts/check-build-safety.mjs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "2.118.0",
     "react": "19.3.1",
     "react-dom": "19.3.1"
   },

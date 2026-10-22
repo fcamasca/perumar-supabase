@@ -1,4 +1,19 @@
+import { useState } from 'react'
+import { browserEnv, validateEnv } from './lib/env'
+import { checkConnection } from './lib/supabase'
+
 export default function App() {
+  const [result, setResult] = useState('Conexión local pendiente de comprobación.')
+  const [busy, setBusy] = useState(false)
+  let configurationError = ''
+  try { validateEnv(browserEnv()) } catch (error) { configurationError = (error as Error).message }
+
+  async function diagnose() {
+    setBusy(true)
+    try { setResult(await checkConnection()) }
+    catch (error) { setResult((error as Error).message) }
+    finally { setBusy(false) }
+  }
   return (
     <main className="bootstrap">
       <p className="eyebrow">H0 · Bootstrap</p>
@@ -6,7 +21,11 @@ export default function App() {
       <p className="intro">Base técnica de la nueva aplicación.</p>
       <section aria-labelledby="environment-title">
         <h2 id="environment-title">Entorno local</h2>
-        <p>React y TypeScript están preparados. La conexión con Supabase local está pendiente de verificación.</p>
+        <p>Supabase se utiliza exclusivamente en el entorno local de desarrollo.</p>
+        {configurationError ? <p role="alert">{configurationError}</p> : <>
+          <button type="button" disabled={busy} onClick={diagnose}>{busy ? 'Comprobando…' : 'Comprobar conexión local'}</button>
+          <p role="status">{result}</p>
+        </>}
       </section>
       <p className="scope">Esta pantalla no incluye autenticación ni funciones de negocio. H0 está en construcción y pendiente de validación humana.</p>
     </main>
