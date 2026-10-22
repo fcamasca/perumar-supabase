@@ -20,20 +20,19 @@ export default function App() {
   }
   return (
     <main className="bootstrap">
-      <p className="eyebrow">H2 · Base académica</p>
-      <h1>PERÚ MAR</h1>
-      <ThemeSelector />
-      <p className="intro">Base técnica de la nueva aplicación.</p>
+      <header className="app-header"><div><p className="eyebrow">Gestión académica</p><h1>PERÚ MAR</h1></div><ThemeSelector /></header>
+      {configurationError && <p role="alert">No se pudo iniciar la aplicación. Revisa la configuración de conexión.</p>}
+      {!configurationError && <SessionProvider><BrowserRouter><SecurityRoutes /></BrowserRouter></SessionProvider>}
+      <footer><details className="technical-details"><summary>Diagnóstico técnico</summary>
       <section aria-labelledby="environment-title">
         <h2 id="environment-title">Entorno local</h2>
         <p>Supabase se utiliza exclusivamente en el entorno local de desarrollo.</p>
-        {configurationError ? <p role="alert">{configurationError}</p> : <>
+        {configurationError ? <p>{configurationError}</p> : <>
           <button type="button" disabled={busy} onClick={diagnose}>{busy ? 'Comprobando…' : 'Comprobar conexión local'}</button>
           <p role="status">{result}</p>
         </>}
       </section>
-      {!configurationError && <SessionProvider><BrowserRouter><SecurityRoutes /></BrowserRouter></SessionProvider>}
-      <p className="scope">Entorno local de validación académica. H2 pendiente de pruebas humanas y Gate 2.</p>
+      </details></footer>
     </main>
   )
 }

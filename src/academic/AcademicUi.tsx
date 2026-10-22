@@ -1,19 +1,30 @@
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 
-type Confirmation = { title: string; description: string; reason?: boolean }
-export function useConfirmation() {
+type Confirmation = { title: string; description: string; reason?: boolean; confirmLabel?: string; sensitive?: boolean }
+export function useConfirmation(busy = false) {
+  const returnFocus = useRef<HTMLElement | null>(null), previousBusy = useRef(busy)
   const [request, setRequest] = useState<Confirmation | null>(null)
   const resolve = useRef<((value: string | null) => void) | null>(null)
   useEffect(() => () => { resolve.current?.(null) }, [])
   function ask(value: Confirmation): Promise<string | null> {
+    returnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
     return new Promise(done => { resolve.current = done; setRequest(value) })
   }
-  const finish = useCallback((value: string | null) => { resolve.current?.(value); resolve.current = null; setRequest(null) }, [])
+  useEffect(() => {
+    const completed = previousBusy.current && !busy
+    previousBusy.current = busy
+    if (!request && completed && returnFocus.current) {
+      const target = returnFocus.current
+      returnFocus.current = null
+      if (target.isConnected && !target.matches(':disabled')) target.focus()
+    }
+  }, [request, busy])
+  const finish = useCallback((value: string | null) => { if (value === null) returnFocus.current = null; resolve.current?.(value); resolve.current = null; setRequest(null) }, [])
   return { ask, dialog: request && <ConfirmDialog {...request} onFinish={finish} /> }
 }
 
-export function ConfirmDialog({ title, description, reason, onFinish }: Confirmation & { onFinish: (value: string | null) => void }) {
+export function ConfirmDialog({ title, description, reason, confirmLabel = 'Confirmar operación', sensitive, onFinish }: Confirmation & { onFinish: (value: string | null) => void }) {
   const panel = useRef<HTMLDivElement>(null), cancel = useRef<HTMLButtonElement>(null)
   const [value, setValue] = useState(''), [error, setError] = useState('')
   const id = useId()
@@ -41,7 +52,7 @@ export function ConfirmDialog({ title, description, reason, onFinish }: Confirma
     <h2 id={`${id}-title`}>{title}</h2><p id={`${id}-description`}>{description}</p>
     {reason && <label>Motivo obligatorio<textarea value={value} aria-invalid={!!error} aria-describedby={error ? `${id}-error` : undefined} onChange={e => setValue(e.target.value)} /></label>}
     {error && <p id={`${id}-error`} role="alert">{error}</p>}
-    <div className="dialog-actions"><button type="button" ref={cancel} className="secondary" onClick={() => onFinish(null)}>Cancelar operación</button><button type="button" onClick={() => { if (reason && !value.trim()) { setError('Indica el motivo antes de confirmar.'); return }; onFinish(reason ? value.trim() : '') }}>Confirmar operación</button></div>
+    <div className="dialog-actions"><button type="button" ref={cancel} className="secondary" onClick={() => onFinish(null)}>Cancelar operación</button><button type="button" onClick={() => { if (reason && !value.trim()) { setError('Indica el motivo antes de confirmar.'); return }; onFinish(reason ? value.trim() : '') }} className={sensitive ? "sensitive" : undefined}>{confirmLabel}</button></div>
   </div></div>, document.body)
 }
 
@@ -73,4 +84,16 @@ export function InlineForm({ children, onSubmit, ...props }: { children: ReactNo
     })
   }, [errors])
   return <form {...props} ref={ref} noValidate onSubmit={validate}>{errors.length > 0 && <div role="alert" className="validation-errors"><p>Revisa los campos indicados:</p><ul>{errors.map(e => <li id={`${e.id}-error`} key={e.id}><a href={`#${e.id}`} onClick={event => { event.preventDefault(); document.getElementById(e.id)?.focus() }}>{e.text}</a></li>)}</ul></div>}{children}</form>
+}
+
+export function StatusBadge({ value }: { value: string }) {
+  return <span className={`status-badge ${['Inactivo', 'ANULADO', 'DESIERTO'].includes(value) ? 'status-muted' : ''}`}><span aria-hidden="true">● </span>{value}</span>
+}
+export function EditorHeading({ children }: { children: ReactNode }) {
+  const heading = useRef<HTMLHeadingElement>(null)
+  useEffect(() => { heading.current?.focus() }, [])
+  return <h3 ref={heading} tabIndex={-1} className="editor-heading">{children}</h3>
+}
+export function EmptyState({ filtered, entity, onCreate }: { filtered: boolean; entity: string; onCreate?: () => void }) {
+  return <div className="empty-state"><p>{filtered ? `No hay ${entity} que coincidan con los filtros.` : `No hay ${entity} registradas.`}</p>{onCreate && !filtered && <button type="button" onClick={onCreate}>Crear primera {entity === 'Carreras' ? 'Carrera' : 'Materia'}</button>}{filtered && <p>Prueba con otro código, nombre o estado.</p>}</div>
 }

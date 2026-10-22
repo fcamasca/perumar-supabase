@@ -55,3 +55,12 @@ describe('rutas de seguridad (UX; RLS se prueba por API real aparte)', () => {
     expect(screen.queryByText('unit-test-private-value')).not.toBeInTheDocument()
   })
 })
+
+it('top navigation identifies the current section and keeps security links role-bound', () => {
+  show({ phase: 'authorized', userId: 'director', roles: ['DIRECTOR_ACADEMICO'] })
+  expect(screen.getByRole('navigation', { name: 'Académico' })).toBeVisible()
+  expect(screen.getByRole('link', { name: 'Mi acceso' })).toHaveAttribute('aria-current', 'page')
+  expect(screen.getByRole('link', { name: 'Materias' })).not.toHaveAttribute('aria-current')
+  expect(screen.queryByRole('link', { name: 'Directorio de seguridad' })).not.toBeInTheDocument()
+  expect(screen.queryByText(/PostgreSQL|RLS/)).not.toBeInTheDocument()
+})
