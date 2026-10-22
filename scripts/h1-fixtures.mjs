@@ -26,6 +26,8 @@ export async function createFixtures({ password, tag = randomUUID() } = {}) {
   const config = localStatus()
   if (!config.administrativeKey) throw new Error('Credencial administrativa local no disponible.')
   const admin = createClient(config.url, config.administrativeKey, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } })
+  const originalRoles = checked(await admin.from('app_roles').select('code,active'), 'leer estado inicial de roles')
+  if (originalRoles.length !== 2 || originalRoles.some(role => !role.active)) throw new Error('Se requiere la base H1 con ambos roles activos; no se corrige automáticamente.')
   const entries = {}
   const events = []
   const secret = password ?? randomBytes(30).toString('base64url')
@@ -40,8 +42,9 @@ export async function createFixtures({ password, tag = randomUUID() } = {}) {
       const { error } = await admin.auth.admin.deleteUser(entry.id)
       if (error) failures.push(actor)
       record('fixture-delete', actor, error ? 'failed' : 'ok')
+      if (!error) delete entries[actor]
     }
-    checked(await admin.from('app_roles').update({ active: true }).in('code', ['ADMIN', 'OPERADOR']), 'restaurar roles')
+    for (const role of originalRoles) checked(await admin.from('app_roles').update({ active: role.active }).eq('code', role.code), 'restaurar roles')
     if (failures.length) throw new Error('No se confirmó toda la limpieza de fixtures; revisar IDs locales.')
   }
   try {

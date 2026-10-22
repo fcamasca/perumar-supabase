@@ -9,8 +9,8 @@ export function assertLocalProject(root = '.') {
   }
 }
 
-export function runLocal(file, args, input) {
-  const result = spawnSync(file, args, { encoding: 'utf8', windowsHide: true, timeout: 60_000, input })
+export function runLocal(file, args, input, timeout = 60_000) {
+  const result = spawnSync(file, args, { encoding: 'utf8', windowsHide: true, timeout, input })
   if (result.error || result.status !== 0) throw new Error('Operación técnica local fallida; salida sensible omitida.')
   return result.stdout
 }
@@ -24,9 +24,13 @@ export function localStatus() {
 }
 
 // Only static, checked-in statements are sent to psql. Fixture values use SDK parameters.
-export function inspectDatabase(sql) {
+export function inspectDatabase(sql, variables = {}) {
   assertLocalProject()
-  return runLocal('docker', ['exec', '-i', 'supabase_db_perumar-supabase', 'psql', '-U', 'postgres', '-d', 'postgres', '-At', '-v', 'ON_ERROR_STOP=1'], sql).trim()
+  const parameters = Object.entries(variables).flatMap(([name, value]) => {
+    if (!/^[a-z_]+$/.test(name) || !/^[a-zA-Z0-9_-]+$/.test(value)) throw new Error('Parámetro técnico no permitido.')
+    return ['-v', `${name}=${value}`]
+  })
+  return runLocal('docker', ['exec', '-i', 'supabase_db_perumar-supabase', 'psql', '-U', 'postgres', '-d', 'postgres', '-At', '-v', 'ON_ERROR_STOP=1', ...parameters], sql).trim()
 }
 
 export function securityInventory() {
@@ -37,6 +41,8 @@ export function securityInventory() {
     'grants', (select json_agg(json_build_object('table',t.table_name,'role',r.name,'select',has_table_privilege(r.name,'public.'||t.table_name,'SELECT'),'insert',has_table_privilege(r.name,'public.'||t.table_name,'INSERT'),'update',has_table_privilege(r.name,'public.'||t.table_name,'UPDATE'),'delete',has_table_privilege(r.name,'public.'||t.table_name,'DELETE'),'truncate',has_table_privilege(r.name,'public.'||t.table_name,'TRUNCATE')) order by t.table_name,r.name) from information_schema.tables t cross join (values ('authenticated'),('anon')) r(name) where t.table_schema='public'),
     'publicFunctions', (select count(*) from information_schema.routines where routine_schema='public'),
     'privateCreate', has_schema_privilege('authenticated','private','CREATE'),
+    'publicCreate', has_schema_privilege('authenticated','public','CREATE'),
+    'publicExecute', (select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace cross join lateral aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a where n.nspname='private' and a.grantee=0 and a.privilege_type='EXECUTE'),
     'authenticatedBypass', (select rolbypassrls from pg_roles where rolname='authenticated'),
     'buckets', (select count(*) from storage.buckets),
     'migrations', (select json_agg(version order by version) from supabase_migrations.schema_migrations)
@@ -47,7 +53,7 @@ export function assertSecurityInventory(info) {
   const tables = ['app_roles', 'app_user_roles', 'app_users']
   if (JSON.stringify(info.tables?.map(t => t.name)) !== JSON.stringify(tables)
     || info.tables.some(t => !t.rls || t.forced) || info.publicFunctions !== 0
-    || info.privateCreate || info.authenticatedBypass || info.buckets !== 0
+    || info.privateCreate || info.publicCreate || info.publicExecute !== 0 || info.authenticatedBypass || info.buckets !== 0
     || JSON.stringify(info.migrations) !== JSON.stringify(['20261022041000'])) throw new Error('Inventario H1 inesperado.')
   const expected = ['app_roles_active_read', 'app_roles_admin_read', 'app_user_roles_admin_read', 'app_user_roles_self_read', 'app_users_admin_read', 'app_users_self_read']
   if (JSON.stringify(info.policies?.map(p => p.name)) !== JSON.stringify(expected)

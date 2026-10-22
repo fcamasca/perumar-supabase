@@ -79,6 +79,21 @@ describe('sesión y aislamiento de estado', () => {
     expect(f.from).not.toHaveBeenCalled()
   })
 
+  it('una respuesta de la identidad anterior no reemplaza la sesión nueva', async () => {
+    const f = fixture()
+    let finishOld!: (value: unknown) => void
+    f.auth.getUser.mockImplementationOnce(() => new Promise(resolve => { finishOld = resolve }))
+    render(<SessionProvider client={f.client}><Probe /></SessionProvider>)
+    await waitFor(() => expect(f.auth.getUser).toHaveBeenCalledTimes(1))
+    f.auth.getUser.mockResolvedValue({ data: { user: { id: 'second-id' } }, error: null })
+    f.rows.app_users = [{ id: 'second-id', active: true }]
+    act(() => f.notify('SIGNED_IN'))
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('authorized second-id'))
+    await act(async () => { finishOld({ data: { user: { id: 'operator-id' } }, error: null }) })
+    expect(screen.getByRole('status')).toHaveTextContent('authorized second-id')
+    expect(screen.getByRole('status')).not.toHaveTextContent('operator-id')
+  })
+
   it('retira datos y comunica fallo de cierre remoto sin fingir éxito', async () => {
     const f = fixture()
     render(<SessionProvider client={f.client}><Probe /></SessionProvider>)
