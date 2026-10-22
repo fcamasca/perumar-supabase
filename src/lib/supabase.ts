@@ -7,7 +7,7 @@ export function getSupabase() {
   if (!client) {
     const config = validateEnv(browserEnv())
     client = createClient(config.url, config.key, {
-      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
       global: { fetch: (input, init) => fetch(input, { ...init, signal: AbortSignal.timeout(5000) }) },
     })
   }
