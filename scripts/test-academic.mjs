@@ -53,6 +53,12 @@ try {
     assert.equal(m1.codigo, `M${tag}1`.toUpperCase())
     assert.match(m1.id, /^[0-9a-f-]{36}$/)
     for (const p of [ { codigo: m1.codigo.toLowerCase(), nombre: 'DUPLICATE CODE' }, { codigo: 'OTHER', nombre: m1.nombre.toLowerCase() }, { codigo: 'A'.repeat(31), nombre: 'LONG' }, { codigo: 'VALID', nombre: 'N'.repeat(151) }, { codigo: 'VALID', nombre: 'VALID', descripcion: 'D'.repeat(501) }, { codigo: { bad: true }, nombre: 'BAD' }, { codigo: ' ', nombre: 'EMPTY' } ]) rejected(await D.rpc('guardar_materia', { p }), 'invalid input accepted')
+    const beforeEdit = m1
+    m1 = await rpc(D, 'guardar_materia', { p: { ...fields(m1), codigo: m1.codigo, nombre: `${m1.nombre} EDITADA`, descripcion: 'Updated with ordinary JWT' } })
+    assert.ok(m1.nombre.endsWith(' EDITADA'))
+    rejected(await D.rpc('guardar_materia', { p: { ...fields(beforeEdit), codigo: beforeEdit.codigo, nombre: beforeEdit.nombre } }), 'stale subject update')
+    const boundary = await rpc(D, 'guardar_materia', { p: { codigo: tag.toUpperCase().padEnd(30, 'C'), nombre: tag.toUpperCase().padEnd(150, 'N'), descripcion: 'D'.repeat(500) } })
+    assert.equal(boundary.codigo.length, 30); assert.equal(boundary.nombre.length, 150); assert.equal(boundary.descripcion.length, 500)
     const inert = await materia('I')
     const inactive = await rpc(D, 'cambiar_active_materia', { ...fields(inert), active: false, motivo: 'ensayo' })
     rejected(await D.rpc('guardar_materia', { p: { codigo: inactive.codigo, nombre: 'NO REUSE' } }), 'inactive code reused')
@@ -65,6 +71,14 @@ try {
     const other = motivos.find(x => x.codigo === 'OTRO')
     rejected(await D.rpc('guardar_carrera', { p: { ...p, modalidad_id: other.id }, materias: [m1.id] }), 'wrong catalog')
     carrera = await rpc(D, 'guardar_carrera', { p, materias: [m1.id] })
+    const occupied = new Set((await rows(D, 'carrera')).map(x => x.sigla))
+    const shortSigla = [...'0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'].map(x => `T${x}`).find(x => !occupied.has(x))
+    assert.ok(shortSigla, 'reference fixture sigla available')
+    for (const [suffix, sigla] of [['2', shortSigla], ['10', `Z${tag.toUpperCase()}0`]]) {
+      const boundary = await rpc(D, 'guardar_carrera', { p: { ...p, codigo: `L${suffix}${tag}`, nombre: `LIMIT ${suffix} ${tag}`, sigla }, materias: [m4.id] })
+      assert.equal(boundary.sigla.length, Number(suffix))
+    }
+    rejected(await D.rpc('guardar_carrera', { p: { ...p, codigo: `UNIQUE${tag}`, nombre: `UNIQUE ${tag}` }, materias: [m1.id] }), 'duplicate sigla')
     rejected(await D.rpc('cambiar_active_materia', { ...fields(m1), active: false, motivo: 'would break career' }), 'last active deactivated')
     rejected(await D.rpc('guardar_carrera', { p: carreraPayload(carrera), materias: [] }), 'last association removed')
   })
@@ -143,7 +157,8 @@ try {
   })
   await scenario('TEST-H2-007/028/030/031 states-history-and-no-delete', async () => {
     rejected(await O.rpc('cambiar_estado_ciclo', { ...fields(ciclo), destino: 'EN_CURSO' }), 'coordinator transition')
-    const running = await rpc(D, 'cambiar_estado_ciclo', { ...fields(ciclo), destino: 'EN_CURSO' })
+    let running = await rpc(D, 'cambiar_estado_ciclo', { ...fields(ciclo), destino: 'EN_CURSO' })
+    running = await rpc(O, 'guardar_ciclo', { p: cicloPayload(running, { nombre_promocion: 'COORDINADOR EN CURSO' }) })
     rejected(await D.rpc('cambiar_estado_ciclo', { ...fields(running), destino: 'ANULADO', motivo: 'forbidden origin' }), 'running annulled')
     const otro = motivos.find(x => x.codigo === 'OTRO')
     rejected(await D.rpc('cambiar_estado_ciclo', { ...fields(running), destino: 'DESIERTO', motivo_desierto_id: otro.id }), 'OTRO without detail')
@@ -160,6 +175,16 @@ try {
     const nextCareer = await byId('carrera', closed.carrera_id)
     await rpc(D, 'guardar_carrera', { p: carreraPayload(nextCareer, { sigla: `T${tag.slice(0, 5)}` }), materias: [m2.id, m4.id] })
     assert.equal((await byId('ciclo', closed.id)).codigo_ciclo, oldCode)
+    const programmed = await rpc(O, 'guardar_ciclo', { p: { ...base, carrera_id: closed.carrera_id, capitania_id: capitanias[12].id } })
+    const deserted = await rpc(D, 'cambiar_estado_ciclo', { ...fields(programmed), destino: 'DESIERTO', motivo_desierto_id: motivos.find(x => x.codigo === 'FALTA_ALUMNOS').id })
+    const programmedAgain = await rpc(O, 'guardar_ciclo', { p: { ...base, carrera_id: closed.carrera_id, capitania_id: capitanias[12].id } })
+    rejected(await D.rpc('cambiar_estado_ciclo', { ...fields(programmedAgain), destino: 'ANULADO' }), 'annulment without reason')
+    const annulled = await rpc(D, 'cambiar_estado_ciclo', { ...fields(programmedAgain), destino: 'ANULADO', motivo: 'Synthetic mistaken registration' })
+    for (const terminal of [deserted, closed, annulled]) {
+      rejected(await O.rpc('guardar_ciclo', { p: cicloPayload(terminal) }), 'terminal edited')
+      rejected(await D.rpc('cambiar_estado_ciclo', { ...fields(terminal), destino: 'PROGRAMADO' }), 'terminal reopened')
+      rejected(await D.from('ciclo').delete().eq('id', terminal.id), 'terminal deleted')
+    }
   })
   await scenario('TEST-H2-007/023/031 inactive-history-and-new-selections', async () => {
     const fresh = await byId('materia', m1.id)

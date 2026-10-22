@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, cleanup } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, cleanup } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { AcademicOnly, Materias, Ciclos } from '../src/academic/AcademicPages'
 import { useSession } from '../src/security/SessionProvider'
@@ -88,4 +88,19 @@ it('Director chooses a catalog reason; OTRO requires detail', async () => {
   fireEvent.change(screen.getByLabelText('Nuevo estado'), { target: { value: 'DESIERTO' } })
   fireEvent.change(screen.getByLabelText('Motivo de Ciclo Desierto'), { target: { value: 'other' } })
   expect(screen.getByLabelText(/Detalle \/ motivo/)).toBeRequired()
+})
+
+it('pending save prevents accidental discard or changes to in-flight input', async () => {
+  session(['DIRECTOR_ACADEMICO'])
+  let finish: (value: unknown) => void = () => undefined
+  rpc.mockReturnValue(new Promise(resolve => { finish = resolve }))
+  render(<Materias />)
+  fireEvent.click(await screen.findByRole('button', { name: 'Editar M1' }))
+  fireEvent.submit(screen.getByRole('button', { name: 'Guardar Materia' }).closest('form')!)
+  expect(screen.getByLabelText('Nombre de Materia')).toBeDisabled()
+  expect(screen.getByRole('button', { name: 'Cancelar' })).toBeDisabled()
+  expect(screen.getByRole('button', { name: 'Recargar información' })).toBeDisabled()
+  await act(async () => finish({ error: { code: '40001' }, data: null }))
+  expect(screen.getByLabelText('Nombre de Materia')).not.toBeDisabled()
+  expect(rpc).toHaveBeenCalledTimes(1)
 })

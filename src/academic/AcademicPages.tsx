@@ -62,13 +62,13 @@ export function Materias() {
     <label>Buscar Materia por código<input value={codeSearch} onChange={e => setCodeSearch(e.target.value)} /></label>
     <label>Buscar Materia por nombre<input value={search} onChange={e => setSearch(e.target.value)} /></label>
     <label>Estado de Materia<select value={status} onChange={e => setStatus(e.target.value)}><option value="">Todos</option><option value="active">Activo</option><option value="inactive">Inactivo</option></select></label>
-    <button onClick={() => { edit(null); setRevision(x => x + 1) }}>Recargar información</button><Notice message={message} /><p role="status">{busy ? 'Guardando…' : ''}</p>
+    <button disabled={busy} onClick={() => { edit(null); setRevision(x => x + 1) }}>Recargar información</button><Notice message={message} /><p role="status">{busy ? 'Guardando…' : ''}</p>
     <div className="table-scroll"><table><caption>Materias — hasta 100 resultados por búsqueda</caption><thead><tr><th>Código</th><th>Nombre</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{rows.map(row => <tr key={row.id}><td>{row.codigo}</td><td>{row.nombre}</td><td>{row.active ? 'Activo' : 'Inactivo'}</td><td>{director ? <><button disabled={busy} onClick={() => edit(row)}>Editar {row.codigo}</button><button disabled={busy} onClick={() => void activate(row)}>{row.active ? 'Inactivar' : 'Reactivar'} {row.codigo}</button></> : 'Solo lectura referencial'}</td></tr>)}</tbody></table></div>
-    {director && <form aria-describedby={message ? "academic-message" : undefined} onSubmit={event => void save(event)}><h3>{selected ? 'Editar Materia' : 'Nueva Materia'}</h3>
+    {director && <form aria-describedby={message ? "academic-message" : undefined} onSubmit={event => void save(event)}><h3>{selected ? 'Editar Materia' : 'Nueva Materia'}</h3><fieldset disabled={busy}><legend>Datos de Materia</legend>
       <label>Código de Materia<input required maxLength={30} value={codigo} onChange={e => setCodigo(e.target.value)} /></label>
       <label>Nombre de Materia<input required maxLength={150} value={nombre} onChange={e => setNombre(e.target.value)} /></label>
       <label>Descripción de Materia<textarea maxLength={500} value={descripcion} onChange={e => setDescripcion(e.target.value)} /></label>
-      <button disabled={busy}>Guardar Materia</button><button type="button" onClick={() => edit(null)}>Cancelar</button>
+      <button disabled={busy}>Guardar Materia</button><button disabled={busy} type="button" onClick={() => edit(null)}>Cancelar</button></fieldset>
     </form>}
   </section>
 }
@@ -113,16 +113,16 @@ export function Carreras() {
     setMessage(r.error ? academicError(r.error) : ''); if (!r.error) setRevision(x => x + 1)
   }
   return <section><h2>Carreras</h2><label>Buscar Carrera por código<input value={codeSearch} onChange={e => setCodeSearch(e.target.value)} /></label><label>Estado de Carrera<select value={activeStatus} onChange={e => setActiveStatus(e.target.value)}><option value="">Todos</option><option value="active">Activo</option><option value="inactive">Inactivo</option></select></label><label>Buscar Carrera por nombre<input value={search} onChange={e => setSearch(e.target.value)} /></label>
-    <button onClick={() => { void edit(null); setRevision(x => x + 1) }}>Recargar información</button><Notice message={message} /><p role="status">{busy ? 'Guardando…' : ''}</p>
+    <button disabled={busy} onClick={() => { void edit(null); setRevision(x => x + 1) }}>Recargar información</button><Notice message={message} /><p role="status">{busy ? 'Guardando…' : ''}</p>
     <div className="table-scroll"><table><caption>Carreras — hasta 100 resultados por búsqueda</caption><thead><tr><th>Código</th><th>Nombre</th><th>Sigla</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{rows.map(row => <tr key={row.id}><td>{row.codigo}</td><td>{row.nombre}</td><td>{row.sigla}</td><td>{row.active ? 'Activo' : 'Inactivo'}</td><td>{director ? <><button disabled={busy} onClick={() => void edit(row)}>Editar {row.codigo}</button><button disabled={busy} onClick={() => void activate(row)}>{row.active ? 'Inactivar' : 'Reactivar'} {row.codigo}</button></> : 'Solo lectura referencial'}</td></tr>)}</tbody></table></div>
-    {director && <form aria-describedby={message ? "academic-message" : undefined} onSubmit={event => void save(event)}><h3>{selected ? 'Editar Carrera' : 'Nueva Carrera'}</h3>
+    {director && <form aria-describedby={message ? "academic-message" : undefined} onSubmit={event => void save(event)}><h3>{selected ? 'Editar Carrera' : 'Nueva Carrera'}</h3><fieldset disabled={busy}><legend>Datos de Carrera</legend>
       <label>Código de Carrera<input required maxLength={30} value={codigo} onChange={e => setCodigo(e.target.value)} /></label>
       <label>Nombre de Carrera<input required maxLength={150} value={nombre} onChange={e => setNombre(e.target.value)} /></label>
       <label>Descripción de Carrera<textarea maxLength={500} value={descripcion} onChange={e => setDescripcion(e.target.value)} /></label>
       <label>Sigla<input required minLength={2} maxLength={10} pattern="[A-Za-z0-9]{2,10}" value={sigla} onChange={e => setSigla(e.target.value)} /></label>
       <label>Modalidad<select required value={modalidad} onChange={e => setModalidad(e.target.value)}><option value="">Seleccionar</option>{modalidades.filter(x => x.activo || x.id === modalidad).map(x => <option key={x.id} value={x.id}>{x.nombre}{!x.activo ? ' (inactivo histórico)' : ''}</option>)}</select></label>
       <fieldset><legend>Materias de Carrera — mínimo una activa</legend>{materias.map(m => <label key={m.id}><input type="checkbox" checked={chosen.includes(m.id)} disabled={!m.active && !chosen.includes(m.id)} onChange={e => setChosen(ids => e.target.checked ? [...ids, m.id] : ids.filter(id => id !== m.id))} />{m.nombre} — {m.active ? 'Activo' : 'Inactivo histórico'}</label>)}</fieldset>
-      <button disabled={busy}>Guardar Carrera y Materias</button><button type="button" onClick={() => void edit(null)}>Cancelar</button>
+      <button disabled={busy}>Guardar Carrera y Materias</button><button disabled={busy} type="button" onClick={() => void edit(null)}>Cancelar</button></fieldset>
     </form>}
   </section>
 }
@@ -187,7 +187,7 @@ export function Ciclos() {
   const referenceOptions = (options: Ref[], value: string) => options.filter(x => x.active || x.id === value).map(x => <option key={x.id} value={x.id}>{x.nombre}{!x.active ? ' (inactivo histórico)' : ''}</option>)
   return <section><h2>Ciclos</h2><label>Buscar código de Ciclo<input value={search} onChange={e => setSearch(e.target.value)} /></label>
     <label>Estado del listado<select value={estado} onChange={e => setEstado(e.target.value)}><option value="">Todos</option>{['PROGRAMADO', 'EN_CURSO', 'CERRADO', 'DESIERTO', 'ANULADO'].map(x => <option key={x}>{x}</option>)}</select></label>
-    <button onClick={() => { void edit(null); setRevision(x => x + 1) }}>Recargar información / nuevo Ciclo</button><Notice message={message} /><p role="status">{busy ? 'Guardando…' : ''}</p>
+    <button disabled={busy} onClick={() => { void edit(null); setRevision(x => x + 1) }}>Recargar información / nuevo Ciclo</button><Notice message={message} /><p role="status">{busy ? 'Guardando…' : ''}</p>
     <div className="table-scroll"><table><caption>Ciclos — hasta 100 resultados por búsqueda</caption><thead><tr><th>Código</th><th>Inicio</th><th>Fin</th><th>Estado</th><th>Consulta</th></tr></thead><tbody>{rows.map(row => <tr key={row.id}><td>{row.codigo_ciclo}</td><td>{row.fecha_inicio}</td><td>{row.fecha_fin}</td><td>{row.estado_codigo}</td><td><button disabled={busy} onClick={() => void edit(row)}>Consultar {row.codigo_ciclo}</button></td></tr>)}</tbody></table></div>
     <form aria-describedby={message ? "academic-message" : undefined} onSubmit={event => void save(event)}><h3>{selected ? selected.codigo_ciclo : 'Nuevo Ciclo'}</h3>{selected && <p>Estado: {selected.estado_codigo}. Código generado; no editable.</p>}
       <fieldset disabled={!editable || busy}><legend>Datos del Ciclo</legend>
@@ -202,7 +202,7 @@ export function Ciclos() {
         <p>Precarga de Carrera (solo activas): {materias.filter(x => x.active && inherited.includes(x.id)).map(x => x.nombre).join(', ') || 'Selecciona una Carrera con Materias activas.'}</p>
         <fieldset><legend>Añadir Materias activas adicionales</legend>{materias.filter(m => m.active && !inherited.includes(m.id) && !relations.some(r => r.materia_id === m.id)).map(m => <label key={m.id}><input type="checkbox" checked={additional.includes(m.id)} onChange={e => setAdditional(ids => e.target.checked ? [...ids, m.id] : ids.filter(id => id !== m.id))} />{m.nombre}</label>)}</fieldset>
         <button disabled={busy}>Guardar Ciclo</button>
-      </fieldset><button type="button" onClick={() => void edit(null)}>{selected ? 'Volver / nuevo formulario' : 'Cancelar / descartar formulario'}</button>
+      </fieldset><button disabled={busy} type="button" onClick={() => void edit(null)}>{selected ? 'Volver / nuevo formulario' : 'Cancelar / descartar formulario'}</button>
     </form>
     {selected && <><h3>Materias del Ciclo</h3><ul>{relations.map(r => <li key={r.id}>{materias.find(m => m.id === r.materia_id)?.nombre ?? r.materia_id} — {r.origen} — {r.activo ? 'Asociación activa' : `Retirada: ${r.motivo_inactivacion}`}{editable && <button disabled={busy} onClick={() => void relation(r)}>{r.activo ? 'Retirar' : 'Reactivar explícitamente'}</button>}</li>)}</ul></>}
     {selected && editable && director && <form onSubmit={event => void transition(event)}><h3>Transición manual</h3>
