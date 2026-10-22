@@ -59,6 +59,8 @@ Ver ux-review.md. Los listados comienzan sin formulario: usar Crear Materia/Carr
 
 ## TEST-H2-019 — Visual, teclado y sistema
 
+La identidad 741f4ac está aprobada humanamente; su integración no lo está. Ver brand-identity.md y brand-integration-preview.html. Incluir login/header y favicon real en Claro, Oscuro, Alto contraste y forced-colors; comprobar ausencia de marca provisional/nombre accesible duplicado y conservación de proporciones. Revisar 16 y 32 px: Codex no pudo verificarlos visualmente por fallo de la herramienta. Si 16 px resulta ilegible, registrar evidencia y detener el rediseño para decisión humana; no simplificar automáticamente. Esta ampliación de la guía no inicia ni aprueba TEST-019.
+
 Estado humano vigente: NO INICIADO / NO APROBADO. El usuario solicitó primero un refresh visual del shell; ver visual-refresh.md y valorar el acabado del nuevo candidato antes de iniciar formalmente este recorrido. Se limpiaron las cuentas sintéticas locales previas al repetir las suites: recrear fixtures con el procedimiento de preparación, sin reutilizar identidades eliminadas.
 
 Mantener fixtures durante esta revisión. Revisar login, listas, formularios, auditoría, estados de error/conflicto, seleccionado y deshabilitado en Sistema, Claro, Oscuro y Alto contraste. Comprobar persistencia al recargar y fallback tolerante a storage inválido/bloqueado.
