@@ -1,0 +1,59 @@
+name: H0 verification
+
+on:
+  push:
+    branches: ['feature/**']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      configuration-failure:
+        description: 'Ensayo controlado: el build debe fallar por configuración inválida'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Fixed npm and clean install
+        run: |
+          npm install --global npm@10.9.0
+          npm ci
+          node --version
+          npm --version
+      - name: Lint, types and unit tests
+        run: |
+          npm run lint
+          npm run typecheck
+          npm test
+      - name: Start isolated local platform
+        run: npm run supabase:start
+      - name: Local configuration and integration
+        run: |
+          npm run supabase:env
+          npm run test:local
+      - name: Build (including controlled failure when requested)
+        env:
+          H0_CONFIG_FAILURE: ${{ inputs.configuration-failure || github.ref_name == 'feature/h0-bootstrap-ci-negative' }}
+        run: node scripts/ci-build.mjs
+      - name: Privileged configuration rejected safely
+        run: npm run test:build-safety
+      - name: Rebuild local database and repeat integration
+        run: |
+          npm run supabase:reset
+          npm run test:local
+      - name: Stop local platform
+        if: always()
+        run: npm run supabase:stop

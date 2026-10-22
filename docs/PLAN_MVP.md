@@ -1,7 +1,23 @@
 # PLAN MVP — PERÚ MAR Supabase
 
-**Versión:** 0.1  
-**Estado:** DRAFT — PENDIENTE DE APROBACIÓN HUMANA
+**Versión:** 1.0
+**Estado:** APROBADO
+
+## Registro de aprobación humana — 21/10/2026
+
+El usuario aprobó explícitamente el PLAN y el Spec de H0 el 21/10/2026 y autorizó el Gate 1 de H0 — Bootstrap. El commit final del Spec aprobado es `dff3c1c94683e5767c5837203d6910a6f25f43e3`, en `feature/h0-bootstrap-spec`.
+
+Se autoriza construir exclusivamente H0, conservando alcance, diseño y tareas aprobadas. OQ-H0-001 queda resuelta. OQ-H0-002 (owner GitHub) sigue pendiente hasta contar con evidencia humana explícita. La aprobación del Gate 1 no sustituye pruebas humanas, Gate 2, acceptance ni autorización de merge a main.
+
+Este registro documental se incorpora en la rama Spec antes de construir; no modifica el contenido de los cuatro documentos aprobados. La implementación nace del commit exacto aprobado y recibe después este registro documental.
+
+### Seguimiento de construcción — 21/10/2026
+
+**Cierre posterior:** H0 ACEPTADO humanamente y Gate 2 aprobado el 21/10/2026 sobre `9523e2e0e1b1889dd12ed3902fa3fe23f7c52141`. Se autoriza registrar [acceptance](specs/H0-bootstrap/acceptance.md) e integrar implementación a main. El seguimiento siguiente conserva antecedentes previos a esa decisión; los bloqueos de Gate 2 allí descritos quedan superados por esta aprobación. H1 continúa NO INICIADO.
+
+OQ-H0-002 quedó resuelta por indicación explícita del usuario: `https://github.com/fcamasca/perumar-supabase.git`. Se comprobó que ese repositorio ya existe, es privado y está vacío; no se creó ni publicó contenido allí.
+
+H0 conserva estado EN CONSTRUCCIÓN. Tras el ensayo controlado, el usuario aprobó CHG-H0-001 y la continuación de TASK-H0-003 y siguientes. DEF-H0-001 queda RESOLVED BY APPROVED MITIGATION: aislamiento efectivo mediante la regla exacta de Windows Firewall, sin afirmar binding exclusivo a loopback. `54322/TCP: NO VERIFICADO DE FORMA INDEPENDIENTE`; limitación aceptada como riesgo residual de H0 local sin datos reales. Véanse la [enmienda autorizada](specs/H0-bootstrap/approved-isolation-amendment.md), las [rondas](specs/H0-bootstrap/controlled-network-test.md) y la [evidencia de construcción](specs/H0-bootstrap/implementation-log.md). Gate 2, acceptance y merge siguen bloqueados. No se comienza H1.
 
 ---
 
@@ -630,7 +646,7 @@ El PLAN vigente debe reflejar el estado real del proyecto.
 
 | Hito | Estado |
 |---|---|
-| H0 Bootstrap | PENDIENTE DE SPEC |
+| H0 Bootstrap | ACEPTADO — Gate 2 aprobado 21/10/2026 |
 | H1 Seguridad base | NO INICIADO |
 | H2 Base académica | NO INICIADO |
 | H3 Alumno y Matrícula | NO INICIADO |
