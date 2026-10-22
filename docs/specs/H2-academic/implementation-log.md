@@ -1,6 +1,6 @@
 # H2 — Evidencia de construcción
 
-Estado vigente: TASK-H2-001 a 008 COMPLETADAS. TEST-H2-018 confirmado PASSED humanamente sobre e2f2db9; correcciones UI y revisión UX posteriores implementadas y verificadas (112 unitarias; ver ux-review.md). TEST-H2-019/020 y revisión del nuevo candidato pendientes; TASK-009 requiere persona y TASK-010 bloqueada por Gate 2. No acceptance ni merge.
+Estado vigente: TASK-H2-001 a 008 COMPLETADAS. TEST-H2-018 confirmado PASSED humanamente sobre e2f2db9; correcciones UI y revisión UX posteriores implementadas y verificadas (112 unitarias; ver ux-review.md). Refresh visual posterior implementado (ver visual-refresh.md). TEST-H2-019 NO INICIADO/NO APROBADO; TEST-H2-020 y revisión del nuevo candidato pendientes; TASK-009 requiere persona y TASK-010 bloqueada por Gate 2. No acceptance ni merge.
 
 Los bloques siguientes conservan estados históricos de cada etapa; sus pendientes intermedios no son el estado vigente.
 
@@ -97,3 +97,7 @@ El usuario confirmó PASSED humano en e2f2db9365b4c46fd6932caba3d47a17324ebe29 y
 ## Revisión UX/UI previa a TEST-H2-019
 
 Base 51b73ba5c6b18c9436a7e087f4110f3c10d91f18; código 0f8096097c7cfa5426ee84a55b56d4bc0e1fc551. Revisión pantalla por pantalla y correcciones de jerarquía/navegación, listado/editor/consulta, relaciones de Ciclo y auditoría legible; reporte de problemas/cambios/beneficio en ux-review.md. 112 unitarias, lint/tipos/build/safety y regresión real local/seguridad14/academic11 PASSED; reset/local/stop y Vite detenidos. Browser integrado falló antes de abrir página; no inspección visual real ni TEST-019/020 humano aprobado. Sin cambios en DB/RLS/RPC/permisos/Spec/PLAN/dependencias/host. Estado de CI del candidato documental se presenta en la entrega. Gate 2, acceptance y merge siguen bloqueados; H3 no iniciado.
+
+## Renovación visual del shell y componentes base
+
+Base humana 7f0a5487d4ddb001eadf3d89cfee91cb02c84255. La funcionalidad se considera bien pero el acabado visual no alcanza el nivel esperado; no equivale a aceptación del nuevo candidato. Código d593ac2: CSS reemplazado/consolidado, paletas marítimas coherentes, login compuesto, marca SVG decorativa mínima y controles/superficies/tablas/diálogos unificados. Sin DB/RLS/RPC/permisos/reglas/Spec/PLAN/dependencias. 112 unitarias con contraste ampliado, lint/tipos/build/safety/local, seguridad14 y academic11 PASSED; reset/local/stop completados. Primera seguridad falló por ocho cuentas sintéticas previas; repetición desde reset pasó sin relajar controles. Herramienta visual no inicializó; sin capturas ni comprobación de viewport/SO atribuida. Evidencia y límites en visual-refresh.md. TEST-019 NO INICIADO/NO APROBADO; TEST-020 y Gate 2 pendientes; sin acceptance, merge ni H3.

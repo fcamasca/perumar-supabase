@@ -59,6 +59,8 @@ Ver ux-review.md. Los listados comienzan sin formulario: usar Crear Materia/Carr
 
 ## TEST-H2-019 — Visual, teclado y sistema
 
+Estado humano vigente: NO INICIADO / NO APROBADO. El usuario solicitó primero un refresh visual del shell; ver visual-refresh.md y valorar el acabado del nuevo candidato antes de iniciar formalmente este recorrido. Se limpiaron las cuentas sintéticas locales previas al repetir las suites: recrear fixtures con el procedimiento de preparación, sin reutilizar identidades eliminadas.
+
 Mantener fixtures durante esta revisión. Revisar login, listas, formularios, auditoría, estados de error/conflicto, seleccionado y deshabilitado en Sistema, Claro, Oscuro y Alto contraste. Comprobar persistencia al recargar y fallback tolerante a storage inválido/bloqueado.
 
 Con Sistema seleccionado, cambiar apariencia/contraste del SO y comprobar respuesta en vivo. Comprobar forced-colors real del SO cuando esté disponible: debe prevalecer incluso sobre una paleta explícita. Restaurar después la preferencia del equipo. Si no puede ensayarse, registrar NO VERIFICADO y solicitar decisión humana; no sustituirlo por captura o prueba DOM.
