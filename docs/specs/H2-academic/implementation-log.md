@@ -63,3 +63,9 @@ Corrección necesaria al integrar UI: modalidad inactiva ya referenciada debe pe
 Workflow incorpora test:academic antes del build y después del reset final. Ensayo negativo temporal usa asignación ADMIN_SISTEMA indebida al Coordinador y verifica primero directorio ampliado por petición ordinaria; no permite asumir que una falla por fixture/conteo basta. README incluye rama de revisión H2, comandos, fuentes, roles reales, limpieza por reset y límites visuales.
 
 Se ejecutan suites locales y CI del commit que contiene este bloque; resultados, run IDs y repetición/clone se registrarán después, no se presuponen PASSED. Última ampliación técnica comprueba las 7 RPC directamente con Admin Sistema, no habilitados y anónimo: ninguna escritura académica permitida.
+
+### Hallazgo CI y corrección de portabilidad
+
+CI positiva bb180ee, run 39791100000: lint/tipos/88 unitarias, arranque/reset e inventario/seguridad H1 evolucionada PASSED; fallo en hash de referencia al iniciar test:academic. Causa: snapshot JSON DICAPI fue escrito con CRLF por Python Windows, su hash se calculó antes de normalización Git a LF; en Linux el contenido normalizado no coincidía. Se normalizan explícitamente snapshots/metadata a LF y se recalcula SHA256 de bytes versionados, conservando hashes originales descargados y todos los nombres oficiales. No se elimina ni relaja el test de integridad. Repetición CI pendiente en el commit de corrección.
+
+Clon privado bb180ee: npm ci PASSED, 215 paquetes/216 auditados, cero vulnerabilidades informadas; typecheck PASSED. Un intento de build anterior a generar la configuración pública fue rechazado correctamente por falta VITE_SUPABASE_URL. Se completará siguiendo README (supabase:env) al transferir el stack tras terminar la suite del checkout principal; sin copiar secretos ni levantar dos stacks.

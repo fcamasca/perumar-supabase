@@ -113,7 +113,7 @@ Para parar: Ctrl+C en la terminal de Vite y `npm run supabase:stop`. Conserva vo
 
 Un workflow con permisos `contents: read` ejecuta instalación, lint, tipos, pruebas, Auth/RLS real, build seguro, expiración y reset con repetición; siempre intenta detener el stack. Acciones fijadas por SHA y sin deployment ni secretos remotos de Supabase. El ensayo negativo temporal introduce ADMIN indebidamente al fixture O y debe fallar en la matriz de filas, limpiar identidades y detener el stack. Se elimina su rama después de conservar runs/commits; no es un candidato alternativo. No hay rama negativa permanente. El mecanismo de fallo de build H0 se retiró del workflow actual; la evidencia histórica permanece en sus documentos/runs.
 
-Los recorridos humanos TEST-H1-018 y TEST-H1-019 se conservan en [implementation-log.md](docs/specs/H1-security/implementation-log.md). El usuario confirmó ambos como PASSED y aprobó Gate 2 el 22/10/2026: [registro de aceptación](docs/specs/H1-security/acceptance.md). Codex registra esa decisión; no se atribuye la ejecución ni aprobación humana. H2 permanece NO INICIADO.
+Los recorridos humanos TEST-H1-018 y TEST-H1-019 se conservan en [implementation-log.md](docs/specs/H1-security/implementation-log.md). El usuario confirmó ambos como PASSED y aprobó Gate 2 el 22/10/2026: [registro de aceptación](docs/specs/H1-security/acceptance.md). Codex registra esa decisión; no se atribuye la ejecución ni aprobación humana. En el cierre histórico de H1, H2 todavía no estaba iniciado; su estado vigente de construcción figura arriba.
 
 ## Spec-Driven Development
 
