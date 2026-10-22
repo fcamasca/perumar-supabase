@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process'
 import { writeFileSync } from 'node:fs'
 import { createClient } from '@supabase/supabase-js'
 import { validateEnv } from '../src/lib/env.ts'
+import { assertSecurityInventory, securityInventory } from './local-platform.mjs'
 
 function run(file, args) {
   const result = spawnSync(file, args, { encoding: 'utf8', windowsHide: true, timeout: 60_000 })
@@ -24,10 +25,8 @@ try {
     })
     const { data, error } = await client.getOpenApiSpec()
     if (error || !data?.paths || Object.keys(data.paths).some(route => route !== '/')) throw new Error('Data API no está disponible o expone rutas de aplicación inesperadas.')
-    const sql = "select (select count(*) from information_schema.tables where table_schema='public') + (select count(*) from information_schema.routines where routine_schema='public') + (select count(*) from pg_policies where schemaname='public') + (select count(*) from auth.users) + (select count(*) from storage.buckets); select to_regclass('supabase_migrations.schema_migrations') is null;"
-    const inventory = run('docker', ['exec', 'supabase_db_perumar-supabase', 'psql', '-U', 'postgres', '-d', 'postgres', '-Atc', sql]).trim()
-    if (inventory !== '0\nt' && inventory !== '0\r\nt') throw new Error('Inventario local no vacío o historial inesperado; revisar antes de continuar.')
-    console.log('Integración local PASÓ: SDK/Data API, sin objetos, usuarios, buckets ni historial de aplicación.')
+    assertSecurityInventory(securityInventory())
+    console.log('Integración local PASÓ: Data API pública sin rutas protegidas y catálogo H1 exacto con grants/RLS/helper.')
   }
 } catch (error) {
   // Never forward SDK/CLI errors or local configuration content.
