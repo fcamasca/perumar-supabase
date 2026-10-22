@@ -11,13 +11,17 @@ Se autoriza construir exclusivamente H0, conservando alcance, diseño y tareas a
 
 Este registro documental se incorpora en la rama Spec antes de construir; no modifica el contenido de los cuatro documentos aprobados. La implementación nace del commit exacto aprobado y recibe después este registro documental.
 
-### Seguimiento de construcción — 21/10/2026
+### Estado vigente de H0 — cierre del 21/10/2026
 
-**Cierre posterior:** H0 ACEPTADO humanamente y Gate 2 aprobado el 21/10/2026 sobre `9523e2e0e1b1889dd12ed3902fa3fe23f7c52141`. Se autoriza registrar [acceptance](specs/H0-bootstrap/acceptance.md) e integrar implementación a main. El seguimiento siguiente conserva antecedentes previos a esa decisión; los bloqueos de Gate 2 allí descritos quedan superados por esta aprobación. H1 continúa NO INICIADO.
+H0 ACEPTADO humanamente y Gate 2 aprobado el 21/10/2026 sobre `9523e2e0e1b1889dd12ed3902fa3fe23f7c52141`. La [aceptación](specs/H0-bootstrap/acceptance.md) quedó registrada y la implementación se integró y publicó en main mediante el merge `b491b556353d60e0a925b293ea214cd4d5d88e07`. H1 continúa NO INICIADO.
 
-OQ-H0-002 quedó resuelta por indicación explícita del usuario: `https://github.com/fcamasca/perumar-supabase.git`. Se comprobó que ese repositorio ya existe, es privado y está vacío; no se creó ni publicó contenido allí.
+### Seguimiento histórico de H0 — estado anterior al cierre
 
-H0 conserva estado EN CONSTRUCCIÓN. Tras el ensayo controlado, el usuario aprobó CHG-H0-001 y la continuación de TASK-H0-003 y siguientes. DEF-H0-001 queda RESOLVED BY APPROVED MITIGATION: aislamiento efectivo mediante la regla exacta de Windows Firewall, sin afirmar binding exclusivo a loopback. `54322/TCP: NO VERIFICADO DE FORMA INDEPENDIENTE`; limitación aceptada como riesgo residual de H0 local sin datos reales. Véanse la [enmienda autorizada](specs/H0-bootstrap/approved-isolation-amendment.md), las [rondas](specs/H0-bootstrap/controlled-network-test.md) y la [evidencia de construcción](specs/H0-bootstrap/implementation-log.md). Gate 2, acceptance y merge siguen bloqueados. No se comienza H1.
+Los párrafos siguientes describen la construcción antes de Gate 2; no representan el estado vigente ni mantienen bloqueos después del cierre.
+
+OQ-H0-002 quedó resuelta por indicación explícita del usuario: `https://github.com/fcamasca/perumar-supabase.git`. En la comprobación inicial, el repositorio ya existía, era privado y estaba vacío; en ese momento todavía no se había publicado contenido allí.
+
+H0 estaba EN CONSTRUCCIÓN. Tras el ensayo controlado, el usuario aprobó CHG-H0-001 y la continuación de TASK-H0-003 y siguientes. DEF-H0-001 quedó RESOLVED BY APPROVED MITIGATION: aislamiento efectivo mediante la regla exacta de Windows Firewall, sin afirmar binding exclusivo a loopback. `54322/TCP: NO VERIFICADO DE FORMA INDEPENDIENTE`; limitación aceptada como riesgo residual de H0 local sin datos reales. Véanse la [enmienda autorizada](specs/H0-bootstrap/approved-isolation-amendment.md), las [rondas](specs/H0-bootstrap/controlled-network-test.md) y la [evidencia de construcción](specs/H0-bootstrap/implementation-log.md). En esa etapa Gate 2, acceptance y merge estaban bloqueados, y H1 no se había iniciado.
 
 ---
 
@@ -662,11 +666,9 @@ El PLAN vigente debe reflejar el estado real del proyecto.
 
 # 14. Próximo paso
 
-Una vez aprobado este PLAN:
-
 Generar exclusivamente el Spec de:
 
-**H0 — Bootstrap**
+**H1 — Seguridad base**
 
 compuesto por:
 
@@ -677,4 +679,4 @@ compuesto por:
 
 Después detenerse para revisión y aprobación humana.
 
-No iniciar construcción de H0 sin esa aprobación.
+No iniciar construcción de H1 sin esa aprobación.
