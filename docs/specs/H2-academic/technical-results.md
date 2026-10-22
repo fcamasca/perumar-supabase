@@ -310,3 +310,13 @@ Cero cuentas Auth/app_users/asignaciones y cero Materias/Carreras/Ciclos/auditor
 - Riesgo H0 conservado: 54322/TCP NO VERIFICADO DE FORMA INDEPENDIENTE; mitigación Windows Firewall aprobada, sin afirmar Docker exclusivo loopback.
 
 No aceptación humana H2, Gate 2 ni merge. No H3 ni funcionalidades financieras, alumnos/profesores/documentos/PDF o infraestructura productiva.
+
+## Comparación razonada de simplicidad — pendiente de juicio humano
+
+Una alta/edición de Materia atraviesa formulario concreto → RPC guardar_materia → constraints y trigger de auditoría, dentro de una petición/transacción. Una consulta usa Data API con RLS; React no decide la autorización efectiva. No existen controller/service/repository adicionales ni motor configurable de CRUD. Esto reduce lugares que modificar para una operación sencilla, pero no demuestra por sí solo menor tiempo de mantenimiento.
+
+Carrera con materias, propagación y cambio de sigla exige más lógica que una alta simple: se concentra en el comando SQL para evitar coordinación de varias escrituras desde React. La restricción de solapamiento reside en una exclusión declarativa; el mínimo y la auditoría se garantizan en servidor. SERIALIZABLE fue necesario por un fallo concurrente observado, no por escalabilidad hipotética. Su costo son conflictos explícitos y SQL privilegiado que un mantenedor debe comprender.
+
+Frente a separar API propia, servicios y repositorios, esta implementación tiene menos componentes desplegables y ninguna dependencia nueva de frontend. A cambio, PostgreSQL reúne reglas, ACL, RLS, RPC y triggers: siete RPC y once helpers no deben considerarse automáticamente simples. El inventario permite revisar exactamente cada privilegio y localizar fallos; test:academic reproduce invariantes/rollback y test:security las denegaciones. No se midió un ahorro comparativo de horas ni se evaluaron implementaciones históricas como benchmark.
+
+El catálogo maestro y las pantallas son concretos; la propagación solo agrega faltantes, conservando un origen por relación. Se evita un motor de sincronización o permisos genérico. Los tres temas explícitos y Sistema reutilizan tokens CSS y estado local, sin backend/Context adicional. La persona debe validar legibilidad, facilidad real de cambiar un CRUD y diagnóstico en TEST-H2-020; este análisis técnico no aprueba el gate arquitectónico.
