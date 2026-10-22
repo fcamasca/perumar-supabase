@@ -1,0 +1,26 @@
+{
+  "retrieved": "2026-10-22",
+  "sources": [
+    {
+      "file": "ubigeo-inei-2022.csv",
+      "publisher": "INEI",
+      "version": "UBIGEOS_2022_1891_distritos",
+      "url": "https://www.inei.gob.pe/media/DATOS_ABIERTOS/UBIGEOS/UBIGEOS_2022_1891_distritos.zip",
+      "original_sha256": "d0ea9598a15c6fcb33bdeb8d81a84494403f37075a2f9f102b40868204f155c5",
+      "encoding_original": "cp1252",
+      "districts": 1891,
+      "transformation": "Keep six-digit IDDIST records; exclude footer notes; retain source names; convert UTF-8",
+      "license": "ODbL per official datosabiertos.gob.pe INEI dataset; not asserted current to 2026",
+      "sha256": "d81fe6e84bf1a7ff8f9c6098da27213b61298d7ab1e427d193396e9775684dae"
+    },
+    {
+      "file": "capitanias-dicapi-20261022.json",
+      "publisher": "DICAPI",
+      "version": "snapshot 2026-10-22",
+      "url": "https://www.dicapi.mil.pe/api/captaincies?pageSize=100",
+      "original_sha256": "9257f0252f6c8b11bc35f290f3395cdec2cb93adef9afd302760c27a952f2271",
+      "records": 19,
+      "sha256": "04440c1852d3a2bfcee397172fb5254c942609f6fff3c23b37c8179ad49a8cd3"
+    }
+  ]
+}
