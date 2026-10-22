@@ -62,3 +62,26 @@ Se comprobó regla habilitada, se registraron IDs previos, se detuvo con el scri
 Tras recreación, los contenedores están activos y sus healthchecks disponibles saludables. Por 127.0.0.1: API 54321 HTTP 404, Studio 54323 HTTP 307, correo 54324 HTTP 200 y PostgreSQL 54322 TCP correcto. IP Wi-Fi sigue 192.168.1.236. Se deja el stack encendido para repetición humana; no detener hasta confirmación de finalización.
 
 Prueba externa TCP 54322: **PENDIENTE**, sin acceso disponible a un segundo dispositivo autorizado desde las herramientas de esta sesión. No se sustituye por petición desde el host, contenedor del mismo host ni navegador. Desde OTRO equipo Windows de la misma LAN ejecutar `Test-NetConnection -ComputerName 192.168.1.236 -Port 54322 -InformationLevel Detailed` y entregar RemoteAddress, RemotePort y TcpTestSucceeded, indicando origen y hora. Se espera False con el servicio local activo; True confirma exposición y exige detener/revertir la regla según el plan. Un resultado negativo acredita solo el trayecto/dispositivo ensayado. Repetición HTTP externa 54321/54323/54324 y evaluación final pendientes. Guard intacto y TASK-H0-004 sin iniciar.
+
+## Resultado humano de ronda 2 y limitación aceptada para el informe
+
+El usuario confirmó que las tres URLs de 54321, 54323 y 54324 completaron con timeout después de la recreación. El stack se mantuvo encendido durante esa ronda. Posteriormente indicó que no será posible la prueba externa TCP de 54322 y pidió continuar sin ella. Se registra **NO VERIFICADA / OMITIDA POR INDICACIÓN HUMANA**, no PASADA. Esta indicación permite continuar el informe con evidencia parcial; no se interpreta como autorización para modificar el guard, aceptar definitivamente el firewall ni avanzar TASK-H0-004.
+
+Las dos rondas aportan evidencia de inaccesibilidad HTTP desde el celular para API, Studio y correo, con loopback operativo y persistencia tras recreación. No demuestran aislamiento externo de PostgreSQL ni IPv6, ni satisfacen la condición previa de cuatro puertos externos comprobados. DEF-H0-001 sigue confirmado/abierto; no se reclasifica como falso positivo del guard.
+
+Terminadas las pruebas disponibles se detuvo el stack con el script local. La regla autorizada del ensayo se conserva sin modificaciones; no hay fallo de aislamiento observado en estas rondas que active reversión automática. Su conservación no implica adopción definitiva.
+
+### Propuesta para decisión humana, no implementada
+
+La evidencia permite evaluar un criterio alternativo de aislamiento efectivo por firewall en este equipo, pero todavía no justifica reemplazar el guard actual. La propuesta mínima, si se desea continuar con la cobertura incompleta, es registrar primero una decisión humana explícita que acepte la limitación de 54322/TCP e IPv6 y revise el diseño aprobado. Solo esa decisión podría autorizar una propuesta de ajuste del guard que verifique la regla exacta habilitada, sus filtros y perfiles antes de iniciar, conserve rechazo ante regla ausente/alterada y mantenga el comportamiento estricto como opción predeterminada. Esta verificación de configuración no prueba por sí misma el aislamiento de red ni detecta automáticamente todos los cambios posteriores del host. No se introduce este ajuste ni una opción de excepción en el código actual.
+
+Alternativa conservadora: conservar el bloqueo y el guard hasta poder completar la comprobación independiente. No se elige ninguna de las dos alternativas automáticamente. No hay acceptance, merge ni continuación de construcción en esta ejecución.
+
+```text
+CHG-H0-001: CONTROLLED TEST COMPLETED WITH LIMITATIONS — FINAL DECISION PENDING
+LAN HTTP 54321/54323/54324: HUMAN-CONFIRMED TIMEOUTS, BEFORE/AFTER RECREATION
+LAN TCP 54322: NOT VERIFIED — OMITTED AT USER REQUEST
+DEF-H0-001: CONFIRMED / OPEN
+H0 IMPLEMENTATION: BLOCKED (PARTIAL)
+ACCEPTANCE: BLOCKED
+```
