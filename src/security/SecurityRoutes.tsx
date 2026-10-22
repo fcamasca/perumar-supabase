@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, NavLink, Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { useSession } from './SessionProvider'
+import { BrandMark } from '../BrandMark'
 import { InlineForm, StatusBadge } from '../academic/AcademicUi'
 import { AcademicOnly, Materias, Carreras, Ciclos, Auditoria } from '../academic/AcademicPages'
 
@@ -21,7 +22,7 @@ function Login() {
     setBusy(false)
   }
   return <section className="login-panel" aria-labelledby="login-title">
-    <h2 id="login-title">Iniciar sesión</h2><p>Ingresa con tu cuenta para acceder a la gestión académica.</p>
+    <div className="login-identity"><BrandMark /><p className="login-wordmark">PERÚ MAR</p><p className="eyebrow">Gestión Académica</p></div><h2 id="login-title">Iniciar sesión</h2><p>Ingresa con tu cuenta institucional.</p>
     <InlineForm onSubmit={submit}>
       <label>Email <input type="email" autoComplete="username" required value={email} onChange={event => setEmail(event.target.value)} /></label>
       <label>Contraseña <input type="password" autoComplete="current-password" required value={password} onChange={event => setPassword(event.target.value)} /></label>
@@ -53,7 +54,7 @@ function ProtectedArea() {
 function OwnAccess() {
   const { state } = useSession()
   const names: Record<string, string> = { ADMIN_SISTEMA: 'Administrador del sistema', DIRECTOR_ACADEMICO: 'Director académico', COORDINADOR_ACADEMICO: 'Coordinador académico' }
-  return <section><h2>Mi acceso</h2><p>Estas son las funciones habilitadas para tu cuenta. Elige una sección en la navegación superior para comenzar.</p>
+  return <section className="account-panel"><h2>Mi acceso</h2><p>Estas son las funciones habilitadas para tu cuenta. Elige una sección en la navegación superior para comenzar.</p>
     <h3>Roles habilitados</h3><ul className="role-list">{state.roles?.map(role => <li key={role}>{names[role] ?? role}</li>)}</ul>
     <details><summary>Identificador de mi cuenta</summary><code className="identifier">{state.userId}</code></details></section>
 }
@@ -82,7 +83,7 @@ function Directory() {
     return () => { current = false }
   }, [client, admin, refresh])
   if (!admin) return <section><h2>Acceso no autorizado</h2><Link to="/seguridad">Volver a mi acceso</Link></section>
-  return <section><h2>Directorio de seguridad</h2><p>Consulta las cuentas registradas y su estado. Esta pantalla es de solo lectura.</p><p role="status">{message}</p>
+  return <section className="directory-panel"><h2>Directorio de seguridad</h2><p>Consulta las cuentas registradas y su estado. Esta pantalla es de solo lectura.</p><p role="status">{message}</p>
     {rows.length > 0 && <div className="table-scroll"><table><caption>Cuentas con acceso a la aplicación</caption><thead><tr><th>Identificador</th><th>Estado</th></tr></thead>
       <tbody>{rows.map(row => <tr key={row.id}><td><code className="identifier">{row.id}</code></td><td><StatusBadge value={row.active ? 'Activo' : 'Inactivo'} /></td></tr>)}</tbody></table></div>}
   </section>

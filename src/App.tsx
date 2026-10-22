@@ -4,6 +4,7 @@ import { checkConnection } from './lib/supabase'
 import { BrowserRouter } from 'react-router-dom'
 import { SessionProvider } from './security/SessionProvider'
 import { SecurityRoutes } from './security/SecurityRoutes'
+import { BrandMark } from './BrandMark'
 import { ThemeSelector } from './ThemeSelector'
 
 export default function App() {
@@ -20,7 +21,7 @@ export default function App() {
   }
   return (
     <main className="bootstrap">
-      <header className="app-header"><div><p className="eyebrow">Gestión académica</p><h1>PERÚ MAR</h1></div><ThemeSelector /></header>
+      <header className="app-header"><div className="app-brand"><BrandMark /><div><h1>PERÚ MAR</h1><p className="eyebrow">Gestión Académica</p></div></div><ThemeSelector /></header>
       {configurationError && <p role="alert">No se pudo iniciar la aplicación. Revisa la configuración de conexión.</p>}
       {!configurationError && <SessionProvider><BrowserRouter><SecurityRoutes /></BrowserRouter></SessionProvider>}
       <footer><details className="technical-details"><summary>Diagnóstico técnico</summary>

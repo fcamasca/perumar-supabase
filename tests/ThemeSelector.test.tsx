@@ -14,12 +14,13 @@ function contrast(a: string, b: string) {
 }
 it.each(Object.keys(palettes) as (keyof typeof palettes)[])('%s: measured text and control contrast', theme => {
   const p = palettes[theme]
-  for (const surface of [p.background, p.surface, p['surface-elevated']]) {
+  for (const surface of [p.background, p.surface, p['surface-elevated'], p['field-background'], p['brand-soft']]) {
     for (const token of ['text-primary', 'text-secondary', 'text-disabled', 'success', 'warning', 'error', 'info'] as const) expect(contrast(p[token], surface), token).toBeGreaterThanOrEqual(4.5)
     expect(contrast(p.border, surface)).toBeGreaterThanOrEqual(3)
     expect(contrast(p.focus, surface)).toBeGreaterThanOrEqual(3)
   }
   expect(contrast(p.primary, p['primary-contrast'])).toBeGreaterThanOrEqual(4.5)
+  expect(contrast(p['primary-hover'], p['primary-contrast'])).toBeGreaterThanOrEqual(4.5)
 })
 it('defaults to system, follows OS changes and persists choice', () => {
   let change: () => void = () => undefined

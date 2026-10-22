@@ -87,7 +87,7 @@ export function InlineForm({ children, onSubmit, ...props }: { children: ReactNo
 }
 
 export function StatusBadge({ value }: { value: string }) {
-  return <span className={`status-badge ${['Inactivo', 'ANULADO', 'DESIERTO'].includes(value) ? 'status-muted' : ''}`}><span aria-hidden="true">● </span>{value}</span>
+  return <span className={`status-badge ${['Inactivo', 'ANULADO', 'DESIERTO'].includes(value) ? 'status-muted' : ''}`}><span aria-hidden="true">● </span>{value.replaceAll('_', ' ')}</span>
 }
 export function EditorHeading({ children }: { children: ReactNode }) {
   const heading = useRef<HTMLHeadingElement>(null)

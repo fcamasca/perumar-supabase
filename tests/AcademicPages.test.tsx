@@ -86,6 +86,7 @@ it('Director chooses a catalog reason; OTRO requires detail', async () => {
   session(['DIRECTOR_ACADEMICO'])
   render(<Ciclos />)
   fireEvent.click(await screen.findByRole('button', { name: 'Consultar 2026-001-NAV' }))
+  expect(screen.getByLabelText('Nuevo estado').querySelector('option[value="EN_CURSO"]')).toHaveTextContent('EN CURSO')
   fireEvent.change(screen.getByLabelText('Nuevo estado'), { target: { value: 'DESIERTO' } })
   fireEvent.change(screen.getByLabelText('Motivo de Ciclo Desierto'), { target: { value: 'other' } })
   expect(screen.getByLabelText(/Detalle \/ motivo/)).toBeRequired()
