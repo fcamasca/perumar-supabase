@@ -1,5 +1,7 @@
 # H0 — Resultados técnicos y recorrido para revisión humana
 
+**Cierre posterior a este informe:** el usuario aprobó H0 y Gate 2 sobre el candidato `9523e2e0e1b1889dd12ed3902fa3fe23f7c52141` el 21/10/2026. Ver [acceptance.md](acceptance.md). Los estados pendientes y el recorrido de este informe se conservan como evidencia de lo presentado antes de la decisión; no se atribuye su ejecución humana a Codex.
+
 Fecha: 21/10/2026, America/Lima. Ejecutor técnico: Codex. Revisión humana de README/pantalla: **PENDIENTE**. Este archivo no es acceptance ni autoriza merge.
 
 ## Candidato y commits

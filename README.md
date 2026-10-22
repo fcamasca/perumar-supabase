@@ -4,11 +4,11 @@ Base documental de una nueva implementación candidata con React, TypeScript, Su
 
 ## Estado
 
-PLAN 1.0 y Spec H0 aprobados humanamente el 21/10/2026 (Gate 1). H0 está EN CONSTRUCCIÓN en `feature/h0-bootstrap`; su aceptación humana y merge siguen bloqueados hasta Gate 2. La pantalla y el diagnóstico son exclusivamente técnicos.
+PLAN 1.0 y Spec H0 aprobados humanamente el 21/10/2026 (Gate 1). H0 y Gate 2 aprobados humanamente el mismo día sobre `9523e2e0e1b1889dd12ed3902fa3fe23f7c52141`; [aceptación y autorización de integración a main](docs/specs/H0-bootstrap/acceptance.md). H1 no iniciado. La pantalla y el diagnóstico son exclusivamente técnicos.
 
 La jerarquía es: `docs/PLAN_MVP.md`, historias vigentes, Spec aprobado del hito e informes arquitectónicos como sustento técnico. El Spec aprobado se conserva sin cambios de requisitos/diseño/tareas. El registro posterior de aprobación está en el PLAN.
 
-El remoto autorizado `fcamasca/perumar-supabase` se verificó privado y está vinculado como origin. main conserva la base documental; Spec e implementación están publicados en sus ramas, sin merge. No existe proyecto Supabase alojado, autenticación funcional ni esquema de negocio.
+El remoto autorizado `fcamasca/perumar-supabase` se verificó privado y está vinculado como origin. main recibe el bootstrap aceptado mediante la integración autorizada de `feature/h0-bootstrap`; la rama Spec conserva la aprobación original. No existe proyecto Supabase alojado, autenticación funcional ni esquema de negocio.
 
 La evidencia histórica está en [implementation-log.md](docs/specs/H0-bootstrap/implementation-log.md) y las verificaciones finales en [technical-results.md](docs/specs/H0-bootstrap/technical-results.md). La [enmienda CHG-H0-001](docs/specs/H0-bootstrap/approved-isolation-amendment.md) fue aprobada humanamente: Windows puede usar aislamiento efectivo mediante la regla exacta creada administrativamente. No se afirma que Docker tenga binding exclusivo a loopback. **54322/TCP: NO VERIFICADO DE FORMA INDEPENDIENTE**; riesgo residual aceptado para H0 local sin datos reales.
 
@@ -84,7 +84,7 @@ Para parar: Ctrl+C en la terminal de Vite y `npm run supabase:stop`. Conserva vo
 
 Un workflow con permisos `contents: read` ejecuta instalación, lint, tipos, pruebas, integración local, build seguro y reset; siempre intenta detener el stack. Acciones fijadas por SHA y sin deployment ni secretos de producción. La rama `feature/h0-bootstrap-ci-negative` es un ensayo deliberado: su build debe fallar por configuración inválida. La rama candidata normal debe pasar. No usar el ensayo fallido como commit a aceptar. El dispatch opcional depende de la disponibilidad del workflow en la rama predeterminada; en H0 se usó la rama de ensayo sin modificar main.
 
-Los recorridos humanos exactos TEST-H0-012 y TEST-H0-014 y el formato para confirmar resultados están en [technical-results.md](docs/specs/H0-bootstrap/technical-results.md). Las pruebas humanas del firewall ya confirmadas no sustituyen esas pruebas del bootstrap completo. H0 permanece pendiente de aceptación humana independiente.
+Los recorridos humanos TEST-H0-012 y TEST-H0-014 están en [technical-results.md](docs/specs/H0-bootstrap/technical-results.md), que conserva la evidencia presentada antes del Gate 2. La aprobación humana global posterior del resultado se registra en [acceptance.md](docs/specs/H0-bootstrap/acceptance.md); Codex no se atribuye ejecución ni aprobación humana.
 
 ## Spec-Driven Development
 
