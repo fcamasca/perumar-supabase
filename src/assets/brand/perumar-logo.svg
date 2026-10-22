@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 510 164" role="img" aria-labelledby="pm-logo-title pm-logo-desc">
+  <title id="pm-logo-title">PERÚ MAR — Gestión Académica</title>
+  <desc id="pm-logo-desc">Isotipo marítimo institucional acompañado por el nombre PERÚ MAR y el descriptor Gestión Académica.</desc>
+  <!-- Anchor: entirely behind the wheel and its opaque medallion. -->
+  <g id="anchor" fill="none" stroke="var(--pm-ink, #173d50)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M80 29v116M34 105c5 18 22 32 46 42 24-10 41-24 46-42"/>
+    <path d="m34 101-3 17 15-9m80-8 3 17-15-9"/>
+  </g>
+  <!-- Institutional T and Peruvian red accents, above rather than inside the wheel. -->
+  <g id="institutional-t" stroke="var(--pm-ink, #173d50)" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M57 13h46v15H86v15H74V28H57Z" fill="var(--pm-paper, #fffaf0)"/>
+    <path d="M59 15h13v11H59Zm29 0h13v11H88Z" fill="var(--pm-red, #bb3544)" stroke="none"/>
+  </g>
+  <!-- Wheel: broad rim and restrained handles, without an internal cross. -->
+  <g id="wheel" stroke="var(--pm-wheel, #947044)" stroke-linecap="round">
+    <path d="M23 83h14m86 0h14M40 43l10 10m60 60 10 10M40 123l10-10m60-60 10-10M80 127v12" fill="none" stroke-width="9"/>
+    <circle cx="80" cy="83" r="44" fill="var(--pm-paper, #fffaf0)" stroke-width="9"/>
+  </g>
+  <!-- Neutral land remains north and east. Only the western sector suggests sea. -->
+  <g id="peru-and-mar-de-grau">
+    <path id="western-sea" d="M43 73c-2 15 5 29 17 36 9 6 20 7 30 3l-8-11-7-11-7-10-5-10Z" fill="var(--pm-sea, #39758a)"/>
+    <path id="sea-lines" d="M47 88h11m-6 9h10" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="2.5" stroke-linecap="round"/>
+    <path id="peru" d="m65 53 8 5 5-4 6 6 8 1 1 6 9 4-6 7 3 5-6 7 3 8-6 12-8-7-7-11-7-10-5-10 2-8-3-6Z" fill="var(--pm-ink, #173d50)" stroke="var(--pm-paper, #fffaf0)" stroke-width="2" stroke-linejoin="round"/>
+  </g>
+  <g id="wordmark" fill="var(--pm-ink, #173d50)" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+    <text x="180" y="83" font-size="43" font-weight="750" letter-spacing="1">PERÚ MAR</text>
+    <text x="182" y="111" font-size="18" font-weight="450" letter-spacing=".4">Gestión Académica</text>
+  </g>
+</svg>
