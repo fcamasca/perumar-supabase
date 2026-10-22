@@ -3,11 +3,12 @@
   <desc id="pm-logo-desc">Isotipo marítimo institucional acompañado por el nombre PERÚ MAR y el descriptor Gestión Académica.</desc>
   <!-- Anchor: entirely behind the wheel and its opaque medallion. -->
   <g id="anchor" fill="none" stroke="var(--pm-ink, #173d50)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path id="anchor-eye" d="M73 18v-4a7 7 0 0 1 14 0v4" stroke-width="3"/>
     <path d="M80 29v116M34 105c5 18 22 32 46 42 24-10 41-24 46-42"/>
     <path d="m34 101-3 17 15-9m80-8 3 17-15-9"/>
   </g>
   <!-- Institutional T and Peruvian red accents, above rather than inside the wheel. -->
-  <g id="institutional-t" transform="translate(80 43) scale(.88 .64) translate(-80 -43)" stroke="var(--pm-ink, #173d50)" stroke-width="2.5" stroke-linejoin="round">
+  <g id="institutional-t" transform="translate(80 35) scale(.88 .64) translate(-80 -43)" stroke="var(--pm-ink, #173d50)" stroke-width="2.5" stroke-linejoin="round">
     <path d="M57 13h46v15H86v15H74V28H57Z" fill="var(--pm-paper, #fffaf0)"/>
     <path d="M59 15h13v11H59Zm29 0h13v11H88Z" fill="var(--pm-red, #bb3544)" stroke="none"/>
   </g>
