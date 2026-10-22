@@ -23,7 +23,7 @@ Al cierre de H1, H2 aún no estaba iniciado; ese registro histórico no sustituy
 
 ### Estado vigente de H2 — Gate 1 del 22/10/2026
 
-El usuario aprobó humanamente Gate 1 sobre el Spec exacto `5c4f57de6618fb0568c6d8846ed04d9d75a89932`. Véase el [registro de aprobación](specs/H2-academic/gate-1.md). **SPEC APROBADO; CONSTRUCCIÓN AUTORIZADA, NO INICIADA.** Los cuatro documentos aprobados se conservan sin cambios. Gate 2, aceptación, merge a main y H3 siguen pendientes de sus decisiones correspondientes.
+El usuario aprobó humanamente Gate 1 sobre el Spec exacto `5c4f57de6618fb0568c6d8846ed04d9d75a89932`. Véase el [registro de aprobación](specs/H2-academic/gate-1.md). **SPEC APROBADO; H2 EN CONSTRUCCIÓN.** Los cuatro documentos aprobados se conservan sin cambios. Gate 2, aceptación, merge a main y H3 siguen pendientes de sus decisiones correspondientes.
 
 ### Seguimiento histórico de H0 — estado anterior al cierre
 
@@ -690,7 +690,7 @@ El PLAN vigente debe reflejar el estado real del proyecto.
 |---|---|
 | H0 Bootstrap | ACEPTADO — Gate 2 aprobado 21/10/2026 |
 | H1 Seguridad base | ACEPTADO / INTEGRADO — Gate 2 aprobado 22/10/2026 |
-| H2 Base académica | SPEC APROBADO — Gate 1 22/10/2026; construcción autorizada, no iniciada |
+| H2 Base académica | EN CONSTRUCCIÓN — Gate 1 aprobado 22/10/2026 |
 | H3 Alumno y Matrícula | NO INICIADO |
 | H4 Pagos | NO INICIADO |
 | H5 Ficha PDF | NO INICIADO |
@@ -706,6 +706,6 @@ El PLAN vigente debe reflejar el estado real del proyecto.
 
 Iniciar exclusivamente H2 — Base académica según el Spec aprobado humanamente `5c4f57de6618fb0568c6d8846ed04d9d75a89932` y su [Gate 1](specs/H2-academic/gate-1.md).
 
-Antes de construir, verificar TASK-H2-001 y crear la rama de implementación desde el commit exacto aprobado; incorporar después el registro documental, sin partir de main ni cambiar el Spec aprobado. Ejecutar las tareas en su orden y preparar evidencia técnica y recorridos humanos para el Gate 2 posterior. Esta actualización solo registra la aprobación: la construcción todavía no se ha iniciado.
+Antes de construir, verificar TASK-H2-001 y crear la rama de implementación desde el commit exacto aprobado; incorporar después el registro documental, sin partir de main ni cambiar el Spec aprobado. Ejecutar las tareas en su orden y preparar evidencia técnica y recorridos humanos para el Gate 2 posterior. La construcción se ejecuta en feature/h2-academic desde el commit aprobado exacto, con el registro Gate 1 incorporado después.
 
 No crear acceptance, integrar a main ni comenzar H3 sin las decisiones humanas posteriores correspondientes.
