@@ -4,11 +4,11 @@ Base documental de una nueva implementación candidata con React, TypeScript, Su
 
 ## Estado
 
-H0 está aceptado e integrado en main: [aceptación histórica](docs/specs/H0-bootstrap/acceptance.md). H1 está en construcción bajo [Gate 1 aprobado](docs/specs/H1-security/gate-1.md), con Spec exacto `3cf847451690d320f1fce39b2992f8a2e53be925`. Gate 2 de H1, acceptance, merge y H2 siguen bloqueados. [Evidencia y recorrido humano de H1](docs/specs/H1-security/implementation-log.md).
+H0 está aceptado e integrado en main: [aceptación histórica](docs/specs/H0-bootstrap/acceptance.md). H1 está aceptado e integrado en main tras Gate 2 humano del 22/10/2026 sobre el candidato `7c15f6c382c43b08b900f00a793fd590205ab618`: [aceptación de H1](docs/specs/H1-security/acceptance.md). H2 permanece NO INICIADO, sin Spec generado en este cierre. [Evidencia y recorrido humano de H1](docs/specs/H1-security/implementation-log.md).
 
 La jerarquía es: `docs/PLAN_MVP.md`, historias vigentes, Spec aprobado del hito e informes arquitectónicos como sustento técnico. El Spec aprobado se conserva sin cambios de requisitos/diseño/tareas. El registro posterior de aprobación está en el PLAN.
 
-El remoto autorizado `fcamasca/perumar-supabase` es privado y está vinculado como origin. main conserva H0 aceptado; H1 se revisa en `feature/h1-security`. No existe proyecto Supabase alojado, esquema de negocio ni hosting. H1 tiene únicamente Auth local y tres tablas de seguridad.
+El remoto autorizado `fcamasca/perumar-supabase` es privado y está vinculado como origin. main integra H0 y H1 aceptados; la rama `feature/h1-security` conserva la trazabilidad de construcción y cierre. No existe proyecto Supabase alojado, esquema de negocio ni hosting. H1 tiene únicamente Auth local y tres tablas de seguridad.
 
 La evidencia histórica está en [implementation-log.md](docs/specs/H0-bootstrap/implementation-log.md) y las verificaciones finales en [technical-results.md](docs/specs/H0-bootstrap/technical-results.md). La [enmienda CHG-H0-001](docs/specs/H0-bootstrap/approved-isolation-amendment.md) fue aprobada humanamente: Windows puede usar aislamiento efectivo mediante la regla exacta creada administrativamente. No se afirma que Docker tenga binding exclusivo a loopback. **54322/TCP: NO VERIFICADO DE FORMA INDEPENDIENTE**; riesgo residual aceptado para H0 local sin datos reales.
 
@@ -113,7 +113,7 @@ Para parar: Ctrl+C en la terminal de Vite y `npm run supabase:stop`. Conserva vo
 
 Un workflow con permisos `contents: read` ejecuta instalación, lint, tipos, pruebas, Auth/RLS real, build seguro, expiración y reset con repetición; siempre intenta detener el stack. Acciones fijadas por SHA y sin deployment ni secretos remotos de Supabase. El ensayo negativo temporal introduce ADMIN indebidamente al fixture O y debe fallar en la matriz de filas, limpiar identidades y detener el stack. Se elimina su rama después de conservar runs/commits; no es un candidato alternativo. No hay rama negativa permanente. El mecanismo de fallo de build H0 se retiró del workflow actual; la evidencia histórica permanece en sus documentos/runs.
 
-Los recorridos humanos TEST-H1-018 y TEST-H1-019 están preparados en [implementation-log.md](docs/specs/H1-security/implementation-log.md). La aprobación de H0 y el Gate 1 de H1 no los sustituyen. Codex no realiza ni aprueba esas pruebas humanas. H1 no tiene acceptance y no puede integrarse hasta Gate 2.
+Los recorridos humanos TEST-H1-018 y TEST-H1-019 se conservan en [implementation-log.md](docs/specs/H1-security/implementation-log.md). El usuario confirmó ambos como PASSED y aprobó Gate 2 el 22/10/2026: [registro de aceptación](docs/specs/H1-security/acceptance.md). Codex registra esa decisión; no se atribuye la ejecución ni aprobación humana. H2 permanece NO INICIADO.
 
 ## Spec-Driven Development
 

@@ -1,5 +1,7 @@
 # H1 — Evidencia técnica y preparación de revisión humana
 
+> **Cierre posterior — 22/10/2026:** el usuario confirmó TEST-H1-018 y TEST-H1-019 PASSED y aprobó Gate 2 sobre `7c15f6c382c43b08b900f00a793fd590205ab618`. Véase [acceptance.md](acceptance.md). TASK-H1-008 queda completada con esa confirmación y TASK-H1-009 se ejecuta como cierre documental e integración autorizada. Todos los estados pendientes, bloqueos, referencias a main previo y prohibiciones de cierre que aparecen debajo describen la entrega anterior a Gate 2; no son el estado vigente. Los recorridos se conservan como evidencia histórica. H2 no se inicia.
+
 Fecha de construcción: 21/10/2026 (America/Lima). Ejecutor técnico: Codex. **Pruebas humanas TEST-H1-018/019: PENDIENTES.** No es acceptance, no aprueba H1 ni autoriza merge.
 
 ## 1. Origen y commits
