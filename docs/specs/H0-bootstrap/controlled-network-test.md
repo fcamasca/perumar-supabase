@@ -25,8 +25,20 @@ Si falla alguna comprobación, detener el stack y eliminar exclusivamente la reg
 
 ```text
 CHG-H0-001: APPROVED FOR CONTROLLED TEST ONLY
-CONTROLLED TEST: BLOCKED — WINDOWS ADMINISTRATIVE PERMISSION
+CONTROLLED TEST: PARTIAL — EXTERNAL VALIDATION INCOMPLETE
 DEF-H0-001: CONFIRMED / OPEN
 H0 IMPLEMENTATION: BLOCKED (PARTIAL)
 ACCEPTANCE: BLOCKED
 ```
+
+## Continuación posterior: regla creada por la persona y primera ronda
+
+El usuario informó creación manual de la regla desde PowerShell administrativo. Codex comprobó que existe y está habilitada, con dirección Inbound, acción Block, todos los perfiles, TCP 54320–54324 y los rangos de direcciones exactos de CHG-H0-001. No modificó la regla. IP Wi-Fi comprobada: `192.168.1.236`.
+
+Se inició el stack con la CLI local y red existentes, sin modificar el guard ni configuración. Arranque: salida 0. Comprobaciones desde el host por `127.0.0.1`: API 54321 HTTP 404; Studio 54323 HTTP 307; correo 54324 HTTP 200; PostgreSQL 54322 conexión TCP correcta. Servicios saludables; consulta de solo lectura confirmó cero tablas base en public. No se imprimieron claves ni cuerpos de respuesta.
+
+El usuario aportó capturas desde el celular: 54321 ERR_CONNECTION_ABORTED, 54323 inicialmente en blanco y después ERR_CONNECTION_TIMED_OUT, 54324 inicialmente en blanco y después ERR_CONNECTION_ABORTED. Se atribuyen a la persona, no a Codex. Archivos originales conservados en los adjuntos de esta conversación; no se copiaron al repositorio.
+
+Tras recibir la primera observación, Codex detuvo el stack (`node scripts/local-supabase.mjs stop`, salida 0). Las capturas finales llegaron después de esa parada en el orden de mensajes. No está confirmada la relación temporal entre los errores capturados y la parada, por lo que no prueban por sí solos aislamiento con servicios activos. Las horas visibles del teléfono no sustituyen esa correlación.
+
+**Resultado:** indicios de inaccesibilidad, validación incompleta. Falta prueba TCP externa de 54322 y confirmar resultados externos mientras el stack está activo; después falta detener/recrear y repetir. IPv6 externo tampoco está validado. No se declara fallo del firewall ni éxito definitivo; no se revierte la regla por una evidencia inconclusa. Stack detenido, regla del ensayo conservada, guard intacto, TASK-H0-004 sin iniciar. DEF-H0-001 sigue confirmado/abierto; aceptación y merge bloqueados.
