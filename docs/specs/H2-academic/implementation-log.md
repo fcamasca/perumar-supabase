@@ -33,3 +33,13 @@ Defecto detectado: Carrera concurrente con inactivación de su única Materia po
 Validaciones finales añadidas: tipos JSON cerrados, fechas calendario ISO y rechazo de nuevas referencias inactivas conservando históricas. Aplicación local de los últimos validadores requirió UTF-8 explícito al usar psql desde Python Windows; primer intento de ese ajuste falló antes de aplicarlo por encoding, corregido y repetido. No se expusieron credenciales.
 
 La verificación anterior es smoke de TASK-003, no equivale a cobertura completa TEST-H2 ni TASK-004 terminado. Fixtures de negocio del smoke permanecen solo en base desechable hasta próximo reset; no datos reales. TASK-004 inicia después de este bloque. TASK-005 a 008 no iniciadas.
+
+## TASK-H2-004 — Suites reales
+
+Fixtures H2 asignan explícitamente roles reales a A/B (Admin Sistema), O (Coordinador), D (Director), M (Admin Sistema+Coordinador), N sin rol, F sin fila e I inactivo. Sin mapeo de cuentas H1. La regresión técnica conserva sus identificadores TEST-H1 para propiedades históricas, usando el catálogo evolucionado, no declara nueva aceptación H1.
+
+Primeras ejecuciones: test:security PASSED (14 escenarios, ocho identidades retiradas y roles restaurados); test:academic PASSED (10 grupos DB/API que cubren inventario/semillas, normalización, FK, mínimos, RLS, roles/metadata, exclusión inclusiva, versión, sigla, sincronización/cambio Carrera, estados, motivo OTRO y fallo real de auditoría con rollback). Trigger de fallo retirado en finally. Las pruebas de materias de ciclo mantienen filas/origen, no borran historia. El directorio global solo aparece al Admin Sistema; lectura referencial Coordinador no da mantenimiento.
+
+La suite académica se amplía además con solicitudes concurrentes de correlativo y paso real por 999/1000; requiere repetición antes de cierre de tarea. Las verificaciones de UI/temas aún no existen y no se atribuyen a estos resultados. TEST-018/019/020 humanos y Gate 2 siguen pendientes. El ensayo negativo de CI TASK-007 no ha sido ejecutado.
+
+Repetición ampliada test:academic: PASSED, 11 grupos técnicos. Incluye nuevas selecciones inactivas rechazadas/historia conservada, correlativos con peticiones simultáneas y creación real 999/1000, Lima vs UTC mediante expresión controlada sin cambiar reloj del host. Conflictos SERIALIZABLE 40001 permitidos, nunca duplicados ni retry automático. Lint de scripts: salida 0. Bloque TASK-004 preparado/verificado; comienzan TASK-005 temas y después TASK-006 UI. La regresión de expiración real y reset/CI completos se ejecutan en TASK-007. No se declara UI ni prueba humana realizada.

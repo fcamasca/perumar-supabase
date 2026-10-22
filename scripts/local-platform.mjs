@@ -50,18 +50,20 @@ export function securityInventory() {
 }
 
 export function assertSecurityInventory(info) {
-  const tables = ['app_roles', 'app_user_roles', 'app_users']
+  const tables = ['app_roles', 'app_user_roles', 'app_users', 'auditoria', 'capitania', 'carrera', 'carrera_materia', 'catalogo', 'catalogo_valor', 'ciclo', 'ciclo_materia', 'departamento', 'distrito', 'materia', 'provincia']
   if (JSON.stringify(info.tables?.map(t => t.name)) !== JSON.stringify(tables)
-    || info.tables.some(t => !t.rls || t.forced) || info.publicFunctions !== 0
+    || info.tables.some(t => !t.rls || t.forced) || info.publicFunctions !== 7
     || info.privateCreate || info.publicCreate || info.publicExecute !== 0 || info.authenticatedBypass || info.buckets !== 0
-    || JSON.stringify(info.migrations) !== JSON.stringify(['20261022041000'])) throw new Error('Inventario H1 inesperado.')
-  const expected = ['app_roles_active_read', 'app_roles_admin_read', 'app_user_roles_admin_read', 'app_user_roles_self_read', 'app_users_admin_read', 'app_users_self_read']
+    || JSON.stringify(info.migrations) !== JSON.stringify(['20261022041000', '20261022150000', '20261022160000'])) throw new Error('Inventario H2 inesperado.')
+  const expected = ['app_roles_active_read', 'app_roles_admin_read', 'app_user_roles_admin_read', 'app_user_roles_self_read', 'app_users_admin_read', 'app_users_self_read', ...Array(11).fill('academic_read'), 'audit_read'].sort()
   if (JSON.stringify(info.policies?.map(p => p.name)) !== JSON.stringify(expected)
-    || info.policies.some(p => p.command !== 'SELECT' || JSON.stringify(p.roles) !== '["authenticated"]' || p.check !== null)) throw new Error('Policies H1 inesperadas.')
-  if (info.grants?.length !== 6 || info.grants.some(g => g.select !== (g.role === 'authenticated') || g.insert || g.update || g.delete || g.truncate)) throw new Error('Grants H1 inesperados.')
-  const [helper] = info.helpers ?? []
-  if (info.helpers?.length !== 1 || helper.name !== 'has_active_role' || helper.owner !== 'postgres'
-    || !helper.definer || helper.volatility !== 's' || !helper.config?.includes('search_path=""')
-    || helper.args !== 'role_code text' || !helper.authenticated || helper.anon
-    || !helper.definition.includes('auth.uid()') || /\b(insert|update|delete|execute)\b/i.test(helper.definition)) throw new Error('Helper H1 inesperado.')
+    || info.policies.some(p => p.command !== 'SELECT' || JSON.stringify(p.roles) !== '["authenticated"]' || p.check !== null)) throw new Error('Policies H2 inesperadas.')
+  if (info.grants?.length !== 30 || info.grants.some(g => g.select !== (g.role === 'authenticated') || g.insert || g.update || g.delete || g.truncate)) throw new Error('Grants H2 inesperados.')
+  const names = ['academic_user', 'assert_fields', 'audit_change', 'authorize', 'carrera_minimum', 'functional_user', 'has_active_role', 'require_catalog', 'require_version', 'stamp_update', 'sync_missing']
+  if (JSON.stringify(info.helpers?.map(h => h.name)) !== JSON.stringify(names)
+    || info.helpers.some(h => h.owner !== 'postgres' || !h.config?.includes('search_path=""') || h.anon
+      || h.authenticated !== ['has_active_role', 'academic_user', 'functional_user'].includes(h.name))) throw new Error('Helpers H2 inesperados.')
+  const helper = info.helpers.find(h => h.name === 'has_active_role')
+  if (!helper.definer || helper.volatility !== 's' || !helper.definition.includes('auth.uid()')
+    || /\b(insert|update|delete|execute)\b/i.test(helper.definition)) throw new Error('Identidad de helper insegura.')
 }

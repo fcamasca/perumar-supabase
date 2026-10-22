@@ -22,9 +22,10 @@
     "supabase:env": "node scripts/check-local.mjs env",
     "test:local": "node scripts/check-local.mjs",
     "test:build-safety": "node scripts/check-build-safety.mjs",
-    "fixtures:human": "node scripts/h1-fixtures.mjs human",
+    "fixtures:human": "node scripts/h2-fixtures.mjs human",
     "test:security": "node scripts/test-security.mjs",
-    "test:expiry": "node scripts/test-expiry.mjs"
+    "test:expiry": "node scripts/test-expiry.mjs",
+    "test:academic": "node scripts/test-academic.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.118.0",

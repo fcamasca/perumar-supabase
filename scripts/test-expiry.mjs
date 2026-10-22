@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import assert from 'node:assert/strict'
 import { setTimeout as delay } from 'node:timers/promises'
-import { createFixtures, publicClient, checked } from './h1-fixtures.mjs'
+import { createFixtures, publicClient, checked } from './h2-fixtures.mjs'
 import { assertLocalProject, inspectDatabase, runLocal } from './local-platform.mjs'
 
 const configPath = 'supabase/config.toml'

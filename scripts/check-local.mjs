@@ -26,10 +26,10 @@ try {
     const { data, error } = await client.getOpenApiSpec()
     if (error || !data?.paths || Object.keys(data.paths).some(route => route !== '/')) throw new Error('Data API no está disponible o expone rutas de aplicación inesperadas.')
     assertSecurityInventory(securityInventory())
-    console.log('Integración local PASÓ: Data API pública sin rutas protegidas y catálogo H1 exacto con grants/RLS/helper.')
+    console.log('Integración local PASÓ: Data API pública sin rutas protegidas y inventario H2 exacto con grants/RLS/helpers/RPC.')
   }
 } catch (error) {
   // Never forward SDK/CLI errors or local configuration content.
-  console.error(error?.code === 'EEXIST' ? '.env.local ya existe; no se sobrescribe.' : 'Comprobación local fallida. Revisa stack, configuración pública y ausencia de dominio; valores omitidos.')
+  console.error(error?.code === 'EEXIST' ? '.env.local ya existe; no se sobrescribe.' : 'Comprobación local fallida. Revisa stack, configuración pública y inventario aprobado; valores omitidos.')
   process.exitCode = 1
 }
