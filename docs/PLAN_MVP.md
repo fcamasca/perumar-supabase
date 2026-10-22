@@ -19,7 +19,11 @@ H0 ACEPTADO humanamente y Gate 2 aprobado el 21/10/2026 sobre `9523e2e0e1b1889dd
 
 H1 — Seguridad base: **ACEPTADO / INTEGRADO**. El usuario aprobó Gate 2 sobre el candidato exacto `7c15f6c382c43b08b900f00a793fd590205ab618`, confirmó TEST-H1-018 y TEST-H1-019 satisfactorios y autorizó su integración a main conservando trazabilidad. La [aceptación](specs/H1-security/acceptance.md) registra Gate 1, evidencia técnica, pruebas humanas y riesgo residual aceptado. Este cierre es exclusivamente documental; no altera implementación ni los cuatro documentos del Spec aprobado.
 
-H2 — Base académica: **NO INICIADO**. No se genera su Spec ni se autoriza su construcción en este cierre.
+Al cierre de H1, H2 aún no estaba iniciado; ese registro histórico no sustituye la aprobación posterior de Gate 1 indicada a continuación.
+
+### Estado vigente de H2 — Gate 1 del 22/10/2026
+
+El usuario aprobó humanamente Gate 1 sobre el Spec exacto `5c4f57de6618fb0568c6d8846ed04d9d75a89932`. Véase el [registro de aprobación](specs/H2-academic/gate-1.md). **SPEC APROBADO; CONSTRUCCIÓN AUTORIZADA, NO INICIADA.** Los cuatro documentos aprobados se conservan sin cambios. Gate 2, aceptación, merge a main y H3 siguen pendientes de sus decisiones correspondientes.
 
 ### Seguimiento histórico de H0 — estado anterior al cierre
 
@@ -686,7 +690,7 @@ El PLAN vigente debe reflejar el estado real del proyecto.
 |---|---|
 | H0 Bootstrap | ACEPTADO — Gate 2 aprobado 21/10/2026 |
 | H1 Seguridad base | ACEPTADO / INTEGRADO — Gate 2 aprobado 22/10/2026 |
-| H2 Base académica | NO INICIADO |
+| H2 Base académica | SPEC APROBADO — Gate 1 22/10/2026; construcción autorizada, no iniciada |
 | H3 Alumno y Matrícula | NO INICIADO |
 | H4 Pagos | NO INICIADO |
 | H5 Ficha PDF | NO INICIADO |
@@ -700,13 +704,8 @@ El PLAN vigente debe reflejar el estado real del proyecto.
 
 # 14. Próximo paso
 
-El siguiente hito es **H2 — Base académica**, todavía **NO INICIADO**.
+Iniciar exclusivamente H2 — Base académica según el Spec aprobado humanamente `5c4f57de6618fb0568c6d8846ed04d9d75a89932` y su [Gate 1](specs/H2-academic/gate-1.md).
 
-En una ejecución posterior autorizada, generar exclusivamente su Spec:
+Antes de construir, verificar TASK-H2-001 y crear la rama de implementación desde el commit exacto aprobado; incorporar después el registro documental, sin partir de main ni cambiar el Spec aprobado. Ejecutar las tareas en su orden y preparar evidencia técnica y recorridos humanos para el Gate 2 posterior. Esta actualización solo registra la aprobación: la construcción todavía no se ha iniciado.
 
-- requirements.md
-- design.md
-- tasks.md
-- test-plan.md
-
-Después detenerse para revisión y aprobación humana. No iniciar construcción de H2 sin esa aprobación. El cierre actual de H1 no genera el Spec de H2 ni inicia trabajo de ese hito.
+No crear acceptance, integrar a main ni comenzar H3 sin las decisiones humanas posteriores correspondientes.
