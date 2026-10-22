@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor, cleanup } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, cleanup, within } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { AcademicOnly, Materias, Ciclos, Carreras, Auditoria, academicError, suggestSigla } from '../src/academic/AcademicPages'
 import { useSession } from '../src/security/SessionProvider'
@@ -67,7 +67,7 @@ it('stale save retains input, reports conflict, and never silently retries', asy
 it('discarding an unsaved cycle never calls a write RPC', async () => {
   session(['COORDINADOR_ACADEMICO'])
   render(<Ciclos />)
-  await screen.findByRole('button', { name: 'Consultar 2026-001-NAV' })
+  await screen.findByRole('button', { name: 'Editar 2026-001-NAV' })
   fireEvent.click(screen.getByRole('button', { name: 'Crear Ciclo' }))
   fireEvent.click(screen.getByRole('button', { name: 'Cancelar / descartar formulario' }))
   expect(rpc).not.toHaveBeenCalled()
@@ -85,7 +85,7 @@ it('terminal cycle is read-only without reopening or delete controls', async () 
 it('Director chooses a catalog reason; OTRO requires detail', async () => {
   session(['DIRECTOR_ACADEMICO'])
   render(<Ciclos />)
-  fireEvent.click(await screen.findByRole('button', { name: 'Consultar 2026-001-NAV' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Editar 2026-001-NAV' }))
   expect(screen.getByLabelText('Nuevo estado').querySelector('option[value="EN_CURSO"]')).toHaveTextContent('EN CURSO')
   fireEvent.change(screen.getByLabelText('Nuevo estado'), { target: { value: 'DESIERTO' } })
   fireEvent.change(screen.getByLabelText('Motivo de Ciclo Desierto'), { target: { value: 'other' } })
@@ -154,7 +154,7 @@ it('required and whitespace fields use inline feedback without native validation
   const form = screen.getByRole('button', { name: 'Guardar Materia' }).closest('form')!
   expect(form).toHaveAttribute('novalidate')
   fireEvent.submit(form)
-  expect(screen.getByRole('alert')).toHaveTextContent('Este campo es obligatorio')
+  expect(screen.getByRole('alert')).toHaveTextContent('Ingresa el código de la Materia')
   expect(screen.getByLabelText('Código de Materia')).toHaveAttribute('aria-invalid', 'true')
   expect(screen.getByLabelText('Código de Materia')).toHaveFocus()
   expect(rpc).not.toHaveBeenCalled()
@@ -180,7 +180,7 @@ it('suggests a simple editable sigla only for a new untouched career', async () 
   fireEvent.click(screen.getByRole('button', { name: 'Editar C1' }))
   fireEvent.change(screen.getByLabelText('Nombre de Carrera'), { target: { value: 'Cambio Nombre' } })
   expect(screen.getByLabelText('Sigla')).toHaveValue('NAV')
-  expect(suggestSigla('Navegación')).toBe('NAVEGACION')
+  expect(suggestSigla('Navegación')).toBe('NVG')
   expect(suggestSigla('Uno dos tres cuatro cinco seis siete ocho nueve diez once')).toMatch(/^[A-Z0-9]{2,10}$/)
 })
 it('career sigla invalid format is explained inline before any confirmation', async () => {
@@ -207,7 +207,7 @@ it('association additions warn about modifiable cycles before saving and may be 
 it('cycle subject references show identity, origin, retirement and own confirmation', async () => {
   tables.ciclo_materia = [{ id: 'relation', ciclo_id: 'cycle', materia_id: 'subject', activo: true, origen: 'HEREDADA', motivo_inactivacion: null }]
   session(['COORDINADOR_ACADEMICO']); render(<Ciclos />)
-  fireEvent.click(await screen.findByRole('button', { name: 'Consultar 2026-001-NAV' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Editar 2026-001-NAV' }))
   const retire = await screen.findByRole('button', { name: 'Retirar' })
   expect(retire.closest('tr')).toHaveTextContent('M1NAVEGACIÓNHEREDADAActiva')
   fireEvent.click(retire)
@@ -236,11 +236,11 @@ it('sigla changes explain terminal history in a cancellable own dialog', async (
 })
 it('OTRO missing detail is rejected inline before state confirmation', async () => {
   session(['DIRECTOR_ACADEMICO']); render(<Ciclos />)
-  fireEvent.click(await screen.findByRole('button', { name: 'Consultar 2026-001-NAV' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Editar 2026-001-NAV' }))
   fireEvent.change(screen.getByLabelText('Nuevo estado'), { target: { value: 'DESIERTO' } })
   fireEvent.change(screen.getByLabelText('Motivo de Ciclo Desierto'), { target: { value: 'other' } })
   fireEvent.submit(screen.getByRole('button', { name: 'Confirmar transición' }).closest('form')!)
-  expect(screen.getByRole('alert')).toHaveTextContent('Este campo es obligatorio')
+  expect(screen.getByRole('alert')).toHaveTextContent('Indica el detalle o motivo obligatorio')
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument(); expect(rpc).not.toHaveBeenCalled()
   fireEvent.change(screen.getByLabelText(/Detalle \/ motivo/), { target: { value: 'ENSAYO' } })
   fireEvent.submit(screen.getByRole('button', { name: 'Confirmar transición' }).closest('form')!)
@@ -250,7 +250,7 @@ it('OTRO missing detail is rejected inline before state confirmation', async () 
 it('explicit cycle subject reactivation confirms without requiring a reason', async () => {
   tables.ciclo_materia = [{ id: 'relation', ciclo_id: 'cycle', materia_id: 'subject', activo: false, origen: 'HEREDADA', motivo_inactivacion: 'RETIRO_MANUAL' }]
   session(['COORDINADOR_ACADEMICO']); render(<Ciclos />)
-  fireEvent.click(await screen.findByRole('button', { name: 'Consultar 2026-001-NAV' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Editar 2026-001-NAV' }))
   fireEvent.click(await screen.findByRole('button', { name: 'Reactivar explícitamente' }))
   expect(screen.getByRole('dialog')).toHaveAccessibleName('Reactivar Materia del Ciclo')
   expect(screen.queryByLabelText('Motivo obligatorio')).not.toBeInTheDocument()
@@ -260,7 +260,7 @@ it('explicit cycle subject reactivation confirms without requiring a reason', as
 it('changing cycle career explains preservation rules before sending a command', async () => {
   tables.carrera.push({ ...tables.carrera[0], id: 'second-career', codigo: 'C2', nombre: 'SEGUNDA CARRERA', sigla: 'SC' })
   session(['COORDINADOR_ACADEMICO']); render(<Ciclos />)
-  fireEvent.click(await screen.findByRole('button', { name: 'Consultar 2026-001-NAV' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Editar 2026-001-NAV' }))
   await waitFor(() => expect(screen.getByLabelText('Distrito')).toHaveValue('dist'))
   fireEvent.change(screen.getByLabelText('Carrera'), { target: { value: 'second-career' } })
   fireEvent.submit(screen.getByRole('button', { name: 'Guardar Ciclo' }).closest('form')!)
@@ -329,4 +329,114 @@ it('confirmed operation returns focus when its opener is enabled again after the
   await waitFor(() => expect(opener).toBeDisabled())
   await act(async () => finish({ error: null }))
   expect(opener).not.toBeDisabled(); expect(opener).toHaveFocus()
+})
+
+
+it.each(['DIRECTOR_ACADEMICO', 'COORDINADOR_ACADEMICO'])('modifiable Cycle action describes editing for %s', async role => {
+  session([role])
+  tables.ciclo.push({ ...ciclo, id: 'running', codigo_ciclo: '2026-002-NAV', estado_codigo: 'EN_CURSO' })
+  render(<Ciclos />)
+  expect(await screen.findByRole('button', { name: 'Editar 2026-001-NAV' })).toHaveTextContent('Editar')
+  expect(screen.getByRole('button', { name: 'Editar 2026-002-NAV' })).toHaveTextContent('Editar')
+  fireEvent.click(screen.getByRole('button', { name: 'Editar 2026-002-NAV' }))
+  expect(await screen.findByRole('button', { name: 'Guardar Ciclo' })).toBeVisible()
+  expect(rpc).not.toHaveBeenCalled()
+})
+it.each(['CERRADO', 'DESIERTO', 'ANULADO'])('terminal %s remains consultation only', async estado => {
+  session(['DIRECTOR_ACADEMICO']); tables.ciclo[0].estado_codigo = estado
+  render(<Ciclos />)
+  const action = await screen.findByRole('button', { name: 'Consultar 2026-001-NAV' })
+  expect(action).toHaveTextContent('Consultar'); fireEvent.click(action)
+  expect(await screen.findByText(/Solo consulta. Este Ciclo/)).toBeVisible()
+  expect(screen.queryByRole('button', { name: 'Guardar Ciclo' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Confirmar transición' })).not.toBeInTheDocument()
+  expect(rpc).not.toHaveBeenCalled()
+})
+it('Cycle presentation does not offer editing without a modifying role; route guard remains separate', async () => {
+  session(['ADMIN_SISTEMA']); render(<Ciclos />)
+  fireEvent.click(await screen.findByRole('button', { name: 'Consultar 2026-001-NAV' }))
+  expect(await screen.findByText('Solo consulta. Tu acceso no permite modificar este Ciclo.')).toBeVisible()
+  expect(screen.queryByRole('button', { name: 'Crear Ciclo' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Guardar Ciclo' })).not.toBeInTheDocument()
+  expect(rpc).not.toHaveBeenCalled()
+})
+it('Career subjects are structured and absence of additional options is explicit', async () => {
+  session(['COORDINADOR_ACADEMICO']); render(<Ciclos />)
+  fireEvent.click(await screen.findByRole('button', { name: 'Editar 2026-001-NAV' }))
+  const source = await screen.findByRole('table', { name: 'Materias activas de la Carrera seleccionada' })
+  expect(within(source).getByRole('cell', { name: 'M1' })).toBeVisible()
+  expect(within(source).getByRole('cell', { name: 'NAVEGACIÓN' })).toBeVisible()
+  expect(screen.getByText('No hay materias activas adicionales disponibles para agregar a este Ciclo.')).toBeVisible()
+  expect(screen.getByRole('table', { name: 'Materias actuales e historial de retiros' })).toBeVisible()
+  expect(screen.queryByText(/Materias que se incorporarán/)).not.toBeInTheDocument()
+})
+it('additional subjects keep code and name, excluding inherited, related and inactive options', async () => {
+  tables.materia.push(
+    { id: 'extra', codigo: 'M2', nombre: 'SEGURIDAD', active: true, updated_at: version },
+    { id: 'inactive', codigo: 'M3', nombre: 'INACTIVA', active: false, updated_at: version },
+    { id: 'retired', codigo: 'M4', nombre: 'RETIRADA', active: true, updated_at: version },
+  )
+  tables.ciclo_materia.push({ id: 'relation', ciclo_id: 'cycle', materia_id: 'retired', activo: false, origen: 'ADICIONAL', motivo_inactivacion: 'RETIRO_MANUAL' })
+  session(['COORDINADOR_ACADEMICO']); render(<Ciclos />)
+  fireEvent.click(await screen.findByRole('button', { name: 'Editar 2026-001-NAV' }))
+  await screen.findByRole('table', { name: 'Materias activas de la Carrera seleccionada' })
+  const options = screen.getByRole('group', { name: 'Materias adicionales disponibles' })
+  expect(within(options).getByRole('checkbox', { name: 'M2 — SEGURIDAD' })).toBeVisible()
+  expect(within(options).getAllByRole('checkbox')).toHaveLength(1)
+  expect(screen.getByRole('table', { name: 'Materias actuales e historial de retiros' })).toHaveTextContent('Retirada manualmente')
+  expect(screen.queryByText(/No hay materias activas adicionales disponibles/)).not.toBeInTheDocument()
+})
+it('missing Modalidad has an adjacent associated message, focus and scrolling, then clears without stealing focus', async () => {
+  session(['DIRECTOR_ACADEMICO']); render(<Carreras />)
+  fireEvent.click(await screen.findByRole('button', { name: 'Editar C1' }))
+  await waitFor(() => expect(screen.getByLabelText(/M1 — NAVEGACIÓN/)).toBeChecked())
+  const field = screen.getByLabelText('Modalidad'), scroll = vi.fn()
+  field.scrollIntoView = scroll
+  fireEvent.change(field, { target: { value: '' } })
+  fireEvent.submit(screen.getByRole('button', { name: 'Guardar Carrera y Materias' }).closest('form')!)
+  expect(field).toHaveFocus(); expect(field).toHaveAttribute('aria-invalid', 'true')
+  expect(scroll).toHaveBeenCalledWith({ block: 'center', behavior: 'auto' })
+  const error = document.getElementById(field.getAttribute('aria-describedby')!)!
+  expect(error).toHaveTextContent('Error: Selecciona una modalidad.')
+  expect(field.closest('label')).toContainElement(error)
+  screen.getByLabelText('Nombre de Carrera').focus()
+  fireEvent.change(field, { target: { value: 'mode' } })
+  expect(field).not.toHaveAttribute('aria-invalid'); expect(error).not.toBeInTheDocument()
+  expect(screen.getByLabelText('Nombre de Carrera')).toHaveFocus()
+  expect(scroll).toHaveBeenCalledTimes(1); expect(rpc).not.toHaveBeenCalled()
+})
+it('Materia required messages stay beside each field and focus the first missing value', async () => {
+  session(['DIRECTOR_ACADEMICO']); render(<Materias />)
+  fireEvent.click(screen.getByRole('button', { name: 'Crear Materia' }))
+  fireEvent.submit(screen.getByRole('button', { name: 'Guardar Materia' }).closest('form')!)
+  for (const label of ['Código de Materia', 'Nombre de Materia']) {
+    const field = screen.getByLabelText(label)
+    const error = document.getElementById(field.getAttribute('aria-describedby')!)!
+    expect(error).toHaveTextContent(label.startsWith('Código') ? 'Ingresa el código de la Materia.' : 'Ingresa el nombre de la Materia.')
+    expect(field.closest('label')).toContainElement(error)
+  }
+  expect(screen.getByLabelText('Código de Materia')).toHaveFocus()
+  expect(rpc).not.toHaveBeenCalled()
+})
+it('missing Cycle location uses the common inline validation and preserves other input', async () => {
+  session(['COORDINADOR_ACADEMICO']); render(<Ciclos />)
+  fireEvent.click(await screen.findByRole('button', { name: 'Editar 2026-001-NAV' }))
+  await screen.findByRole('table', { name: 'Materias activas de la Carrera seleccionada' })
+  const field = screen.getByLabelText('Capitanía'), scroll = vi.fn(); field.scrollIntoView = scroll
+  fireEvent.change(field, { target: { value: '' } })
+  fireEvent.submit(screen.getByRole('button', { name: 'Guardar Ciclo' }).closest('form')!)
+  expect(field).toHaveFocus(); expect(scroll).toHaveBeenCalledTimes(1)
+  expect(document.getElementById(field.getAttribute('aria-describedby')!)).toHaveTextContent('Selecciona una capitanía.')
+  expect(screen.getByLabelText('Fecha de inicio')).toHaveValue('2037-01-01')
+  expect(rpc).not.toHaveBeenCalled()
+})
+it.each([
+  ['FORMACIÓN NÁUTICA', 'FN'], ['FORMACIÓN ALTERNA H2', 'FAH2'], ['BUZO', 'BZ'],
+  ['NAVEGACIÓN', 'NVG'], ['ESCUELA DE LA MARINA', 'EM'], ['A', 'AA'], ['', ''],
+])('suggests a short deterministic abbreviation for %s', (name, expected) => {
+  expect(suggestSigla(name)).toBe(expected)
+})
+it('sigla suggestion respects the maximum and never contains accents or punctuation', () => {
+  const suggestion = suggestSigla('ÁGUA BOTE COSTA DELTA ESTE FARO GRAU HELICE ISLA JUNCO KAYAK LIMA')
+  expect(suggestion).toMatch(/^[A-Z0-9]{2,10}$/)
 })

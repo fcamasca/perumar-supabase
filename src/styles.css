@@ -119,6 +119,7 @@ td button.sensitive:hover:not(:disabled) { padding:calc(.4rem - 1px) calc(.6rem 
 .validation-errors p { margin-bottom:.4rem; }
 .validation-errors ul { padding-left:1.2rem; margin:0; }
 [aria-invalid=true] { border:2px solid var(--error); }
+.field-error { display:block; color:var(--error); font-size:.8rem; font-weight:500; line-height:1.5; }
 /* Login: a composed entry surface rather than a second bordered form. */
 .login-panel { width:min(100%,28.5rem); margin:clamp(1.5rem,5vh,3rem) auto 3rem; padding:2rem; background:var(--surface-elevated); border:1px solid var(--border-soft); border-radius:1.25rem; box-shadow:var(--shadow); }
 .login-identity { display:grid; grid-template-columns:3rem auto; align-items:center; justify-content:center; gap:.1rem .8rem; margin-bottom:1.75rem; }

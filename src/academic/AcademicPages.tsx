@@ -31,8 +31,19 @@ export function academicError(error: { code?: string; message?: string } | null,
 const academicLabel = (row?: { codigo: string; nombre: string }) => row ? `${row.codigo} — ${row.nombre}` : 'Referencia no disponible'
 export function suggestSigla(name: string) {
   const words = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().match(/[A-Z0-9]+/g) ?? []
-  return (words.length > 1 ? words.map(word => word[0]).join('') : words[0] ?? '').slice(0, 10)
+  if (!words.length) return ''
+  const significant = words.filter(word => !['DE', 'DEL', 'LA', 'LAS', 'EL', 'LOS', 'Y', 'EN', 'PARA'].includes(word))
+  const tokens = significant.length ? significant : words
+  let suggestion: string
+  if (tokens.length > 1) suggestion = tokens.map(word => /[0-9]/.test(word) ? word : word[0]).join('')
+  else {
+    const word = tokens[0]
+    suggestion = word[0] + word.slice(1).replace(/[AEIOU]/g, '').slice(0, 2)
+    if (suggestion.length < 2) suggestion = word.slice(0, 2)
+  }
+  return (suggestion.length < 2 ? suggestion + suggestion : suggestion).slice(0, 10)
 }
+
 function Notice({ message }: { message: string }) { return message ? <p id="academic-message" role={/correctamente|^Ciclo declarado/.test(message) ? "status" : "alert"} className={/correctamente|^Ciclo declarado/.test(message) ? "success" : undefined}>{message}</p> : null }
 export function AcademicOnly({ children }: { children: ReactNode }) {
   const { state } = useSession()
@@ -193,7 +204,10 @@ export function Ciclos() {
   const [search, setSearch] = useState(''), [estado, setEstado] = useState(''), [message, setMessage] = useState(''), [busy, setBusy] = useState(false), [revision, setRevision] = useState(0)
   const { ask, dialog } = useConfirmation(busy)
   const [destino, setDestino] = useState(''), [motivoId, setMotivoId] = useState(''), [detalle, setDetalle] = useState('')
-  const editable = !selected || ['PROGRAMADO', 'EN_CURSO'].includes(selected.estado_codigo)
+  const canModify = state.roles?.some(role => role === 'DIRECTOR_ACADEMICO' || role === 'COORDINADOR_ACADEMICO') ?? false
+  const canEditCycle = (row: Ciclo) => canModify && ['PROGRAMADO', 'EN_CURSO'].includes(row.estado_codigo)
+  const editable = canModify && (!selected || canEditCycle(selected))
+  const [inheritedStatus, setInheritedStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   useEffect(() => {
     let current = true
     setLoading(true); setLoadError(false)
@@ -214,8 +228,8 @@ export function Ciclos() {
     return () => { current = false }
   }, [client, draft.provincia_id])
   useEffect(() => {
-    let current = true; setInherited([])
-    if (draft.carrera_id) void client.from('carrera_materia').select('materia_id').eq('carrera_id', draft.carrera_id).then(r => { if (current && !r.error) setInherited(r.data.map(x => x.materia_id)) })
+    let current = true; setInherited([]); setInheritedStatus(draft.carrera_id ? 'loading' : 'idle')
+    if (draft.carrera_id) void client.from('carrera_materia').select('materia_id').eq('carrera_id', draft.carrera_id).then(r => { if (current) { setInheritedStatus(r.error ? 'error' : 'ready'); if (!r.error) setInherited(r.data.map(x => x.materia_id)) } })
     return () => { current = false }
   }, [client, draft.carrera_id, revision])
   async function edit(row: Ciclo | null) {
@@ -247,11 +261,11 @@ export function Ciclos() {
   }
   const relationsTable = selected && <div className="cycle-subjects"><h3>Materias del Ciclo</h3>{loading && <p role="status">Cargando ciclos…</p>}<div className="table-scroll"><table><caption>Materias actuales e historial de retiros</caption><thead><tr><th>Código</th><th>Nombre</th><th>Origen</th><th>Estado</th><th>Acción</th></tr></thead><tbody>{relations.length === 0 && <tr><td colSpan={5}>No se encontraron materias para este Ciclo.</td></tr>}{relations.map(r => { const m = materias.find(m => m.id === r.materia_id); return <tr key={r.id}><td>{m?.codigo ?? '—'}</td><td>{m?.nombre ?? 'Referencia no disponible'}</td><td>{r.origen}</td><td>{r.activo ? 'Activa' : r.motivo_inactivacion === 'CAMBIO_CARRERA' ? 'Retirada por cambio de Carrera' : 'Retirada manualmente'}</td><td>{editable ? <button type="button" className={r.activo ? 'sensitive' : 'secondary'} disabled={busy} onClick={() => void relation(r)}>{r.activo ? 'Retirar' : 'Reactivar explícitamente'}</button> : 'Solo consulta'}</td></tr> })}</tbody></table></div></div>
   const referenceOptions = (options: Ref[], value: string) => options.filter(x => x.active || x.id === value).map(x => <option key={x.id} value={x.id}>{'codigo' in x ? academicLabel(x as Carrera) : x.nombre}{!x.active ? ' (inactivo histórico)' : ''}</option>)
-  return <section>{dialog}<div className="page-heading"><div><h2>Ciclos</h2><p>Consulta o prepara un Ciclo: fechas, ubicación y materias.</p></div><button data-create="Ciclos" disabled={busy} onClick={() => void edit(null)}>Crear Ciclo</button></div><div className="filters" role="group" aria-label="Filtrar Ciclos"><label>Buscar código de Ciclo<input value={search} onChange={e => setSearch(e.target.value)} /></label>
+  return <section>{dialog}<div className="page-heading"><div><h2>Ciclos</h2><p>Consulta o prepara un Ciclo: fechas, ubicación y materias.</p></div>{canModify && <button data-create="Ciclos" disabled={busy} onClick={() => void edit(null)}>Crear Ciclo</button>}</div><div className="filters" role="group" aria-label="Filtrar Ciclos"><label>Buscar código de Ciclo<input value={search} onChange={e => setSearch(e.target.value)} /></label>
     <label>Estado del listado<select value={estado} onChange={e => setEstado(e.target.value)}><option value="">Todos</option>{['PROGRAMADO', 'EN_CURSO', 'CERRADO', 'DESIERTO', 'ANULADO'].map(x => <option key={x} value={x}>{x.replaceAll('_', ' ')}</option>)}</select></label>
     <button disabled={busy} onClick={() => { void edit(null); setRevision(x => x + 1) ; setOpen(false) }}>Recargar información</button></div><Notice message={message} /><p role="status">{busy ? 'Guardando…' : ''}</p>
-    <div className="table-scroll"><table><caption>Ciclos — hasta 100 resultados por búsqueda</caption><thead><tr><th>Código</th><th>Carrera</th><th>Capitanía</th><th>Inicio</th><th>Fin</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{!loading && !loadError && rows.length === 0 && <tr><td colSpan={7}><div className="empty-state"><p>{search || estado ? 'No hay Ciclos que coincidan con los filtros.' : 'No hay Ciclos registrados.'}</p>{!search && !estado && <button onClick={() => void edit(null)}>Crear primer Ciclo</button>}</div></td></tr>}{rows.map(row => <tr className={open && selected?.id === row.id ? 'selected-row' : undefined} key={row.id}><td><strong>{row.codigo_ciclo}</strong></td><td>{academicLabel(carreras.find(c => c.id === row.carrera_id))}</td><td>{capitanias.find(c => c.id === row.capitania_id)?.nombre ?? '—'}</td><td>{row.fecha_inicio}</td><td>{row.fecha_fin}</td><td><StatusBadge value={row.estado_codigo} /></td><td><button disabled={busy} aria-label={`Consultar ${row.codigo_ciclo}`} onClick={() => void edit(row)}>Consultar</button></td></tr>)}</tbody></table></div>
-    {open && selected && !editable && <article className="record-detail"><EditorHeading>{selected.codigo_ciclo}</EditorHeading><StatusBadge value={selected.estado_codigo} /><p>Solo consulta. Este Ciclo ya no admite cambios y no puede reabrirse.</p><dl className="record-summary"><dt>Carrera</dt><dd>{academicLabel(carreras.find(c => c.id === selected.carrera_id))}</dd><dt>Capitanía</dt><dd>{capitanias.find(c => c.id === selected.capitania_id)?.nombre}</dd><dt>Fechas</dt><dd>{selected.fecha_inicio} — {selected.fecha_fin}</dd><dt>Promoción</dt><dd>{selected.nombre_promocion || 'Sin promoción indicada'}</dd><dt>Ubicación</dt><dd>{departamentos.find(x => x.id === selected.departamento_id)?.nombre} / {provincias.find(x => x.id === selected.provincia_id)?.nombre} / {distritos.find(x => x.id === selected.distrito_id)?.nombre}</dd></dl>{relationsTable}<button className="secondary" disabled={busy} onClick={() => { void edit(null); setOpen(false) }}>Volver al listado</button></article>}
+    <div className="table-scroll"><table><caption>Ciclos — hasta 100 resultados por búsqueda</caption><thead><tr><th>Código</th><th>Carrera</th><th>Capitanía</th><th>Inicio</th><th>Fin</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{!loading && !loadError && rows.length === 0 && <tr><td colSpan={7}><div className="empty-state"><p>{search || estado ? 'No hay Ciclos que coincidan con los filtros.' : 'No hay Ciclos registrados.'}</p>{canModify && !search && !estado && <button onClick={() => void edit(null)}>Crear primer Ciclo</button>}</div></td></tr>}{rows.map(row => <tr className={open && selected?.id === row.id ? 'selected-row' : undefined} key={row.id}><td><strong>{row.codigo_ciclo}</strong></td><td>{academicLabel(carreras.find(c => c.id === row.carrera_id))}</td><td>{capitanias.find(c => c.id === row.capitania_id)?.nombre ?? '—'}</td><td>{row.fecha_inicio}</td><td>{row.fecha_fin}</td><td><StatusBadge value={row.estado_codigo} /></td><td><button disabled={busy} aria-label={`${canEditCycle(row) ? 'Editar' : 'Consultar'} ${row.codigo_ciclo}`} onClick={() => void edit(row)}>{canEditCycle(row) ? 'Editar' : 'Consultar'}</button></td></tr>)}</tbody></table></div>
+    {open && selected && !editable && <article className="record-detail"><EditorHeading>{selected.codigo_ciclo}</EditorHeading><StatusBadge value={selected.estado_codigo} /><p>{['PROGRAMADO', 'EN_CURSO'].includes(selected.estado_codigo) ? 'Solo consulta. Tu acceso no permite modificar este Ciclo.' : 'Solo consulta. Este Ciclo ya no admite cambios y no puede reabrirse.'}</p><dl className="record-summary"><dt>Carrera</dt><dd>{academicLabel(carreras.find(c => c.id === selected.carrera_id))}</dd><dt>Capitanía</dt><dd>{capitanias.find(c => c.id === selected.capitania_id)?.nombre}</dd><dt>Fechas</dt><dd>{selected.fecha_inicio} — {selected.fecha_fin}</dd><dt>Promoción</dt><dd>{selected.nombre_promocion || 'Sin promoción indicada'}</dd><dt>Ubicación</dt><dd>{departamentos.find(x => x.id === selected.departamento_id)?.nombre} / {provincias.find(x => x.id === selected.provincia_id)?.nombre} / {distritos.find(x => x.id === selected.distrito_id)?.nombre}</dd></dl>{relationsTable}<button className="secondary" disabled={busy} onClick={() => { void edit(null); setOpen(false) }}>Volver al listado</button></article>}
     {open && editable && <InlineForm key={selected?.id ?? 'new'} aria-describedby={message ? "academic-message" : undefined} onSubmit={event => void save(event)}><EditorHeading>{selected ? selected.codigo_ciclo : 'Nuevo Ciclo'}</EditorHeading>{selected && <p><StatusBadge value={selected.estado_codigo} /> · Editando Ciclo</p>}<p className="help-text">Los campos marcados con * son obligatorios.</p>
       <fieldset disabled={!editable || busy}><legend>Datos del Ciclo</legend><fieldset className="field-grid"><legend>Datos principales</legend>
         <label><span className="field-label">Carrera<span aria-hidden="true"> *</span></span><select aria-label="Carrera" required value={draft.carrera_id} onChange={e => setDraft({ ...draft, carrera_id: e.target.value })}><option value="">Seleccionar</option>{referenceOptions(carreras, draft.carrera_id)}</select></label>
@@ -262,8 +276,18 @@ export function Ciclos() {
         <label><span className="field-label">Provincia<span aria-hidden="true"> *</span></span><select aria-label="Provincia" required value={draft.provincia_id} onChange={e => setDraft({ ...draft, provincia_id: e.target.value, distrito_id: '' })}><option value="">Seleccionar</option>{referenceOptions(provincias.filter(x => x.departamento_id === draft.departamento_id), draft.provincia_id)}</select></label>
         <label><span className="field-label">Distrito<span aria-hidden="true"> *</span></span><select aria-label="Distrito" required value={draft.distrito_id} onChange={e => setDraft({ ...draft, distrito_id: e.target.value })}><option value="">Seleccionar</option>{referenceOptions(distritos, draft.distrito_id)}</select></label>
         <label><span className="field-label">Capitanía<span aria-hidden="true"> *</span></span><select aria-label="Capitanía" required value={draft.capitania_id} onChange={e => setDraft({ ...draft, capitania_id: e.target.value })}><option value="">Seleccionar</option>{referenceOptions(capitanias, draft.capitania_id)}</select></label>
-        </fieldset><fieldset><legend>Materias de la Carrera</legend><p>Materias que se incorporarán si aún no están asociadas: {materias.filter(x => x.active && inherited.includes(x.id)).map(academicLabel).join(', ') || 'Selecciona una Carrera con Materias activas.'}</p></fieldset>
-        <fieldset><legend>Añadir Materias activas adicionales</legend>{materias.filter(m => m.active && !inherited.includes(m.id) && !relations.some(r => r.materia_id === m.id)).map(m => <label key={m.id}><input type="checkbox" checked={additional.includes(m.id)} onChange={e => setAdditional(ids => e.target.checked ? [...ids, m.id] : ids.filter(id => id !== m.id))} />{academicLabel(m)}</label>)}</fieldset>
+        </fieldset><fieldset><legend>Materias de la Carrera</legend>
+          {inheritedStatus === 'idle' && <p>Selecciona una Carrera para ver sus Materias.</p>}
+          {inheritedStatus === 'loading' && <p role="status">Cargando Materias de la Carrera…</p>}
+          {inheritedStatus === 'error' && <p role="alert">No se pudieron consultar las Materias de la Carrera. Recarga la información.</p>}
+          {inheritedStatus === 'ready' && <div className="table-scroll"><table><caption>Materias activas de la Carrera seleccionada</caption><thead><tr><th>Código</th><th>Nombre</th></tr></thead><tbody>{materias.filter(m => m.active && inherited.includes(m.id)).map(m => <tr key={m.id}><td>{m.codigo}</td><td>{m.nombre}</td></tr>)}{!materias.some(m => m.active && inherited.includes(m.id)) && <tr><td colSpan={2}>Esta Carrera no tiene Materias activas disponibles.</td></tr>}</tbody></table></div>}
+        </fieldset>
+        <fieldset><legend>Materias adicionales disponibles</legend>
+          {loading || inheritedStatus === 'loading' ? <p role="status">Cargando Materias adicionales…</p> : inheritedStatus === 'error' ? <p>No se pueden determinar las Materias adicionales hasta cargar la Carrera.</p> : <>
+            {materias.filter(m => m.active && !inherited.includes(m.id) && !relations.some(r => r.materia_id === m.id)).map(m => <label key={m.id}><input type="checkbox" checked={additional.includes(m.id)} onChange={e => setAdditional(ids => e.target.checked ? [...ids, m.id] : ids.filter(id => id !== m.id))} />{academicLabel(m)}</label>)}
+            {!materias.some(m => m.active && !inherited.includes(m.id) && !relations.some(r => r.materia_id === m.id)) && <p>No hay materias activas adicionales disponibles para agregar a este Ciclo.</p>}
+          </>}
+        </fieldset>
     {relationsTable}
       </fieldset><div className="form-actions"><button disabled={busy}>Guardar Ciclo</button><button className="secondary" disabled={busy} type="button" onClick={() => { void edit(null); setOpen(false) }}>{selected ? 'Volver al listado' : 'Cancelar / descartar formulario'}</button></div>
     </InlineForm>}
