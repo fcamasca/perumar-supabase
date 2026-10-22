@@ -1,0 +1,32 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+*credentials*
+*secrets*
+*tokens*
+!*.example
+.npmrc
+
+# Local tools, generated output and temporary files
+node_modules/
+dist/
+coverage/
+supabase/.temp/
+supabase/.branches/
+.supabase/
+*.log
+*.tmp
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
