@@ -1,6 +1,8 @@
 # H2 — Evidencia de construcción
 
-Estado: EN CONSTRUCCIÓN. No acceptance ni Gate 2. Pruebas humanas 018/019/020 pendientes.
+Estado vigente: TASK-H2-001 a 008 COMPLETADAS; implementación y pruebas técnicas listas para revisión humana. TEST-H2-018/019/020 pendientes; TASK-009 requiere persona y TASK-010 bloqueada por Gate 2. No acceptance ni merge.
+
+Los bloques siguientes conservan estados históricos de cada etapa; sus pendientes intermedios no son el estado vigente.
 
 ## TASK-H2-001 — Completada
 
@@ -79,3 +81,11 @@ Ensayo negativo bb180ee, run 39791112224: fallo esperado TEST-H1-007 por «Coord
 Revisión de cobertura añadió casos explícitos de modificación exitosa y conflicto Materia, límites válidos 30/150/500 y sigla 2/10, sigla duplicada, edición Coordinador EN_CURSO, PROGRAMADO→DESIERTO/ANULADO y prohibición de edición/reapertura/DELETE de todos los terminales. Suite académica ampliada PASSED (11 grupos) con Auth/RPC reales. UI bloquea entrada/recarga/descarte durante guardado para no perder ediciones ni confundir Cancelar con rollback de solicitud en curso. Regresión UI añadida; suite completa: 89 pruebas PASSED, typecheck y lint salida 0. Se repite CI del nuevo commit antes de declarar conformidad final.
 
 Comprobación adicional de navegador integrada no iniciada: herramienta falló con «failed to write kernel assets» antes de abrir página. No se atribuyen resultados de navegador/teclado/SO ni pruebas humanas a Codex. Vite de esa comprobación fue detenido, sin cambiar entorno de automatización/host. TEST-018/019/020 siguen pendientes de persona.
+
+## TASK-H2-007 — Completada
+
+CI fuente final f851dc728d22ac218da0b629c9a0192cfa5bc0c3, run 39795267071: todos los pasos SUCCESS (89 unitarias, seguridad real, académica real, build/safety, expiración/restauración y reset/repetición/stop). CI negativa relevante y clon reproducible completados, detallados en technical-results.md. Logs positivos 91498b0 obtenidos posteriormente por endpoint de job: sin patrones PAT/JWT privilegiado, 40 identidades por lote retiradas. Sin cambios de host ni relajación del guard.
+
+## TASK-H2-008 — Completada; detención humana
+
+technical-results.md publica matriz TEST, commits/comandos/defectos/correcciones, inventario PostgreSQL real de tablas/roles/semillas/policies/ACL/funciones/constraints/índices/triggers y limitaciones. human-test-guide.md prepara reproducción y TEST-018/019/020; no se registra resultado humano aún. Código final f851dc7 verificado local/clon/CI. El SHA candidato documental y su CI se presentan en la entrega para evitar autorreferencia circular. Stack y Vite locales detenidos, datos sintéticos eliminados por reset. Spec aprobado y H0/H1 intactos; main no cambia. No acceptance, Gate 2, merge ni H3.
