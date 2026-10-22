@@ -89,6 +89,18 @@ try {
       rejected(await D.from(table).delete().eq('id', randomUUID()), 'direct delete')
     }
     for (const extra of [{ actor: fixture.entries.A.id }, { estado_codigo: 'CERRADO' }, { updated_at: new Date().toISOString() }]) rejected(await O.rpc('guardar_ciclo', { p: { ...base, carrera_id: carrera.id, ...extra } }), 'payload bypass')
+    const calls = [
+      ['guardar_materia', { p: { codigo: 'DENIED', nombre: 'DENIED' } }],
+      ['guardar_carrera', { p: carreraPayload(carrera), materias: [m1.id] }],
+      ['cambiar_active_materia', { ...fields(m1), active: false, motivo: 'DENIED' }],
+      ['cambiar_active_carrera', { ...fields(carrera), active: false, motivo: 'DENIED' }],
+      ['guardar_ciclo', { p: cicloPayload(ciclo) }],
+      ['cambiar_materia_ciclo', { ciclo_id: ciclo.id, materia_id: m1.id, expected_updated_at: ciclo.updated_at, activo: false }],
+      ['cambiar_estado_ciclo', { ...fields(ciclo), destino: 'EN_CURSO' }],
+    ]
+    for (const client of [A, clients.N, clients.F, clients.I, publicClient(fixture.config)]) {
+      for (const [name, args] of calls) rejected(await client.rpc(name, args), 'direct RPC authorization bypass')
+    }
     rejected(await fixture.admin.from('app_roles').insert({ code: 'ADMIN' }), 'legacy role remains functional')
     checked(await A.auth.updateUser({ data: { role: 'DIRECTOR_ACADEMICO' } }), 'metadata preparation')
     checked(await A.auth.refreshSession(), 'metadata renewal')

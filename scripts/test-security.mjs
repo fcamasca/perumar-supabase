@@ -97,7 +97,7 @@ async function main() {
   })
 
   await scenario('TEST-H1-007 exact-actor-matrix', async () => {
-    if (process.env.H1_PRIVILEGE_FAILURE === 'true') {
+    if (process.env.H2_PRIVILEGE_FAILURE === 'true') {
       checked(await admin.from('app_user_roles').insert({ user_id: entries.O.id, role_code: 'ADMIN_SISTEMA' }), 'ensayo temporal de privilegio')
       record('controlled-extra-assignment', 'O', 'ok', { before: ['COORDINADOR_ACADEMICO'], after: ['COORDINADOR_ACADEMICO', 'ADMIN_SISTEMA'] })
     }

@@ -1,4 +1,4 @@
-name: H1 security verification
+name: H2 academic and security verification
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       security-failure:
-        description: 'Ensayo temporal: detectar una asignación ADMIN indebida a OPERADOR'
+        description: 'Ensayo temporal: detectar una asignación ADMIN_SISTEMA indebida a Coordinador'
         type: boolean
         default: false
 
@@ -47,8 +47,10 @@ jobs:
           npm run test:local
       - name: Real Auth and RLS actor matrix
         env:
-          H1_PRIVILEGE_FAILURE: ${{ inputs.security-failure || github.ref_name == 'feature/h1-security-privilege-trial' }}
+          H2_PRIVILEGE_FAILURE: ${{ inputs.security-failure || github.ref_name == 'feature/h2-academic-privilege-trial' }}
         run: npm run test:security
+      - name: Real academic invariants and audit rollback
+        run: npm run test:academic
       - name: Frontend build
         run: npm run build
       - name: Privileged configuration rejected safely
@@ -62,6 +64,7 @@ jobs:
           npm run supabase:reset
           npm run test:local
           npm run test:security
+          npm run test:academic
       - name: Stop local platform
         if: always()
         run: npm run supabase:stop

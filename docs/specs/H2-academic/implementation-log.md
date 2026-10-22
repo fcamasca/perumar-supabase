@@ -57,3 +57,9 @@ Pantallas Materias, Carreras, Ciclos y consulta básica Auditoría, protegidas b
 Suite completa React/SDK: 88 pruebas PASSED en 8 archivos, incluidos 6 casos UI nuevos (solo lectura, acceso académico, conflicto sin retry, descarte sin RPC, terminal no editable/DELETE/reapertura y OTRO obligatorio). Typecheck/lint se verifican en este bloque y se repiten dentro de CI. No es recorrido humano ni evaluación visual del SO.
 
 Corrección necesaria al integrar UI: modalidad inactiva ya referenciada debe permanecer válida al editar otros campos de la Carrera, pero no en nuevas selecciones. RPC guardar_carrera conserva solo referencia previa idéntica; toda nueva selección sigue validando catálogo activo y pertenencia. Caso técnico incorporado a test:academic para repetición desde reset en TASK-007.
+
+## TASK-H2-007 — CI y reproducción en curso
+
+Workflow incorpora test:academic antes del build y después del reset final. Ensayo negativo temporal usa asignación ADMIN_SISTEMA indebida al Coordinador y verifica primero directorio ampliado por petición ordinaria; no permite asumir que una falla por fixture/conteo basta. README incluye rama de revisión H2, comandos, fuentes, roles reales, limpieza por reset y límites visuales.
+
+Se ejecutan suites locales y CI del commit que contiene este bloque; resultados, run IDs y repetición/clone se registrarán después, no se presuponen PASSED. Última ampliación técnica comprueba las 7 RPC directamente con Admin Sistema, no habilitados y anónimo: ninguna escritura académica permitida.
