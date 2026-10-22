@@ -41,3 +41,32 @@ caption { text-align:left; font-weight:bold; padding:.5rem 0; }
  --warning:CanvasText!important; --error:CanvasText!important; --info:CanvasText!important; color-scheme:light dark!important; }
  :focus-visible { outline:3px solid Highlight; } a { color:LinkText; }
 }
+
+/* Academic UI: compact hierarchy shared by all semantic palettes. */
+h2 { font-size:1.55rem; margin:.25rem 0 1rem; }
+h3 { font-size:1.15rem; margin:.25rem 0 .8rem; }
+section > label { display:inline-grid; min-width:13rem; margin:0 .8rem .8rem 0; vertical-align:top; }
+form { max-width:62rem; margin:1.5rem 0; background:var(--surface-elevated); border:1px solid var(--border); border-radius:.6rem; padding:1.25rem; }
+fieldset { border-radius:.4rem; display:grid; gap:.9rem; min-width:0; }
+legend { font-weight:650; padding:0 .4rem; }
+fieldset label { display:grid; align-items:start; gap:.35rem; }
+fieldset label:has(input[type=checkbox]) { display:flex; align-items:center; padding:.4rem; border-bottom:1px solid var(--border); }
+label small { font-weight:400; font-size:.85rem; }
+textarea { width:100%; min-height:6rem; resize:vertical; }
+button { font-weight:600; min-height:2.6rem; }
+button.secondary,.table-scroll button { background:var(--surface-elevated); color:var(--text-primary); }
+button:hover:not(:disabled) { outline:1px solid var(--border-strong); outline-offset:1px; }
+button:disabled,input:disabled,select:disabled,textarea:disabled { color:var(--text-disabled); background:var(--surface); cursor:not-allowed; }
+th { background:var(--surface); font-weight:650; }
+tbody tr:focus-within { outline:2px solid var(--focus); outline-offset:-2px; }
+[role=alert],.success { padding:.75rem; border:1px solid currentColor; border-radius:.35rem; overflow-wrap:anywhere; }
+.cycle-subjects { border:1px solid var(--border-strong); background:var(--surface); padding:1rem; border-radius:.4rem; }
+.cycle-subjects ul { padding:0; list-style:none; }
+.cycle-subjects li { padding:.7rem 0; border-top:1px solid var(--border); line-height:1.6; }
+.dialog-backdrop { position:fixed; inset:0; background:rgb(0 0 0 / .6); z-index:100; display:flex; align-items:center; justify-content:center; padding:1rem; }
+.confirm-dialog { background:var(--surface-elevated); color:var(--text-primary); border:2px solid var(--border-strong); border-radius:.6rem; padding:1.5rem; width:min(100%,36rem); max-height:90dvh; overflow:auto; }
+.dialog-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:.5rem; margin-top:1rem; }
+.validation-errors { border:1px solid var(--error); padding:.75rem; }
+[aria-invalid=true] { border:2px solid var(--error); }
+@media(max-width:40rem) { section > label { display:grid; margin-right:0; } form { padding:.75rem; } fieldset { padding:.75rem; } .confirm-dialog { padding:1rem; } }
+@media(forced-colors:active) { .dialog-backdrop { background:Canvas; } .confirm-dialog { border:2px solid ButtonText; } [aria-invalid=true] { border:2px dashed CanvasText; } }
