@@ -45,8 +45,8 @@ try {
     for (const source of sources.sources) assert.equal(createHash('sha256').update(readFileSync(`supabase/reference/${source.file}`)).digest('hex'), source.sha256)
     assert.equal(inspectDatabase('select count(*) from public.distrito;'), '1891')
     assert.equal(capitanias.length, 19)
-    assert.equal((await rows(D, 'catalogo')).length, 2)
-    assert.equal(motivos.length, 7)
+    assert.equal((await rows(D, 'catalogo')).length, 10)
+    assert.equal(motivos.length, 9)
   })
   await scenario('TEST-H2-003/024 normalization-uuid-uniqueness', async () => {
     m1 = await materia('1'); m2 = await materia('2'); m3 = await materia('3'); m4 = await materia('4')

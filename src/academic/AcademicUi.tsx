@@ -77,7 +77,7 @@ export function InlineForm({ children, onSubmit, ...props }: { children: ReactNo
       if (!field.id) field.id = `${id}-field-${i}`
       if (field.willValidate && (!field.validity.valid || (field.required && !field.value.trim()))) {
         const label = field.getAttribute('aria-label') || field.labels?.[0]?.querySelector('.field-label')?.textContent?.replace('*', '').trim() || field.labels?.[0]?.firstChild?.textContent?.trim() || 'Campo'
-        const text = field.required && !field.value.trim() ? requiredMessages[label] ?? `Completa el campo ${label.toLocaleLowerCase()}.` : field.validity.patternMismatch ? 'Usa entre 2 y 10 caracteres alfanuméricos.' : field.validity.tooLong ? 'Supera el máximo de caracteres permitido.' : field.validity.rangeUnderflow ? 'La fecha de fin no puede ser anterior al inicio.' : 'Revisa el formato del valor.'
+        const text = field.required && !field.value.trim() ? requiredMessages[label] ?? `Completa el campo ${label.toLocaleLowerCase()}.` : field.validity.patternMismatch ? field.getAttribute('data-pattern-error') ?? 'Usa entre 2 y 10 caracteres alfanuméricos.' : field.validity.tooLong ? 'Supera el máximo de caracteres permitido.' : field.validity.rangeUnderflow ? 'La fecha de fin no puede ser anterior al inicio.' : 'Revisa el formato del valor.'
         failures.push({ id: field.id, label, text })
       }
     })

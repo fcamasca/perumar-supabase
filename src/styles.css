@@ -183,3 +183,10 @@ footer > .technical-details { opacity:1; }
   nav a[aria-current=page] { border:2px solid Highlight; text-decoration:underline; }
   [aria-invalid=true],button.sensitive { border-style:dashed; }
 }
+
+/* H3 consumes the existing semantic palette. */
+.enrollment-steps { display:flex; flex-wrap:wrap; gap:1.5rem; padding:1rem 2rem; }
+.enrollment-steps [aria-current="step"] { font-weight:700; text-decoration:underline; }
+.snapshot-detail { white-space:pre-wrap; overflow-wrap:anywhere; max-width:100%; }
+[role="tablist"] { display:flex; flex-wrap:wrap; gap:.5rem; margin-block:1rem; }
+[role="tab"][aria-selected="true"] { outline:2px solid currentColor; outline-offset:2px; }

@@ -50,16 +50,16 @@ export function securityInventory() {
 }
 
 export function assertSecurityInventory(info) {
-  const tables = ['app_roles', 'app_user_roles', 'app_users', 'auditoria', 'capitania', 'carrera', 'carrera_materia', 'catalogo', 'catalogo_valor', 'ciclo', 'ciclo_materia', 'departamento', 'distrito', 'materia', 'provincia']
+  const tables = ['alumno', 'alumno_contacto_emergencia', 'app_roles', 'app_user_roles', 'app_users', 'auditoria', 'capitania', 'carrera', 'carrera_materia', 'catalogo', 'catalogo_valor', 'ciclo', 'ciclo_materia', 'ciclo_tarifa', 'departamento', 'distrito', 'empresa_patrocinadora', 'materia', 'matricula', 'matricula_cargo', 'provincia', 'tarifa']
   if (JSON.stringify(info.tables?.map(t => t.name)) !== JSON.stringify(tables)
-    || info.tables.some(t => !t.rls || t.forced) || info.publicFunctions !== 7
+    || info.tables.some(t => !t.rls || t.forced) || info.publicFunctions !== 17
     || info.privateCreate || info.publicCreate || info.publicExecute !== 0 || info.authenticatedBypass || info.buckets !== 0
-    || JSON.stringify(info.migrations) !== JSON.stringify(['20261022041000', '20261022150000', '20261022160000'])) throw new Error('Inventario H2 inesperado.')
-  const expected = ['app_roles_active_read', 'app_roles_admin_read', 'app_user_roles_admin_read', 'app_user_roles_self_read', 'app_users_admin_read', 'app_users_self_read', ...Array(11).fill('academic_read'), 'audit_read'].sort()
+    || JSON.stringify(info.migrations) !== JSON.stringify(['20261022041000', '20261022150000', '20261022160000', '20261023010000', '20261023020000'])) throw new Error('Inventario H3 inesperado.')
+  const expected = ['app_roles_active_read', 'app_roles_admin_read', 'app_user_roles_admin_read', 'app_user_roles_self_read', 'app_users_admin_read', 'app_users_self_read', ...Array(18).fill('academic_read'), 'audit_read'].sort()
   if (JSON.stringify(info.policies?.map(p => p.name)) !== JSON.stringify(expected)
     || info.policies.some(p => p.command !== 'SELECT' || JSON.stringify(p.roles) !== '["authenticated"]' || p.check !== null)) throw new Error('Policies H2 inesperadas.')
-  if (info.grants?.length !== 30 || info.grants.some(g => g.select !== (g.role === 'authenticated') || g.insert || g.update || g.delete || g.truncate)) throw new Error('Grants H2 inesperados.')
-  const names = ['academic_user', 'assert_fields', 'audit_change', 'authorize', 'carrera_minimum', 'functional_user', 'has_active_role', 'require_catalog', 'require_version', 'stamp_update', 'sync_missing']
+  if (info.grants?.length !== 44 || info.grants.some(g => g.select !== (g.role === 'authenticated') || g.insert || g.update || g.delete || g.truncate)) throw new Error('Grants H2 inesperados.')
+  const names = ['academic_user', 'apply_enrollment_charges', 'assert_fields', 'audit_change', 'audit_enrollment', 'authorize', 'carrera_minimum', 'enrollment_snapshot', 'functional_user', 'guard_enrollment_history', 'has_active_role', 'require_catalog', 'require_version', 'stamp_update', 'sync_missing', 'validate_alumno']
   if (JSON.stringify(info.helpers?.map(h => h.name)) !== JSON.stringify(names)
     || info.helpers.some(h => h.owner !== 'postgres' || !h.config?.includes('search_path=""') || h.anon
       || h.authenticated !== ['has_active_role', 'academic_user', 'functional_user'].includes(h.name))) throw new Error('Helpers H2 inesperados.')
