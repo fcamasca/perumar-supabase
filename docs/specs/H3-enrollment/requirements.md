@@ -1,6 +1,6 @@
 # H3 — Alumno y Matrícula: requirements
 
-Versión 0.1 · 22/10/2026 (America/Lima).
+Versión 0.2 · 22/10/2026 (America/Lima).
 
 **SPEC ELABORADO. PENDIENTE DE REVISIÓN HUMANA Y GATE 1. CONSTRUCCIÓN NO AUTORIZADA.**
 
@@ -16,43 +16,43 @@ Solo cuatro documentos Spec, EVOLUCIONES y estado PLAN. Sin implementación, mig
 
 ## REQ-H3-002 — Roles y seguridad
 
-Director y Coordinador crean/consultan/editan alumnos y contactos, registran/editan matrículas activas y anulan con motivo. Solo Director aplica descuentos y mantiene tarifas/asociaciones con Ciclo. ADMIN_SISTEMA no tiene permisos académicos implícitos. Autoridad servidor vigente, nunca visibilidad UI ni metadata cliente. Multirol suma solo capacidades activas asignadas explícitamente.
+Director y Coordinador crean/consultan/editan alumnos y contactos, buscan/crean/editan empresa patrocinadora mínima, registran/editan matrículas ACTIVO cuyo Ciclo no sea terminal y anulan con motivo incluso si su Ciclo es terminal. Solo Director aplica descuentos y mantiene tarifas/asociaciones con Ciclo. ADMIN_SISTEMA no tiene permisos académicos implícitos. Autoridad servidor vigente, nunca visibilidad UI ni metadata cliente. Multirol suma solo capacidades activas asignadas explícitamente.
 
 ## REQ-H3-003 — Ficha independiente
 
-Obligatorios: apellido paterno, apellido materno, nombres, tipo DI, número DI, fecha nacimiento, sexo, celular, Departamento/Provincia/Distrito nacimiento, domicilio y Departamento/Provincia/Distrito domicilio. Opcionales: fijo, email, grupo sanguíneo, instrucción, ojos, cabello, estatura, peso, señas, ocupación, estado civil. Contemplar N°/Mz Lt; propuesta opcional porque no está en la lista obligatoria. Edad calculada, no persistida. Tipos iniciales DNI/CARNET_EXTRANJERIA, reutilizar catálogo simple y UBIGEO H2. Ficha mantenible sin matrícula.
+Obligatorios: apellido paterno, apellido materno, nombres, tipo DI, número DI, fecha nacimiento, sexo, celular, Departamento/Provincia/Distrito nacimiento, domicilio y Departamento/Provincia/Distrito domicilio. Opcionales: fijo, email, grupo sanguíneo, instrucción, ojos, cabello, estatura, peso, señas, ocupación, estado civil y N°/Mz Lt. Edad calculada, no persistida. Catálogos simples TIPO_DI, SEXO, ESTADO_CIVIL y GRUPO_SANGUINEO; TIPO_DI inicia con DNI/CARNET_EXTRANJERIA. Instrucción, ojos, cabello y parentesco son texto simple, sin mantenimiento genérico. DNI texto trim de exactamente 8 dígitos; CE texto trim/uppercase alfanumérico de máximo técnico 30, sin checksum ni longitud legal adicional. Estatura en centímetros, peso en kilogramos, positivos si presentes sin rangos clínicos. Mantener cotas técnicas DES-003 y UBIGEO H2. Ficha mantenible sin matrícula.
 
 ## REQ-H3-004 — Identidad y ficha incompleta
 
-Documento único protegido por DB, incluida concurrencia. Buscar alumno devuelve todos sus datos autorizados disponibles. Ficha histórica incompleta permite completar/editar y exige obligatorios al guardar; no ocultarla ni duplicarla. Alumno puede tener múltiples matrículas en distintos Ciclos; consultas operativas usan ficha vigente por alumno_id.
+Unicidad DB de tipo_di + numero_di normalizado, incluida concurrencia; no unicidad global solo por número. Buscar alumno devuelve todos sus datos autorizados disponibles. Ficha histórica incompleta permite completar/editar y exige obligatorios al guardar; no ocultarla ni duplicarla. Alumno puede tener múltiples matrículas en distintos Ciclos; consultas operativas usan ficha vigente por alumno_id.
 
 ## REQ-H3-005 — Emergencia
 
-Entidad separada alumno_contacto_emergencia, uno a muchos por alumno; apellido, nombre, parentesco y celular obligatorios, dirección opcional. Al matricular debe existir al menos un contacto válido. No columnas de contacto en alumno ni pertenencia a matrícula.
+Entidad separada alumno_contacto_emergencia, uno a muchos por alumno; apellido, nombre, parentesco texto y celular obligatorios, dirección opcional. Retiro lógico a INACTIVO, no DELETE ni contacto principal. Al registrar matrícula debe existir al menos un contacto activo válido. No columnas de contacto en alumno ni pertenencia a matrícula.
 
 ## REQ-H3-006 — Snapshot y PII
 
-Matrícula guarda alumno_id y alumno_snapshot JSONB histórico inmutable con ficha relevante y contactos vigentes al inscribir. Cambios posteriores de alumno o matrícula no reescriben esa fotografía. No copiar toda la ficha ni snapshot en auditoría/logs. Lectura histórica y vigente distinguibles, exposición mínima.
+Matrícula guarda alumno_id y alumno_snapshot JSONB histórico inmutable con ficha relevante y todos los contactos activos/válidos existentes al inscribir; excluir contactos inactivos del nuevo snapshot. Cambios posteriores de alumno, contactos o matrícula no reescriben esa fotografía. No copiar toda la ficha ni snapshot en auditoría/logs. Lectura histórica y vigente distinguibles, exposición mínima.
 
 ## REQ-H3-007 — Empresa mínima
 
-Entidad independiente con RUC, razón social, persona contacto, teléfono/celular, email. Una empresa puede patrocinar varias matrículas; matrícula admite cero o una. No relación fija empresa-alumno. Solo mantenimiento necesario para matrícula, sin facturas/pagos/deuda ni H7 completo. Permisos y obligatoriedad detallada pendientes en OQ.
+Entidad independiente: RUC y razón social obligatorios; persona contacto, teléfono/celular y email opcionales. RUC texto trim de exactamente 11 dígitos, UNIQUE, nunca número. Director y Coordinador buscan/crean/editan empresa mínima. Una empresa puede patrocinar varias matrículas; matrícula admite cero o una. No relación fija empresa-alumno. Sin SUNAT, facturas/pagos/deuda ni H7 completo.
 
 ## REQ-H3-008 — Tarifas
 
-Catálogo independiente: UUID, código, nombre, descripción, tipo, monto_por_defecto, activo, timestamps/concurrencia. Solo Director mantiene. No borrar tarifas usadas. Default solo ayuda inicial; no asociación automática con Carrera.
+Catálogo independiente: UUID, código, nombre, descripción, tipo CARRERA/OTRO, monto_por_defecto numeric(12,2), activo, timestamps/concurrencia. Permitir 0.00, no negativos ni precisión superior a dos decimales mediante redondeo silencioso. Solo Director mantiene. No borrar tarifas usadas. Default solo ayuda inicial; no asociación automática con Carrera. Capitanía/Refrigerio/Actividades son conceptos por código/nombre, no tipos nuevos.
 
 ## REQ-H3-009 — Configuración por Ciclo
 
-Relación ciclo_tarifa con Ciclo, tarifa, importe configurado, obligatorio/opcional y activo. Selección manual por Director; propone default y admite override sin modificar catálogo. Concepto CARRERA obligatorio; otros como Capitanía opcionales. Misma Carrera puede tener Ciclos de S/650 y S/700.
+Relación ciclo_tarifa con Ciclo, tarifa, importe numeric(12,2) no negativo (0.00 permitido), obligatorio/opcional y activo. Selección manual por Director; propone default y admite override sin modificar catálogo. Para matricular exactamente una tarifa activa de tipo CARRERA marcada obligatoria; otras obligatorias se incluyen y opcionales se eligen por alumno. Misma Carrera puede tener Ciclos de S/650 y S/700. Mantenimiento ciclo_tarifa solo PROGRAMADO/EN_CURSO; terminales CERRADO/DESIERTO/ANULADO solo consulta. Sin redondeo silencioso ni asociación automática con Carrera.
 
 ## REQ-H3-010 — Registro y cargos
 
-Matrícula mediante comando único transaccional DB: autorizar, validar, reobtener tarifas activas del Ciclo, incluir obligatorias, validar opcionales elegidas, recalcular importes y guardar matrícula/cargos/snapshot/auditoría juntos. React no coordina esas escrituras ni decide montos, permisos o estados. Fallo en cualquier parte revierte toda matrícula. Cargos históricos preservan concepto, importe original, descuento separado y final; cambios futuros de tarifa/default/Ciclo no alteran matrículas anteriores. Preparar referencia estable para H4 sin pagos.
+Matrícula mediante comando único transaccional DB: autorizar, validar, reobtener tarifas activas del Ciclo, incluir obligatorias, validar opcionales elegidas, recalcular importes y guardar matrícula/cargos/snapshot/auditoría juntos. React no coordina esas escrituras ni decide montos, permisos o estados. Fallo en cualquier parte revierte toda matrícula. matricula_cargo tiene UUID estable, estado/vigencia y datos históricos de concepto, importe original, descuento separado/motivo y final. No DELETE ni replaced_by, árbol de versiones o event sourcing. Cambios de tarifa/default/ciclo_tarifa no alteran cargos existentes. Preparar referencias estables para H4 sin pagos.
 
 ## REQ-H3-011 — Ciclo y compatibilidad H2
 
-Registrar o cambiar a Ciclo solo PROGRAMADO/EN_CURSO; bloquear CERRADO/DESIERTO/ANULADO en servidor. Activar reglas H2 diferidas con matrículas: edición ordinaria del Ciclo solo Director y promoción/fechas; prohibir ANULAR Ciclo con matrículas. Revisar rutas indirectas H2 sin inventar cascadas de estado ni pagos.
+Registrar o cambiar a Ciclo solo PROGRAMADO/EN_CURSO; bloquear CERRADO/DESIERTO/ANULADO en servidor. Si existe al menos una matrícula ACTIVO, no cambiar Carrera del Ciclo; conservar edición ordinaria limitada a Director y promoción/fechas. Si solo hay matrículas ANULADO, permitir cambiar Carrera respetando reglas H2, sin reescribir historia/códigos de esas matrículas. Revisar rutas indirectas H2 de Carrera, sigla y sincronización para no evadir esa protección. Conservar la regla H2 de no ANULAR un Ciclo con matrículas: no confundirla con el criterio de matrículas activas que limita cambio de Carrera. Matrícula ACTIVO cuyo Ciclo pasó a terminal pierde edición ordinaria de Ciclo/patrocinador/opciones/código/descuento, pero ambos roles pueden ANULARLA con motivo. Sin cascadas automáticas.
 
 ## REQ-H3-012 — Duplicado
 
@@ -60,19 +60,19 @@ No más de una matrícula alumno+ciclo mediante UNIQUE DB, también concurrente 
 
 ## REQ-H3-013 — Código
 
-PK UUID y código visible automático AÑO-SIGLA_CARRERA-CORRELATIVO; correlativo por año+sigla, reinicio anual, generación servidor concurrente. MPC y BZ independientes. Código sugerido editable por usuario autorizado, siempre único y con trazabilidad de propuesta original y cambios. No confundir con correlativo global anual/código de Ciclo H2.
+PK UUID y código automático AÑO-SIGLA_CARRERA-CORRELATIVO, año DB de inscripción America/Lima; correlativo por año+sigla, reinicio anual y generación concurrente servidor, MPC/BZ independientes. Ambos roles editan código solo matrícula ACTIVO y Ciclo no terminal. Manual trim/uppercase UNIQUE con formato YYYY-SIGLA-CORRELATIVO, correlativo mínimo 3 dígitos y crecimiento >999, sin límite arbitrario 50. Conservar codigo_generado_original, año/sigla/correlativo usados y código visible. No regenerar automáticamente por cambio de Ciclo, Carrera o sigla. Override consume contador, sin gapless. Auditar cada cambio manual. Independiente del correlativo/código Ciclo H2.
 
 ## REQ-H3-014 — Descuento
 
-Solo Director; monto en soles únicamente sobre concepto CARRERA. Original no cambia, descuento separado, 0 ≤ descuento ≤ original, final=original-descuento. Motivo obligatorio si >0. Coordinador no lo aplica/modifica mediante request ni cambio indirecto. Auditar original/descuento/motivo/actor/operación, sin PII ajena.
+Solo Director aplica descuento en soles al cargo CARRERA, original separado, 0 ≤ descuento ≤ original, final=original-descuento, motivo obligatorio si >0. Coordinador no aplica/modifica descuento vigente mediante request. Al cambiar Ciclo, el cargo anterior conserva descuento/motivo/importes históricos y queda INACTIVO; el nuevo cargo CARRERA inicia descuento=0 por regla servidor, no por decisión del Coordinador. No trasladar descuento previo ni aceptar uno nuevo de Coordinador; solo Director puede aplicarlo nuevamente al nuevo cargo. Auditar importes, motivo, actor y operación sin PII ajena.
 
 ## REQ-H3-015 — Edición activa
 
-Director/Coordinador pueden cambiar Ciclo, patrocinador y opciones de tarifa; Director además descuento. Cambio Ciclo valida destino/par, recupera tarifas destino y recalcula consistentemente con auditoría. No reglas sobre movimientos financieros inexistentes; antes de H4 revisar libertad de cambios. Versionado de cargos y descuentos existentes requiere cerrar OQ.
+Director/Coordinador cambian Ciclo, patrocinador y opciones solo matrícula ACTIVO con Ciclo actual no terminal; Director además descuento. Cambio Ciclo valida destino elegible/par: todos los cargos vigentes anteriores quedan INACTIVOS con motivo CAMBIO_CICLO, sin DELETE ni cambio de importes históricos; crea nuevos cargos con nuevos UUID desde tarifas obligatorias/opcionales destino y descuento CARRERA inicial cero, sin traslado previo. Solo Director puede aplicar nuevo descuento. Cambio de opciones en mismo Ciclo: retiro inactiva cargo con motivo conservando importes; agregar/reagregar crea UUID nuevo con precio vigente servidor. Cargos retenidos conservan importe original, sin repricing. Patrocinador no toca cargos. Todo atómico/auditado. Sin replaced_by/árboles/event sourcing ni reglas financieras inexistentes; antes de H4 revisar cambios libres.
 
 ## REQ-H3-016 — Anulación
 
-Alta ACTIVO. Ambos roles anulan con motivo obligatorio; ANULADO terminal y consulta, sin reactivar, editar ni borrar registros/cargos/snapshot. Auditar motivo y actor.
+Alta ACTIVO. Ambos roles anulan con motivo obligatorio incluso si Ciclo actual es terminal; ANULADO terminal y consulta, sin reactivar, editar ni borrar registros/cargos/snapshot. Auditar motivo y actor, sin cascada automática desde estado Ciclo.
 
 ## REQ-H3-017 — Auditoría
 
@@ -90,18 +90,22 @@ Nuevo Alumno Stepper: Identificación, Domicilio, Información adicional, Contac
 
 Trazabilidad completa entre los cuatro documentos; pruebas automatizadas, integración local, seguridad/RLS, concurrencia, humanas y Gate 2 diferenciadas. Revisar aislamiento, permisos, validación, parameter tampering, PII, outputs y secretos según OWASP Secure SDLC y cinco pilares Well-Architected aplicables. CI no concede aprobación humana. Si RPC exige capas/helpers excesivos, registrar riesgo para decisión humana, no construir API oculta.
 
-## Preguntas abiertas — todas PENDIENTES, previas a Gate 1
+## Decisiones cerradas antes de Gate 1
 
-| ID | Decisión requerida | Requisitos afectados |
-|---|---|---|
-| OQ-H3-001 | Unicidad DI por tipo+número o global; formatos exactos DNI/CE; listas o texto para sexo/estado civil/sangre/instrucción/ojos/cabello/parentesco y valores iniciales; unidades estatura/peso. Revisar cotas técnicas propuestas y N°/Mz Lt opcional. Sin longitud legal ni rango clínico inventado. | 003–005 |
-| OQ-H3-002 | Permitir Director/Coordinador alta/edición empresa mínima; obligatorios de contacto/teléfono/email, formato RUC y unicidad propuesta. | 002, 007 |
-| OQ-H3-003 | Confirmar retiro lógico de contactos y snapshot con todos los activos válidos, sin contacto principal obligatorio. | 005–006 |
-| OQ-H3-004 | Confirmar exactamente una CARRERA activa obligatoria por Ciclo, tipos CARRERA/OTRO, importes cero y mantenimiento de tarifas en Ciclos terminales. | 008–010 |
-| OQ-H3-005 | «Con matrículas» incluye anuladas; edición/anulación de matrícula activa si Ciclo ya terminal; límites sobre cambios automáticos H2 de materias/sigla. | 011, 015–016 |
-| OQ-H3-006 | Año de inscripción America/Lima, roles/momento/formato del código manual (propuesta ≤50), código estable ante cambio Ciclo/sigla y consumo correlativo con override. | 013 |
-| OQ-H3-007 | Cambio Ciclo por Coordinador con descuento previo: ¿conservar nominal si compatible y rechazar si excede nuevo costo, o reservar cambio al Director? Nunca ajustar automáticamente. | 014–015 |
-| OQ-H3-008 | Aprobar retención de precio de cargos existentes, opcionales nuevos a precio vigente y revisiones de cargos retirados/reemplazados sin DELETE; continuidad UUID para H4. | 010, 015 |
+OQ-H3-001 a OQ-H3-008: **RESUELTAS POR DECISIÓN HUMANA** en la solicitud de actualización del Spec base `96bd395487954f6fe1194c00b70487563a87ccfe`. No constituyen aprobación del Spec completo ni Gate 1.
+
+| ID | Decisión cerrada | REQ / DES / TASK (mismo índice) | TEST afectados |
+|---|---|---|---|
+| OQ-H3-001 | Unicidad tipo+número; DNI 8 dígitos texto, CE alfanumérico uppercase ≤30; cuatro catálogos simples, instrucción/ojos/cabello/parentesco texto; N°/Mz Lt opcional, cm/kg sin rangos clínicos y cotas técnicas conservadas. | 003–005 | 004–008 |
+| OQ-H3-002 | Ambos roles buscan/crean/editan empresa; RUC/razón social obligatorios, demás opcionales; RUC texto trim 11 dígitos UNIQUE, sin SUNAT/H7. | 002, 007 | 002, 012 |
+| OQ-H3-003 | Retiro lógico INACTIVO, sin principal; snapshot incluye todos los activos/válidos y excluye inactivos, histórico inmutable. | 005–006 | 008–010 |
+| OQ-H3-004 | Exactamente una CARRERA activa obligatoria; tipos CARRERA/OTRO; numeric(12,2) admite cero, sin negativos/redondeo; mantenimiento Ciclo solo PROGRAMADO/EN_CURSO. | 008–010 | 013–017 |
+| OQ-H3-005 | Matrícula activa bloquea Carrera; solo anuladas permiten cambio bajo H2; historia/códigos intactos. Ciclo terminal bloquea edición ordinaria matrícula pero no anulación motivada; revisar rutas indirectas sin cascadas. | 011, 015–016 | 020–022, 027, 033–034 |
+| OQ-H3-006 | Año America/Lima, contador año+sigla; manual por ambos roles solo ACTIVO/Ciclo no terminal con formato y unicidad; metadatos originales, sin regeneración automática/gapless, contador consumido con override. | 013 | 025–027 |
+| OQ-H3-007 | Cambio Ciclo inactiva cargos anteriores CAMBIO_CICLO y crea nuevos desde servidor sin trasladar descuento; nuevo CARRERA inicia cero. Coordinador puede cambiar pero no enviar descuento nuevo; solo Director aplica nuevamente. | 014–015, 017 | 028–032, 035 |
+| OQ-H3-008 | UUID/vigencia de cargo, no DELETE; retiro opcional conserva histórico y motivo; agregar/reagregar crea UUID/precio vigente, retenidos sin repricing; patrocinador no toca cargos. Sin árboles ni event sourcing. | 010, 015 | 017, 030–032 |
+
+No quedan OQ abiertas de esta ronda. La revisión humana de Gate 1 permanece pendiente.
 
 ## Exclusiones
 
@@ -109,4 +113,4 @@ Pagos/medios, deuda/saldos, idempotencia financiera, facturación/pagos de patro
 
 ## Trazabilidad
 
-Cada índice 001–020 vincula REQ-H3-n → DES-H3-n → TASK-H3-n. El test-plan enumera explícitamente los TEST vinculados; tasks contiene la matriz de cobertura. Todas las propuestas de diseño y OQ deben resolverse/coherenciarse antes de Gate 1.
+Cada índice 001–020 vincula REQ-H3-n → DES-H3-n → TASK-H3-n. El test-plan enumera explícitamente los TEST vinculados; tasks contiene la matriz de cobertura. Las ocho decisiones están incorporadas y coherenciadas; Gate 1 sigue pendiente de revisión humana.

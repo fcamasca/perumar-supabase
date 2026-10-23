@@ -31,7 +31,7 @@ H2 — Base académica: **CLOSED / ACEPTADO / INTEGRADO**. El usuario aprobó ex
 
 ### Estado vigente de H3 — Spec del 22/10/2026
 
-H3 — Alumno y Matrícula: **SPEC ELABORADO / PENDIENTE DE REVISIÓN HUMANA Y GATE 1**. [Requisitos](specs/H3-enrollment/requirements.md), [diseño](specs/H3-enrollment/design.md), [tareas](specs/H3-enrollment/tasks.md) y [plan de pruebas](specs/H3-enrollment/test-plan.md) preparados desde main con H2 cerrado e integrado. Preguntas abiertas registradas en requisitos; no son decisiones aprobadas. Construcción NO INICIADA / NO AUTORIZADA. Sin aprobación automática de Gate 1, sin acceptance ni cambios funcionales. [Evoluciones](EVOLUCIONES.md) registra dos propuestas fuera de alcance. El alcance preliminar de H3 más abajo es antecedente de planificación; el detalle del Spec solicitado está pendiente de aprobación humana.
+H3 — Alumno y Matrícula: **SPEC ELABORADO / PENDIENTE DE REVISIÓN HUMANA Y GATE 1**. [Requisitos](specs/H3-enrollment/requirements.md), [diseño](specs/H3-enrollment/design.md), [tareas](specs/H3-enrollment/tasks.md) y [plan de pruebas](specs/H3-enrollment/test-plan.md) preparados desde main con H2 cerrado e integrado. OQ-H3-001 a 008 resueltas por decisión humana e incorporadas en los cuatro documentos; Spec listo para revisión humana de Gate 1, todavía no aprobado. Construcción NO INICIADA / NO AUTORIZADA. Sin aprobación automática de Gate 1, sin acceptance ni cambios funcionales. [Evoluciones](EVOLUCIONES.md) registra dos propuestas fuera de alcance. El alcance preliminar de H3 más abajo es antecedente de planificación; el detalle del Spec solicitado está pendiente de aprobación humana.
 
 ### Seguimiento histórico de H0 — estado anterior al cierre
 
