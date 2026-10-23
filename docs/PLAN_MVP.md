@@ -27,7 +27,11 @@ El usuario aprobó humanamente Gate 1 sobre el Spec exacto `5c4f57de6618fb0568c6
 
 ### Estado vigente de H2 — cierre del 22/10/2026
 
-H2 — Base académica: **CLOSED / ACEPTADO / INTEGRADO**. El usuario aprobó explícitamente Gate 2 sobre `796a47aa4c1ce21c6cf8c81e9c631a22202bb709`: TEST-H2-018 y TEST-H2-020 PASSED humanos; TEST-H2-019 completado con Sistema/Claro/Oscuro/Alto contraste revisados, persistencia, teclado/foco y OBS-UX-01 a 04 PASSED. **forced-colors real del sistema operativo no fue verificado manualmente en H2; el usuario aceptó este riesgo en Gate 2.** La [aceptación](specs/H2-academic/acceptance.md) registra la decisión, CI del candidato completamente verde y cierre exclusivamente documental con integración trazable. H3 permanece NO INICIADO.
+H2 — Base académica: **CLOSED / ACEPTADO / INTEGRADO**. El usuario aprobó explícitamente Gate 2 sobre `796a47aa4c1ce21c6cf8c81e9c631a22202bb709`: TEST-H2-018 y TEST-H2-020 PASSED humanos; TEST-H2-019 completado con Sistema/Claro/Oscuro/Alto contraste revisados, persistencia, teclado/foco y OBS-UX-01 a 04 PASSED. **forced-colors real del sistema operativo no fue verificado manualmente en H2; el usuario aceptó este riesgo en Gate 2.** La [aceptación](specs/H2-academic/acceptance.md) registra la decisión, CI del candidato completamente verde y cierre exclusivamente documental con integración trazable. H3 tiene Spec elaborado; véase el estado vigente siguiente.
+
+### Estado vigente de H3 — Spec del 22/10/2026
+
+H3 — Alumno y Matrícula: **SPEC ELABORADO / PENDIENTE DE REVISIÓN HUMANA Y GATE 1**. [Requisitos](specs/H3-enrollment/requirements.md), [diseño](specs/H3-enrollment/design.md), [tareas](specs/H3-enrollment/tasks.md) y [plan de pruebas](specs/H3-enrollment/test-plan.md) preparados desde main con H2 cerrado e integrado. Preguntas abiertas registradas en requisitos; no son decisiones aprobadas. Construcción NO INICIADA / NO AUTORIZADA. Sin aprobación automática de Gate 1, sin acceptance ni cambios funcionales. [Evoluciones](EVOLUCIONES.md) registra dos propuestas fuera de alcance. El alcance preliminar de H3 más abajo es antecedente de planificación; el detalle del Spec solicitado está pendiente de aprobación humana.
 
 ### Seguimiento histórico de H0 — estado anterior al cierre
 
