@@ -4,11 +4,11 @@ Base documental de una nueva implementación candidata con React, TypeScript, Su
 
 ## Estado
 
-H0 está aceptado e integrado en main: [aceptación histórica](docs/specs/H0-bootstrap/acceptance.md). H1 está aceptado e integrado en main tras Gate 2 humano del 22/10/2026 sobre el candidato `7c15f6c382c43b08b900f00a793fd590205ab618`: [aceptación de H1](docs/specs/H1-security/acceptance.md). H2 permanece NO INICIADO, sin Spec generado en este cierre. [Evidencia y recorrido humano de H1](docs/specs/H1-security/implementation-log.md).
+H0 está aceptado e integrado en main: [aceptación histórica](docs/specs/H0-bootstrap/acceptance.md). H1 está aceptado e integrado en main tras Gate 2 humano del 22/10/2026 sobre el candidato `7c15f6c382c43b08b900f00a793fd590205ab618`: [aceptación de H1](docs/specs/H1-security/acceptance.md). H2 está CLOSED / ACEPTADO e integrado en main tras Gate 2 humano sobre `796a47aa4c1ce21c6cf8c81e9c631a22202bb709`: [aceptación H2](docs/specs/H2-academic/acceptance.md). TEST-H2-018/020 PASSED humanos y TEST-H2-019 completado con riesgo residual aceptado: forced-colors real del sistema operativo no fue verificado manualmente en H2; el usuario aceptó este riesgo en Gate 2. H3 NO INICIADO. [Evidencia y recorrido humano de H1](docs/specs/H1-security/implementation-log.md).
 
 La jerarquía es: `docs/PLAN_MVP.md`, historias vigentes, Spec aprobado del hito e informes arquitectónicos como sustento técnico. El Spec aprobado se conserva sin cambios de requisitos/diseño/tareas. El registro posterior de aprobación está en el PLAN.
 
-El remoto autorizado `fcamasca/perumar-supabase` es privado y está vinculado como origin. main integra H0 y H1 aceptados; la rama `feature/h1-security` conserva la trazabilidad de construcción y cierre. No existe proyecto Supabase alojado, esquema de negocio ni hosting. H1 tiene únicamente Auth local y tres tablas de seguridad.
+El remoto autorizado `fcamasca/perumar-supabase` es privado y está vinculado como origin. main integra H0, H1 y H2 aceptados; la rama `feature/h1-security` conserva la trazabilidad de construcción y cierre. No existe proyecto Supabase alojado ni hosting. H2 conserva Auth y las tres tablas de seguridad y añade el modelo académico aprobado; no hay entidades de matrícula, pagos o facturación.
 
 La evidencia histórica está en [implementation-log.md](docs/specs/H0-bootstrap/implementation-log.md) y las verificaciones finales en [technical-results.md](docs/specs/H0-bootstrap/technical-results.md). La [enmienda CHG-H0-001](docs/specs/H0-bootstrap/approved-isolation-amendment.md) fue aprobada humanamente: Windows puede usar aislamiento efectivo mediante la regla exacta creada administrativamente. No se afirma que Docker tenga binding exclusivo a loopback. **54322/TCP: NO VERIFICADO DE FORMA INDEPENDIENTE**; riesgo residual aceptado para H0 local sin datos reales.
 
@@ -89,7 +89,7 @@ npm run test:local
 npm run test:security
 ```
 
-El reset destruye únicamente la base local desechable y usa la misma red del arranque. Nunca usar con datos reales. Rechaza link remoto o flags adicionales. H1 aplica `20261022041000_h1_security.sql` y exige el inventario exacto de tres tablas, seis policies y un helper; no se deshabilitó el control de inventario H0 para aceptar cualquier objeto. La CLI puede avisar que ignora `migrations/README.md`. [Disciplina de migraciones](supabase/migrations/README.md).
+El reset destruye únicamente la base local desechable y usa la misma red del arranque. Nunca usar con datos reales. Rechaza link remoto o flags adicionales. H2 conserva `20261022041000_h1_security.sql` y añade las migraciones 20261022150000/20261022160000, semillas de referencia e inventario exacto de 15 tablas públicas, 18 policies de lectura y 7 RPC; no se deshabilitó el control de inventario H0 para aceptar cualquier objeto. La CLI puede avisar que ignora `migrations/README.md`. [Disciplina de migraciones](supabase/migrations/README.md).
 
 `test:security` crea siete actores en memoria, prueba login y Data API con clave pública/JWT ordinario por actor y limpia sus identidades al terminar. El privilegio administrativo se usa solo para preparación, cambios de estado del ensayo y observación separada. Los logs contienen IDs sintéticos, casos/resultados y cambios de estado; no contraseñas/tokens. No equivalen a auditoría productiva.
 
@@ -113,7 +113,7 @@ Para parar: Ctrl+C en la terminal de Vite y `npm run supabase:stop`. Conserva vo
 
 Un workflow con permisos `contents: read` ejecuta instalación, lint, tipos, pruebas, Auth/RLS real, build seguro, expiración y reset con repetición; siempre intenta detener el stack. Acciones fijadas por SHA y sin deployment ni secretos remotos de Supabase. El ensayo negativo temporal introduce ADMIN indebidamente al fixture O y debe fallar en la matriz de filas, limpiar identidades y detener el stack. Se elimina su rama después de conservar runs/commits; no es un candidato alternativo. No hay rama negativa permanente. El mecanismo de fallo de build H0 se retiró del workflow actual; la evidencia histórica permanece en sus documentos/runs.
 
-Los recorridos humanos TEST-H1-018 y TEST-H1-019 se conservan en [implementation-log.md](docs/specs/H1-security/implementation-log.md). El usuario confirmó ambos como PASSED y aprobó Gate 2 el 22/10/2026: [registro de aceptación](docs/specs/H1-security/acceptance.md). Codex registra esa decisión; no se atribuye la ejecución ni aprobación humana. H2 permanece NO INICIADO.
+Los recorridos humanos TEST-H1-018 y TEST-H1-019 se conservan en [implementation-log.md](docs/specs/H1-security/implementation-log.md). El usuario confirmó ambos como PASSED y aprobó Gate 2 el 22/10/2026: [registro de aceptación](docs/specs/H1-security/acceptance.md). Codex registra esa decisión; no se atribuye la ejecución ni aprobación humana. En el cierre histórico de H1, H2 todavía no estaba iniciado; su estado vigente figura arriba.
 
 ## Spec-Driven Development
 
@@ -133,3 +133,19 @@ Para cada hito se crea `feature/<hito>-spec` desde main. Solo después del Gate 
 La historia de usuario aportada como `Historias_de_Usuario_export.md` se normalizó de Windows-1252 a UTF-8 y se renombró a `Historias_de_Usuario.md`, sin reinterpretar ni corregir sus requisitos. Los informes son contexto; sus referencias antiguas no sustituyen al PLAN vigente. No se incorporan scripts, configuraciones ni código de implementaciones anteriores.
 
 Los scripts operativos son exclusivamente locales. El guard acepta loopback estricto o la mitigación exacta aprobada y rechaza cualquier otra situación. La reconstrucción local no sustituye backups/restauración productivos de H9. Las limitaciones aceptadas de red no autorizan datos reales, alojamiento LAN/Internet ni funciones de H2 o posteriores.
+
+## Reproducción y evidencia de H2 (CLOSED)
+
+H2 está integrado en main. Para reproducir exactamente el candidato aceptado, usar `796a47aa4c1ce21c6cf8c81e9c631a22202bb709`; feature/h2-academic conserva además el cierre documental. No ejecutar dos clones del mismo project_id a la vez. El main anterior al merge H2 no contiene H2. Seguir los mismos requisitos y guard locales de esta guía.
+
+Orden técnico: `npm ci`, `npm run supabase:start`, `npm run supabase:reset`, `npm run supabase:env` (solo si .env.local no existe), `npm run test:local`, `npm run test:security`, `npm run test:academic`, `npm run build`, `npm run test:build-safety`. `test:expiry` cambia temporalmente solo jwt_expiry local, restaura archivo exacto y reinicia stack; no ejecutarlo con fixtures humanos abiertos. No ejecutar suites técnicas concurrentemente sobre la misma base.
+
+`test:academic` usa peticiones ordinarias por actor para permisos/invariantes; SQL administrativo solo para inspección, preparación controlada de contador y fallo temporal de auditoría con restauración en finally. Fixtures de negocio se retiran reconstruyendo la base local con `supabase:reset` después de la suite, no mediante un DELETE de producto de Ciclos permanentes. Identidades efímeras se eliminan por UUID en finally; no cuentas reales.
+
+Rutas: `/academico/materias`, `/academico/carreras`, `/academico/ciclos`, `/academico/auditoria`. Director mantiene Materias/Carreras y transiciona Ciclos; Coordinador tiene lectura referencial y opera PROGRAMADO/EN_CURSO; Admin Sistema solo auditoría y directorio de seguridad de lectura, sin CRUD académico. Los roles se asignan explícitamente: no equivalencias ADMIN/OPERADOR. No gestión HU17/HU18.
+
+Ensayo humano: `npm run dev` en una terminal y `npm run fixtures:human` en otra; la persona introduce contraseña con entrada oculta. A/B Admin Sistema, O Coordinador, D Director, M Admin Sistema+Coordinador, N sin rol, F sin fila e I inactivo. Enter al terminar elimina identidades. Detener Vite y ejecutar reset, test:local y supabase:stop. No enviar contraseña, JWT ni claves al chat. Ver el [recorrido/evidencia H2](docs/specs/H2-academic/implementation-log.md).
+
+Los cuatro modos visuales usan preferencia local del navegador, Sistema predeterminado y prioridad de forced-colors del SO; no se guardan en Auth/DB. Las medidas automáticas de contraste no constituyen conformidad WCAG completa ni prueba humana.
+
+Fuentes de referencia y hashes: [sources.json](supabase/reference/sources.json). Snapshot oficial INEI 2022: 25 departamentos, 196 provincias y 1891 distritos (no se afirma vigencia exhaustiva a 2026); DICAPI snapshot 22/10/2026: 19 Capitanías. Atribución INEI/Plataforma Nacional de Datos Abiertos, licencia de datos ODbL indicada en el dataset. Referencias públicas transformadas, no datos de usuarios. Reset no requiere red para obtener catálogos; carga inicial versionada sin todo HU20.

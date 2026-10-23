@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+  <g fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round">
+    <circle cx="32" cy="28" r="17"/>
+    <path d="M8 28h5m38 0h5M15 11l4 4m26 26 4 4M15 45l4-4m26-26 4-4"/>
+  </g>
+  <g fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="32" cy="6" r="3"/>
+    <path d="M32 9v3m0 32v10M15 38c1 8 7 13 17 17 10-4 16-9 17-17"/>
+  </g>
+  <path fill="currentColor" d="m15 36-3 9 9-4Zm34 0 3 9-9-4Z"/>
+  <path fill="var(--brand-mark-accent, currentColor)" d="m27 17 5 3 4-1 1 5 4 2-4 5 3 6-4 4-5-4-3-6-4-5 2-4-1-3Z"/>
+</svg>

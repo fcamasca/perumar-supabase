@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { randomBytes, randomUUID } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
-import { createFixtures, publicClient, checked } from './h1-fixtures.mjs'
+import { createFixtures, publicClient, checked } from './h2-fixtures.mjs'
 import { assertSecurityInventory, securityInventory, inspectDatabase } from './local-platform.mjs'
 
 let current = 'fixtures'
@@ -40,9 +40,9 @@ async function main() {
   }
   async function mutation(table, actor, method) {
     const identityField = table === 'app_users' ? 'id' : table === 'app_user_roles' ? 'user_id' : 'code'
-    const identity = table === 'app_roles' ? 'ADMIN' : (entries[actor] ?? entries.O).id
+    const identity = table === 'app_roles' ? 'ADMIN_SISTEMA' : (entries[actor] ?? entries.O).id
     const body = table === 'app_users' ? { id: identity, active: false }
-      : table === 'app_roles' ? { code: identity, active: false } : { user_id: identity, role_code: 'ADMIN' }
+      : table === 'app_roles' ? { code: identity, active: false } : { user_id: identity, role_code: 'ADMIN_SISTEMA' }
     return request(table, actor, { method, query: method === 'POST' ? '' : `?${identityField}=eq.${identity}`, body: method === 'DELETE' ? undefined : body })
   }
   async function snapshot() {
@@ -59,8 +59,8 @@ async function main() {
   await scenario('TEST-H1-002 inventory-and-constraints', async () => {
     assertSecurityInventory(securityInventory())
     assert.ok((await admin.from('app_users').insert({ id: randomUUID() })).error, 'FK Auth no aplicada.')
-    assert.ok((await admin.from('app_user_roles').insert({ user_id: randomUUID(), role_code: 'ADMIN' })).error, 'FK asignación no aplicada.')
-    assert.ok((await admin.from('app_user_roles').insert({ user_id: entries.O.id, role_code: 'OPERADOR' })).error, 'Duplicado aceptado.')
+    assert.ok((await admin.from('app_user_roles').insert({ user_id: randomUUID(), role_code: 'ADMIN_SISTEMA' })).error, 'FK asignación no aplicada.')
+    assert.ok((await admin.from('app_user_roles').insert({ user_id: entries.O.id, role_code: 'COORDINADOR_ACADEMICO' })).error, 'Duplicado aceptado.')
     assert.ok((await admin.from('app_roles').insert({ code: 'UNKNOWN' })).error, 'Rol no previsto aceptado.')
   })
 
@@ -97,20 +97,20 @@ async function main() {
   })
 
   await scenario('TEST-H1-007 exact-actor-matrix', async () => {
-    if (process.env.H1_PRIVILEGE_FAILURE === 'true') {
-      checked(await admin.from('app_user_roles').insert({ user_id: entries.O.id, role_code: 'ADMIN' }), 'ensayo temporal de privilegio')
-      record('controlled-extra-assignment', 'O', 'ok', { before: ['OPERADOR'], after: ['OPERADOR', 'ADMIN'] })
+    if (process.env.H2_PRIVILEGE_FAILURE === 'true') {
+      checked(await admin.from('app_user_roles').insert({ user_id: entries.O.id, role_code: 'ADMIN_SISTEMA' }), 'ensayo temporal de privilegio')
+      record('controlled-extra-assignment', 'O', 'ok', { before: ['COORDINADOR_ACADEMICO'], after: ['COORDINADOR_ACADEMICO', 'ADMIN_SISTEMA'] })
     }
     const allIds = Object.entries(entries).filter(([actor]) => actor !== 'F').map(([, entry]) => entry.id).sort()
     // The negative CI trial must fail on ordinary-user visibility, not merely fixture counts.
-    assert.deepEqual((await rows('app_users', 'O')).map(row => row.id), [entries.O.id], 'OPERADOR recibió directorio ampliado.')
+    assert.deepEqual((await rows('app_users', 'O')).map(row => row.id), [entries.O.id], 'Coordinador recibió directorio ampliado.')
     for (const actor of ['A', 'B', 'M']) {
       assert.deepEqual((await rows('app_users', actor)).map(row => row.id).sort(), allIds)
-      assert.equal((await rows('app_user_roles', actor)).length, 6)
-      assert.equal((await rows('app_roles', actor)).length, 2)
+      assert.equal((await rows('app_user_roles', actor)).length, 7)
+      assert.equal((await rows('app_roles', actor)).length, 3)
     }
-    assert.deepEqual((await rows('app_user_roles', 'O')).map(row => row.role_code), ['OPERADOR'])
-    assert.equal((await rows('app_roles', 'O')).length, 2)
+    assert.deepEqual((await rows('app_user_roles', 'O')).map(row => row.role_code), ['COORDINADOR_ACADEMICO'])
+    assert.equal((await rows('app_roles', 'O')).length, 3)
     assert.equal((await rows('app_users', 'O', `?id=eq.${entries.A.id}`)).length, 0)
     assert.equal((await rows('app_user_roles', 'O', `?user_id=eq.${entries.A.id}`)).length, 0)
     const joined = await rows('app_users', 'O', '?select=id,app_user_roles(role_code)')
@@ -123,12 +123,12 @@ async function main() {
   })
 
   await scenario('TEST-H1-009 client-metadata-cannot-authorize', async () => {
-    checked(await clients.O.auth.updateUser({ data: { role: 'ADMIN', permissions: ['*'], user_id: entries.A.id } }), 'metadata editable de prueba')
+    checked(await clients.O.auth.updateUser({ data: { role: 'ADMIN_SISTEMA', permissions: ['*'], user_id: entries.A.id } }), 'metadata editable de prueba')
     const forgedMetadata = checked(await clients.O.auth.refreshSession(), 'renovar JWT con metadata editable')
     tokens.O = forgedMetadata.session.access_token
-    assert.equal(JSON.parse(Buffer.from(tokens.O.split('.')[1], 'base64url').toString()).user_metadata.role, 'ADMIN')
+    assert.equal(JSON.parse(Buffer.from(tokens.O.split('.')[1], 'base64url').toString()).user_metadata.role, 'ADMIN_SISTEMA')
     assert.deepEqual((await rows('app_users', 'O')).map(row => row.id), [entries.O.id])
-    assert.ok(!(await request('app_users', 'O', { method: 'POST', body: { id: entries.A.id, role: 'ADMIN', permissions: ['*'] } })).ok)
+    assert.ok(!(await request('app_users', 'O', { method: 'POST', body: { id: entries.A.id, role: 'ADMIN_SISTEMA', permissions: ['*'] } })).ok)
     checked(await clients.O.auth.updateUser({ data: { role: null, permissions: null, user_id: null } }), 'restaurar metadata')
     tokens.O = checked(await clients.O.auth.refreshSession(), 'renovar metadata restaurada').session.access_token
   })
@@ -141,8 +141,8 @@ async function main() {
     }
     assert.equal(await snapshot(), before, 'Escritura denegada dejó efectos.')
     for (const actor of ['A', 'O']) {
-      assert.ok(!(await request('rpc/has_active_role', actor, { method: 'POST', body: { role_code: 'ADMIN' } })).ok)
-      assert.ok(!(await request('rpc/has_active_role', actor, { method: 'POST', body: { role_code: 'ADMIN', user_id: entries.A.id }, headers: { 'Content-Profile': 'private' } })).ok)
+      assert.ok(!(await request('rpc/has_active_role', actor, { method: 'POST', body: { role_code: 'ADMIN_SISTEMA' } })).ok)
+      assert.ok(!(await request('rpc/has_active_role', actor, { method: 'POST', body: { role_code: 'ADMIN_SISTEMA', user_id: entries.A.id }, headers: { 'Content-Profile': 'private' } })).ok)
       assert.ok(!(await request('app_users', actor, { headers: { 'Accept-Profile': 'private' } })).ok)
       const identityAdministration = await fetch(`${config.url}/auth/v1/admin/users`, { headers: { apikey: config.key, Authorization: `Bearer ${tokens[actor]}` } })
       assert.equal(identityAdministration.status, 403, 'Rol de aplicación accedió a administración Auth.')
@@ -151,14 +151,14 @@ async function main() {
 
   await scenario('TEST-H1-008 multi-role-union', async () => {
     try {
-      await roleState('OPERADOR', false)
-      assert.equal((await rows('app_users', 'M')).length, 6)
+      await roleState('COORDINADOR_ACADEMICO', false)
+      assert.equal((await rows('app_users', 'M')).length, 7)
       await noRows('O')
-      await roleState('OPERADOR', true)
-      await roleState('ADMIN', false)
+      await roleState('COORDINADOR_ACADEMICO', true)
+      await roleState('ADMIN_SISTEMA', false)
       assert.deepEqual((await rows('app_users', 'M')).map(row => row.id), [entries.M.id])
-      assert.equal((await rows('app_roles', 'M')).length, 1)
-    } finally { await roleState('ADMIN', true); await roleState('OPERADOR', true) }
+      assert.equal((await rows('app_roles', 'M')).length, 2)
+    } finally { await roleState('ADMIN_SISTEMA', true); await roleState('COORDINADOR_ACADEMICO', true) }
   })
 
   await scenario('TEST-H1-012 same-JWT-revocation', async () => {
@@ -168,21 +168,21 @@ async function main() {
     await noRows('O')
     checked(await admin.from('app_users').update({ active: true }).eq('id', entries.O.id), 'restaurar fixture')
     record('user-state', 'O', 'ok', { before: false, after: true })
-    checked(await admin.from('app_user_roles').delete().eq('user_id', entries.O.id).eq('role_code', 'OPERADOR'), 'retirar asignación')
-    record('assignment-state', 'O', 'ok', { before: ['OPERADOR'], after: [] })
+    checked(await admin.from('app_user_roles').delete().eq('user_id', entries.O.id).eq('role_code', 'COORDINADOR_ACADEMICO'), 'retirar asignación')
+    record('assignment-state', 'O', 'ok', { before: ['COORDINADOR_ACADEMICO'], after: [] })
     await noRows('O')
-    checked(await admin.from('app_user_roles').insert({ user_id: entries.O.id, role_code: 'OPERADOR' }), 'restaurar asignación')
-    record('assignment-state', 'O', 'ok', { before: [], after: ['OPERADOR'] })
+    checked(await admin.from('app_user_roles').insert({ user_id: entries.O.id, role_code: 'COORDINADOR_ACADEMICO' }), 'restaurar asignación')
+    record('assignment-state', 'O', 'ok', { before: [], after: ['COORDINADOR_ACADEMICO'] })
     assert.equal((await rows('app_users', 'O')).length, 1)
   })
 
   await scenario('TEST-H1-013 helper-and-policy-isolation', async () => {
     assertSecurityInventory(securityInventory())
     const result = inspectDatabase(`begin; set local role authenticated;
-      select private.has_active_role('ADMIN');
+      select private.has_active_role('ADMIN_SISTEMA');
       select set_config('request.jwt.claim.sub', :'actor', true) is not null;
       select private.has_active_role('UNKNOWN');
-      select private.has_active_role('ADMIN'' OR TRUE --'); rollback;`, { actor: entries.O.id })
+      select private.has_active_role('ADMIN_SISTEMA'' OR TRUE --'); rollback;`, { actor: entries.O.id })
     assert.deepEqual(result.split(/\r?\n/).filter(line => /^[tf]$/.test(line)), ['f', 't', 'f', 'f'])
   })
 

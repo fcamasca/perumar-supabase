@@ -4,6 +4,8 @@ import { checkConnection } from './lib/supabase'
 import { BrowserRouter } from 'react-router-dom'
 import { SessionProvider } from './security/SessionProvider'
 import { SecurityRoutes } from './security/SecurityRoutes'
+import { BrandMark } from './BrandMark'
+import { ThemeSelector } from './ThemeSelector'
 
 export default function App() {
   const [result, setResult] = useState('Conexión local pendiente de comprobación.')
@@ -19,19 +21,19 @@ export default function App() {
   }
   return (
     <main className="bootstrap">
-      <p className="eyebrow">H1 · Seguridad base</p>
-      <h1>PERÚ MAR</h1>
-      <p className="intro">Base técnica de la nueva aplicación.</p>
+      <header className="app-header"><div className="app-brand"><BrandMark /><div><h1>PERÚ MAR</h1><p className="eyebrow">Gestión Académica</p></div></div><ThemeSelector /></header>
+      {configurationError && <p role="alert">No se pudo iniciar la aplicación. Revisa la configuración de conexión.</p>}
+      {!configurationError && <SessionProvider><BrowserRouter><SecurityRoutes /></BrowserRouter></SessionProvider>}
+      <footer><details className="technical-details"><summary>Diagnóstico técnico</summary>
       <section aria-labelledby="environment-title">
         <h2 id="environment-title">Entorno local</h2>
         <p>Supabase se utiliza exclusivamente en el entorno local de desarrollo.</p>
-        {configurationError ? <p role="alert">{configurationError}</p> : <>
+        {configurationError ? <p>{configurationError}</p> : <>
           <button type="button" disabled={busy} onClick={diagnose}>{busy ? 'Comprobando…' : 'Comprobar conexión local'}</button>
           <p role="status">{result}</p>
         </>}
       </section>
-      {!configurationError && <SessionProvider><BrowserRouter><SecurityRoutes /></BrowserRouter></SessionProvider>}
-      <p className="scope">Ensayo local de Auth y RLS. Sin funciones de negocio. H1 pendiente de validación humana.</p>
+      </details></footer>
     </main>
   )
 }

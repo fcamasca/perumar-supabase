@@ -8,18 +8,19 @@ vi.mock('../src/security/SessionProvider', () => ({ SessionProvider: ({ children
 vi.mock('../src/security/SecurityRoutes', () => ({ SecurityRoutes: () => null }))
 afterEach(() => { vi.unstubAllEnvs(); vi.clearAllMocks() })
 
-describe('pantalla técnica H0', () => {
+describe('encabezado y diagnóstico secundario', () => {
   it('monta el punto de entrada visible con identificación y entorno accesibles', () => {
     render(<App />)
     expect(screen.getByRole('main')).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 1, name: 'PERÚ MAR' })).toBeVisible()
-    expect(screen.getByRole('region', { name: 'Entorno local' })).toBeVisible()
+    expect(screen.getByText('Diagnóstico técnico')).toBeVisible()
+    expect(screen.getByRole('region', { name: 'Entorno local' })).not.toBeVisible()
   })
 
   it('muestra un error seguro si falta la configuración', () => {
     vi.stubEnv('VITE_SUPABASE_URL', '')
     render(<App />)
-    expect(screen.getByRole('alert')).toHaveTextContent('Falta VITE_SUPABASE_URL')
+    expect(screen.getByRole('alert')).toHaveTextContent('No se pudo iniciar la aplicación')
     expect(screen.queryByRole('form')).not.toBeInTheDocument()
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
@@ -30,6 +31,7 @@ describe('pantalla técnica H0', () => {
     vi.mocked(checkConnection).mockResolvedValue('Conexión local verificada.')
     render(<App />)
     expect(checkConnection).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByText('Diagnóstico técnico'))
     fireEvent.click(screen.getByRole('button', { name: 'Comprobar conexión local' }))
     expect(await screen.findByText('Conexión local verificada.')).toBeVisible()
   })

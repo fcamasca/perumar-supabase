@@ -1,0 +1,586 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PERÚ MAR — proporciones y costa</title><style>
+:root{font-family:system-ui,sans-serif;color:#173d50;background:#f3f6f9}*{box-sizing:border-box}body{max-width:1160px;margin:auto;padding:32px}h1{font-size:26px;line-height:1.25}h2{font-size:18px}.panel{background:#fff;border:1px solid #d9e3eb;border-radius:12px;padding:24px;margin:24px 0}.samples{display:flex;align-items:center;gap:28px;flex-wrap:wrap}.sample{display:grid;justify-items:center;gap:12px;font-size:13px}.reference{padding-right:24px;border-right:1px solid #d9e3eb}.reference img{width:180px;height:180px;object-fit:contain;background:#fff}.dark{background:#0e1b29;color:#eef5fa;--pm-ink:#c9e7ef;--pm-wheel:#d4b78d;--pm-paper:#152b39;--pm-sea:#43899e;--pm-red:#ef7b88}.mono{--pm-ink:#173d50;--pm-wheel:#173d50;--pm-paper:#fff;--pm-sea:#173d50;--pm-red:#173d50}.lockup{margin-top:24px}p,li{line-height:1.6}code{font-size:12px}summary{cursor:pointer}.notes{max-width:85ch;font-size:14px}@media(max-width:650px){body{padding:16px}.panel{padding:20px}.reference{border:0;padding:0}}@media(forced-colors:active){.panel,:root{color:CanvasText;background:Canvas}.panel{--pm-ink:CanvasText;--pm-wheel:CanvasText;--pm-paper:Canvas;--pm-sea:CanvasText;--pm-red:CanvasText;border-color:CanvasText}}
+</style></head><body><h1>PERÚ MAR — ajuste de proporciones</h1><p>Diseño aprobado humanamente: 741f4ac. Integrado en login/header/favicon; validación visual de la integración pendiente. Ver brand-integration-preview.html.</p>
+<section class="panel"><h2>Comparación directa con el escudo institucional</h2><p class="notes">Revisar el tamaño del remate superior, el espacio alrededor del Perú y la separación entre mar, costa y territorio.</p><div class="samples"><figure class="sample reference"><img src="brand-reference/escudo-institucional.png" alt="Escudo institucional original de PERÚ MAR, aportado como referencia"><figcaption>Escudo original · referencia</figcaption></figure><div class="sample"><svg style="width:160px;max-width:100%;height:auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 164" role="img" aria-labelledby="comparison-160-pm-isotype-title comparison-160-pm-isotype-desc">
+  <title id="comparison-160-pm-isotype-title">PERÚ MAR — isotipo institucional</title>
+  <desc id="comparison-160-pm-isotype-desc">Timón con ancla detrás, Perú en el centro y Mar de Grau al oeste. Una T superior incorpora acentos rojos peruanos.</desc>
+  <!-- Anchor: entirely behind the wheel and its opaque medallion. -->
+  <g id="comparison-160-anchor" fill="none" stroke="var(--pm-ink, #173d50)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path id="comparison-160-anchor-eye" d="M73 18v-4a7 7 0 0 1 14 0v4" stroke-width="3"/>
+    <path d="M80 29v116M34 105c5 18 22 32 46 42 24-10 41-24 46-42"/>
+    <path d="m34 101-3 17 15-9m80-8 3 17-15-9"/>
+  </g>
+  <!-- Institutional T and Peruvian red accents, above rather than inside the wheel. -->
+  <g id="comparison-160-institutional-t" transform="translate(80 35) scale(.88 .64) translate(-80 -43)" stroke="var(--pm-ink, #173d50)" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M57 13h46v15H86v15H74V28H57Z" fill="var(--pm-paper, #fffaf0)"/>
+    <path d="M59 15h13v11H59Zm29 0h13v11H88Z" fill="var(--pm-red, #bb3544)" stroke="none"/>
+  </g>
+  <!-- Wheel: broad rim and restrained handles, without an internal cross. -->
+  <g id="comparison-160-wheel" stroke="var(--pm-wheel, #947044)" stroke-linecap="round">
+    <path d="M23 83h14m86 0h14M40 43l10 10m60 60 10 10M40 123l10-10m60-60 10-10M80 127v12" fill="none" stroke-width="9"/>
+    <circle cx="80" cy="83" r="44" fill="var(--pm-paper, #fffaf0)" stroke-width="9"/>
+  </g>
+  <!-- Neutral land remains north and east. Only the western sector suggests sea. -->
+  <g id="comparison-160-peru-and-mar-de-grau">
+    <defs><clipPath id="comparison-160-medallion-coast-clip"><circle cx="80" cy="83" r="39.5"/></clipPath></defs>
+    <g clip-path="url(#comparison-160-medallion-coast-clip)">
+      <path id="comparison-160-western-sea" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00 L0.00 126.00 L0.00 44.00Z" fill="var(--pm-sea, #39758a)"/>
+      <path id="comparison-160-sea-lines" d="M46 82q2-1.5 4 0t4 0M50 96q2-1.5 4 0t4 0" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="1.4" stroke-linecap="round"/>
+      <path id="comparison-160-peru" d="M96.27 62.43 L92.72 62.24 L92.19 62.84 L88.96 63.61 L84.46 66.32 L84.17 68.19 L83.16 69.57 L83.56 71.73 L81.17 72.88 L81.18 74.57 L80.14 75.30 L81.78 78.89 L83.97 81.32 L83.14 83.04 L85.75 83.27 L87.24 85.40 L90.72 85.50 L93.95 83.15 L93.69 89.21 L95.48 89.67 L97.70 88.98 L101.11 95.40 L100.26 96.76 L100.07 99.56 L99.99 102.96 L98.45 104.95 L99.16 106.43 L98.25 107.77 L99.95 111.13 L97.46 115.43 L96.41 117.48 L94.38 118.50 L90.43 116.21 L90.09 114.57 L82.28 110.56 L75.21 106.20 L72.17 103.74 L70.54 100.44 L71.19 99.29 L67.85 94.05 L63.97 86.69 L60.25 78.74 L58.63 76.92 L57.39 73.98 L54.33 71.38 L51.53 69.76 L52.80 67.98 L50.89 64.18 L52.12 61.38 L55.26 58.86 L55.73 60.52 L54.60 61.47 L54.71 62.94 L56.34 62.62 L57.93 63.05 L59.58 65.06 L61.81 63.42 L62.55 60.73 L64.97 57.26 L69.71 55.68 L74.00 51.50 L75.23 48.91 L74.68 45.88 L75.73 45.50 L78.35 47.39 L79.61 49.27 L81.43 50.30 L83.75 54.49 L86.69 54.99 L88.86 53.93 L90.28 54.62 L92.64 54.28 L95.66 56.15 L93.12 60.21 L94.30 60.30Z" fill="var(--pm-ink, #173d50)"/>
+      <path id="comparison-160-western-coast" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+</svg>
+<span>Nuevo · 160 px</span></div><div class="sample"><svg style="width:80px;max-width:100%;height:auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 164" role="img" aria-labelledby="comparison-80-pm-isotype-title comparison-80-pm-isotype-desc">
+  <title id="comparison-80-pm-isotype-title">PERÚ MAR — isotipo institucional</title>
+  <desc id="comparison-80-pm-isotype-desc">Timón con ancla detrás, Perú en el centro y Mar de Grau al oeste. Una T superior incorpora acentos rojos peruanos.</desc>
+  <!-- Anchor: entirely behind the wheel and its opaque medallion. -->
+  <g id="comparison-80-anchor" fill="none" stroke="var(--pm-ink, #173d50)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path id="comparison-80-anchor-eye" d="M73 18v-4a7 7 0 0 1 14 0v4" stroke-width="3"/>
+    <path d="M80 29v116M34 105c5 18 22 32 46 42 24-10 41-24 46-42"/>
+    <path d="m34 101-3 17 15-9m80-8 3 17-15-9"/>
+  </g>
+  <!-- Institutional T and Peruvian red accents, above rather than inside the wheel. -->
+  <g id="comparison-80-institutional-t" transform="translate(80 35) scale(.88 .64) translate(-80 -43)" stroke="var(--pm-ink, #173d50)" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M57 13h46v15H86v15H74V28H57Z" fill="var(--pm-paper, #fffaf0)"/>
+    <path d="M59 15h13v11H59Zm29 0h13v11H88Z" fill="var(--pm-red, #bb3544)" stroke="none"/>
+  </g>
+  <!-- Wheel: broad rim and restrained handles, without an internal cross. -->
+  <g id="comparison-80-wheel" stroke="var(--pm-wheel, #947044)" stroke-linecap="round">
+    <path d="M23 83h14m86 0h14M40 43l10 10m60 60 10 10M40 123l10-10m60-60 10-10M80 127v12" fill="none" stroke-width="9"/>
+    <circle cx="80" cy="83" r="44" fill="var(--pm-paper, #fffaf0)" stroke-width="9"/>
+  </g>
+  <!-- Neutral land remains north and east. Only the western sector suggests sea. -->
+  <g id="comparison-80-peru-and-mar-de-grau">
+    <defs><clipPath id="comparison-80-medallion-coast-clip"><circle cx="80" cy="83" r="39.5"/></clipPath></defs>
+    <g clip-path="url(#comparison-80-medallion-coast-clip)">
+      <path id="comparison-80-western-sea" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00 L0.00 126.00 L0.00 44.00Z" fill="var(--pm-sea, #39758a)"/>
+      <path id="comparison-80-sea-lines" d="M46 82q2-1.5 4 0t4 0M50 96q2-1.5 4 0t4 0" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="1.4" stroke-linecap="round"/>
+      <path id="comparison-80-peru" d="M96.27 62.43 L92.72 62.24 L92.19 62.84 L88.96 63.61 L84.46 66.32 L84.17 68.19 L83.16 69.57 L83.56 71.73 L81.17 72.88 L81.18 74.57 L80.14 75.30 L81.78 78.89 L83.97 81.32 L83.14 83.04 L85.75 83.27 L87.24 85.40 L90.72 85.50 L93.95 83.15 L93.69 89.21 L95.48 89.67 L97.70 88.98 L101.11 95.40 L100.26 96.76 L100.07 99.56 L99.99 102.96 L98.45 104.95 L99.16 106.43 L98.25 107.77 L99.95 111.13 L97.46 115.43 L96.41 117.48 L94.38 118.50 L90.43 116.21 L90.09 114.57 L82.28 110.56 L75.21 106.20 L72.17 103.74 L70.54 100.44 L71.19 99.29 L67.85 94.05 L63.97 86.69 L60.25 78.74 L58.63 76.92 L57.39 73.98 L54.33 71.38 L51.53 69.76 L52.80 67.98 L50.89 64.18 L52.12 61.38 L55.26 58.86 L55.73 60.52 L54.60 61.47 L54.71 62.94 L56.34 62.62 L57.93 63.05 L59.58 65.06 L61.81 63.42 L62.55 60.73 L64.97 57.26 L69.71 55.68 L74.00 51.50 L75.23 48.91 L74.68 45.88 L75.73 45.50 L78.35 47.39 L79.61 49.27 L81.43 50.30 L83.75 54.49 L86.69 54.99 L88.86 53.93 L90.28 54.62 L92.64 54.28 L95.66 56.15 L93.12 60.21 L94.30 60.30Z" fill="var(--pm-ink, #173d50)"/>
+      <path id="comparison-80-western-coast" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+</svg>
+<span>Nuevo · 80 px</span></div><div class="sample"><svg style="width:40px;max-width:100%;height:auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 164" role="img" aria-labelledby="comparison-40-pm-isotype-title comparison-40-pm-isotype-desc">
+  <title id="comparison-40-pm-isotype-title">PERÚ MAR — isotipo institucional</title>
+  <desc id="comparison-40-pm-isotype-desc">Timón con ancla detrás, Perú en el centro y Mar de Grau al oeste. Una T superior incorpora acentos rojos peruanos.</desc>
+  <!-- Anchor: entirely behind the wheel and its opaque medallion. -->
+  <g id="comparison-40-anchor" fill="none" stroke="var(--pm-ink, #173d50)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path id="comparison-40-anchor-eye" d="M73 18v-4a7 7 0 0 1 14 0v4" stroke-width="3"/>
+    <path d="M80 29v116M34 105c5 18 22 32 46 42 24-10 41-24 46-42"/>
+    <path d="m34 101-3 17 15-9m80-8 3 17-15-9"/>
+  </g>
+  <!-- Institutional T and Peruvian red accents, above rather than inside the wheel. -->
+  <g id="comparison-40-institutional-t" transform="translate(80 35) scale(.88 .64) translate(-80 -43)" stroke="var(--pm-ink, #173d50)" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M57 13h46v15H86v15H74V28H57Z" fill="var(--pm-paper, #fffaf0)"/>
+    <path d="M59 15h13v11H59Zm29 0h13v11H88Z" fill="var(--pm-red, #bb3544)" stroke="none"/>
+  </g>
+  <!-- Wheel: broad rim and restrained handles, without an internal cross. -->
+  <g id="comparison-40-wheel" stroke="var(--pm-wheel, #947044)" stroke-linecap="round">
+    <path d="M23 83h14m86 0h14M40 43l10 10m60 60 10 10M40 123l10-10m60-60 10-10M80 127v12" fill="none" stroke-width="9"/>
+    <circle cx="80" cy="83" r="44" fill="var(--pm-paper, #fffaf0)" stroke-width="9"/>
+  </g>
+  <!-- Neutral land remains north and east. Only the western sector suggests sea. -->
+  <g id="comparison-40-peru-and-mar-de-grau">
+    <defs><clipPath id="comparison-40-medallion-coast-clip"><circle cx="80" cy="83" r="39.5"/></clipPath></defs>
+    <g clip-path="url(#comparison-40-medallion-coast-clip)">
+      <path id="comparison-40-western-sea" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00 L0.00 126.00 L0.00 44.00Z" fill="var(--pm-sea, #39758a)"/>
+      <path id="comparison-40-sea-lines" d="M46 82q2-1.5 4 0t4 0M50 96q2-1.5 4 0t4 0" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="1.4" stroke-linecap="round"/>
+      <path id="comparison-40-peru" d="M96.27 62.43 L92.72 62.24 L92.19 62.84 L88.96 63.61 L84.46 66.32 L84.17 68.19 L83.16 69.57 L83.56 71.73 L81.17 72.88 L81.18 74.57 L80.14 75.30 L81.78 78.89 L83.97 81.32 L83.14 83.04 L85.75 83.27 L87.24 85.40 L90.72 85.50 L93.95 83.15 L93.69 89.21 L95.48 89.67 L97.70 88.98 L101.11 95.40 L100.26 96.76 L100.07 99.56 L99.99 102.96 L98.45 104.95 L99.16 106.43 L98.25 107.77 L99.95 111.13 L97.46 115.43 L96.41 117.48 L94.38 118.50 L90.43 116.21 L90.09 114.57 L82.28 110.56 L75.21 106.20 L72.17 103.74 L70.54 100.44 L71.19 99.29 L67.85 94.05 L63.97 86.69 L60.25 78.74 L58.63 76.92 L57.39 73.98 L54.33 71.38 L51.53 69.76 L52.80 67.98 L50.89 64.18 L52.12 61.38 L55.26 58.86 L55.73 60.52 L54.60 61.47 L54.71 62.94 L56.34 62.62 L57.93 63.05 L59.58 65.06 L61.81 63.42 L62.55 60.73 L64.97 57.26 L69.71 55.68 L74.00 51.50 L75.23 48.91 L74.68 45.88 L75.73 45.50 L78.35 47.39 L79.61 49.27 L81.43 50.30 L83.75 54.49 L86.69 54.99 L88.86 53.93 L90.28 54.62 L92.64 54.28 L95.66 56.15 L93.12 60.21 L94.30 60.30Z" fill="var(--pm-ink, #173d50)"/>
+      <path id="comparison-40-western-coast" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+</svg>
+<span>Nuevo · 40 px</span></div><div class="sample"><svg style="width:24px;max-width:100%;height:auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 164" role="img" aria-labelledby="comparison-24-pm-isotype-title comparison-24-pm-isotype-desc">
+  <title id="comparison-24-pm-isotype-title">PERÚ MAR — isotipo institucional</title>
+  <desc id="comparison-24-pm-isotype-desc">Timón con ancla detrás, Perú en el centro y Mar de Grau al oeste. Una T superior incorpora acentos rojos peruanos.</desc>
+  <!-- Anchor: entirely behind the wheel and its opaque medallion. -->
+  <g id="comparison-24-anchor" fill="none" stroke="var(--pm-ink, #173d50)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path id="comparison-24-anchor-eye" d="M73 18v-4a7 7 0 0 1 14 0v4" stroke-width="3"/>
+    <path d="M80 29v116M34 105c5 18 22 32 46 42 24-10 41-24 46-42"/>
+    <path d="m34 101-3 17 15-9m80-8 3 17-15-9"/>
+  </g>
+  <!-- Institutional T and Peruvian red accents, above rather than inside the wheel. -->
+  <g id="comparison-24-institutional-t" transform="translate(80 35) scale(.88 .64) translate(-80 -43)" stroke="var(--pm-ink, #173d50)" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M57 13h46v15H86v15H74V28H57Z" fill="var(--pm-paper, #fffaf0)"/>
+    <path d="M59 15h13v11H59Zm29 0h13v11H88Z" fill="var(--pm-red, #bb3544)" stroke="none"/>
+  </g>
+  <!-- Wheel: broad rim and restrained handles, without an internal cross. -->
+  <g id="comparison-24-wheel" stroke="var(--pm-wheel, #947044)" stroke-linecap="round">
+    <path d="M23 83h14m86 0h14M40 43l10 10m60 60 10 10M40 123l10-10m60-60 10-10M80 127v12" fill="none" stroke-width="9"/>
+    <circle cx="80" cy="83" r="44" fill="var(--pm-paper, #fffaf0)" stroke-width="9"/>
+  </g>
+  <!-- Neutral land remains north and east. Only the western sector suggests sea. -->
+  <g id="comparison-24-peru-and-mar-de-grau">
+    <defs><clipPath id="comparison-24-medallion-coast-clip"><circle cx="80" cy="83" r="39.5"/></clipPath></defs>
+    <g clip-path="url(#comparison-24-medallion-coast-clip)">
+      <path id="comparison-24-western-sea" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00 L0.00 126.00 L0.00 44.00Z" fill="var(--pm-sea, #39758a)"/>
+      <path id="comparison-24-sea-lines" d="M46 82q2-1.5 4 0t4 0M50 96q2-1.5 4 0t4 0" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="1.4" stroke-linecap="round"/>
+      <path id="comparison-24-peru" d="M96.27 62.43 L92.72 62.24 L92.19 62.84 L88.96 63.61 L84.46 66.32 L84.17 68.19 L83.16 69.57 L83.56 71.73 L81.17 72.88 L81.18 74.57 L80.14 75.30 L81.78 78.89 L83.97 81.32 L83.14 83.04 L85.75 83.27 L87.24 85.40 L90.72 85.50 L93.95 83.15 L93.69 89.21 L95.48 89.67 L97.70 88.98 L101.11 95.40 L100.26 96.76 L100.07 99.56 L99.99 102.96 L98.45 104.95 L99.16 106.43 L98.25 107.77 L99.95 111.13 L97.46 115.43 L96.41 117.48 L94.38 118.50 L90.43 116.21 L90.09 114.57 L82.28 110.56 L75.21 106.20 L72.17 103.74 L70.54 100.44 L71.19 99.29 L67.85 94.05 L63.97 86.69 L60.25 78.74 L58.63 76.92 L57.39 73.98 L54.33 71.38 L51.53 69.76 L52.80 67.98 L50.89 64.18 L52.12 61.38 L55.26 58.86 L55.73 60.52 L54.60 61.47 L54.71 62.94 L56.34 62.62 L57.93 63.05 L59.58 65.06 L61.81 63.42 L62.55 60.73 L64.97 57.26 L69.71 55.68 L74.00 51.50 L75.23 48.91 L74.68 45.88 L75.73 45.50 L78.35 47.39 L79.61 49.27 L81.43 50.30 L83.75 54.49 L86.69 54.99 L88.86 53.93 L90.28 54.62 L92.64 54.28 L95.66 56.15 L93.12 60.21 L94.30 60.30Z" fill="var(--pm-ink, #173d50)"/>
+      <path id="comparison-24-western-coast" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+</svg>
+<span>Nuevo · 24 px</span></div></div></section><p class="notes"><strong>T:</strong> centrada, más alargada horizontalmente: ancho al 88 % y altura al 64 % del diseño inicial. La pieza se eleva 8 unidades para dejar más aire respecto al timón. Sobre ella aparece la media argolla del ancla, dibujada detrás de la T. Los laterales rojo/blanco/rojo siguen siendo un remate estrecho, no una bandera rectangular. <strong>Perú:</strong> altura de 73 unidades sobre 79 útiles del medallón (≈92 %), con escala geográfica uniforme. El norte y el sureste rozan visualmente el borde, con margen mínimo y sin recortar ni deformar el país. <strong>Costa:</strong> trazo claro continuo de 2 unidades en todo el litoral representado, prolongado hasta los bordes del medallón. El océano queda siempre al oeste de esa línea; no hay halo en torno al país.</p><section class="panel "><h2>Claro</h2><div class="samples"><div class="sample"><svg style="width:160px;max-width:100%;height:auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 164" role="img" aria-labelledby="light-160-pm-isotype-title light-160-pm-isotype-desc">
+  <title id="light-160-pm-isotype-title">PERÚ MAR — isotipo institucional</title>
+  <desc id="light-160-pm-isotype-desc">Timón con ancla detrás, Perú en el centro y Mar de Grau al oeste. Una T superior incorpora acentos rojos peruanos.</desc>
+  <!-- Anchor: entirely behind the wheel and its opaque medallion. -->
+  <g id="light-160-anchor" fill="none" stroke="var(--pm-ink, #173d50)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path id="light-160-anchor-eye" d="M73 18v-4a7 7 0 0 1 14 0v4" stroke-width="3"/>
+    <path d="M80 29v116M34 105c5 18 22 32 46 42 24-10 41-24 46-42"/>
+    <path d="m34 101-3 17 15-9m80-8 3 17-15-9"/>
+  </g>
+  <!-- Institutional T and Peruvian red accents, above rather than inside the wheel. -->
+  <g id="light-160-institutional-t" transform="translate(80 35) scale(.88 .64) translate(-80 -43)" stroke="var(--pm-ink, #173d50)" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M57 13h46v15H86v15H74V28H57Z" fill="var(--pm-paper, #fffaf0)"/>
+    <path d="M59 15h13v11H59Zm29 0h13v11H88Z" fill="var(--pm-red, #bb3544)" stroke="none"/>
+  </g>
+  <!-- Wheel: broad rim and restrained handles, without an internal cross. -->
+  <g id="light-160-wheel" stroke="var(--pm-wheel, #947044)" stroke-linecap="round">
+    <path d="M23 83h14m86 0h14M40 43l10 10m60 60 10 10M40 123l10-10m60-60 10-10M80 127v12" fill="none" stroke-width="9"/>
+    <circle cx="80" cy="83" r="44" fill="var(--pm-paper, #fffaf0)" stroke-width="9"/>
+  </g>
+  <!-- Neutral land remains north and east. Only the western sector suggests sea. -->
+  <g id="light-160-peru-and-mar-de-grau">
+    <defs><clipPath id="light-160-medallion-coast-clip"><circle cx="80" cy="83" r="39.5"/></clipPath></defs>
+    <g clip-path="url(#light-160-medallion-coast-clip)">
+      <path id="light-160-western-sea" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00 L0.00 126.00 L0.00 44.00Z" fill="var(--pm-sea, #39758a)"/>
+      <path id="light-160-sea-lines" d="M46 82q2-1.5 4 0t4 0M50 96q2-1.5 4 0t4 0" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="1.4" stroke-linecap="round"/>
+      <path id="light-160-peru" d="M96.27 62.43 L92.72 62.24 L92.19 62.84 L88.96 63.61 L84.46 66.32 L84.17 68.19 L83.16 69.57 L83.56 71.73 L81.17 72.88 L81.18 74.57 L80.14 75.30 L81.78 78.89 L83.97 81.32 L83.14 83.04 L85.75 83.27 L87.24 85.40 L90.72 85.50 L93.95 83.15 L93.69 89.21 L95.48 89.67 L97.70 88.98 L101.11 95.40 L100.26 96.76 L100.07 99.56 L99.99 102.96 L98.45 104.95 L99.16 106.43 L98.25 107.77 L99.95 111.13 L97.46 115.43 L96.41 117.48 L94.38 118.50 L90.43 116.21 L90.09 114.57 L82.28 110.56 L75.21 106.20 L72.17 103.74 L70.54 100.44 L71.19 99.29 L67.85 94.05 L63.97 86.69 L60.25 78.74 L58.63 76.92 L57.39 73.98 L54.33 71.38 L51.53 69.76 L52.80 67.98 L50.89 64.18 L52.12 61.38 L55.26 58.86 L55.73 60.52 L54.60 61.47 L54.71 62.94 L56.34 62.62 L57.93 63.05 L59.58 65.06 L61.81 63.42 L62.55 60.73 L64.97 57.26 L69.71 55.68 L74.00 51.50 L75.23 48.91 L74.68 45.88 L75.73 45.50 L78.35 47.39 L79.61 49.27 L81.43 50.30 L83.75 54.49 L86.69 54.99 L88.86 53.93 L90.28 54.62 L92.64 54.28 L95.66 56.15 L93.12 60.21 L94.30 60.30Z" fill="var(--pm-ink, #173d50)"/>
+      <path id="light-160-western-coast" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+</svg>
+<span>160 px</span></div><div class="sample"><svg style="width:80px;max-width:100%;height:auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 164" role="img" aria-labelledby="light-80-pm-isotype-title light-80-pm-isotype-desc">
+  <title id="light-80-pm-isotype-title">PERÚ MAR — isotipo institucional</title>
+  <desc id="light-80-pm-isotype-desc">Timón con ancla detrás, Perú en el centro y Mar de Grau al oeste. Una T superior incorpora acentos rojos peruanos.</desc>
+  <!-- Anchor: entirely behind the wheel and its opaque medallion. -->
+  <g id="light-80-anchor" fill="none" stroke="var(--pm-ink, #173d50)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path id="light-80-anchor-eye" d="M73 18v-4a7 7 0 0 1 14 0v4" stroke-width="3"/>
+    <path d="M80 29v116M34 105c5 18 22 32 46 42 24-10 41-24 46-42"/>
+    <path d="m34 101-3 17 15-9m80-8 3 17-15-9"/>
+  </g>
+  <!-- Institutional T and Peruvian red accents, above rather than inside the wheel. -->
+  <g id="light-80-institutional-t" transform="translate(80 35) scale(.88 .64) translate(-80 -43)" stroke="var(--pm-ink, #173d50)" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M57 13h46v15H86v15H74V28H57Z" fill="var(--pm-paper, #fffaf0)"/>
+    <path d="M59 15h13v11H59Zm29 0h13v11H88Z" fill="var(--pm-red, #bb3544)" stroke="none"/>
+  </g>
+  <!-- Wheel: broad rim and restrained handles, without an internal cross. -->
+  <g id="light-80-wheel" stroke="var(--pm-wheel, #947044)" stroke-linecap="round">
+    <path d="M23 83h14m86 0h14M40 43l10 10m60 60 10 10M40 123l10-10m60-60 10-10M80 127v12" fill="none" stroke-width="9"/>
+    <circle cx="80" cy="83" r="44" fill="var(--pm-paper, #fffaf0)" stroke-width="9"/>
+  </g>
+  <!-- Neutral land remains north and east. Only the western sector suggests sea. -->
+  <g id="light-80-peru-and-mar-de-grau">
+    <defs><clipPath id="light-80-medallion-coast-clip"><circle cx="80" cy="83" r="39.5"/></clipPath></defs>
+    <g clip-path="url(#light-80-medallion-coast-clip)">
+      <path id="light-80-western-sea" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00 L0.00 126.00 L0.00 44.00Z" fill="var(--pm-sea, #39758a)"/>
+      <path id="light-80-sea-lines" d="M46 82q2-1.5 4 0t4 0M50 96q2-1.5 4 0t4 0" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="1.4" stroke-linecap="round"/>
+      <path id="light-80-peru" d="M96.27 62.43 L92.72 62.24 L92.19 62.84 L88.96 63.61 L84.46 66.32 L84.17 68.19 L83.16 69.57 L83.56 71.73 L81.17 72.88 L81.18 74.57 L80.14 75.30 L81.78 78.89 L83.97 81.32 L83.14 83.04 L85.75 83.27 L87.24 85.40 L90.72 85.50 L93.95 83.15 L93.69 89.21 L95.48 89.67 L97.70 88.98 L101.11 95.40 L100.26 96.76 L100.07 99.56 L99.99 102.96 L98.45 104.95 L99.16 106.43 L98.25 107.77 L99.95 111.13 L97.46 115.43 L96.41 117.48 L94.38 118.50 L90.43 116.21 L90.09 114.57 L82.28 110.56 L75.21 106.20 L72.17 103.74 L70.54 100.44 L71.19 99.29 L67.85 94.05 L63.97 86.69 L60.25 78.74 L58.63 76.92 L57.39 73.98 L54.33 71.38 L51.53 69.76 L52.80 67.98 L50.89 64.18 L52.12 61.38 L55.26 58.86 L55.73 60.52 L54.60 61.47 L54.71 62.94 L56.34 62.62 L57.93 63.05 L59.58 65.06 L61.81 63.42 L62.55 60.73 L64.97 57.26 L69.71 55.68 L74.00 51.50 L75.23 48.91 L74.68 45.88 L75.73 45.50 L78.35 47.39 L79.61 49.27 L81.43 50.30 L83.75 54.49 L86.69 54.99 L88.86 53.93 L90.28 54.62 L92.64 54.28 L95.66 56.15 L93.12 60.21 L94.30 60.30Z" fill="var(--pm-ink, #173d50)"/>
+      <path id="light-80-western-coast" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+</svg>
+<span>80 px</span></div><div class="sample"><svg style="width:40px;max-width:100%;height:auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 164" role="img" aria-labelledby="light-40-pm-isotype-title light-40-pm-isotype-desc">
+  <title id="light-40-pm-isotype-title">PERÚ MAR — isotipo institucional</title>
+  <desc id="light-40-pm-isotype-desc">Timón con ancla detrás, Perú en el centro y Mar de Grau al oeste. Una T superior incorpora acentos rojos peruanos.</desc>
+  <!-- Anchor: entirely behind the wheel and its opaque medallion. -->
+  <g id="light-40-anchor" fill="none" stroke="var(--pm-ink, #173d50)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path id="light-40-anchor-eye" d="M73 18v-4a7 7 0 0 1 14 0v4" stroke-width="3"/>
+    <path d="M80 29v116M34 105c5 18 22 32 46 42 24-10 41-24 46-42"/>
+    <path d="m34 101-3 17 15-9m80-8 3 17-15-9"/>
+  </g>
+  <!-- Institutional T and Peruvian red accents, above rather than inside the wheel. -->
+  <g id="light-40-institutional-t" transform="translate(80 35) scale(.88 .64) translate(-80 -43)" stroke="var(--pm-ink, #173d50)" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M57 13h46v15H86v15H74V28H57Z" fill="var(--pm-paper, #fffaf0)"/>
+    <path d="M59 15h13v11H59Zm29 0h13v11H88Z" fill="var(--pm-red, #bb3544)" stroke="none"/>
+  </g>
+  <!-- Wheel: broad rim and restrained handles, without an internal cross. -->
+  <g id="light-40-wheel" stroke="var(--pm-wheel, #947044)" stroke-linecap="round">
+    <path d="M23 83h14m86 0h14M40 43l10 10m60 60 10 10M40 123l10-10m60-60 10-10M80 127v12" fill="none" stroke-width="9"/>
+    <circle cx="80" cy="83" r="44" fill="var(--pm-paper, #fffaf0)" stroke-width="9"/>
+  </g>
+  <!-- Neutral land remains north and east. Only the western sector suggests sea. -->
+  <g id="light-40-peru-and-mar-de-grau">
+    <defs><clipPath id="light-40-medallion-coast-clip"><circle cx="80" cy="83" r="39.5"/></clipPath></defs>
+    <g clip-path="url(#light-40-medallion-coast-clip)">
+      <path id="light-40-western-sea" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00 L0.00 126.00 L0.00 44.00Z" fill="var(--pm-sea, #39758a)"/>
+      <path id="light-40-sea-lines" d="M46 82q2-1.5 4 0t4 0M50 96q2-1.5 4 0t4 0" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="1.4" stroke-linecap="round"/>
+      <path id="light-40-peru" d="M96.27 62.43 L92.72 62.24 L92.19 62.84 L88.96 63.61 L84.46 66.32 L84.17 68.19 L83.16 69.57 L83.56 71.73 L81.17 72.88 L81.18 74.57 L80.14 75.30 L81.78 78.89 L83.97 81.32 L83.14 83.04 L85.75 83.27 L87.24 85.40 L90.72 85.50 L93.95 83.15 L93.69 89.21 L95.48 89.67 L97.70 88.98 L101.11 95.40 L100.26 96.76 L100.07 99.56 L99.99 102.96 L98.45 104.95 L99.16 106.43 L98.25 107.77 L99.95 111.13 L97.46 115.43 L96.41 117.48 L94.38 118.50 L90.43 116.21 L90.09 114.57 L82.28 110.56 L75.21 106.20 L72.17 103.74 L70.54 100.44 L71.19 99.29 L67.85 94.05 L63.97 86.69 L60.25 78.74 L58.63 76.92 L57.39 73.98 L54.33 71.38 L51.53 69.76 L52.80 67.98 L50.89 64.18 L52.12 61.38 L55.26 58.86 L55.73 60.52 L54.60 61.47 L54.71 62.94 L56.34 62.62 L57.93 63.05 L59.58 65.06 L61.81 63.42 L62.55 60.73 L64.97 57.26 L69.71 55.68 L74.00 51.50 L75.23 48.91 L74.68 45.88 L75.73 45.50 L78.35 47.39 L79.61 49.27 L81.43 50.30 L83.75 54.49 L86.69 54.99 L88.86 53.93 L90.28 54.62 L92.64 54.28 L95.66 56.15 L93.12 60.21 L94.30 60.30Z" fill="var(--pm-ink, #173d50)"/>
+      <path id="light-40-western-coast" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+</svg>
+<span>40 px</span></div><div class="sample"><svg style="width:24px;max-width:100%;height:auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 164" role="img" aria-labelledby="light-24-pm-isotype-title light-24-pm-isotype-desc">
+  <title id="light-24-pm-isotype-title">PERÚ MAR — isotipo institucional</title>
+  <desc id="light-24-pm-isotype-desc">Timón con ancla detrás, Perú en el centro y Mar de Grau al oeste. Una T superior incorpora acentos rojos peruanos.</desc>
+  <!-- Anchor: entirely behind the wheel and its opaque medallion. -->
+  <g id="light-24-anchor" fill="none" stroke="var(--pm-ink, #173d50)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path id="light-24-anchor-eye" d="M73 18v-4a7 7 0 0 1 14 0v4" stroke-width="3"/>
+    <path d="M80 29v116M34 105c5 18 22 32 46 42 24-10 41-24 46-42"/>
+    <path d="m34 101-3 17 15-9m80-8 3 17-15-9"/>
+  </g>
+  <!-- Institutional T and Peruvian red accents, above rather than inside the wheel. -->
+  <g id="light-24-institutional-t" transform="translate(80 35) scale(.88 .64) translate(-80 -43)" stroke="var(--pm-ink, #173d50)" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M57 13h46v15H86v15H74V28H57Z" fill="var(--pm-paper, #fffaf0)"/>
+    <path d="M59 15h13v11H59Zm29 0h13v11H88Z" fill="var(--pm-red, #bb3544)" stroke="none"/>
+  </g>
+  <!-- Wheel: broad rim and restrained handles, without an internal cross. -->
+  <g id="light-24-wheel" stroke="var(--pm-wheel, #947044)" stroke-linecap="round">
+    <path d="M23 83h14m86 0h14M40 43l10 10m60 60 10 10M40 123l10-10m60-60 10-10M80 127v12" fill="none" stroke-width="9"/>
+    <circle cx="80" cy="83" r="44" fill="var(--pm-paper, #fffaf0)" stroke-width="9"/>
+  </g>
+  <!-- Neutral land remains north and east. Only the western sector suggests sea. -->
+  <g id="light-24-peru-and-mar-de-grau">
+    <defs><clipPath id="light-24-medallion-coast-clip"><circle cx="80" cy="83" r="39.5"/></clipPath></defs>
+    <g clip-path="url(#light-24-medallion-coast-clip)">
+      <path id="light-24-western-sea" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00 L0.00 126.00 L0.00 44.00Z" fill="var(--pm-sea, #39758a)"/>
+      <path id="light-24-sea-lines" d="M46 82q2-1.5 4 0t4 0M50 96q2-1.5 4 0t4 0" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="1.4" stroke-linecap="round"/>
+      <path id="light-24-peru" d="M96.27 62.43 L92.72 62.24 L92.19 62.84 L88.96 63.61 L84.46 66.32 L84.17 68.19 L83.16 69.57 L83.56 71.73 L81.17 72.88 L81.18 74.57 L80.14 75.30 L81.78 78.89 L83.97 81.32 L83.14 83.04 L85.75 83.27 L87.24 85.40 L90.72 85.50 L93.95 83.15 L93.69 89.21 L95.48 89.67 L97.70 88.98 L101.11 95.40 L100.26 96.76 L100.07 99.56 L99.99 102.96 L98.45 104.95 L99.16 106.43 L98.25 107.77 L99.95 111.13 L97.46 115.43 L96.41 117.48 L94.38 118.50 L90.43 116.21 L90.09 114.57 L82.28 110.56 L75.21 106.20 L72.17 103.74 L70.54 100.44 L71.19 99.29 L67.85 94.05 L63.97 86.69 L60.25 78.74 L58.63 76.92 L57.39 73.98 L54.33 71.38 L51.53 69.76 L52.80 67.98 L50.89 64.18 L52.12 61.38 L55.26 58.86 L55.73 60.52 L54.60 61.47 L54.71 62.94 L56.34 62.62 L57.93 63.05 L59.58 65.06 L61.81 63.42 L62.55 60.73 L64.97 57.26 L69.71 55.68 L74.00 51.50 L75.23 48.91 L74.68 45.88 L75.73 45.50 L78.35 47.39 L79.61 49.27 L81.43 50.30 L83.75 54.49 L86.69 54.99 L88.86 53.93 L90.28 54.62 L92.64 54.28 L95.66 56.15 L93.12 60.21 L94.30 60.30Z" fill="var(--pm-ink, #173d50)"/>
+      <path id="light-24-western-coast" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+</svg>
+<span>24 px</span></div></div><div class="lockup"><svg style="width:510px;max-width:100%;height:auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 510 164" role="img" aria-labelledby="light-logo-pm-logo-title light-logo-pm-logo-desc">
+  <title id="light-logo-pm-logo-title">PERÚ MAR — Gestión Académica</title>
+  <desc id="light-logo-pm-logo-desc">Isotipo marítimo institucional acompañado por el nombre PERÚ MAR y el descriptor Gestión Académica.</desc>
+  <!-- Anchor: entirely behind the wheel and its opaque medallion. -->
+  <g id="light-logo-anchor" fill="none" stroke="var(--pm-ink, #173d50)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path id="light-logo-anchor-eye" d="M73 18v-4a7 7 0 0 1 14 0v4" stroke-width="3"/>
+    <path d="M80 29v116M34 105c5 18 22 32 46 42 24-10 41-24 46-42"/>
+    <path d="m34 101-3 17 15-9m80-8 3 17-15-9"/>
+  </g>
+  <!-- Institutional T and Peruvian red accents, above rather than inside the wheel. -->
+  <g id="light-logo-institutional-t" transform="translate(80 35) scale(.88 .64) translate(-80 -43)" stroke="var(--pm-ink, #173d50)" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M57 13h46v15H86v15H74V28H57Z" fill="var(--pm-paper, #fffaf0)"/>
+    <path d="M59 15h13v11H59Zm29 0h13v11H88Z" fill="var(--pm-red, #bb3544)" stroke="none"/>
+  </g>
+  <!-- Wheel: broad rim and restrained handles, without an internal cross. -->
+  <g id="light-logo-wheel" stroke="var(--pm-wheel, #947044)" stroke-linecap="round">
+    <path d="M23 83h14m86 0h14M40 43l10 10m60 60 10 10M40 123l10-10m60-60 10-10M80 127v12" fill="none" stroke-width="9"/>
+    <circle cx="80" cy="83" r="44" fill="var(--pm-paper, #fffaf0)" stroke-width="9"/>
+  </g>
+  <!-- Neutral land remains north and east. Only the western sector suggests sea. -->
+  <g id="light-logo-peru-and-mar-de-grau">
+    <defs><clipPath id="light-logo-medallion-coast-clip"><circle cx="80" cy="83" r="39.5"/></clipPath></defs>
+    <g clip-path="url(#light-logo-medallion-coast-clip)">
+      <path id="light-logo-western-sea" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00 L0.00 126.00 L0.00 44.00Z" fill="var(--pm-sea, #39758a)"/>
+      <path id="light-logo-sea-lines" d="M46 82q2-1.5 4 0t4 0M50 96q2-1.5 4 0t4 0" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="1.4" stroke-linecap="round"/>
+      <path id="light-logo-peru" d="M96.27 62.43 L92.72 62.24 L92.19 62.84 L88.96 63.61 L84.46 66.32 L84.17 68.19 L83.16 69.57 L83.56 71.73 L81.17 72.88 L81.18 74.57 L80.14 75.30 L81.78 78.89 L83.97 81.32 L83.14 83.04 L85.75 83.27 L87.24 85.40 L90.72 85.50 L93.95 83.15 L93.69 89.21 L95.48 89.67 L97.70 88.98 L101.11 95.40 L100.26 96.76 L100.07 99.56 L99.99 102.96 L98.45 104.95 L99.16 106.43 L98.25 107.77 L99.95 111.13 L97.46 115.43 L96.41 117.48 L94.38 118.50 L90.43 116.21 L90.09 114.57 L82.28 110.56 L75.21 106.20 L72.17 103.74 L70.54 100.44 L71.19 99.29 L67.85 94.05 L63.97 86.69 L60.25 78.74 L58.63 76.92 L57.39 73.98 L54.33 71.38 L51.53 69.76 L52.80 67.98 L50.89 64.18 L52.12 61.38 L55.26 58.86 L55.73 60.52 L54.60 61.47 L54.71 62.94 L56.34 62.62 L57.93 63.05 L59.58 65.06 L61.81 63.42 L62.55 60.73 L64.97 57.26 L69.71 55.68 L74.00 51.50 L75.23 48.91 L74.68 45.88 L75.73 45.50 L78.35 47.39 L79.61 49.27 L81.43 50.30 L83.75 54.49 L86.69 54.99 L88.86 53.93 L90.28 54.62 L92.64 54.28 L95.66 56.15 L93.12 60.21 L94.30 60.30Z" fill="var(--pm-ink, #173d50)"/>
+      <path id="light-logo-western-coast" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+  <g id="light-logo-wordmark" fill="var(--pm-ink, #173d50)" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+    <text x="180" y="83" font-size="43" font-weight="750" letter-spacing="1">PERÚ MAR</text>
+    <text x="182" y="111" font-size="18" font-weight="450" letter-spacing=".4">Gestión Académica</text>
+  </g>
+</svg>
+</div></section><section class="panel dark"><h2>Oscuro</h2><div class="samples"><div class="sample"><svg style="width:160px;max-width:100%;height:auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 164" role="img" aria-labelledby="dark-160-pm-isotype-title dark-160-pm-isotype-desc">
+  <title id="dark-160-pm-isotype-title">PERÚ MAR — isotipo institucional</title>
+  <desc id="dark-160-pm-isotype-desc">Timón con ancla detrás, Perú en el centro y Mar de Grau al oeste. Una T superior incorpora acentos rojos peruanos.</desc>
+  <!-- Anchor: entirely behind the wheel and its opaque medallion. -->
+  <g id="dark-160-anchor" fill="none" stroke="var(--pm-ink, #173d50)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path id="dark-160-anchor-eye" d="M73 18v-4a7 7 0 0 1 14 0v4" stroke-width="3"/>
+    <path d="M80 29v116M34 105c5 18 22 32 46 42 24-10 41-24 46-42"/>
+    <path d="m34 101-3 17 15-9m80-8 3 17-15-9"/>
+  </g>
+  <!-- Institutional T and Peruvian red accents, above rather than inside the wheel. -->
+  <g id="dark-160-institutional-t" transform="translate(80 35) scale(.88 .64) translate(-80 -43)" stroke="var(--pm-ink, #173d50)" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M57 13h46v15H86v15H74V28H57Z" fill="var(--pm-paper, #fffaf0)"/>
+    <path d="M59 15h13v11H59Zm29 0h13v11H88Z" fill="var(--pm-red, #bb3544)" stroke="none"/>
+  </g>
+  <!-- Wheel: broad rim and restrained handles, without an internal cross. -->
+  <g id="dark-160-wheel" stroke="var(--pm-wheel, #947044)" stroke-linecap="round">
+    <path d="M23 83h14m86 0h14M40 43l10 10m60 60 10 10M40 123l10-10m60-60 10-10M80 127v12" fill="none" stroke-width="9"/>
+    <circle cx="80" cy="83" r="44" fill="var(--pm-paper, #fffaf0)" stroke-width="9"/>
+  </g>
+  <!-- Neutral land remains north and east. Only the western sector suggests sea. -->
+  <g id="dark-160-peru-and-mar-de-grau">
+    <defs><clipPath id="dark-160-medallion-coast-clip"><circle cx="80" cy="83" r="39.5"/></clipPath></defs>
+    <g clip-path="url(#dark-160-medallion-coast-clip)">
+      <path id="dark-160-western-sea" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00 L0.00 126.00 L0.00 44.00Z" fill="var(--pm-sea, #39758a)"/>
+      <path id="dark-160-sea-lines" d="M46 82q2-1.5 4 0t4 0M50 96q2-1.5 4 0t4 0" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="1.4" stroke-linecap="round"/>
+      <path id="dark-160-peru" d="M96.27 62.43 L92.72 62.24 L92.19 62.84 L88.96 63.61 L84.46 66.32 L84.17 68.19 L83.16 69.57 L83.56 71.73 L81.17 72.88 L81.18 74.57 L80.14 75.30 L81.78 78.89 L83.97 81.32 L83.14 83.04 L85.75 83.27 L87.24 85.40 L90.72 85.50 L93.95 83.15 L93.69 89.21 L95.48 89.67 L97.70 88.98 L101.11 95.40 L100.26 96.76 L100.07 99.56 L99.99 102.96 L98.45 104.95 L99.16 106.43 L98.25 107.77 L99.95 111.13 L97.46 115.43 L96.41 117.48 L94.38 118.50 L90.43 116.21 L90.09 114.57 L82.28 110.56 L75.21 106.20 L72.17 103.74 L70.54 100.44 L71.19 99.29 L67.85 94.05 L63.97 86.69 L60.25 78.74 L58.63 76.92 L57.39 73.98 L54.33 71.38 L51.53 69.76 L52.80 67.98 L50.89 64.18 L52.12 61.38 L55.26 58.86 L55.73 60.52 L54.60 61.47 L54.71 62.94 L56.34 62.62 L57.93 63.05 L59.58 65.06 L61.81 63.42 L62.55 60.73 L64.97 57.26 L69.71 55.68 L74.00 51.50 L75.23 48.91 L74.68 45.88 L75.73 45.50 L78.35 47.39 L79.61 49.27 L81.43 50.30 L83.75 54.49 L86.69 54.99 L88.86 53.93 L90.28 54.62 L92.64 54.28 L95.66 56.15 L93.12 60.21 L94.30 60.30Z" fill="var(--pm-ink, #173d50)"/>
+      <path id="dark-160-western-coast" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+</svg>
+<span>160 px</span></div><div class="sample"><svg style="width:80px;max-width:100%;height:auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 164" role="img" aria-labelledby="dark-80-pm-isotype-title dark-80-pm-isotype-desc">
+  <title id="dark-80-pm-isotype-title">PERÚ MAR — isotipo institucional</title>
+  <desc id="dark-80-pm-isotype-desc">Timón con ancla detrás, Perú en el centro y Mar de Grau al oeste. Una T superior incorpora acentos rojos peruanos.</desc>
+  <!-- Anchor: entirely behind the wheel and its opaque medallion. -->
+  <g id="dark-80-anchor" fill="none" stroke="var(--pm-ink, #173d50)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path id="dark-80-anchor-eye" d="M73 18v-4a7 7 0 0 1 14 0v4" stroke-width="3"/>
+    <path d="M80 29v116M34 105c5 18 22 32 46 42 24-10 41-24 46-42"/>
+    <path d="m34 101-3 17 15-9m80-8 3 17-15-9"/>
+  </g>
+  <!-- Institutional T and Peruvian red accents, above rather than inside the wheel. -->
+  <g id="dark-80-institutional-t" transform="translate(80 35) scale(.88 .64) translate(-80 -43)" stroke="var(--pm-ink, #173d50)" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M57 13h46v15H86v15H74V28H57Z" fill="var(--pm-paper, #fffaf0)"/>
+    <path d="M59 15h13v11H59Zm29 0h13v11H88Z" fill="var(--pm-red, #bb3544)" stroke="none"/>
+  </g>
+  <!-- Wheel: broad rim and restrained handles, without an internal cross. -->
+  <g id="dark-80-wheel" stroke="var(--pm-wheel, #947044)" stroke-linecap="round">
+    <path d="M23 83h14m86 0h14M40 43l10 10m60 60 10 10M40 123l10-10m60-60 10-10M80 127v12" fill="none" stroke-width="9"/>
+    <circle cx="80" cy="83" r="44" fill="var(--pm-paper, #fffaf0)" stroke-width="9"/>
+  </g>
+  <!-- Neutral land remains north and east. Only the western sector suggests sea. -->
+  <g id="dark-80-peru-and-mar-de-grau">
+    <defs><clipPath id="dark-80-medallion-coast-clip"><circle cx="80" cy="83" r="39.5"/></clipPath></defs>
+    <g clip-path="url(#dark-80-medallion-coast-clip)">
+      <path id="dark-80-western-sea" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00 L0.00 126.00 L0.00 44.00Z" fill="var(--pm-sea, #39758a)"/>
+      <path id="dark-80-sea-lines" d="M46 82q2-1.5 4 0t4 0M50 96q2-1.5 4 0t4 0" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="1.4" stroke-linecap="round"/>
+      <path id="dark-80-peru" d="M96.27 62.43 L92.72 62.24 L92.19 62.84 L88.96 63.61 L84.46 66.32 L84.17 68.19 L83.16 69.57 L83.56 71.73 L81.17 72.88 L81.18 74.57 L80.14 75.30 L81.78 78.89 L83.97 81.32 L83.14 83.04 L85.75 83.27 L87.24 85.40 L90.72 85.50 L93.95 83.15 L93.69 89.21 L95.48 89.67 L97.70 88.98 L101.11 95.40 L100.26 96.76 L100.07 99.56 L99.99 102.96 L98.45 104.95 L99.16 106.43 L98.25 107.77 L99.95 111.13 L97.46 115.43 L96.41 117.48 L94.38 118.50 L90.43 116.21 L90.09 114.57 L82.28 110.56 L75.21 106.20 L72.17 103.74 L70.54 100.44 L71.19 99.29 L67.85 94.05 L63.97 86.69 L60.25 78.74 L58.63 76.92 L57.39 73.98 L54.33 71.38 L51.53 69.76 L52.80 67.98 L50.89 64.18 L52.12 61.38 L55.26 58.86 L55.73 60.52 L54.60 61.47 L54.71 62.94 L56.34 62.62 L57.93 63.05 L59.58 65.06 L61.81 63.42 L62.55 60.73 L64.97 57.26 L69.71 55.68 L74.00 51.50 L75.23 48.91 L74.68 45.88 L75.73 45.50 L78.35 47.39 L79.61 49.27 L81.43 50.30 L83.75 54.49 L86.69 54.99 L88.86 53.93 L90.28 54.62 L92.64 54.28 L95.66 56.15 L93.12 60.21 L94.30 60.30Z" fill="var(--pm-ink, #173d50)"/>
+      <path id="dark-80-western-coast" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+</svg>
+<span>80 px</span></div><div class="sample"><svg style="width:40px;max-width:100%;height:auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 164" role="img" aria-labelledby="dark-40-pm-isotype-title dark-40-pm-isotype-desc">
+  <title id="dark-40-pm-isotype-title">PERÚ MAR — isotipo institucional</title>
+  <desc id="dark-40-pm-isotype-desc">Timón con ancla detrás, Perú en el centro y Mar de Grau al oeste. Una T superior incorpora acentos rojos peruanos.</desc>
+  <!-- Anchor: entirely behind the wheel and its opaque medallion. -->
+  <g id="dark-40-anchor" fill="none" stroke="var(--pm-ink, #173d50)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path id="dark-40-anchor-eye" d="M73 18v-4a7 7 0 0 1 14 0v4" stroke-width="3"/>
+    <path d="M80 29v116M34 105c5 18 22 32 46 42 24-10 41-24 46-42"/>
+    <path d="m34 101-3 17 15-9m80-8 3 17-15-9"/>
+  </g>
+  <!-- Institutional T and Peruvian red accents, above rather than inside the wheel. -->
+  <g id="dark-40-institutional-t" transform="translate(80 35) scale(.88 .64) translate(-80 -43)" stroke="var(--pm-ink, #173d50)" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M57 13h46v15H86v15H74V28H57Z" fill="var(--pm-paper, #fffaf0)"/>
+    <path d="M59 15h13v11H59Zm29 0h13v11H88Z" fill="var(--pm-red, #bb3544)" stroke="none"/>
+  </g>
+  <!-- Wheel: broad rim and restrained handles, without an internal cross. -->
+  <g id="dark-40-wheel" stroke="var(--pm-wheel, #947044)" stroke-linecap="round">
+    <path d="M23 83h14m86 0h14M40 43l10 10m60 60 10 10M40 123l10-10m60-60 10-10M80 127v12" fill="none" stroke-width="9"/>
+    <circle cx="80" cy="83" r="44" fill="var(--pm-paper, #fffaf0)" stroke-width="9"/>
+  </g>
+  <!-- Neutral land remains north and east. Only the western sector suggests sea. -->
+  <g id="dark-40-peru-and-mar-de-grau">
+    <defs><clipPath id="dark-40-medallion-coast-clip"><circle cx="80" cy="83" r="39.5"/></clipPath></defs>
+    <g clip-path="url(#dark-40-medallion-coast-clip)">
+      <path id="dark-40-western-sea" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00 L0.00 126.00 L0.00 44.00Z" fill="var(--pm-sea, #39758a)"/>
+      <path id="dark-40-sea-lines" d="M46 82q2-1.5 4 0t4 0M50 96q2-1.5 4 0t4 0" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="1.4" stroke-linecap="round"/>
+      <path id="dark-40-peru" d="M96.27 62.43 L92.72 62.24 L92.19 62.84 L88.96 63.61 L84.46 66.32 L84.17 68.19 L83.16 69.57 L83.56 71.73 L81.17 72.88 L81.18 74.57 L80.14 75.30 L81.78 78.89 L83.97 81.32 L83.14 83.04 L85.75 83.27 L87.24 85.40 L90.72 85.50 L93.95 83.15 L93.69 89.21 L95.48 89.67 L97.70 88.98 L101.11 95.40 L100.26 96.76 L100.07 99.56 L99.99 102.96 L98.45 104.95 L99.16 106.43 L98.25 107.77 L99.95 111.13 L97.46 115.43 L96.41 117.48 L94.38 118.50 L90.43 116.21 L90.09 114.57 L82.28 110.56 L75.21 106.20 L72.17 103.74 L70.54 100.44 L71.19 99.29 L67.85 94.05 L63.97 86.69 L60.25 78.74 L58.63 76.92 L57.39 73.98 L54.33 71.38 L51.53 69.76 L52.80 67.98 L50.89 64.18 L52.12 61.38 L55.26 58.86 L55.73 60.52 L54.60 61.47 L54.71 62.94 L56.34 62.62 L57.93 63.05 L59.58 65.06 L61.81 63.42 L62.55 60.73 L64.97 57.26 L69.71 55.68 L74.00 51.50 L75.23 48.91 L74.68 45.88 L75.73 45.50 L78.35 47.39 L79.61 49.27 L81.43 50.30 L83.75 54.49 L86.69 54.99 L88.86 53.93 L90.28 54.62 L92.64 54.28 L95.66 56.15 L93.12 60.21 L94.30 60.30Z" fill="var(--pm-ink, #173d50)"/>
+      <path id="dark-40-western-coast" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+</svg>
+<span>40 px</span></div><div class="sample"><svg style="width:24px;max-width:100%;height:auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 164" role="img" aria-labelledby="dark-24-pm-isotype-title dark-24-pm-isotype-desc">
+  <title id="dark-24-pm-isotype-title">PERÚ MAR — isotipo institucional</title>
+  <desc id="dark-24-pm-isotype-desc">Timón con ancla detrás, Perú en el centro y Mar de Grau al oeste. Una T superior incorpora acentos rojos peruanos.</desc>
+  <!-- Anchor: entirely behind the wheel and its opaque medallion. -->
+  <g id="dark-24-anchor" fill="none" stroke="var(--pm-ink, #173d50)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path id="dark-24-anchor-eye" d="M73 18v-4a7 7 0 0 1 14 0v4" stroke-width="3"/>
+    <path d="M80 29v116M34 105c5 18 22 32 46 42 24-10 41-24 46-42"/>
+    <path d="m34 101-3 17 15-9m80-8 3 17-15-9"/>
+  </g>
+  <!-- Institutional T and Peruvian red accents, above rather than inside the wheel. -->
+  <g id="dark-24-institutional-t" transform="translate(80 35) scale(.88 .64) translate(-80 -43)" stroke="var(--pm-ink, #173d50)" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M57 13h46v15H86v15H74V28H57Z" fill="var(--pm-paper, #fffaf0)"/>
+    <path d="M59 15h13v11H59Zm29 0h13v11H88Z" fill="var(--pm-red, #bb3544)" stroke="none"/>
+  </g>
+  <!-- Wheel: broad rim and restrained handles, without an internal cross. -->
+  <g id="dark-24-wheel" stroke="var(--pm-wheel, #947044)" stroke-linecap="round">
+    <path d="M23 83h14m86 0h14M40 43l10 10m60 60 10 10M40 123l10-10m60-60 10-10M80 127v12" fill="none" stroke-width="9"/>
+    <circle cx="80" cy="83" r="44" fill="var(--pm-paper, #fffaf0)" stroke-width="9"/>
+  </g>
+  <!-- Neutral land remains north and east. Only the western sector suggests sea. -->
+  <g id="dark-24-peru-and-mar-de-grau">
+    <defs><clipPath id="dark-24-medallion-coast-clip"><circle cx="80" cy="83" r="39.5"/></clipPath></defs>
+    <g clip-path="url(#dark-24-medallion-coast-clip)">
+      <path id="dark-24-western-sea" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00 L0.00 126.00 L0.00 44.00Z" fill="var(--pm-sea, #39758a)"/>
+      <path id="dark-24-sea-lines" d="M46 82q2-1.5 4 0t4 0M50 96q2-1.5 4 0t4 0" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="1.4" stroke-linecap="round"/>
+      <path id="dark-24-peru" d="M96.27 62.43 L92.72 62.24 L92.19 62.84 L88.96 63.61 L84.46 66.32 L84.17 68.19 L83.16 69.57 L83.56 71.73 L81.17 72.88 L81.18 74.57 L80.14 75.30 L81.78 78.89 L83.97 81.32 L83.14 83.04 L85.75 83.27 L87.24 85.40 L90.72 85.50 L93.95 83.15 L93.69 89.21 L95.48 89.67 L97.70 88.98 L101.11 95.40 L100.26 96.76 L100.07 99.56 L99.99 102.96 L98.45 104.95 L99.16 106.43 L98.25 107.77 L99.95 111.13 L97.46 115.43 L96.41 117.48 L94.38 118.50 L90.43 116.21 L90.09 114.57 L82.28 110.56 L75.21 106.20 L72.17 103.74 L70.54 100.44 L71.19 99.29 L67.85 94.05 L63.97 86.69 L60.25 78.74 L58.63 76.92 L57.39 73.98 L54.33 71.38 L51.53 69.76 L52.80 67.98 L50.89 64.18 L52.12 61.38 L55.26 58.86 L55.73 60.52 L54.60 61.47 L54.71 62.94 L56.34 62.62 L57.93 63.05 L59.58 65.06 L61.81 63.42 L62.55 60.73 L64.97 57.26 L69.71 55.68 L74.00 51.50 L75.23 48.91 L74.68 45.88 L75.73 45.50 L78.35 47.39 L79.61 49.27 L81.43 50.30 L83.75 54.49 L86.69 54.99 L88.86 53.93 L90.28 54.62 L92.64 54.28 L95.66 56.15 L93.12 60.21 L94.30 60.30Z" fill="var(--pm-ink, #173d50)"/>
+      <path id="dark-24-western-coast" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+</svg>
+<span>24 px</span></div></div><div class="lockup"><svg style="width:510px;max-width:100%;height:auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 510 164" role="img" aria-labelledby="dark-logo-pm-logo-title dark-logo-pm-logo-desc">
+  <title id="dark-logo-pm-logo-title">PERÚ MAR — Gestión Académica</title>
+  <desc id="dark-logo-pm-logo-desc">Isotipo marítimo institucional acompañado por el nombre PERÚ MAR y el descriptor Gestión Académica.</desc>
+  <!-- Anchor: entirely behind the wheel and its opaque medallion. -->
+  <g id="dark-logo-anchor" fill="none" stroke="var(--pm-ink, #173d50)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path id="dark-logo-anchor-eye" d="M73 18v-4a7 7 0 0 1 14 0v4" stroke-width="3"/>
+    <path d="M80 29v116M34 105c5 18 22 32 46 42 24-10 41-24 46-42"/>
+    <path d="m34 101-3 17 15-9m80-8 3 17-15-9"/>
+  </g>
+  <!-- Institutional T and Peruvian red accents, above rather than inside the wheel. -->
+  <g id="dark-logo-institutional-t" transform="translate(80 35) scale(.88 .64) translate(-80 -43)" stroke="var(--pm-ink, #173d50)" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M57 13h46v15H86v15H74V28H57Z" fill="var(--pm-paper, #fffaf0)"/>
+    <path d="M59 15h13v11H59Zm29 0h13v11H88Z" fill="var(--pm-red, #bb3544)" stroke="none"/>
+  </g>
+  <!-- Wheel: broad rim and restrained handles, without an internal cross. -->
+  <g id="dark-logo-wheel" stroke="var(--pm-wheel, #947044)" stroke-linecap="round">
+    <path d="M23 83h14m86 0h14M40 43l10 10m60 60 10 10M40 123l10-10m60-60 10-10M80 127v12" fill="none" stroke-width="9"/>
+    <circle cx="80" cy="83" r="44" fill="var(--pm-paper, #fffaf0)" stroke-width="9"/>
+  </g>
+  <!-- Neutral land remains north and east. Only the western sector suggests sea. -->
+  <g id="dark-logo-peru-and-mar-de-grau">
+    <defs><clipPath id="dark-logo-medallion-coast-clip"><circle cx="80" cy="83" r="39.5"/></clipPath></defs>
+    <g clip-path="url(#dark-logo-medallion-coast-clip)">
+      <path id="dark-logo-western-sea" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00 L0.00 126.00 L0.00 44.00Z" fill="var(--pm-sea, #39758a)"/>
+      <path id="dark-logo-sea-lines" d="M46 82q2-1.5 4 0t4 0M50 96q2-1.5 4 0t4 0" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="1.4" stroke-linecap="round"/>
+      <path id="dark-logo-peru" d="M96.27 62.43 L92.72 62.24 L92.19 62.84 L88.96 63.61 L84.46 66.32 L84.17 68.19 L83.16 69.57 L83.56 71.73 L81.17 72.88 L81.18 74.57 L80.14 75.30 L81.78 78.89 L83.97 81.32 L83.14 83.04 L85.75 83.27 L87.24 85.40 L90.72 85.50 L93.95 83.15 L93.69 89.21 L95.48 89.67 L97.70 88.98 L101.11 95.40 L100.26 96.76 L100.07 99.56 L99.99 102.96 L98.45 104.95 L99.16 106.43 L98.25 107.77 L99.95 111.13 L97.46 115.43 L96.41 117.48 L94.38 118.50 L90.43 116.21 L90.09 114.57 L82.28 110.56 L75.21 106.20 L72.17 103.74 L70.54 100.44 L71.19 99.29 L67.85 94.05 L63.97 86.69 L60.25 78.74 L58.63 76.92 L57.39 73.98 L54.33 71.38 L51.53 69.76 L52.80 67.98 L50.89 64.18 L52.12 61.38 L55.26 58.86 L55.73 60.52 L54.60 61.47 L54.71 62.94 L56.34 62.62 L57.93 63.05 L59.58 65.06 L61.81 63.42 L62.55 60.73 L64.97 57.26 L69.71 55.68 L74.00 51.50 L75.23 48.91 L74.68 45.88 L75.73 45.50 L78.35 47.39 L79.61 49.27 L81.43 50.30 L83.75 54.49 L86.69 54.99 L88.86 53.93 L90.28 54.62 L92.64 54.28 L95.66 56.15 L93.12 60.21 L94.30 60.30Z" fill="var(--pm-ink, #173d50)"/>
+      <path id="dark-logo-western-coast" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+  <g id="dark-logo-wordmark" fill="var(--pm-ink, #173d50)" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+    <text x="180" y="83" font-size="43" font-weight="750" letter-spacing="1">PERÚ MAR</text>
+    <text x="182" y="111" font-size="18" font-weight="450" letter-spacing=".4">Gestión Académica</text>
+  </g>
+</svg>
+</div></section><section class="panel mono"><h2>Monocromo</h2><div class="samples"><div class="sample"><svg style="width:160px;max-width:100%;height:auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 164" role="img" aria-labelledby="mono-160-pm-isotype-title mono-160-pm-isotype-desc">
+  <title id="mono-160-pm-isotype-title">PERÚ MAR — isotipo institucional</title>
+  <desc id="mono-160-pm-isotype-desc">Timón con ancla detrás, Perú en el centro y Mar de Grau al oeste. Una T superior incorpora acentos rojos peruanos.</desc>
+  <!-- Anchor: entirely behind the wheel and its opaque medallion. -->
+  <g id="mono-160-anchor" fill="none" stroke="var(--pm-ink, #173d50)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path id="mono-160-anchor-eye" d="M73 18v-4a7 7 0 0 1 14 0v4" stroke-width="3"/>
+    <path d="M80 29v116M34 105c5 18 22 32 46 42 24-10 41-24 46-42"/>
+    <path d="m34 101-3 17 15-9m80-8 3 17-15-9"/>
+  </g>
+  <!-- Institutional T and Peruvian red accents, above rather than inside the wheel. -->
+  <g id="mono-160-institutional-t" transform="translate(80 35) scale(.88 .64) translate(-80 -43)" stroke="var(--pm-ink, #173d50)" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M57 13h46v15H86v15H74V28H57Z" fill="var(--pm-paper, #fffaf0)"/>
+    <path d="M59 15h13v11H59Zm29 0h13v11H88Z" fill="var(--pm-red, #bb3544)" stroke="none"/>
+  </g>
+  <!-- Wheel: broad rim and restrained handles, without an internal cross. -->
+  <g id="mono-160-wheel" stroke="var(--pm-wheel, #947044)" stroke-linecap="round">
+    <path d="M23 83h14m86 0h14M40 43l10 10m60 60 10 10M40 123l10-10m60-60 10-10M80 127v12" fill="none" stroke-width="9"/>
+    <circle cx="80" cy="83" r="44" fill="var(--pm-paper, #fffaf0)" stroke-width="9"/>
+  </g>
+  <!-- Neutral land remains north and east. Only the western sector suggests sea. -->
+  <g id="mono-160-peru-and-mar-de-grau">
+    <defs><clipPath id="mono-160-medallion-coast-clip"><circle cx="80" cy="83" r="39.5"/></clipPath></defs>
+    <g clip-path="url(#mono-160-medallion-coast-clip)">
+      <path id="mono-160-western-sea" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00 L0.00 126.00 L0.00 44.00Z" fill="var(--pm-sea, #39758a)"/>
+      <path id="mono-160-sea-lines" d="M46 82q2-1.5 4 0t4 0M50 96q2-1.5 4 0t4 0" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="1.4" stroke-linecap="round"/>
+      <path id="mono-160-peru" d="M96.27 62.43 L92.72 62.24 L92.19 62.84 L88.96 63.61 L84.46 66.32 L84.17 68.19 L83.16 69.57 L83.56 71.73 L81.17 72.88 L81.18 74.57 L80.14 75.30 L81.78 78.89 L83.97 81.32 L83.14 83.04 L85.75 83.27 L87.24 85.40 L90.72 85.50 L93.95 83.15 L93.69 89.21 L95.48 89.67 L97.70 88.98 L101.11 95.40 L100.26 96.76 L100.07 99.56 L99.99 102.96 L98.45 104.95 L99.16 106.43 L98.25 107.77 L99.95 111.13 L97.46 115.43 L96.41 117.48 L94.38 118.50 L90.43 116.21 L90.09 114.57 L82.28 110.56 L75.21 106.20 L72.17 103.74 L70.54 100.44 L71.19 99.29 L67.85 94.05 L63.97 86.69 L60.25 78.74 L58.63 76.92 L57.39 73.98 L54.33 71.38 L51.53 69.76 L52.80 67.98 L50.89 64.18 L52.12 61.38 L55.26 58.86 L55.73 60.52 L54.60 61.47 L54.71 62.94 L56.34 62.62 L57.93 63.05 L59.58 65.06 L61.81 63.42 L62.55 60.73 L64.97 57.26 L69.71 55.68 L74.00 51.50 L75.23 48.91 L74.68 45.88 L75.73 45.50 L78.35 47.39 L79.61 49.27 L81.43 50.30 L83.75 54.49 L86.69 54.99 L88.86 53.93 L90.28 54.62 L92.64 54.28 L95.66 56.15 L93.12 60.21 L94.30 60.30Z" fill="var(--pm-ink, #173d50)"/>
+      <path id="mono-160-western-coast" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+</svg>
+<span>160 px</span></div><div class="sample"><svg style="width:80px;max-width:100%;height:auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 164" role="img" aria-labelledby="mono-80-pm-isotype-title mono-80-pm-isotype-desc">
+  <title id="mono-80-pm-isotype-title">PERÚ MAR — isotipo institucional</title>
+  <desc id="mono-80-pm-isotype-desc">Timón con ancla detrás, Perú en el centro y Mar de Grau al oeste. Una T superior incorpora acentos rojos peruanos.</desc>
+  <!-- Anchor: entirely behind the wheel and its opaque medallion. -->
+  <g id="mono-80-anchor" fill="none" stroke="var(--pm-ink, #173d50)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path id="mono-80-anchor-eye" d="M73 18v-4a7 7 0 0 1 14 0v4" stroke-width="3"/>
+    <path d="M80 29v116M34 105c5 18 22 32 46 42 24-10 41-24 46-42"/>
+    <path d="m34 101-3 17 15-9m80-8 3 17-15-9"/>
+  </g>
+  <!-- Institutional T and Peruvian red accents, above rather than inside the wheel. -->
+  <g id="mono-80-institutional-t" transform="translate(80 35) scale(.88 .64) translate(-80 -43)" stroke="var(--pm-ink, #173d50)" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M57 13h46v15H86v15H74V28H57Z" fill="var(--pm-paper, #fffaf0)"/>
+    <path d="M59 15h13v11H59Zm29 0h13v11H88Z" fill="var(--pm-red, #bb3544)" stroke="none"/>
+  </g>
+  <!-- Wheel: broad rim and restrained handles, without an internal cross. -->
+  <g id="mono-80-wheel" stroke="var(--pm-wheel, #947044)" stroke-linecap="round">
+    <path d="M23 83h14m86 0h14M40 43l10 10m60 60 10 10M40 123l10-10m60-60 10-10M80 127v12" fill="none" stroke-width="9"/>
+    <circle cx="80" cy="83" r="44" fill="var(--pm-paper, #fffaf0)" stroke-width="9"/>
+  </g>
+  <!-- Neutral land remains north and east. Only the western sector suggests sea. -->
+  <g id="mono-80-peru-and-mar-de-grau">
+    <defs><clipPath id="mono-80-medallion-coast-clip"><circle cx="80" cy="83" r="39.5"/></clipPath></defs>
+    <g clip-path="url(#mono-80-medallion-coast-clip)">
+      <path id="mono-80-western-sea" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00 L0.00 126.00 L0.00 44.00Z" fill="var(--pm-sea, #39758a)"/>
+      <path id="mono-80-sea-lines" d="M46 82q2-1.5 4 0t4 0M50 96q2-1.5 4 0t4 0" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="1.4" stroke-linecap="round"/>
+      <path id="mono-80-peru" d="M96.27 62.43 L92.72 62.24 L92.19 62.84 L88.96 63.61 L84.46 66.32 L84.17 68.19 L83.16 69.57 L83.56 71.73 L81.17 72.88 L81.18 74.57 L80.14 75.30 L81.78 78.89 L83.97 81.32 L83.14 83.04 L85.75 83.27 L87.24 85.40 L90.72 85.50 L93.95 83.15 L93.69 89.21 L95.48 89.67 L97.70 88.98 L101.11 95.40 L100.26 96.76 L100.07 99.56 L99.99 102.96 L98.45 104.95 L99.16 106.43 L98.25 107.77 L99.95 111.13 L97.46 115.43 L96.41 117.48 L94.38 118.50 L90.43 116.21 L90.09 114.57 L82.28 110.56 L75.21 106.20 L72.17 103.74 L70.54 100.44 L71.19 99.29 L67.85 94.05 L63.97 86.69 L60.25 78.74 L58.63 76.92 L57.39 73.98 L54.33 71.38 L51.53 69.76 L52.80 67.98 L50.89 64.18 L52.12 61.38 L55.26 58.86 L55.73 60.52 L54.60 61.47 L54.71 62.94 L56.34 62.62 L57.93 63.05 L59.58 65.06 L61.81 63.42 L62.55 60.73 L64.97 57.26 L69.71 55.68 L74.00 51.50 L75.23 48.91 L74.68 45.88 L75.73 45.50 L78.35 47.39 L79.61 49.27 L81.43 50.30 L83.75 54.49 L86.69 54.99 L88.86 53.93 L90.28 54.62 L92.64 54.28 L95.66 56.15 L93.12 60.21 L94.30 60.30Z" fill="var(--pm-ink, #173d50)"/>
+      <path id="mono-80-western-coast" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+</svg>
+<span>80 px</span></div><div class="sample"><svg style="width:40px;max-width:100%;height:auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 164" role="img" aria-labelledby="mono-40-pm-isotype-title mono-40-pm-isotype-desc">
+  <title id="mono-40-pm-isotype-title">PERÚ MAR — isotipo institucional</title>
+  <desc id="mono-40-pm-isotype-desc">Timón con ancla detrás, Perú en el centro y Mar de Grau al oeste. Una T superior incorpora acentos rojos peruanos.</desc>
+  <!-- Anchor: entirely behind the wheel and its opaque medallion. -->
+  <g id="mono-40-anchor" fill="none" stroke="var(--pm-ink, #173d50)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path id="mono-40-anchor-eye" d="M73 18v-4a7 7 0 0 1 14 0v4" stroke-width="3"/>
+    <path d="M80 29v116M34 105c5 18 22 32 46 42 24-10 41-24 46-42"/>
+    <path d="m34 101-3 17 15-9m80-8 3 17-15-9"/>
+  </g>
+  <!-- Institutional T and Peruvian red accents, above rather than inside the wheel. -->
+  <g id="mono-40-institutional-t" transform="translate(80 35) scale(.88 .64) translate(-80 -43)" stroke="var(--pm-ink, #173d50)" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M57 13h46v15H86v15H74V28H57Z" fill="var(--pm-paper, #fffaf0)"/>
+    <path d="M59 15h13v11H59Zm29 0h13v11H88Z" fill="var(--pm-red, #bb3544)" stroke="none"/>
+  </g>
+  <!-- Wheel: broad rim and restrained handles, without an internal cross. -->
+  <g id="mono-40-wheel" stroke="var(--pm-wheel, #947044)" stroke-linecap="round">
+    <path d="M23 83h14m86 0h14M40 43l10 10m60 60 10 10M40 123l10-10m60-60 10-10M80 127v12" fill="none" stroke-width="9"/>
+    <circle cx="80" cy="83" r="44" fill="var(--pm-paper, #fffaf0)" stroke-width="9"/>
+  </g>
+  <!-- Neutral land remains north and east. Only the western sector suggests sea. -->
+  <g id="mono-40-peru-and-mar-de-grau">
+    <defs><clipPath id="mono-40-medallion-coast-clip"><circle cx="80" cy="83" r="39.5"/></clipPath></defs>
+    <g clip-path="url(#mono-40-medallion-coast-clip)">
+      <path id="mono-40-western-sea" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00 L0.00 126.00 L0.00 44.00Z" fill="var(--pm-sea, #39758a)"/>
+      <path id="mono-40-sea-lines" d="M46 82q2-1.5 4 0t4 0M50 96q2-1.5 4 0t4 0" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="1.4" stroke-linecap="round"/>
+      <path id="mono-40-peru" d="M96.27 62.43 L92.72 62.24 L92.19 62.84 L88.96 63.61 L84.46 66.32 L84.17 68.19 L83.16 69.57 L83.56 71.73 L81.17 72.88 L81.18 74.57 L80.14 75.30 L81.78 78.89 L83.97 81.32 L83.14 83.04 L85.75 83.27 L87.24 85.40 L90.72 85.50 L93.95 83.15 L93.69 89.21 L95.48 89.67 L97.70 88.98 L101.11 95.40 L100.26 96.76 L100.07 99.56 L99.99 102.96 L98.45 104.95 L99.16 106.43 L98.25 107.77 L99.95 111.13 L97.46 115.43 L96.41 117.48 L94.38 118.50 L90.43 116.21 L90.09 114.57 L82.28 110.56 L75.21 106.20 L72.17 103.74 L70.54 100.44 L71.19 99.29 L67.85 94.05 L63.97 86.69 L60.25 78.74 L58.63 76.92 L57.39 73.98 L54.33 71.38 L51.53 69.76 L52.80 67.98 L50.89 64.18 L52.12 61.38 L55.26 58.86 L55.73 60.52 L54.60 61.47 L54.71 62.94 L56.34 62.62 L57.93 63.05 L59.58 65.06 L61.81 63.42 L62.55 60.73 L64.97 57.26 L69.71 55.68 L74.00 51.50 L75.23 48.91 L74.68 45.88 L75.73 45.50 L78.35 47.39 L79.61 49.27 L81.43 50.30 L83.75 54.49 L86.69 54.99 L88.86 53.93 L90.28 54.62 L92.64 54.28 L95.66 56.15 L93.12 60.21 L94.30 60.30Z" fill="var(--pm-ink, #173d50)"/>
+      <path id="mono-40-western-coast" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+</svg>
+<span>40 px</span></div><div class="sample"><svg style="width:24px;max-width:100%;height:auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 164" role="img" aria-labelledby="mono-24-pm-isotype-title mono-24-pm-isotype-desc">
+  <title id="mono-24-pm-isotype-title">PERÚ MAR — isotipo institucional</title>
+  <desc id="mono-24-pm-isotype-desc">Timón con ancla detrás, Perú en el centro y Mar de Grau al oeste. Una T superior incorpora acentos rojos peruanos.</desc>
+  <!-- Anchor: entirely behind the wheel and its opaque medallion. -->
+  <g id="mono-24-anchor" fill="none" stroke="var(--pm-ink, #173d50)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path id="mono-24-anchor-eye" d="M73 18v-4a7 7 0 0 1 14 0v4" stroke-width="3"/>
+    <path d="M80 29v116M34 105c5 18 22 32 46 42 24-10 41-24 46-42"/>
+    <path d="m34 101-3 17 15-9m80-8 3 17-15-9"/>
+  </g>
+  <!-- Institutional T and Peruvian red accents, above rather than inside the wheel. -->
+  <g id="mono-24-institutional-t" transform="translate(80 35) scale(.88 .64) translate(-80 -43)" stroke="var(--pm-ink, #173d50)" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M57 13h46v15H86v15H74V28H57Z" fill="var(--pm-paper, #fffaf0)"/>
+    <path d="M59 15h13v11H59Zm29 0h13v11H88Z" fill="var(--pm-red, #bb3544)" stroke="none"/>
+  </g>
+  <!-- Wheel: broad rim and restrained handles, without an internal cross. -->
+  <g id="mono-24-wheel" stroke="var(--pm-wheel, #947044)" stroke-linecap="round">
+    <path d="M23 83h14m86 0h14M40 43l10 10m60 60 10 10M40 123l10-10m60-60 10-10M80 127v12" fill="none" stroke-width="9"/>
+    <circle cx="80" cy="83" r="44" fill="var(--pm-paper, #fffaf0)" stroke-width="9"/>
+  </g>
+  <!-- Neutral land remains north and east. Only the western sector suggests sea. -->
+  <g id="mono-24-peru-and-mar-de-grau">
+    <defs><clipPath id="mono-24-medallion-coast-clip"><circle cx="80" cy="83" r="39.5"/></clipPath></defs>
+    <g clip-path="url(#mono-24-medallion-coast-clip)">
+      <path id="mono-24-western-sea" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00 L0.00 126.00 L0.00 44.00Z" fill="var(--pm-sea, #39758a)"/>
+      <path id="mono-24-sea-lines" d="M46 82q2-1.5 4 0t4 0M50 96q2-1.5 4 0t4 0" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="1.4" stroke-linecap="round"/>
+      <path id="mono-24-peru" d="M96.27 62.43 L92.72 62.24 L92.19 62.84 L88.96 63.61 L84.46 66.32 L84.17 68.19 L83.16 69.57 L83.56 71.73 L81.17 72.88 L81.18 74.57 L80.14 75.30 L81.78 78.89 L83.97 81.32 L83.14 83.04 L85.75 83.27 L87.24 85.40 L90.72 85.50 L93.95 83.15 L93.69 89.21 L95.48 89.67 L97.70 88.98 L101.11 95.40 L100.26 96.76 L100.07 99.56 L99.99 102.96 L98.45 104.95 L99.16 106.43 L98.25 107.77 L99.95 111.13 L97.46 115.43 L96.41 117.48 L94.38 118.50 L90.43 116.21 L90.09 114.57 L82.28 110.56 L75.21 106.20 L72.17 103.74 L70.54 100.44 L71.19 99.29 L67.85 94.05 L63.97 86.69 L60.25 78.74 L58.63 76.92 L57.39 73.98 L54.33 71.38 L51.53 69.76 L52.80 67.98 L50.89 64.18 L52.12 61.38 L55.26 58.86 L55.73 60.52 L54.60 61.47 L54.71 62.94 L56.34 62.62 L57.93 63.05 L59.58 65.06 L61.81 63.42 L62.55 60.73 L64.97 57.26 L69.71 55.68 L74.00 51.50 L75.23 48.91 L74.68 45.88 L75.73 45.50 L78.35 47.39 L79.61 49.27 L81.43 50.30 L83.75 54.49 L86.69 54.99 L88.86 53.93 L90.28 54.62 L92.64 54.28 L95.66 56.15 L93.12 60.21 L94.30 60.30Z" fill="var(--pm-ink, #173d50)"/>
+      <path id="mono-24-western-coast" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+</svg>
+<span>24 px</span></div></div><div class="lockup"><svg style="width:510px;max-width:100%;height:auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 510 164" role="img" aria-labelledby="mono-logo-pm-logo-title mono-logo-pm-logo-desc">
+  <title id="mono-logo-pm-logo-title">PERÚ MAR — Gestión Académica</title>
+  <desc id="mono-logo-pm-logo-desc">Isotipo marítimo institucional acompañado por el nombre PERÚ MAR y el descriptor Gestión Académica.</desc>
+  <!-- Anchor: entirely behind the wheel and its opaque medallion. -->
+  <g id="mono-logo-anchor" fill="none" stroke="var(--pm-ink, #173d50)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path id="mono-logo-anchor-eye" d="M73 18v-4a7 7 0 0 1 14 0v4" stroke-width="3"/>
+    <path d="M80 29v116M34 105c5 18 22 32 46 42 24-10 41-24 46-42"/>
+    <path d="m34 101-3 17 15-9m80-8 3 17-15-9"/>
+  </g>
+  <!-- Institutional T and Peruvian red accents, above rather than inside the wheel. -->
+  <g id="mono-logo-institutional-t" transform="translate(80 35) scale(.88 .64) translate(-80 -43)" stroke="var(--pm-ink, #173d50)" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M57 13h46v15H86v15H74V28H57Z" fill="var(--pm-paper, #fffaf0)"/>
+    <path d="M59 15h13v11H59Zm29 0h13v11H88Z" fill="var(--pm-red, #bb3544)" stroke="none"/>
+  </g>
+  <!-- Wheel: broad rim and restrained handles, without an internal cross. -->
+  <g id="mono-logo-wheel" stroke="var(--pm-wheel, #947044)" stroke-linecap="round">
+    <path d="M23 83h14m86 0h14M40 43l10 10m60 60 10 10M40 123l10-10m60-60 10-10M80 127v12" fill="none" stroke-width="9"/>
+    <circle cx="80" cy="83" r="44" fill="var(--pm-paper, #fffaf0)" stroke-width="9"/>
+  </g>
+  <!-- Neutral land remains north and east. Only the western sector suggests sea. -->
+  <g id="mono-logo-peru-and-mar-de-grau">
+    <defs><clipPath id="mono-logo-medallion-coast-clip"><circle cx="80" cy="83" r="39.5"/></clipPath></defs>
+    <g clip-path="url(#mono-logo-medallion-coast-clip)">
+      <path id="mono-logo-western-sea" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00 L0.00 126.00 L0.00 44.00Z" fill="var(--pm-sea, #39758a)"/>
+      <path id="mono-logo-sea-lines" d="M46 82q2-1.5 4 0t4 0M50 96q2-1.5 4 0t4 0" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="1.4" stroke-linecap="round"/>
+      <path id="mono-logo-peru" d="M96.27 62.43 L92.72 62.24 L92.19 62.84 L88.96 63.61 L84.46 66.32 L84.17 68.19 L83.16 69.57 L83.56 71.73 L81.17 72.88 L81.18 74.57 L80.14 75.30 L81.78 78.89 L83.97 81.32 L83.14 83.04 L85.75 83.27 L87.24 85.40 L90.72 85.50 L93.95 83.15 L93.69 89.21 L95.48 89.67 L97.70 88.98 L101.11 95.40 L100.26 96.76 L100.07 99.56 L99.99 102.96 L98.45 104.95 L99.16 106.43 L98.25 107.77 L99.95 111.13 L97.46 115.43 L96.41 117.48 L94.38 118.50 L90.43 116.21 L90.09 114.57 L82.28 110.56 L75.21 106.20 L72.17 103.74 L70.54 100.44 L71.19 99.29 L67.85 94.05 L63.97 86.69 L60.25 78.74 L58.63 76.92 L57.39 73.98 L54.33 71.38 L51.53 69.76 L52.80 67.98 L50.89 64.18 L52.12 61.38 L55.26 58.86 L55.73 60.52 L54.60 61.47 L54.71 62.94 L56.34 62.62 L57.93 63.05 L59.58 65.06 L61.81 63.42 L62.55 60.73 L64.97 57.26 L69.71 55.68 L74.00 51.50 L75.23 48.91 L74.68 45.88 L75.73 45.50 L78.35 47.39 L79.61 49.27 L81.43 50.30 L83.75 54.49 L86.69 54.99 L88.86 53.93 L90.28 54.62 L92.64 54.28 L95.66 56.15 L93.12 60.21 L94.30 60.30Z" fill="var(--pm-ink, #173d50)"/>
+      <path id="mono-logo-western-coast" d="M48.00 44.00 L55.26 58.86 L52.12 61.38 L50.89 64.18 L52.80 67.98 L51.53 69.76 L54.33 71.38 L57.39 73.98 L58.63 76.92 L60.25 78.74 L63.97 86.69 L67.85 94.05 L71.19 99.29 L70.54 100.44 L72.17 103.74 L75.21 106.20 L82.28 110.56 L90.09 114.57 L90.43 116.21 L94.38 118.50 L103.00 126.00" fill="none" stroke="var(--pm-paper, #fffaf0)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+  <g id="mono-logo-wordmark" fill="var(--pm-ink, #173d50)" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+    <text x="180" y="83" font-size="43" font-weight="750" letter-spacing="1">PERÚ MAR</text>
+    <text x="182" y="111" font-size="18" font-weight="450" letter-spacing=".4">Gestión Académica</text>
+  </g>
+</svg>
+</div></section><details><summary>Alcance, geografía y edición</summary><p>Solo se ajustaron la escala de la T y el grupo Perú + Mar de Grau en los dos SVG. Ancla, timón, paleta, texto y disposición general permanecen intactos. El mapa conserva la geometría y orientación norte arriba de <a href="https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_admin_0_countries.geojson">Natural Earth</a>, con escala uniforme. Datos de <a href="https://www.naturalearthdata.com/about/terms-of-use/">dominio público</a>.</p><p>El mar ocupa el lado occidental de una costa continua, desde el borde superior occidental al inferior sureste del medallón. No hay un círculo azul detrás del mapa: al este de la costa y alrededor del norte y este del país permanece la superficie neutra. La prolongación del litoral no dibuja fronteras ni siluetas de países vecinos. El Perú no tiene stroke perimetral; la separación clara sigue la costa occidental y continúa hasta los límites del medallón. Un clip circular limita solo la composición interior; no modifica el timón. No se dibujan países vecinos.</p><p>La imagen de referencia es una copia sin modificaciones del escudo institucional existente; no se generó ni editó una imagen raster. Los nuevos isotipos siguen siendo vectoriales. Los colores se adaptan mediante --pm-ink, --pm-wheel, --pm-paper, --pm-sea y --pm-red. Los textos del lockup siguen editables. Al repetir SVG inline, prefijar IDs; para uso decorativo futuro ajustar aria-hidden y el nombre accesible del contenedor.</p><p>La comparación de 40 px prioriza reconocimiento y equilibrio; a 24 px se acepta pérdida cartográfica. La aprobación humana corresponde únicamente al diseño 741f4ac. Integración pendiente de validación visual humana. No se ejecutó TEST-H2-019; sin Gate 2, acceptance, merge ni H3.</p></details></body></html>

@@ -1,0 +1,78 @@
+[
+  {
+    "codigo": "callao",
+    "nombre": "Callao"
+  },
+  {
+    "codigo": "paita",
+    "nombre": "Paita"
+  },
+  {
+    "codigo": "puno",
+    "nombre": "Puno"
+  },
+  {
+    "codigo": "ilo",
+    "nombre": "Ilo"
+  },
+  {
+    "codigo": "chimbote",
+    "nombre": "Chimbote"
+  },
+  {
+    "codigo": "zorritos",
+    "nombre": "Zorritos"
+  },
+  {
+    "codigo": "chancay",
+    "nombre": "Chancay"
+  },
+  {
+    "codigo": "huacho",
+    "nombre": "Huacho"
+  },
+  {
+    "codigo": "iquitos",
+    "nombre": "Iquitos"
+  },
+  {
+    "codigo": "mollendo",
+    "nombre": "Mollendo"
+  },
+  {
+    "codigo": "pucallpa",
+    "nombre": "Pucallpa"
+  },
+  {
+    "codigo": "pimentel",
+    "nombre": "Pimentel"
+  },
+  {
+    "codigo": "pto-maldonado",
+    "nombre": "Pto. Maldonado"
+  },
+  {
+    "codigo": "pisco",
+    "nombre": "Pisco"
+  },
+  {
+    "codigo": "supe",
+    "nombre": "Supe"
+  },
+  {
+    "codigo": "san-juan",
+    "nombre": "San Juan"
+  },
+  {
+    "codigo": "salaverry",
+    "nombre": "Salaverry"
+  },
+  {
+    "codigo": "talara",
+    "nombre": "Talara"
+  },
+  {
+    "codigo": "yurimaguas",
+    "nombre": "Yurimaguas"
+  }
+]

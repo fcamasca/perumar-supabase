@@ -29,12 +29,12 @@ describe('rutas de seguridad (UX; RLS se prueba por API real aparte)', () => {
     expect(client.from).not.toHaveBeenCalled()
   })
   it('niega URL ADMIN a OPERADOR sin hacer consulta de directorio', () => {
-    show({ phase: 'authorized', userId: 'operator-id', roles: ['OPERADOR'] }, '/seguridad/usuarios')
+    show({ phase: 'authorized', userId: 'operator-id', roles: ['COORDINADOR_ACADEMICO'] }, '/seguridad/usuarios')
     expect(screen.getByRole('heading', { name: 'Acceso no autorizado' })).toBeVisible()
     expect(client.from).not.toHaveBeenCalled()
   })
   it('ADMIN consulta directorio con cliente ordinario y sin botones de escritura', async () => {
-    show({ phase: 'authorized', userId: 'admin-id', roles: ['ADMIN'] }, '/seguridad/usuarios')
+    show({ phase: 'authorized', userId: 'admin-id', roles: ['ADMIN_SISTEMA'] }, '/seguridad/usuarios')
     expect(await screen.findByText('synthetic-directory-id')).toBeVisible()
     expect(client.from).toHaveBeenCalledWith('app_users')
     expect(screen.queryByText(/Editar|Eliminar|Crear usuario/)).not.toBeInTheDocument()
@@ -54,4 +54,13 @@ describe('rutas de seguridad (UX; RLS se prueba por API real aparte)', () => {
     expect(screen.getByLabelText('Contraseña')).toHaveValue('')
     expect(screen.queryByText('unit-test-private-value')).not.toBeInTheDocument()
   })
+})
+
+it('top navigation identifies the current section and keeps security links role-bound', () => {
+  show({ phase: 'authorized', userId: 'director', roles: ['DIRECTOR_ACADEMICO'] })
+  expect(screen.getByRole('navigation', { name: 'Académico' })).toBeVisible()
+  expect(screen.getByRole('link', { name: 'Mi acceso' })).toHaveAttribute('aria-current', 'page')
+  expect(screen.getByRole('link', { name: 'Materias' })).not.toHaveAttribute('aria-current')
+  expect(screen.queryByRole('link', { name: 'Directorio de seguridad' })).not.toBeInTheDocument()
+  expect(screen.queryByText(/PostgreSQL|RLS/)).not.toBeInTheDocument()
 })
