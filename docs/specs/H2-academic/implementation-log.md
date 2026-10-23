@@ -1,6 +1,6 @@
 # H2 — Evidencia de construcción
 
-Estado vigente: TASK-H2-001 a 008 COMPLETADAS. TEST-H2-018 confirmado PASSED humanamente sobre e2f2db9. La persona comunicó una regresión parcial posterior de modales/temas y cuatro observaciones UX: corrección/evidencia en [ux-observations-01-04.md](ux-observations-01-04.md). TEST-H2-019 PENDIENTE / NO APROBADO: regresión corta OBS-UX-01 a 04 y comprobaciones restantes de teclado/forced-colors. TEST-H2-020 pendiente; TASK-009 requiere persona y TASK-010 bloqueada por Gate 2. Sin acceptance, merge ni H3.
+Estado vigente: **H2 CLOSED / ACEPTADO — Gate 2 APROBADO HUMANAMENTE** sobre `796a47aa4c1ce21c6cf8c81e9c631a22202bb709`. TASK-H2-001 a 010 completadas con la evidencia técnica, revisión humana y cierre autorizado. TEST-H2-018/020 PASSED humanos; TEST-H2-019 completado con forced-colors real del SO NO VERIFICADO y riesgo aceptado. [Aceptación y cierre](acceptance.md). H3 NO INICIADO.
 
 Los bloques siguientes conservan estados históricos de cada etapa; sus pendientes intermedios no son el estado vigente.
 
@@ -110,3 +110,10 @@ Aprobación humana explícita limitada al isotipo 741f4ac; código de integraci�
 ## OBS-UX-01 a 04 — Correcciones posteriores a regresión humana parcial
 
 Sobre HEAD recibido 6d2a9b1, la implementación 86b7924 corrige etiquetas Editar/Consultar, composición de Materias de Ciclo, validación inline con foco/scroll y abreviatura sugerida. Conserva modales ya confirmados por la persona y el lenguaje visual vigente. Alcance, casos, resultados y pendientes en ux-observations-01-04.md. La confirmación humana parcial recibida no se convierte en TEST-H2-019 PASSED ni Gate 2.
+
+
+## TASK-H2-009 y 010 — Cierre por Gate 2 humano
+
+El usuario aprobó explícitamente Gate 2 sobre `796a47aa4c1ce21c6cf8c81e9c631a22202bb709` y comunicó TEST-H2-018 PASSED, TEST-H2-019 completado (cuatro modos revisados; persistencia, teclado/foco y OBS-UX-01 a 04 PASSED) y TEST-H2-020 PASSED con complejidad y mantenimiento aceptables. **forced-colors real del sistema operativo no fue verificado manualmente en H2; el usuario aceptó este riesgo en Gate 2.** Limpieza humana reset/test:local/stop PASSED y working tree vacío. Codex registra la confirmación, no se atribuye pruebas humanas.
+
+Antes de crear acceptance se verificó run 39873778494 COMPLETED/SUCCESS, job verify y todos sus pasos completados SUCCESS sobre el candidato exacto. Se crea acceptance, se actualizan estados documentales y se autoriza el merge trazable --no-ff a main; SHA de cierre y merge en la entrega Git. Sin cambios de implementación, Spec funcional, H0/H1 ni inicio de H3.

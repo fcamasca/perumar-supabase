@@ -1,5 +1,7 @@
 # H2 — Correcciones UI posteriores a TEST-H2-018
 
+> Estado al cierre: **H2 CLOSED**. Gate 2 aprobado humanamente sobre `796a47aa4c1ce21c6cf8c81e9c631a22202bb709`; TEST-H2-018/020 PASSED humanos y TEST-H2-019 completado con riesgo residual aceptado. forced-colors real del sistema operativo no fue verificado manualmente en H2; el usuario aceptó este riesgo en Gate 2. Ver [acceptance.md](acceptance.md). Los pendientes, conteos y estados conservados debajo son históricos; no sustituyen el cierre. H3 NO INICIADO.
+
 ## Confirmación humana recibida
 
 El usuario confirmó **TEST-H2-018: PASSED** sobre el candidato exacto `e2f2db9365b4c46fd6932caba3d47a17324ebe29`. Confirmación recibida el 22/10/2026; no se presume fecha de ejecución ni nombre del revisor no proporcionados. Este resultado pertenece a esa revisión humana, no a Codex, y no se extiende automáticamente al candidato corregido.

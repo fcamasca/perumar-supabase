@@ -4,11 +4,11 @@ Base documental de una nueva implementación candidata con React, TypeScript, Su
 
 ## Estado
 
-H0 está aceptado e integrado en main: [aceptación histórica](docs/specs/H0-bootstrap/acceptance.md). H1 está aceptado e integrado en main tras Gate 2 humano del 22/10/2026 sobre el candidato `7c15f6c382c43b08b900f00a793fd590205ab618`: [aceptación de H1](docs/specs/H1-security/acceptance.md). H2 está EN CONSTRUCCIÓN en feature/h2-academic, bajo [Gate 1](docs/specs/H2-academic/gate-1.md), Spec exacto 5c4f57de6618fb0568c6d8846ed04d9d75a89932. Pruebas humanas y Gate 2 pendientes; no aceptación ni merge H2. [Evidencia y recorrido humano de H1](docs/specs/H1-security/implementation-log.md).
+H0 está aceptado e integrado en main: [aceptación histórica](docs/specs/H0-bootstrap/acceptance.md). H1 está aceptado e integrado en main tras Gate 2 humano del 22/10/2026 sobre el candidato `7c15f6c382c43b08b900f00a793fd590205ab618`: [aceptación de H1](docs/specs/H1-security/acceptance.md). H2 está CLOSED / ACEPTADO e integrado en main tras Gate 2 humano sobre `796a47aa4c1ce21c6cf8c81e9c631a22202bb709`: [aceptación H2](docs/specs/H2-academic/acceptance.md). TEST-H2-018/020 PASSED humanos y TEST-H2-019 completado con riesgo residual aceptado: forced-colors real del sistema operativo no fue verificado manualmente en H2; el usuario aceptó este riesgo en Gate 2. H3 NO INICIADO. [Evidencia y recorrido humano de H1](docs/specs/H1-security/implementation-log.md).
 
 La jerarquía es: `docs/PLAN_MVP.md`, historias vigentes, Spec aprobado del hito e informes arquitectónicos como sustento técnico. El Spec aprobado se conserva sin cambios de requisitos/diseño/tareas. El registro posterior de aprobación está en el PLAN.
 
-El remoto autorizado `fcamasca/perumar-supabase` es privado y está vinculado como origin. main integra H0 y H1 aceptados; la rama `feature/h1-security` conserva la trazabilidad de construcción y cierre. No existe proyecto Supabase alojado, esquema de negocio ni hosting. La rama H2 conserva Auth y tres tablas de seguridad y añade el modelo académico aprobado; no hay entidades de matrícula, pagos o facturación.
+El remoto autorizado `fcamasca/perumar-supabase` es privado y está vinculado como origin. main integra H0, H1 y H2 aceptados; la rama `feature/h1-security` conserva la trazabilidad de construcción y cierre. No existe proyecto Supabase alojado ni hosting. H2 conserva Auth y las tres tablas de seguridad y añade el modelo académico aprobado; no hay entidades de matrícula, pagos o facturación.
 
 La evidencia histórica está en [implementation-log.md](docs/specs/H0-bootstrap/implementation-log.md) y las verificaciones finales en [technical-results.md](docs/specs/H0-bootstrap/technical-results.md). La [enmienda CHG-H0-001](docs/specs/H0-bootstrap/approved-isolation-amendment.md) fue aprobada humanamente: Windows puede usar aislamiento efectivo mediante la regla exacta creada administrativamente. No se afirma que Docker tenga binding exclusivo a loopback. **54322/TCP: NO VERIFICADO DE FORMA INDEPENDIENTE**; riesgo residual aceptado para H0 local sin datos reales.
 
@@ -113,7 +113,7 @@ Para parar: Ctrl+C en la terminal de Vite y `npm run supabase:stop`. Conserva vo
 
 Un workflow con permisos `contents: read` ejecuta instalación, lint, tipos, pruebas, Auth/RLS real, build seguro, expiración y reset con repetición; siempre intenta detener el stack. Acciones fijadas por SHA y sin deployment ni secretos remotos de Supabase. El ensayo negativo temporal introduce ADMIN indebidamente al fixture O y debe fallar en la matriz de filas, limpiar identidades y detener el stack. Se elimina su rama después de conservar runs/commits; no es un candidato alternativo. No hay rama negativa permanente. El mecanismo de fallo de build H0 se retiró del workflow actual; la evidencia histórica permanece en sus documentos/runs.
 
-Los recorridos humanos TEST-H1-018 y TEST-H1-019 se conservan en [implementation-log.md](docs/specs/H1-security/implementation-log.md). El usuario confirmó ambos como PASSED y aprobó Gate 2 el 22/10/2026: [registro de aceptación](docs/specs/H1-security/acceptance.md). Codex registra esa decisión; no se atribuye la ejecución ni aprobación humana. En el cierre histórico de H1, H2 todavía no estaba iniciado; su estado vigente de construcción figura arriba.
+Los recorridos humanos TEST-H1-018 y TEST-H1-019 se conservan en [implementation-log.md](docs/specs/H1-security/implementation-log.md). El usuario confirmó ambos como PASSED y aprobó Gate 2 el 22/10/2026: [registro de aceptación](docs/specs/H1-security/acceptance.md). Codex registra esa decisión; no se atribuye la ejecución ni aprobación humana. En el cierre histórico de H1, H2 todavía no estaba iniciado; su estado vigente figura arriba.
 
 ## Spec-Driven Development
 
@@ -134,9 +134,9 @@ La historia de usuario aportada como `Historias_de_Usuario_export.md` se normali
 
 Los scripts operativos son exclusivamente locales. El guard acepta loopback estricto o la mitigación exacta aprobada y rechaza cualquier otra situación. La reconstrucción local no sustituye backups/restauración productivos de H9. Las limitaciones aceptadas de red no autorizan datos reales, alojamiento LAN/Internet ni funciones de H2 o posteriores.
 
-## Revisión del candidato H2 (Gate 2 pendiente)
+## Reproducción y evidencia de H2 (CLOSED)
 
-Para revisar H2, clonar explícitamente `feature/h2-academic` en otra carpeta y comprobar su SHA contra el candidato presentado. No ejecutar dos clones del mismo project_id a la vez. El clon normal desde main anterior no contiene H2. Seguir los mismos requisitos y guard locales de esta guía.
+H2 está integrado en main. Para reproducir exactamente el candidato aceptado, usar `796a47aa4c1ce21c6cf8c81e9c631a22202bb709`; feature/h2-academic conserva además el cierre documental. No ejecutar dos clones del mismo project_id a la vez. El main anterior al merge H2 no contiene H2. Seguir los mismos requisitos y guard locales de esta guía.
 
 Orden técnico: `npm ci`, `npm run supabase:start`, `npm run supabase:reset`, `npm run supabase:env` (solo si .env.local no existe), `npm run test:local`, `npm run test:security`, `npm run test:academic`, `npm run build`, `npm run test:build-safety`. `test:expiry` cambia temporalmente solo jwt_expiry local, restaura archivo exacto y reinicia stack; no ejecutarlo con fixtures humanos abiertos. No ejecutar suites técnicas concurrentemente sobre la misma base.
 

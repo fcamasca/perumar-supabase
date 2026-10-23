@@ -1,5 +1,7 @@
 # H2 — Resultados técnicos e inventario
 
+> Estado al cierre: **H2 CLOSED**. Gate 2 aprobado humanamente sobre `796a47aa4c1ce21c6cf8c81e9c631a22202bb709`; TEST-H2-018/020 PASSED humanos y TEST-H2-019 completado con riesgo residual aceptado. forced-colors real del sistema operativo no fue verificado manualmente en H2; el usuario aceptó este riesgo en Gate 2. Ver [acceptance.md](acceptance.md). Los pendientes, conteos y estados conservados debajo son históricos; no sustituyen el cierre. H3 NO INICIADO.
+
 Este informe conserva la evidencia del candidato inicial y sus etapas históricas. Evidencia técnica actual y correcciones posteriores a regresión humana parcial: [ux-observations-01-04.md](ux-observations-01-04.md) (139 unitarias). Antecedentes: [visual-refresh.md](visual-refresh.md), [ux-review.md](ux-review.md), [ui-corrections.md](ui-corrections.md). TEST-H2-018 fue confirmado PASSED humanamente en e2f2db9. TEST-H2-019 queda pendiente de regresión corta OBS-UX-01 a 04 y comprobaciones restantes de teclado/forced-colors; TEST-H2-020 y Gate 2 siguen pendientes. Los estados y conteos inferiores reflejan cada entrega histórica.
 
 Fecha: 22/10/2026 (America/Lima). Construcción autorizada por Gate 1 sobre Spec exacto `5c4f57de6618fb0568c6d8846ed04d9d75a89932`. No es acceptance ni Gate 2.

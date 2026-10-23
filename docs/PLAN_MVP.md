@@ -21,9 +21,13 @@ H1 — Seguridad base: **ACEPTADO / INTEGRADO**. El usuario aprobó Gate 2 sobre
 
 Al cierre de H1, H2 aún no estaba iniciado; ese registro histórico no sustituye la aprobación posterior de Gate 1 indicada a continuación.
 
-### Estado vigente de H2 — Gate 1 del 22/10/2026
+### Registro histórico de H2 — Gate 1 del 22/10/2026
 
-El usuario aprobó humanamente Gate 1 sobre el Spec exacto `5c4f57de6618fb0568c6d8846ed04d9d75a89932`. Véase el [registro de aprobación](specs/H2-academic/gate-1.md). **SPEC APROBADO; H2 EN CONSTRUCCIÓN.** Los cuatro documentos aprobados se conservan sin cambios. Gate 2, aceptación, merge a main y H3 siguen pendientes de sus decisiones correspondientes.
+El usuario aprobó humanamente Gate 1 sobre el Spec exacto `5c4f57de6618fb0568c6d8846ed04d9d75a89932`. Véase el [registro de aprobación](specs/H2-academic/gate-1.md). **SPEC APROBADO; H2 EN CONSTRUCCIÓN en esa etapa.** Los cuatro documentos aprobados se conservan sin cambios. Este es el estado anterior al cierre, no el vigente.
+
+### Estado vigente de H2 — cierre del 22/10/2026
+
+H2 — Base académica: **CLOSED / ACEPTADO / INTEGRADO**. El usuario aprobó explícitamente Gate 2 sobre `796a47aa4c1ce21c6cf8c81e9c631a22202bb709`: TEST-H2-018 y TEST-H2-020 PASSED humanos; TEST-H2-019 completado con Sistema/Claro/Oscuro/Alto contraste revisados, persistencia, teclado/foco y OBS-UX-01 a 04 PASSED. **forced-colors real del sistema operativo no fue verificado manualmente en H2; el usuario aceptó este riesgo en Gate 2.** La [aceptación](specs/H2-academic/acceptance.md) registra la decisión, CI del candidato completamente verde y cierre exclusivamente documental con integración trazable. H3 permanece NO INICIADO.
 
 ### Seguimiento histórico de H0 — estado anterior al cierre
 
@@ -690,7 +694,7 @@ El PLAN vigente debe reflejar el estado real del proyecto.
 |---|---|
 | H0 Bootstrap | ACEPTADO — Gate 2 aprobado 21/10/2026 |
 | H1 Seguridad base | ACEPTADO / INTEGRADO — Gate 2 aprobado 22/10/2026 |
-| H2 Base académica | EN CONSTRUCCIÓN — Gate 1 aprobado 22/10/2026 |
+| H2 Base académica | CLOSED / ACEPTADO / INTEGRADO — Gate 2 aprobado 22/10/2026; riesgo forced-colors aceptado |
 | H3 Alumno y Matrícula | NO INICIADO |
 | H4 Pagos | NO INICIADO |
 | H5 Ficha PDF | NO INICIADO |
@@ -704,8 +708,6 @@ El PLAN vigente debe reflejar el estado real del proyecto.
 
 # 14. Próximo paso
 
-Iniciar exclusivamente H2 — Base académica según el Spec aprobado humanamente `5c4f57de6618fb0568c6d8846ed04d9d75a89932` y su [Gate 1](specs/H2-academic/gate-1.md).
+H2 está cerrado tras Gate 2 humano. H3 — Alumno y Matrícula permanece **NO INICIADO**.
 
-Antes de construir, verificar TASK-H2-001 y crear la rama de implementación desde el commit exacto aprobado; incorporar después el registro documental, sin partir de main ni cambiar el Spec aprobado. Ejecutar las tareas en su orden y preparar evidencia técnica y recorridos humanos para el Gate 2 posterior. La construcción se ejecuta en feature/h2-academic desde el commit aprobado exacto, con el registro Gate 1 incorporado después.
-
-No crear acceptance, integrar a main ni comenzar H3 sin las decisiones humanas posteriores correspondientes.
+La siguiente actividad requiere una instrucción humana posterior para preparar exclusivamente el Spec de H3 (requirements.md, design.md, tasks.md y test-plan.md) y detenerse para revisión y aprobación humana. No generar ese Spec ni iniciar construcción de H3 como parte del cierre de H2.

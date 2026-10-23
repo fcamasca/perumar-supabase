@@ -1,5 +1,7 @@
 # H2 — Refresh visual del shell y componentes base
 
+> Estado al cierre: **H2 CLOSED**. Gate 2 aprobado humanamente sobre `796a47aa4c1ce21c6cf8c81e9c631a22202bb709`; TEST-H2-018/020 PASSED humanos y TEST-H2-019 completado con riesgo residual aceptado. forced-colors real del sistema operativo no fue verificado manualmente en H2; el usuario aceptó este riesgo en Gate 2. Ver [acceptance.md](acceptance.md). Los pendientes, conteos y estados conservados debajo son históricos; no sustituyen el cierre. H3 NO INICIADO.
+
 Base: `7f0a5487d4ddb001eadf3d89cfee91cb02c84255`. Código: `d593ac23563cff51e2a84d2d50e2423a7ee1ad62`. Fecha: 22/10/2026. Rama: feature/h2-academic. El candidato final y su CI se identifican en la entrega.
 
 ## Contexto y límite de aceptación

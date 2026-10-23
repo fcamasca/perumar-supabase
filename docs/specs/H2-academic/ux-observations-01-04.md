@@ -1,5 +1,7 @@
 # H2 — Corrección de observaciones humanas OBS-UX-01 a 04
 
+> Estado al cierre: **H2 CLOSED**. Gate 2 aprobado humanamente sobre `796a47aa4c1ce21c6cf8c81e9c631a22202bb709`; TEST-H2-018/020 PASSED humanos y TEST-H2-019 completado con riesgo residual aceptado. forced-colors real del sistema operativo no fue verificado manualmente en H2; el usuario aceptó este riesgo en Gate 2. Ver [acceptance.md](acceptance.md). Los pendientes, conteos y estados conservados debajo son históricos; no sustituyen el cierre. H3 NO INICIADO.
+
 Fecha: 22/10/2026 (America/Lima). Base recibida: `6d2a9b1018d205aa585272042c5dbad4925b35be`, rama `feature/h2-academic`. Implementación: `86b7924b00ec11ca877079c6322455b6a4060a03`.
 
 ## Procedencia y límites

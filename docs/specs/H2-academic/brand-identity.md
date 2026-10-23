@@ -4,7 +4,7 @@
 
 El usuario aprobó explícitamente el diseño del isotipo correspondiente a `741f4ac5998189676b22b9c3d67d3b2d556754b7` (741f4ac). Registro recibido el 22/10/2026, America/Lima. La aprobación se limita a identidad visual: no implica TEST-H2-019, TEST-H2-020, Gate 2, acceptance, merge ni H3.
 
-**Estado: IDENTIDAD APROBADA / INTEGRACIÓN PENDIENTE DE VALIDACIÓN VISUAL HUMANA.**
+**Estado: IDENTIDAD APROBADA / INTEGRACIÓN INCLUIDA EN REVISIÓN HUMANA COMPLETADA DE H2.** Gate 2 aprobado sobre `796a47aa4c1ce21c6cf8c81e9c631a22202bb709`; [aceptación](acceptance.md). forced-colors real del sistema operativo no fue verificado manualmente en H2; el usuario aceptó este riesgo en Gate 2. No se añaden comprobaciones individuales de favicon 16/32 px que el usuario no haya informado expresamente; la limitación técnica histórica siguiente se conserva como tal.
 
 Código de integración probado: `aeafc0f57c4e4470a8016dfa02a75ed649f253ca`. El SHA del candidato documental y su CI se presentan en la entrega.
 
@@ -52,4 +52,4 @@ Si una persona confirma ilegibilidad a 16 px, registrar evidencia y solicitar de
 - `perumar-mark-a.svg`, `perumar-mark-b.svg`, `perumar-mark-c.svg` y `brand-mark-preview.html`: EXPLORATORIOS / NO VIGENTES. No se importan en la aplicación.
 - El icono provisional de ondas de BrandMark fue reemplazado; no se utiliza como identidad actual.
 
-TEST-H2-019 no ejecutado ni aprobado; integración pendiente de revisión visual humana en Claro/Oscuro/Alto contraste/forced-colors. TEST-H2-020 y Gate 2 pendientes. Sin acceptance, merge ni H3. No se extiende automáticamente a este candidato el PASSED humano anterior de TEST-H2-018.
+Estado anterior al cierre: la integración estaba pendiente de revisión. Estado vigente: TEST-H2-019 completado humanamente en los términos de acceptance.md; forced-colors real NO VERIFICADO y riesgo aceptado explícitamente. TEST-H2-018/020 PASSED humanos y Gate 2 aprobado sobre el candidato exacto. H3 NO INICIADO.
