@@ -20,7 +20,7 @@ Director y Coordinador crean/consultan/editan alumnos y contactos, buscan/crean/
 
 ## REQ-H3-003 — Ficha independiente
 
-Obligatorios: apellido paterno, apellido materno, nombres, tipo DI, número DI, fecha nacimiento, sexo, celular, Departamento/Provincia/Distrito nacimiento, domicilio y Departamento/Provincia/Distrito domicilio. Opcionales: fijo, email, grupo sanguíneo, instrucción, ojos, cabello, estatura, peso, señas, ocupación, estado civil y N°/Mz Lt. Edad calculada, no persistida. Catálogos simples TIPO_DI, SEXO, ESTADO_CIVIL y GRUPO_SANGUINEO; TIPO_DI inicia con DNI/CARNET_EXTRANJERIA. Instrucción, ojos, cabello y parentesco son texto simple, sin mantenimiento genérico. DNI texto trim de exactamente 8 dígitos; CE texto trim/uppercase alfanumérico de máximo técnico 30, sin checksum ni longitud legal adicional. Estatura en centímetros, peso en kilogramos, positivos si presentes sin rangos clínicos. Mantener cotas técnicas DES-003 y UBIGEO H2. Ficha mantenible sin matrícula.
+Obligatorios: apellido paterno, apellido materno, nombres, tipo DI, número DI, fecha nacimiento, sexo, celular, Departamento/Provincia/Distrito nacimiento, domicilio y Departamento/Provincia/Distrito domicilio. Opcionales: fijo, email, grupo sanguíneo, instrucción, ojos, cabello, estatura, peso, señas, ocupación, estado civil y N°/Mz Lt. Edad calculada, no persistida. Catálogos simples TIPO_DI, SEXO, ESTADO_CIVIL y GRUPO_SANGUINEO; TIPO_DI inicia con DNI/CARNET_EXTRANJERIA. GRADO_INSTRUCCION, COLOR_OJOS y COLOR_CABELLO son referencias opcionales de Alumno a catalogo_valor; PARENTESCO es referencia obligatoria del contacto de emergencia. Reutilizar exclusivamente catalogo/catalogo_valor, sin tablas nuevas ni motor/mantenimiento adicional. Validar server-side pertenencia al catálogo correcto y estado activo de cada valor suministrado. DNI texto trim de exactamente 8 dígitos; CE texto trim/uppercase alfanumérico de máximo técnico 30, sin checksum ni longitud legal adicional. Estatura en centímetros, peso en kilogramos, positivos si presentes sin rangos clínicos. Mantener cotas técnicas DES-003 y UBIGEO H2. Ficha mantenible sin matrícula.
 
 ## REQ-H3-004 — Identidad y ficha incompleta
 
@@ -28,11 +28,11 @@ Unicidad DB de tipo_di + numero_di normalizado, incluida concurrencia; no unicid
 
 ## REQ-H3-005 — Emergencia
 
-Entidad separada alumno_contacto_emergencia, uno a muchos por alumno; apellido, nombre, parentesco texto y celular obligatorios, dirección opcional. Retiro lógico a INACTIVO, no DELETE ni contacto principal. Al registrar matrícula debe existir al menos un contacto activo válido. No columnas de contacto en alumno ni pertenencia a matrícula.
+Entidad separada alumno_contacto_emergencia, uno a muchos por alumno; apellido, nombre, parentesco mediante valor activo del catálogo PARENTESCO y celular obligatorios, dirección opcional. Retiro lógico a INACTIVO, no DELETE ni contacto principal. Al registrar matrícula debe existir al menos un contacto activo válido. No columnas de contacto en alumno ni pertenencia a matrícula.
 
 ## REQ-H3-006 — Snapshot y PII
 
-Matrícula guarda alumno_id y alumno_snapshot JSONB histórico inmutable con ficha relevante y todos los contactos activos/válidos existentes al inscribir; excluir contactos inactivos del nuevo snapshot. Cambios posteriores de alumno, contactos o matrícula no reescriben esa fotografía. No copiar toda la ficha ni snapshot en auditoría/logs. Lectura histórica y vigente distinguibles, exposición mínima.
+Matrícula guarda alumno_id y alumno_snapshot JSONB histórico inmutable con ficha relevante y todos los contactos activos/válidos existentes al inscribir; excluir contactos inactivos del nuevo snapshot. Para GRADO_INSTRUCCION, COLOR_OJOS, COLOR_CABELLO y PARENTESCO conservar ID y descripción/etiqueta histórica obtenidos por servidor al matricular; los tres campos opcionales de Alumno ausentes permanecen NULL. Cambios posteriores de alumno, contactos o matrícula no reescriben esa fotografía. No copiar toda la ficha ni snapshot en auditoría/logs. Lectura histórica y vigente distinguibles, exposición mínima.
 
 ## REQ-H3-007 — Empresa mínima
 
@@ -96,7 +96,7 @@ OQ-H3-001 a OQ-H3-008: **RESUELTAS POR DECISIÓN HUMANA** en la solicitud de act
 
 | ID | Decisión cerrada | REQ / DES / TASK (mismo índice) | TEST afectados |
 |---|---|---|---|
-| OQ-H3-001 | Unicidad tipo+número; DNI 8 dígitos texto, CE alfanumérico uppercase ≤30; cuatro catálogos simples, instrucción/ojos/cabello/parentesco texto; N°/Mz Lt opcional, cm/kg sin rangos clínicos y cotas técnicas conservadas. | 003–005 | 004–008 |
+| OQ-H3-001 | Unicidad tipo+número; DNI 8 dígitos texto, CE alfanumérico uppercase ≤30; catálogos simples TIPO_DI/SEXO/ESTADO_CIVIL/GRUPO_SANGUINEO y, por ajuste humano sobre 23c54b15330d3cf978abe999a286507d8dabfd86, GRADO_INSTRUCCION/COLOR_OJOS/COLOR_CABELLO en Alumno y PARENTESCO en contacto, exclusivamente catalogo/catalogo_valor, sin nuevas tablas/mantenimiento; pertenencia/activo servidor e ID/etiqueta histórica en snapshot; N°/Mz Lt opcional, cm/kg sin rangos clínicos y cotas técnicas conservadas. | 003, 005–006 | 004–005, 008, 010 |
 | OQ-H3-002 | Ambos roles buscan/crean/editan empresa; RUC/razón social obligatorios, demás opcionales; RUC texto trim 11 dígitos UNIQUE, sin SUNAT/H7. | 002, 007 | 002, 012 |
 | OQ-H3-003 | Retiro lógico INACTIVO, sin principal; snapshot incluye todos los activos/válidos y excluye inactivos, histórico inmutable. | 005–006 | 008–010 |
 | OQ-H3-004 | Exactamente una CARRERA activa obligatoria; tipos CARRERA/OTRO; numeric(12,2) admite cero, sin negativos/redondeo; mantenimiento Ciclo solo PROGRAMADO/EN_CURSO. | 008–010 | 013–017 |

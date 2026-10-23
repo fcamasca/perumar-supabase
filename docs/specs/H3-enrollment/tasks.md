@@ -26,7 +26,7 @@ Todas las tareas son FUTURAS / NO INICIADAS / BLOQUEADAS POR GATE 1. La elaborac
 
 - REQ-H3-003 → DES-H3-003. Pruebas: TEST-H3-004, TEST-H3-005.
 - Dependencias: 001, 002; todas las tareas 002–020 requieren 001 y decisiones cerradas registradas en requirements.
-- Trabajo futuro: Crear modelo aditivo con DNI texto trim 8 dígitos, CE alfanumérico uppercase ≤30 y cuatro catálogos simples TIPO_DI/SEXO/ESTADO_CIVIL/GRUPO_SANGUINEO. Instrucción/ojos/cabello/parentesco texto, N°/Mz Lt opcional, cm/kg y cotas conservadas; edad derivada, geografía H2 y versión servidor.
+- Trabajo futuro: Crear modelo aditivo con DNI texto trim 8 dígitos, CE alfanumérico uppercase ≤30 y catálogos simples TIPO_DI/SEXO/ESTADO_CIVIL/GRUPO_SANGUINEO y referencias opcionales GRADO_INSTRUCCION/COLOR_OJOS/COLOR_CABELLO de Alumno usando exclusivamente catalogo/catalogo_valor; validar pertenencia y activo server-side, sin tablas ni motor/mantenimiento adicionales para estas propiedades, N°/Mz Lt opcional, cm/kg y cotas conservadas; edad derivada, geografía H2 y versión servidor.
 - Finalización: criterios del requisito demostrados con pruebas vinculadas y revisión del diseño sobre SHA exacto; evidencia segura.
 - Estado: NO INICIADA / BLOQUEADA POR GATE 1.
 
@@ -42,7 +42,7 @@ Todas las tareas son FUTURAS / NO INICIADAS / BLOQUEADAS POR GATE 1. La elaborac
 
 - REQ-H3-005 → DES-H3-005. Pruebas: TEST-H3-008, TEST-H3-009.
 - Dependencias: 003, 004; todas las tareas 002–020 requieren 001 y decisiones cerradas registradas en requirements.
-- Trabajo futuro: Implementar entidad separada, varios contactos sin principal, retiro lógico INACTIVO sin DELETE y versión padre; al matricular exigir ≥1 activo válido.
+- Trabajo futuro: Implementar entidad separada con parentesco_id obligatorio a catalogo_valor de PARENTESCO, validación server-side de pertenencia y activo sin texto libre ni tabla/mantenimiento adicional de catálogo, varios contactos sin principal, retiro lógico INACTIVO sin DELETE y versión padre; al matricular exigir ≥1 activo válido.
 - Finalización: criterios del requisito demostrados con pruebas vinculadas y revisión del diseño sobre SHA exacto; evidencia segura.
 - Estado: NO INICIADA / BLOQUEADA POR GATE 1.
 
@@ -50,7 +50,7 @@ Todas las tareas son FUTURAS / NO INICIADAS / BLOQUEADAS POR GATE 1. La elaborac
 
 - REQ-H3-006 → DES-H3-006. Pruebas: TEST-H3-010, TEST-H3-011.
 - Dependencias: 003, 005; todas las tareas 002–020 requieren 001 y decisiones cerradas registradas en requirements.
-- Trabajo futuro: Construir snapshot DB con whitelist y todos los contactos activos/válidos excluyendo inactivos; mantener histórico inmutable y sin proyección accidental en auditoría/lista/logs.
+- Trabajo futuro: Construir snapshot DB con whitelist y todos los contactos activos/válidos excluyendo inactivos; conservar ID y descripción/etiqueta histórica de GRADO_INSTRUCCION/COLOR_OJOS/COLOR_CABELLO del Alumno y PARENTESCO de contactos al matricular, NULL en opcionales ausentes; mantener histórico inmutable y sin proyección accidental en auditoría/lista/logs.
 - Finalización: criterios del requisito demostrados con pruebas vinculadas y revisión del diseño sobre SHA exacto; evidencia segura.
 - Estado: NO INICIADA / BLOQUEADA POR GATE 1.
 

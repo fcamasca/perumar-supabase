@@ -45,7 +45,7 @@ Humanas: revisor registra pasos, actor, SO/navegador, resultado y limitaciones s
 ## TEST-H3-005 — Automatizada
 
 - Trazabilidad: REQ-H3-003 → DES-H3-003 → TASK-H3-003.
-- Escenario y resultado esperado: Validar cotas exactas/tildes/apóstrofos, email/teléfono y medidas positivas en cm/kg sin rangos clínicos; edad antes/en/después cumpleaños. TIPO_DI/SEXO/ESTADO_CIVIL/GRUPO_SANGUINEO catálogos simples; instrucción/ojos/cabello/parentesco texto, sin mantenimiento genérico. No convertir DI a número.
+- Escenario y resultado esperado: Validar cotas exactas/tildes/apóstrofos, email/teléfono y medidas positivas en cm/kg sin rangos clínicos; edad antes/en/después cumpleaños. TIPO_DI/SEXO/ESTADO_CIVIL/GRUPO_SANGUINEO catálogos simples; GRADO_INSTRUCCION/COLOR_OJOS/COLOR_CABELLO son referencias opcionales de Alumno a catalogo_valor y PARENTESCO obligatoria del contacto. Para los cuatro, probar por RPC directa UUID activo del catálogo correcto aceptado y UUID inexistente/de otro catálogo/inactivo o texto libre rechazados server-side sin efectos parciales. NULL permitido solo en los tres opcionales. Reutilizar exclusivamente catalogo/catalogo_valor, sin tablas ni motor/mantenimiento adicional para estas propiedades. No convertir DI a número.
 - Evidencia: entradas sintéticas/actor, respuesta segura y estado antes/después con aserciones; para UI resultado del recorrido/foco.
 - Estado: NO EJECUTADO.
 
@@ -66,7 +66,7 @@ Humanas: revisor registra pasos, actor, SO/navegador, resultado y limitaciones s
 ## TEST-H3-008 — Integración local
 
 - Trazabilidad: REQ-H3-005 → DES-H3-005 → TASK-H3-005.
-- Escenario y resultado esperado: Alumno sin contactos puede guardarse pero no matricularse. Contacto incompleto falla; solo inactivos no habilitan matrícula. Dos activos/válidos pertenecen al alumno y habilitan matrícula; retiro lógico conserva fila INACTIVO sin DELETE ni concepto principal.
+- Escenario y resultado esperado: Alumno sin contactos puede guardarse pero no matricularse. Contacto incompleto o sin PARENTESCO falla; parentesco_id activo del catálogo correcto acepta, UUID ajeno/inactivo/inexistente o texto libre rechaza server-side; solo inactivos no habilitan matrícula. Dos activos/válidos pertenecen al alumno y habilitan matrícula; retiro lógico conserva fila INACTIVO sin DELETE ni concepto principal.
 - Evidencia: entradas sintéticas/actor, respuesta segura y estado antes/después con aserciones; para UI resultado del recorrido/foco.
 - Estado: NO EJECUTADO.
 
@@ -80,7 +80,7 @@ Humanas: revisor registra pasos, actor, SO/navegador, resultado y limitaciones s
 ## TEST-H3-010 — Integración local
 
 - Trazabilidad: REQ-H3-006 → DES-H3-006 → TASK-H3-006.
-- Escenario y resultado esperado: Matricular con dos contactos activos/válidos y uno INACTIVO: snapshot incluye ambos activos y excluye inactivo. Cambiar ficha/contactos/estado después: actual cambia, snapshot conserva contenido/etiquetas/contactos originales; editar Ciclo/empresa/opciones tampoco lo modifica.
+- Escenario y resultado esperado: Matricular con dos contactos activos/válidos y uno INACTIVO: snapshot incluye ambos activos y excluye inactivo. Verificar para GRADO_INSTRUCCION/COLOR_OJOS/COLOR_CABELLO y PARENTESCO de cada contacto el ID y descripción/etiqueta obtenidos de DB al matricular, NULL en opcionales ausentes. Cambiar después etiqueta/vigencia de catalogo_valor conserva snapshot histórico intacto; intento de matricular con referencias suministradas inactivas/de catálogo incorrecto se rechaza sin efectos parciales. Cambiar ficha/contactos/estado después: actual cambia, snapshot conserva contenido/etiquetas/contactos originales; editar Ciclo/empresa/opciones tampoco lo modifica.
 - Evidencia: entradas sintéticas/actor, respuesta segura y estado antes/después con aserciones; para UI resultado del recorrido/foco.
 - Estado: NO EJECUTADO.
 
