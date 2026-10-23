@@ -46,7 +46,7 @@ try {
     assert.equal(inspectDatabase('select count(*) from public.distrito;'), '1891')
     assert.equal(capitanias.length, 19)
     assert.equal((await rows(D, 'catalogo')).length, 10)
-    assert.equal(motivos.length, 9)
+    assert.equal(motivos.length, 50)
   })
   await scenario('TEST-H2-003/024 normalization-uuid-uniqueness', async () => {
     m1 = await materia('1'); m2 = await materia('2'); m3 = await materia('3'); m4 = await materia('4')

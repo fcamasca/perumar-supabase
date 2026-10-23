@@ -1,0 +1,183 @@
+{
+  "source": "Human user reply 2026-10-23 America/Lima",
+  "catalogs": {
+    "SEXO": [
+      {
+        "codigo": "F",
+        "nombre": "F"
+      },
+      {
+        "codigo": "M",
+        "nombre": "M"
+      }
+    ],
+    "ESTADO_CIVIL": [
+      {
+        "codigo": "CASADO",
+        "nombre": "Casado (a)"
+      },
+      {
+        "codigo": "CONVIVIENTE",
+        "nombre": "Conviviente"
+      },
+      {
+        "codigo": "DIVORCIADO",
+        "nombre": "Divorciado (a)"
+      },
+      {
+        "codigo": "SOLTERO",
+        "nombre": "Soltero (a)"
+      },
+      {
+        "codigo": "VIUDO",
+        "nombre": "Viudo (a)"
+      }
+    ],
+    "GRUPO_SANGUINEO": [
+      {
+        "codigo": "A_NEG",
+        "nombre": "A-"
+      },
+      {
+        "codigo": "A_POS",
+        "nombre": "A+"
+      },
+      {
+        "codigo": "AB_NEG",
+        "nombre": "AB-"
+      },
+      {
+        "codigo": "AB_POS",
+        "nombre": "AB+"
+      },
+      {
+        "codigo": "B_NEG",
+        "nombre": "B-"
+      },
+      {
+        "codigo": "B_POS",
+        "nombre": "B+"
+      },
+      {
+        "codigo": "O_NEG",
+        "nombre": "O-"
+      },
+      {
+        "codigo": "O_POS",
+        "nombre": "O+"
+      }
+    ],
+    "GRADO_INSTRUCCION": [
+      {
+        "codigo": "ANALFABETO",
+        "nombre": "Analfabeto"
+      },
+      {
+        "codigo": "PRIMARIA",
+        "nombre": "Primaria"
+      },
+      {
+        "codigo": "SECUNDARIA",
+        "nombre": "Secundaria"
+      },
+      {
+        "codigo": "TECNICO",
+        "nombre": "Tecnico"
+      },
+      {
+        "codigo": "SUPERIOR",
+        "nombre": "Superior"
+      }
+    ],
+    "COLOR_OJOS": [
+      {
+        "codigo": "AZULES",
+        "nombre": "Azules"
+      },
+      {
+        "codigo": "MARRONES",
+        "nombre": "Marrones"
+      },
+      {
+        "codigo": "NEGROS",
+        "nombre": "Negros"
+      },
+      {
+        "codigo": "PARDOS",
+        "nombre": "Pardos"
+      },
+      {
+        "codigo": "VERDES",
+        "nombre": "Verdes"
+      }
+    ],
+    "COLOR_CABELLO": [
+      {
+        "codigo": "CASTANO",
+        "nombre": "Castaño"
+      },
+      {
+        "codigo": "MARRON",
+        "nombre": "Marrón"
+      },
+      {
+        "codigo": "NEGRO",
+        "nombre": "Negro"
+      },
+      {
+        "codigo": "PELIRROJO",
+        "nombre": "Pelirrojo"
+      }
+    ],
+    "PARENTESCO": [
+      {
+        "codigo": "CONVIVIENTE",
+        "nombre": "Conviviente"
+      },
+      {
+        "codigo": "CUNADO",
+        "nombre": "Cuñado (a)"
+      },
+      {
+        "codigo": "CONYUGE",
+        "nombre": "Cónyuge"
+      },
+      {
+        "codigo": "HERMANO",
+        "nombre": "Hermano (a)"
+      },
+      {
+        "codigo": "HIJO",
+        "nombre": "Hijo (a)"
+      },
+      {
+        "codigo": "MADRE",
+        "nombre": "Madre"
+      },
+      {
+        "codigo": "PADRE",
+        "nombre": "Padre"
+      },
+      {
+        "codigo": "PRIMO",
+        "nombre": "Primo (a)"
+      },
+      {
+        "codigo": "SOBRINO",
+        "nombre": "Sobrino (a)"
+      },
+      {
+        "codigo": "SUEGRO",
+        "nombre": "Suegro (a)"
+      },
+      {
+        "codigo": "TIO",
+        "nombre": "Tio (a)"
+      },
+      {
+        "codigo": "VECINO",
+        "nombre": "Vecino (a)"
+      }
+    ]
+  }
+}

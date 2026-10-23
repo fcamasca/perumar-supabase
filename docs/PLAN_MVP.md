@@ -29,9 +29,9 @@ El usuario aprobó humanamente Gate 1 sobre el Spec exacto `5c4f57de6618fb0568c6
 
 H2 — Base académica: **CLOSED / ACEPTADO / INTEGRADO**. El usuario aprobó explícitamente Gate 2 sobre `796a47aa4c1ce21c6cf8c81e9c631a22202bb709`: TEST-H2-018 y TEST-H2-020 PASSED humanos; TEST-H2-019 completado con Sistema/Claro/Oscuro/Alto contraste revisados, persistencia, teclado/foco y OBS-UX-01 a 04 PASSED. **forced-colors real del sistema operativo no fue verificado manualmente en H2; el usuario aceptó este riesgo en Gate 2.** La [aceptación](specs/H2-academic/acceptance.md) registra la decisión, CI del candidato completamente verde y cierre exclusivamente documental con integración trazable. H3 tiene Spec elaborado; véase el estado vigente siguiente.
 
-### Estado vigente de H3 — Gate 1 del 22/10/2026
+### Estado vigente de H3 — candidato técnico del 23/10/2026
 
-H3 — Alumno y Matrícula: **SPEC APROBADO HUMANAMENTE / CONSTRUCCIÓN AUTORIZADA** sobre `551cd00ed2957178400dca8fe9d945cf3f9e8d20`. Véase [registro Gate 1](specs/H3-enrollment/gate-1.md). Cuatro documentos aprobados preservados sin cambios y OQ-H3-001…008 resueltas. Construcción bajo ese alcance exclusivamente; Gate 2, pruebas humanas y aceptación siguen pendientes. EVOL-001/002 fuera de alcance.
+H3 — Alumno y Matrícula: **CONSTRUCCIÓN COMPLETADA TÉCNICAMENTE / PENDIENTE DE PRUEBAS HUMANAS Y GATE 2**. Gate 1 aprobado humanamente sobre `551cd00ed2957178400dca8fe9d945cf3f9e8d20`; [registro](specs/H3-enrollment/gate-1.md). Cuatro documentos aprobados intactos; OQ-H3-001…008 resueltas. Valores iniciales de siete catálogos autorizados el 23/10/2026, solo DNI/CE en H3. [Evidencia técnica](specs/H3-enrollment/technical-results.md), [registro de construcción](specs/H3-enrollment/implementation-log.md) y [guía humana](specs/H3-enrollment/human-test-guide.md). CI del candidato se informa por SHA al publicar, sin sustituir decisión humana. Sin acceptance ni merge; EVOL-001/002 y H4+ excluidos.
 
 ### Seguimiento histórico de H0 — estado anterior al cierre
 

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { createFixtures, publicClient, checked } from './h2-fixtures.mjs';
 import { inspectDatabase } from './local-platform.mjs';
@@ -19,6 +20,15 @@ try {
     const version = x => ({ id: x.id, expected_updated_at: x.updated_at });
     const scenario = async (id, fn) => { current = id; await fn(); passed++; console.log(id + ': PASSED technical DB/API'); };
     const vals = await rows('catalogo_valor'), cat = {};
+    const authorized = JSON.parse(readFileSync('supabase/reference/h3-catalog-values.json','utf8')).catalogs;
+    const definitions=await rows('catalogo');
+    for(const [catalog, expected] of Object.entries(authorized)) {
+        const definition=definitions.find(c=>c.codigo===catalog);
+        const actual=vals.filter(v=>v.catalogo_id===definition.id && v.activo).map(v=>({codigo:v.codigo,nombre:v.nombre})).sort((a,b)=>a.codigo.localeCompare(b.codigo));
+        assert.deepEqual(actual,[...expected].sort((a,b)=>a.codigo.localeCompare(b.codigo)));
+    }
+    assert.deepEqual(vals.filter(v=>v.catalogo_id===definitions.find(c=>c.codigo==='TIPO_DI').id).map(v=>v.codigo).sort(),['CARNET_EXTRANJERIA','DNI']);
+
     for (const name of ['SEXO', 'ESTADO_CIVIL', 'GRUPO_SANGUINEO', 'GRADO_INSTRUCCION', 'COLOR_OJOS', 'COLOR_CABELLO', 'PARENTESCO']) {
         cat[name] = inspectDatabase("insert into public.catalogo_valor(catalogo_id,codigo,nombre) select id,:'code',:'code' from public.catalogo where codigo=:'catalog' returning id;", { code: 'TEST_' + tag, catalog: name }).split('\n')[0];
     }
@@ -26,7 +36,7 @@ try {
     const district = (await rows('distrito'))[0], province = await byId('provincia', district.provincia_id);
     const geo = { departamento_id: province.departamento_id, provincia_id: province.id, distrito_id: district.id };
     let seq = Math.floor(Math.random() * 1000000);
-    const payload = () => ({ apellido_paterno: 'Ensayo', apellido_materno: 'Sintético', nombres: 'Alumno', tipo_di_id: dni, numero_di: String(++seq).padStart(8, '0'), fecha_nacimiento: '2000-10-22', sexo_id: cat.SEXO, celular: '+51 999 111 222', domicilio: 'SINTETICO', ...Object.fromEntries(Object.entries(geo).map(([k, v]) => ['nacimiento_' + k, v])), ...Object.fromEntries(Object.entries(geo).map(([k, v]) => ['domicilio_' + k, v])), grado_instruccion_id: cat.GRADO_INSTRUCCION, color_ojos_id: cat.COLOR_OJOS, color_cabello_id: cat.COLOR_CABELLO });
+    const payload = () => ({ apellido_paterno: 'Ensayo', apellido_materno: 'Sintético', nombres: 'Alumno', tipo_di_id: dni, numero_di: String(++seq).padStart(8, '0'), fecha_nacimiento: '2000-10-22', sexo_id: vals.find(v=>v.codigo==='F' && v.catalogo_id===definitions.find(c=>c.codigo==='SEXO').id).id, celular: '+51 999 111 222', domicilio: 'SINTETICO', ...Object.fromEntries(Object.entries(geo).map(([k, v]) => ['nacimiento_' + k, v])), ...Object.fromEntries(Object.entries(geo).map(([k, v]) => ['domicilio_' + k, v])), grado_instruccion_id: cat.GRADO_INSTRUCCION, color_ojos_id: cat.COLOR_OJOS, color_cabello_id: cat.COLOR_CABELLO });
     const student = async () => rpc(O, 'guardar_alumno', { p: payload() });
     const contact = async (a) => rpc(O, 'guardar_contacto_emergencia', { p: { alumno_id: a.id, expected_alumno_updated_at: a.updated_at, apellido: 'Contacto', nombre: 'Sintético', parentesco_id: cat.PARENTESCO, celular: '999111222' } });
     const mat = await rpc(D, 'guardar_materia', { p: { codigo: tag, nombre: 'MATERIA ' + tag } });
@@ -44,9 +54,13 @@ try {
     const register = async (c, a, extras = {}, client = D) => rpc(client, 'registrar_matricula', { p: { alumno_id: a.id, expected_alumno_updated_at: a.updated_at, ciclo_id: c.id, expected_ciclo_updated_at: c.updated_at, ...extras }, opcionales: config.some(x => x.ciclo_id === c.id && x.tarifa_id === opt.id) ? [option(c)] : [] });
     let a, reg;
     await scenario('TEST-H3-004-009 alumno-contactos-catalogos', async () => {
-        const initialContact={apellido:'INICIAL',nombre:'SINTETICO',parentesco_id:cat.PARENTESCO,celular:'999111222'};
-        const initial=await rpc(O,'guardar_alumno',{p:{...payload(),contactos:[initialContact,initialContact]}});
+        const approvedValue=(catalog,code)=>vals.find(v=>v.catalogo_id===definitions.find(c=>c.codigo===catalog).id && v.codigo===code).id;
+        const initialContact={apellido:'INICIAL',nombre:'SINTETICO',parentesco_id:approvedValue('PARENTESCO','CONVIVIENTE'),celular:'999111222'};
+        const initial=await rpc(O,'guardar_alumno',{p:{...payload(),grado_instruccion_id:approvedValue('GRADO_INSTRUCCION','PRIMARIA'),color_ojos_id:approvedValue('COLOR_OJOS','AZULES'),color_cabello_id:approvedValue('COLOR_CABELLO','CASTANO'),contactos:[initialContact,initialContact]}});
         assert.equal(checked(await D.from('alumno_contacto_emergencia').select('id').eq('alumno_id',initial.id),'initial contacts').length,2);
+        const seededEnrollment=await register(c3,initial);
+        assert.equal(seededEnrollment.alumno_snapshot.catalogos.COLOR_CABELLO.etiqueta,'Castaño');
+        assert.equal(seededEnrollment.alumno_snapshot.contactos[0].parentesco.etiqueta,'Conviviente');
         const beforeInitial=(await rows('alumno')).length;
         reject(await O.rpc('guardar_alumno',{p:{...payload(),contactos:[{...initialContact,parentesco_id:cat.SEXO}]}}));
         assert.equal((await rows('alumno')).length,beforeInitial);

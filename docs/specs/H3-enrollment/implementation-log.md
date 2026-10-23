@@ -6,7 +6,7 @@ Spec exacto aprobado: `551cd00ed2957178400dca8fe9d945cf3f9e8d20`. Working tree l
 
 ## Construcción por bloques
 
-TASK-H3-002…018: modelo, comandos, ACL/RLS, auditoría, snapshot/cargos e invariantes concurrentes implementados mediante dos migraciones aditivas. H2 permanece sin reescribir; triggers H3 protegen rutas indirectas. Se reutilizan los helpers de autorización, versión, catálogo y timestamps. No API propia ni motor genérico de mutaciones.
+TASK-H3-002…018: modelo, comandos, ACL/RLS, auditoría, snapshot/cargos e invariantes concurrentes implementados mediante dos migraciones aditivas de modelo/comandos y una tercera de datos autorizados. H2 permanece sin reescribir; triggers H3 protegen rutas indirectas. Se reutilizan los helpers de autorización, versión, catálogo y timestamps. No API propia ni motor genérico de mutaciones.
 
 Alta Alumno con contactos iniciales opcionales en un único comando y rollback del agregado si falla parentesco; el frontend no coordina esas escrituras.
 
@@ -16,10 +16,23 @@ Validación ampliada: 14 grupos de integración H3 con JWT ordinarios, rollback 
 
 TASK-H3-019: pantallas Alumno/contactos/empresa/tarifas/Ciclo-tarifa/matrícula, Stepper/Tabs, modales propios y estados terminales implementados. Pruebas DOM incluyen foco de primer error, cancelación sin escritura, teclado Tabs y retorno a matrícula conservando Ciclo. La lectura real visual/teclado/SO corresponde a la persona; no se atribuye a Codex.
 
-TASK-H3-020: CI existente ampliada con test:enrollment en primera ejecución y después de reset; verificación y evidencia en curso. Pruebas humanas y Gate 2 pendientes; no acceptance, merge o H4.
+TASK-H3-020: parte técnica completada; CI existente ampliada con test:enrollment en primera ejecución y después de reset. Pruebas humanas y Gate 2 pendientes; no acceptance, merge o H4.
 
-## Dato de negocio pendiente, sin inventar listas
+## Pendiente de catálogos de 22c1fee — resuelto el 23/10/2026
 
-DES-H3-003 prohíbe rellenar silenciosamente listas no especificadas. El Spec define ocho catálogos pero solo enumera valores de TIPO_DI. Se crean las ocho definiciones y únicamente DNI/CARNET_EXTRANJERIA como valores de negocio; no se inventan valores de SEXO/ESTADO_CIVIL/GRUPO_SANGUINEO/GRADO_INSTRUCCION/COLOR_OJOS/COLOR_CABELLO/PARENTESCO. Se solicitó al usuario su contenido inicial mientras se continuó trabajo independiente. Las pruebas preparan valores etiquetados TEST/SINTETICO, nunca los convierten en datos de negocio de una migración.
+DES-H3-003 impide inventar listas. En 22c1fee se crearon ocho definiciones y solo los valores DNI/CE; las pruebas usaron valores TEST/SINTETICO. Se consultó a la persona y no se declaró cierre técnico mientras no hubiera valores autorizados de SEXO/PARENTESCO.
 
-Sin valores autorizados de SEXO y PARENTESCO, un reset limpio no permite altas operativas desde UI. Este pendiente de datos se comunica explícitamente y evita declarar cierre técnico completo o candidato final listo para pruebas exclusivamente humanas. No se modifica el Spec ni se aprueba un gate para resolverlo.
+El 23/10/2026 el usuario suministró los valores de los siete catálogos pendientes y confirmó conservar solo DNI/CE, sin PASAPORTE en H3. [Registro de valores](catalog-values.md): 41 valores, incluyendo F/M y los doce parentescos. Se agregó una tercera migración exclusivamente de datos; migraciones publicadas y los cuatro documentos aprobados intactos. Inventario de objetos no cambia; el total inicial de catalogo_valor pasa de 9 a 50 incluyendo H2 y TIPO_DI.
+
+Se amplió la integración para comparar exactamente códigos/etiquetas/vigencia/pertenencia de las siete listas y ejecutar alta Alumno/contactos y matrícula con valores autorizados (sin depender de valores TEST para esa operación), verificando descripción histórica en snapshot. Los fixtures TEST restantes siguen reservados a pruebas negativas/de concurrencia.
+
+Regresión del 23/10/2026 PASSED: reset/local, seguridad (14 escenarios), académica (11 grupos), H3 (14 grupos, incluida comparación exacta de semillas y matrícula con datos autorizados), lint/types, 148 unitarias, build y build-safety. Se mantienen límites de H0/H1/H2 y advertencia de bundle. CI de 22c1fee completada SUCCESS; CI nueva se reporta sobre SHA final.
+
+## Estado técnico y tareas al 23/10/2026
+
+- TASK-H3-001: COMPLETA, Gate 1 humano registrado desde SHA aprobado.
+- TASK-H3-002…018: COMPLETAS TÉCNICAMENTE; evidencia en technical-results y scripts de regresión. Modelo/RPC/RLS/PII/historia/concurrencia y semillas autorizadas comprobados.
+- TASK-H3-019: IMPLEMENTACIÓN Y VERIFICACIÓN AUTOMATIZADA COMPLETAS. TEST-H3-040/041/042 humanos pendientes, incluidos teclado/temas/forced-colors SO; no se declaran ejecutados.
+- TASK-H3-020: PARTE TÉCNICA COMPLETA; evidencia/guía disponibles. TEST-H3-044 revisión humana de mantenibilidad y TEST-H3-045 Gate 2 pendientes. No se registra acceptance ni integración a main.
+
+**Construcción H3 completada técnicamente. Pendiente de pruebas humanas y Gate 2.**

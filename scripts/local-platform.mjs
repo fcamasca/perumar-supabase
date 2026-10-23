@@ -54,7 +54,7 @@ export function assertSecurityInventory(info) {
   if (JSON.stringify(info.tables?.map(t => t.name)) !== JSON.stringify(tables)
     || info.tables.some(t => !t.rls || t.forced) || info.publicFunctions !== 17
     || info.privateCreate || info.publicCreate || info.publicExecute !== 0 || info.authenticatedBypass || info.buckets !== 0
-    || JSON.stringify(info.migrations) !== JSON.stringify(['20261022041000', '20261022150000', '20261022160000', '20261023010000', '20261023020000'])) throw new Error('Inventario H3 inesperado.')
+    || JSON.stringify(info.migrations) !== JSON.stringify(['20261022041000', '20261022150000', '20261022160000', '20261023010000', '20261023020000', '20261023030000'])) throw new Error('Inventario H3 inesperado.')
   const expected = ['app_roles_active_read', 'app_roles_admin_read', 'app_user_roles_admin_read', 'app_user_roles_self_read', 'app_users_admin_read', 'app_users_self_read', ...Array(18).fill('academic_read'), 'audit_read'].sort()
   if (JSON.stringify(info.policies?.map(p => p.name)) !== JSON.stringify(expected)
     || info.policies.some(p => p.command !== 'SELECT' || JSON.stringify(p.roles) !== '["authenticated"]' || p.check !== null)) throw new Error('Policies H2 inesperadas.')
