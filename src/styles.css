@@ -185,8 +185,27 @@ footer > .technical-details { opacity:1; }
 }
 
 /* H3 consumes the existing semantic palette. */
-.enrollment-steps { display:flex; flex-wrap:wrap; gap:1.5rem; padding:1rem 2rem; }
+.enrollment-steps { display:flex; flex-wrap:wrap; gap:.65rem 1.25rem; list-style:none; margin:1.25rem 0; padding:0; }
 .enrollment-steps [aria-current="step"] { font-weight:700; text-decoration:underline; }
 .snapshot-detail { white-space:pre-wrap; overflow-wrap:anywhere; max-width:100%; }
 [role="tablist"] { display:flex; flex-wrap:wrap; gap:.5rem; margin-block:1rem; }
 [role="tab"][aria-selected="true"] { outline:2px solid currentColor; outline-offset:2px; }
+
+/* H3 field widths follow the content, preserving DOM/tab order. */
+.form-grid { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:1rem 1.25rem; align-items:start; }
+.form-grid > label[data-field] { grid-column:span 4; min-width:0; width:100%; max-width:none; margin:0; }
+.form-grid > label[data-field] > :is(input,select,textarea) { width:100%; max-width:100%; }
+.form-grid > label:is([data-field="tipo_di_id"],[data-field="numero_di"],[data-field="celular"],[data-field="telefono_fijo"],[data-field="parentesco_id"],[data-field="grupo_sanguineo_id"],[data-field="grado_instruccion_id"],[data-field="color_ojos_id"],[data-field="color_cabello_id"],[data-field="estatura_cm"],[data-field="peso_kg"],[data-field="ruc"]) { grid-column:span 3; }
+.form-grid > label:is([data-field="fecha_nacimiento"],[data-field="sexo_id"],[data-field="estado_civil_id"],[data-field="nacimiento_departamento_id"],[data-field="nacimiento_provincia_id"],[data-field="nacimiento_distrito_id"]) { grid-column:span 3; }
+.form-grid > label:is([data-field="email"],[data-field="apellido"],[data-field="nombre"],[data-field="direccion"],[data-field="persona_contacto"],[data-field="ocupacion"],[data-field="senas_particulares"]) { grid-column:span 6; }
+.form-grid > label[data-field="domicilio"] { grid-column:span 8; }
+.form-grid > label[data-field="razon_social"] { grid-column:span 9; }
+.form-grid > label[data-field="descripcion"] { grid-column:1 / -1; }
+@media (max-width:60rem) {
+  .form-grid > label[data-field] { grid-column:span 6; }
+  .form-grid > label:is([data-field="nombres"],[data-field="domicilio"],[data-field="direccion"],[data-field="razon_social"],[data-field="descripcion"],[data-field="senas_particulares"]) { grid-column:1 / -1; }
+}
+@media (max-width:40rem) {
+  .form-grid { grid-template-columns:minmax(0,1fr); }
+  .form-grid > label[data-field] { grid-column:1 / -1; }
+}

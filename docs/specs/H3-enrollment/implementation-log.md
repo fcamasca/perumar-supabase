@@ -36,3 +36,10 @@ Regresión del 23/10/2026 PASSED: reset/local, seguridad (14 escenarios), acadé
 - TASK-H3-020: PARTE TÉCNICA COMPLETA; evidencia/guía disponibles. TEST-H3-044 revisión humana de mantenibilidad y TEST-H3-045 Gate 2 pendientes. No se registra acceptance ni integración a main.
 
 **Construcción H3 completada técnicamente. Pendiente de pruebas humanas y Gate 2.**
+
+
+## Ajuste de distribución solicitado el 28/10/2026
+
+El usuario observó que cada campo de Nuevo Alumno ocupaba una línea completa. Se añadió distribución responsive al contenedor form-grid: nombres en tres columnas; documento/fecha/sexo y catálogos de identificación en campos compactos; domicilio y textos extensos con mayor espacio. Dos columnas en anchos intermedios y una en móvil, conservando orden DOM/teclado, etiquetas, errores inline y colores semánticos existentes. El componente de campos compartido aplica la distribución también a domicilio, información adicional, contactos y empresa. Se corrigió además la numeración duplicada de los pasos (marcador de lista y número explícito).
+
+Verificación: typecheck y build; revisión visual humana de esta distribución pendiente. Gate 2 permanece pendiente.
