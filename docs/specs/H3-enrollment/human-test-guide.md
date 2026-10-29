@@ -14,3 +14,15 @@ No es acceptance ni Gate 2. Usar exclusivamente datos sintéticos, nunca datos p
 10. TEST-H3-044: seguir UI→RPC→rol/versiones→constraints/cargos/snapshot→auditoría, inspeccionar inventario y mantenibilidad; no aceptar API oculta ni nuevas capas por rutina. TEST-H3-045 requiere decisión humana independiente sobre candidato exacto, después de validar el candidato técnico y completar la revisión humana.
 
 Al concluir ensayo: retirar fixtures por IDs/proceso controlado o reset local desechable, comprobar test:local y detener supabase:stop. No merge, acceptance o H4 sin autorización correspondiente.
+
+
+## Comprobación complementaria de ficha y contactos — 28/10/2026
+
+Pendiente de ejecución humana sobre el candidato correspondiente, dentro de TEST-H3-040/041/042:
+
+- Comparar Ver y Editar: mismo encabezado, pestañas y ubicación de campos. Modificar varias secciones mediante clic/flechas y comprobar que el borrador permanece; Cancelar restaura los datos guardados.
+- Desde Resumen, Guardar con un obligatorio vacío en otra pestaña: debe abrir esa sección y enfocar el campo. Comprobar también enlaces del resumen de errores. Un conflicto de versión debe conservar el borrador y exigir resolución explícita.
+- Comparar Resumen con Revisar del registro: ficha completa, etiquetas de catálogos/geografía, fecha, cm/kg, ocupación/OTROS y todos los contactos con su estado.
+- En Contactos comprobar todas las columnas, tooltips/foco de acciones a la derecha, edición validada y Retirar con confirmación sin borrar historia. Inactivos sin acciones de modificación. Con edición de Alumno pendiente, consultar contactos sin modificarlos hasta guardar/cancelar.
+- En Nuevo Alumno, agregar varios contactos a la misma grilla, editar uno, cancelar otra edición y quitar uno. Estado Por guardar; no deben persistir hasta Guardar final. Revisar debe reflejar la lista final. Comprobar Aplicar cambios y revisar y la ayuda que aclara conservación sin guardado inmediato.
+- Revisar tablas, formularios y diálogos en móvil/escritorio, cuatro temas y forced-colors; comprobar scroll horizontal y que no se oculten datos/acciones de Contactos. No marcar como PASSED sin ensayo real.

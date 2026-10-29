@@ -179,7 +179,7 @@ it('reviews complete readable data and allows correcting one section without sav
   fireEvent.click(screen.getByRole('button',{name:'Corregir domicilio'}))
   expect(screen.getByLabelText(/^Celular/)).toHaveValue('999123456')
   enter(/^Domicilio/,'av. nueva')
-  fireEvent.click(screen.getByRole('button',{name:'Volver al resumen'}))
+  fireEvent.click(screen.getByRole('button',{name:'Aplicar cambios y revisar'}))
   expect(within(screen.getByRole('region',{name:'Domicilio'})).getByText('AV. NUEVA')).toBeInTheDocument()
   expect(within(screen.getByRole('region',{name:'Identificación'})).getByText('00123456')).toBeInTheDocument()
   expect(client.rpc).not.toHaveBeenCalled()
@@ -191,11 +191,13 @@ it('reviews complete readable data and allows correcting one section without sav
 it('validates a contact correction before returning to review and shows its relationship as a label', async()=>{
   const {enter}=await openFilledReview()
   fireEvent.click(screen.getByRole('button',{name:'Corregir contacto de emergencia'}))
+  fireEvent.click(screen.getByRole('button',{name:'Agregar contacto'}))
   enter(/^Apellido contacto/,'pérez')
-  fireEvent.click(screen.getByRole('button',{name:'Volver al resumen'}))
+  fireEvent.click(screen.getByRole('button',{name:'Agregar a la lista'}))
   await waitFor(()=>expect(screen.getByRole('textbox',{name:/^Nombre contacto/})).toHaveFocus())
   enter(/^Nombre contacto/,'elena');enter(/^Parentesco/,'rel-mother');enter(/^Celular contacto/,'999111222')
-  fireEvent.click(screen.getByRole('button',{name:'Volver al resumen'}))
+  fireEvent.click(screen.getByRole('button',{name:'Agregar a la lista'}))
+  fireEvent.click(screen.getByRole('button',{name:'Aplicar cambios y revisar'}))
   const contacts=screen.getByRole('region',{name:'Contacto de emergencia'})
   expect(within(contacts).getByText('ELENA')).toBeInTheDocument()
   expect(within(contacts).getByText('MADRE')).toBeInTheDocument()
@@ -314,10 +316,197 @@ it('opens the editor from the list edit link and cancel returns to consultation'
     const refs = ['catalogo','catalogo_valor','departamento','provincia','distrito'];
     client.from.mockImplementation((table:string)=>refs.includes(table) ? {select:()=>({range:async()=>({data:[],error:null})})} : resultQuery(table==='alumno'?{id:'s',nombres:'PRUEBA',apellido_paterno:'ALUMNO'}:[]));
     render(<MemoryRouter initialEntries={['/alumnos/s?editar=1']}><StudentDetail/></MemoryRouter>);
-    await screen.findByRole('heading',{name:'Editar Alumno'});
+    await waitFor(() => expect(screen.getByText('Editando alumno')).toBeVisible());
     expect(screen.getByRole('textbox',{name:/Apellido paterno/})).not.toHaveAttribute('readonly');
     fireEvent.click(screen.getByRole('button',{name:'Cancelar'}));
     expect(screen.getByRole('heading',{name:'Ficha del alumno'})).toBeInTheDocument();
     expect(screen.getByRole('textbox',{name:'Apellido paterno'})).toHaveAttribute('readonly');
     expect(client.rpc).not.toHaveBeenCalled();
+});
+
+async function openTabbedStudent({ editing = false, emptyContacts = false } = {}) {
+    const refs: Record<string, unknown[]> = {
+        catalogo:[{id:'cat-di',codigo:'TIPO_DI'},{id:'cat-sex',codigo:'SEXO'},{id:'cat-rel',codigo:'PARENTESCO'},{id:'cat-occupation',codigo:'OCUPACION'}],
+        catalogo_valor:[{id:'dni',catalogo_id:'cat-di',codigo:'DNI',nombre:'DNI',activo:true},{id:'female',catalogo_id:'cat-sex',codigo:'F',nombre:'FEMENINO',activo:true},{id:'mother',catalogo_id:'cat-rel',codigo:'MADRE',nombre:'MADRE',activo:true},{id:'other',catalogo_id:'cat-occupation',codigo:'OTROS',nombre:'OTROS',orden:0,activo:true}],
+        departamento:[{id:'dep',nombre:'LIMA',active:true}],provincia:[{id:'prov',nombre:'LIMA',departamento_id:'dep',active:true}],distrito:[{id:'dist',nombre:'MIRAFLORES',provincia_id:'prov',active:true}]
+    };
+    const row = {id:'s',updated_at:'student-v1',apellido_paterno:'MUÑOZ',apellido_materno:'GÓMEZ',nombres:'ANA',tipo_di_id:'dni',numero_di:'00123456',fecha_nacimiento:'2000-01-02',sexo_id:'female',nacimiento_departamento_id:'dep',nacimiento_provincia_id:'prov',nacimiento_distrito_id:'dist',celular:'999123456',domicilio:'AV. MAR',domicilio_departamento_id:'dep',domicilio_provincia_id:'prov',domicilio_distrito_id:'dist',email:'ana@example.invalid',ocupacion_id:'other',ocupacion:'SOLDADOR NAVAL',senas_particulares:'CICATRIZ',estatura_cm:'165',peso_kg:'60'};
+    const contacts = emptyContacts ? [] : [{id:'c1',updated_at:'contact-v1',apellido:'PÉREZ',nombre:'ELENA',parentesco_id:'mother',celular:'999111222',direccion:'AV. PUERTO 123',activo:true},{id:'c2',updated_at:'contact-v2',apellido:'LÓPEZ',nombre:'LUIS',parentesco_id:'mother',celular:'999333444',direccion:null,activo:false}];
+    client.from.mockImplementation((table:string)=>table in refs ? {select:()=>({range:async(start:number)=>({data:start===0?refs[table]:[],error:null})})} : resultQuery(table==='alumno'?row:table==='alumno_contacto_emergencia'?contacts:[]));
+    render(<MemoryRouter initialEntries={[`/alumnos/s${editing?'?editar=1':''}`]}><StudentDetail/></MemoryRouter>);
+    await screen.findByRole('heading',{name:'MUÑOZ GÓMEZ, ANA'});
+    await waitFor(()=>expect(screen.getByRole(editing?'combobox':'textbox',{name:/^Sexo/})).toHaveValue(editing?'female':'FEMENINO'));
+    return {row,contacts};
+}
+it('keeps the same record and tabs for viewing/editing and preserves drafts across arbitrary sections',async()=>{
+    const {row}=await openTabbedStudent();
+    const title=screen.getByRole('heading',{name:'Ficha del alumno'});
+    const names=screen.getAllByRole('tab').map(t=>t.textContent);
+    fireEvent.click(screen.getByRole('button',{name:'Editar alumno'}));
+    expect(screen.getByRole('heading',{name:'Ficha del alumno'})).toBe(title);
+    expect(screen.getAllByRole('tab').map(t=>t.textContent)).toEqual(names);
+    const first=screen.getByRole('textbox',{name:/^Nombres/});
+    fireEvent.change(first,{target:{value:'ana maría'}});
+    fireEvent.click(screen.getByRole('tab',{name:'Domicilio'}));
+    fireEvent.change(screen.getByRole('textbox',{name:/^Domicilio/}),{target:{value:'av. nueva'}});
+    fireEvent.click(screen.getByRole('tab',{name:'Información adicional'}));
+    fireEvent.change(screen.getByRole('textbox',{name:'Señas particulares'}),{target:{value:'cicatriz y lunar'}});
+    fireEvent.click(screen.getByRole('tab',{name:'Contactos'}));
+    expect(screen.getByRole('button',{name:'Agregar contacto'})).toBeDisabled();
+    fireEvent.click(screen.getByRole('tab',{name:'Identificación'}));
+    expect(screen.getByRole('textbox',{name:/^Nombres/})).toBe(first);
+    expect(first).toHaveValue('ANA MARÍA');
+    fireEvent.click(screen.getByRole('tab',{name:'Resumen'}));
+    expect(within(screen.getByRole('region',{name:'Domicilio'})).getByText('AV. NUEVA')).toBeVisible();
+    expect(within(screen.getByRole('region',{name:'Información adicional'})).getByText('CICATRIZ Y LUNAR')).toBeVisible();
+    expect(client.rpc).not.toHaveBeenCalled();
+    client.rpc.mockResolvedValue({data:{...row,nombres:'ANA MARÍA',domicilio:'AV. NUEVA',senas_particulares:'CICATRIZ Y LUNAR',updated_at:'student-v2'},error:null});
+    fireEvent.click(screen.getByRole('button',{name:'Guardar cambios'}));
+    await waitFor(()=>expect(screen.getByRole('button',{name:'Editar alumno'})).toBeVisible());
+    expect(client.rpc).toHaveBeenCalledWith('guardar_alumno',{p:expect.objectContaining({id:'s',expected_updated_at:'student-v1',nombres:'ANA MARÍA',domicilio:'AV. NUEVA',senas_particulares:'CICATRIZ Y LUNAR',contactos:[]})});
+    expect(screen.getByRole('tab',{name:'Resumen'})).toHaveAttribute('aria-selected','true');
+});
+it('uses the complete review data for Resumen with readable references, all sections and contacts',async()=>{
+    await openTabbedStudent();
+    fireEvent.click(screen.getByRole('tab',{name:'Resumen'}));
+    const identity=screen.getByRole('region',{name:'Identificación'}),address=screen.getByRole('region',{name:'Domicilio'}),extra=screen.getByRole('region',{name:'Información adicional'}),contacts=screen.getByRole('region',{name:'Contacto de emergencia'});
+    expect(within(identity).getByText('FEMENINO')).toBeVisible();
+    expect(within(identity).getByText('02/01/2000')).toBeVisible();
+    expect(within(address).getByText('MIRAFLORES')).toBeVisible();
+    expect(within(extra).getByText('OTROS — SOLDADOR NAVAL')).toBeVisible();
+    expect(within(extra).getByText('165 cm')).toBeVisible();
+    expect(within(extra).getByText('60 kg')).toBeVisible();
+    expect(within(contacts).getByText('AV. PUERTO 123')).toBeVisible();
+    expect(within(contacts).getByText('ELENA')).toBeVisible();
+    expect(within(contacts).getByText('LUIS')).toBeVisible();
+    expect(screen.queryByRole('button',{name:/Corregir/})).not.toBeInTheDocument();
+    expect(client.rpc).not.toHaveBeenCalled();
+});
+it('opens the first invalid section on save and error links reveal other hidden sections',async()=>{
+    await openTabbedStudent({editing:true});
+    fireEvent.change(screen.getByRole('textbox',{name:/^Apellido materno/}),{target:{value:''}});
+    fireEvent.click(screen.getByRole('tab',{name:'Domicilio'}));
+    fireEvent.change(screen.getByRole('textbox',{name:/^Domicilio/}),{target:{value:''}});
+    fireEvent.click(screen.getByRole('tab',{name:'Resumen'}));
+    fireEvent.click(screen.getByRole('button',{name:'Guardar cambios'}));
+    await waitFor(()=>expect(screen.getByRole('textbox',{name:/^Apellido materno/})).toHaveFocus());
+    expect(screen.getByRole('tab',{name:'Identificación'})).toHaveAttribute('aria-selected','true');
+    expect(client.rpc).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('link',{name:/^Domicilio: Completa/}));
+    await waitFor(()=>expect(screen.getByRole('textbox',{name:/^Domicilio/})).toHaveFocus());
+    expect(screen.getByRole('tab',{name:'Domicilio'})).toHaveAttribute('aria-selected','true');
+});
+it('cancel discards tabbed edits; a version conflict retains the draft and never retries',async()=>{
+    await openTabbedStudent({editing:true});
+    fireEvent.change(screen.getByRole('textbox',{name:/^Nombres/}),{target:{value:'borrador'}});
+    fireEvent.click(screen.getByRole('tab',{name:'Domicilio'}));
+    fireEvent.click(screen.getByRole('button',{name:'Cancelar'}));
+    fireEvent.click(screen.getByRole('tab',{name:'Identificación'}));
+    expect(screen.getByRole('textbox',{name:'Nombres'})).toHaveValue('ANA');
+    fireEvent.click(screen.getByRole('button',{name:'Editar alumno'}));
+    fireEvent.change(screen.getByRole('textbox',{name:/^Nombres/}),{target:{value:'cambio'}});
+    client.rpc.mockResolvedValue({data:null,error:{code:'40001'}});
+    fireEvent.click(screen.getByRole('tab',{name:'Información adicional'}));
+    fireEvent.click(screen.getByRole('button',{name:'Guardar cambios'}));
+    await screen.findByText(/La información cambió/);
+    fireEvent.click(screen.getByRole('tab',{name:'Identificación'}));
+    expect(screen.getByRole('textbox',{name:/^Nombres/})).toHaveValue('CAMBIO');
+    expect(client.rpc).toHaveBeenCalledTimes(1);
+});
+it('shows every functional contact field and exposes actions only for active contacts',async()=>{
+    await openTabbedStudent();
+    fireEvent.click(screen.getByRole('tab',{name:'Contactos'}));
+    const table=screen.getByRole('table',{name:'Contactos de emergencia'});
+    expect(within(table).getAllByRole('columnheader').map(h=>h.textContent)).toEqual(['Apellidos','Nombres','Parentesco','Celular','Dirección','Estado','Acciones']);
+    const rows=within(table).getAllByRole('row');
+    expect(rows[1]).toHaveTextContent('PÉREZ');expect(rows[1]).toHaveTextContent('ELENA');expect(rows[1]).toHaveTextContent('MADRE');expect(rows[1]).toHaveTextContent('999111222');expect(rows[1]).toHaveTextContent('AV. PUERTO 123');
+    expect(within(rows[2]).queryByRole('button')).not.toBeInTheDocument();
+    expect(rows[2]).toHaveTextContent('Inactivo');expect(rows[2]).toHaveTextContent('No indicado');
+    fireEvent.click(screen.getByRole('button',{name:'Editar contacto: PÉREZ ELENA'}));
+    const dialog=screen.getByRole('dialog',{name:'Contacto de emergencia'});
+    expect(within(dialog).getByRole('textbox',{name:'Dirección contacto'})).toHaveValue('AV. PUERTO 123');
+    fireEvent.change(within(dialog).getByRole('textbox',{name:'Dirección contacto'}),{target:{value:'av. actualizada'}});
+    client.rpc.mockResolvedValue({data:{id:'c1'},error:null});
+    fireEvent.click(within(dialog).getByRole('button',{name:'Guardar contacto'}));
+    await waitFor(()=>expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(client.rpc).toHaveBeenCalledWith('guardar_contacto_emergencia',{p:expect.objectContaining({id:'c1',expected_updated_at:'contact-v1',alumno_id:'s',expected_alumno_updated_at:'student-v1',direccion:'AV. ACTUALIZADA'})});
+});
+it('requires confirmation to retire a contact and uses the existing command without DELETE',async()=>{
+    await openTabbedStudent();
+    fireEvent.click(screen.getByRole('tab',{name:'Contactos'}));
+    fireEvent.click(screen.getByRole('button',{name:'Retirar contacto: PÉREZ ELENA'}));
+    const dialog=screen.getByRole('dialog',{name:'Retirar contacto'});
+    fireEvent.click(within(dialog).getByRole('button',{name:'Cancelar operación'}));
+    expect(client.rpc).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button',{name:'Retirar contacto: PÉREZ ELENA'}));
+    client.rpc.mockResolvedValue({data:{},error:null});
+    fireEvent.click(within(screen.getByRole('dialog',{name:'Retirar contacto'})).getByRole('button',{name:'Confirmar operación'}));
+    await waitFor(()=>expect(client.rpc).toHaveBeenCalledWith('retirar_contacto_emergencia',{id:'c1',expected_alumno_updated_at:'student-v1'}));
+});
+
+it('stages multiple contacts in the shared grid, edits/removes locally and sends only final contacts in the student transaction', async()=>{
+    const {done}=await openFilledReview();
+    fireEvent.click(screen.getByRole('button',{name:'Corregir contacto de emergencia'}));
+    expect(screen.getByText(/Al continuar conservarás lo corregido/)).toBeVisible();
+    expect(screen.queryByRole('button',{name:'Volver al resumen'})).not.toBeInTheDocument();
+    const add=(apellido:string,nombre:string,celular:string)=>{
+        fireEvent.click(screen.getByRole('button',{name:'Agregar contacto'}));
+        const dialog=within(screen.getByRole('dialog',{name:'Contacto de emergencia'}));
+        fireEvent.change(dialog.getByRole('textbox',{name:/^Apellido contacto/}),{target:{value:apellido}});
+        fireEvent.change(dialog.getByRole('textbox',{name:/^Nombre contacto/}),{target:{value:nombre}});
+        fireEvent.change(dialog.getByRole('combobox',{name:/^Parentesco/}),{target:{value:'rel-mother'}});
+        fireEvent.change(dialog.getByRole('textbox',{name:/^Celular contacto/}),{target:{value:celular}});
+        fireEvent.click(dialog.getByRole('button',{name:'Agregar a la lista'}));
+    };
+    add('pérez','elena','999111222');add('lópez','luis','999333444');add('prueba','quitar','999555666');
+    const table=screen.getByRole('table',{name:'Contactos de emergencia'});
+    expect(within(table).getAllByRole('columnheader').map(h=>h.textContent)).toEqual(['Apellidos','Nombres','Parentesco','Celular','Dirección','Estado','Acciones']);
+    expect(within(table).getAllByRole('row')).toHaveLength(4);
+    expect(within(table).getAllByText('Por guardar')).toHaveLength(3);
+    fireEvent.click(screen.getByRole('button',{name:'Editar contacto: PÉREZ ELENA'}));
+    let dialog=within(screen.getByRole('dialog',{name:'Contacto de emergencia'}));
+    fireEvent.change(dialog.getByRole('textbox',{name:/^Celular contacto/}),{target:{value:'999000000'}});
+    fireEvent.click(dialog.getByRole('button',{name:'Cancelar'}));
+    expect(within(table).getByText('999111222')).toBeVisible();
+    fireEvent.click(screen.getByRole('button',{name:'Editar contacto: PÉREZ ELENA'}));
+    dialog=within(screen.getByRole('dialog',{name:'Contacto de emergencia'}));
+    fireEvent.change(dialog.getByRole('textbox',{name:/^Celular contacto/}),{target:{value:'999000000'}});
+    fireEvent.click(dialog.getByRole('button',{name:'Aplicar cambios'}));
+    fireEvent.click(screen.getByRole('button',{name:'Quitar contacto: PRUEBA QUITAR'}));
+    expect(within(table).getAllByRole('row')).toHaveLength(3);
+    expect(within(table).queryByText('QUITAR')).not.toBeInTheDocument();
+    expect(client.rpc).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button',{name:'Aplicar cambios y revisar'}));
+    const review=screen.getByRole('region',{name:'Contacto de emergencia'});
+    expect(within(review).getByText('ELENA')).toBeVisible();expect(within(review).getByText('LUIS')).toBeVisible();
+    expect(within(review).getByText('999000000')).toBeVisible();
+    client.rpc.mockResolvedValue({data:{id:'saved',updated_at:'v1'},error:null});
+    fireEvent.click(screen.getByRole('button',{name:'Guardar'}));
+    await waitFor(()=>expect(done).toHaveBeenCalledOnce());
+    expect(client.rpc).toHaveBeenCalledOnce();
+    expect(client.rpc).toHaveBeenCalledWith('guardar_alumno',{p:expect.objectContaining({contactos:[{apellido:'PÉREZ',nombre:'ELENA',parentesco_id:'rel-mother',celular:'999000000',direccion:null},{apellido:'LÓPEZ',nombre:'LUIS',parentesco_id:'rel-mother',celular:'999333444',direccion:null}]})});
+});
+it('retains staged contacts if final registration fails and makes no contact writes before confirmation',async()=>{
+    await openFilledReview();
+    fireEvent.click(screen.getByRole('button',{name:'Corregir contacto de emergencia'}));
+    fireEvent.click(screen.getByRole('button',{name:'Agregar contacto'}));
+    let dialog=within(screen.getByRole('dialog',{name:'Contacto de emergencia'}));
+    fireEvent.change(dialog.getByRole('textbox',{name:/^Nombre contacto/}),{target:{value:'descartar'}});
+    fireEvent.click(dialog.getByRole('button',{name:'Cancelar'}));
+    expect(screen.getByText('No hay contactos registrados.')).toBeVisible();
+    fireEvent.click(screen.getByRole('button',{name:'Agregar contacto'}));
+    dialog=within(screen.getByRole('dialog',{name:'Contacto de emergencia'}));
+    fireEvent.change(dialog.getByRole('textbox',{name:/^Apellido contacto/}),{target:{value:'pérez'}});
+    fireEvent.change(dialog.getByRole('textbox',{name:/^Nombre contacto/}),{target:{value:'elena'}});
+    fireEvent.change(dialog.getByRole('combobox',{name:/^Parentesco/}),{target:{value:'rel-mother'}});
+    fireEvent.change(dialog.getByRole('textbox',{name:/^Celular contacto/}),{target:{value:'999111222'}});
+    fireEvent.click(dialog.getByRole('button',{name:'Agregar a la lista'}));
+    fireEvent.click(screen.getByRole('button',{name:'Aplicar cambios y revisar'}));
+    expect(client.rpc).not.toHaveBeenCalled();
+    client.rpc.mockResolvedValue({data:null,error:{code:'23514'}});
+    fireEvent.click(screen.getByRole('button',{name:'Guardar'}));
+    await screen.findByText(/No se pudo guardar/);
+    fireEvent.click(screen.getByRole('button',{name:'Corregir contacto de emergencia'}));
+    expect(screen.getByRole('table',{name:'Contactos de emergencia'})).toHaveTextContent('ELENA');
+    expect(client.rpc).toHaveBeenCalledOnce();
 });

@@ -64,6 +64,12 @@ const studentGroups = [
     [['celular', 'Celular', 'required'], ['telefono_fijo', 'Teléfono fijo', 'optional'], ['email', 'Email', 'email'], ['domicilio', 'Domicilio', 'required'], ['numero_mz_lt', 'N° / Mz Lt', 'optional'], ['domicilio_departamento_id', 'Departamento domicilio', 'required'], ['domicilio_provincia_id', 'Provincia domicilio', 'required'], ['domicilio_distrito_id', 'Distrito domicilio', 'required']],
     [['grupo_sanguineo_id', 'Grupo sanguíneo', 'optional'], ['grado_instruccion_id', 'Grado de instrucción', 'optional'], ['color_ojos_id', 'Color de ojos', 'optional'], ['color_cabello_id', 'Color de cabello', 'optional'], ['estatura_cm', 'Estatura (cm)', 'number'], ['peso_kg', 'Peso (kg)', 'number'], ['ocupacion_id', 'Ocupación', 'optional'], ['senas_particulares', 'Señas particulares', 'optional']],
 ];
+function studentDraft(row?: Row): Draft {
+    return { ...Object.fromEntries(studentGroups.flat().map(([key]) => [key, value(row, key)])), ocupacion: value(row, 'ocupacion') };
+}
+function updateStudentDraft(draft: Draft, key: string, text: string): Draft {
+    return { ...draft, [key]: text, ...(key === 'tipo_di_id' && text !== draft.tipo_di_id ? { numero_di: '' } : {}), ...(/departamento_id$/.test(key) ? { [key.replace('departamento', 'provincia')]: '', [key.replace('departamento', 'distrito')]: '' } : /provincia_id$/.test(key) ? { [key.replace('provincia', 'distrito')]: '' } : {}) };
+}
 const contactFields = [['apellido', 'Apellido contacto', 'required'], ['nombre', 'Nombre contacto', 'required'], ['parentesco_id', 'Parentesco', 'required'], ['celular', 'Celular contacto', 'required'], ['direccion', 'Dirección contacto', 'optional']];
 export function OccupationField({ draft, change, options }: { draft: Draft; change: (key: string, text: string) => void; options: Row[] }) {
     const id = useId(), input = useRef<HTMLInputElement>(null);
@@ -119,8 +125,8 @@ function Fields({ fields, draft, change, refs, readOnly = false }: {
             return <label key={key} data-field={key}><span className="field-label">{label}{required ? ' *' : ''}</span>{options ? <select required={required} value={draft[key] ?? ''} onChange={e => change(key, formTextValue(e.currentTarget))}><option value="">Seleccionar</option>{options.map(r => <option key={r.id} value={r.id} disabled={r.activo === false || r.active === false}>{value(r, 'nombre')}{r.activo === false || r.active === false ? ' (inactivo)' : ''}</option>)}</select> : <input required={required} type={kind === 'date' ? 'date' : kind === 'number' ? 'number' : kind === 'email' ? 'email' : 'text'} step={kind === 'number' ? 'any' : undefined} min={kind === 'number' ? '0.000001' : undefined} max={kind === 'date' ? new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' }) : undefined} id={rule ? `${id}-${key}` : undefined} aria-describedby={rule ? `${id}-${key}-help` : undefined} disabled={key === 'numero_di' && !rule} inputMode={rule?.numeric ? 'numeric' : undefined} minLength={rule?.minLength} maxLength={rule?.maxLength ?? max} data-pattern-error={key === 'ruc' ? 'El RUC debe tener exactamente 11 dígitos.' : key === 'numero_di' ? 'DNI: exactamente 8 dígitos. Carné de extranjería: 1 a 30 caracteres alfanuméricos.' : undefined} pattern={rule?.pattern} value={draft[key] ?? ''} onChange={e => change(key, rule ? documentInputValue(e.currentTarget, rule.kind) : formTextValue(e.currentTarget))} onPaste={rule ? e => { e.preventDefault(); change(key, pasteDocumentValue(e.currentTarget, e.clipboardData.getData('text'), rule.kind)); } : undefined}/>} {rule && <small id={`${id}-${key}-help`}>{rule.hint}</small>}{key === 'numero_di' && !rule && <small>Selecciona primero el tipo de documento.</small>}</label>;
         })}</div>;
 }
-function StudentReview({ draft, contact, refs, editing, contacts, contactsError, busy, correct }: {
-    draft: Draft; contact: Draft; refs: Record<string, Row[]>; editing: boolean; contacts: Row[] | null; contactsError: string; busy: boolean; correct: (step: number) => void;
+function StudentReview({ draft, refs, editing, contacts, contactsError, busy, correct, readOnly = false }: {
+    draft: Draft; refs: Record<string, Row[]>; editing: boolean; contacts: Row[] | null; contactsError: string; busy: boolean; correct?: (step: number) => void; readOnly?: boolean;
 }) {
     const id = useId();
     function display(data: Record<string, unknown>, key: string) {
@@ -139,18 +145,18 @@ function StudentReview({ draft, contact, refs, editing, contacts, contactsError,
         return <dl className="review-fields">{fields.map(([key, label]) => <div key={key} className={['domicilio', 'direccion', 'senas_particulares'].includes(key) ? 'review-wide' : undefined}><dt>{label}</dt><dd className={!value(data, key).trim() ? 'review-empty' : undefined}>{display(data, key)}</dd></div>)}</dl>;
     }
     const titles = ['Identificación', 'Domicilio', 'Información adicional'];
-    const entries: Record<string, unknown>[] = editing ? contacts ?? [] : Object.values(contact).some(v => v.trim()) ? [contact] : [];
+    const entries: Record<string, unknown>[] = contacts ?? [];
     const noActiveContacts = !entries.some(c => !editing || c.activo === true);
-    return <div className="student-review"><p>Verifica los datos antes de guardar. Puedes corregir cada sección sin perder lo que ingresaste.</p>
+    return <div className="student-review">{!readOnly && <p>Verifica los datos antes de guardar. Puedes corregir cada sección sin perder lo que ingresaste.</p>}
         <div className="review-identity"><strong>{draft.apellido_paterno} {draft.apellido_materno}, {draft.nombres}</strong><span>{display(draft, 'tipo_di_id')} · {draft.numero_di}</span></div>
-        {studentGroups.map((fields, index) => <section className="review-section" key={titles[index]} aria-labelledby={`${id}-${index}`}><header className="review-section-heading"><h3 id={`${id}-${index}`}>{titles[index]}</h3><button type="button" className="secondary" disabled={busy} aria-label={`Corregir ${titles[index].toLocaleLowerCase('es')}`} onClick={() => correct(index)}>Corregir</button></header>{details(draft, fields)}{index === 0 && <p className="review-age">Edad calculada: {ageAt(draft.fecha_nacimiento)} años</p>}</section>)}
-        <section className="review-section" aria-labelledby={`${id}-contacts`}><header className="review-section-heading"><h3 id={`${id}-contacts`}>Contacto de emergencia</h3>{!editing && <button type="button" className="secondary" disabled={busy} aria-label="Corregir contacto de emergencia" onClick={() => correct(3)}>Corregir</button>}</header>
+        {studentGroups.map((fields, index) => <section className="review-section" key={titles[index]} aria-labelledby={`${id}-${index}`}><header className="review-section-heading"><h3 id={`${id}-${index}`}>{titles[index]}</h3>{correct && <button type="button" className="secondary" disabled={busy} aria-label={`Corregir ${titles[index].toLocaleLowerCase('es')}`} onClick={() => correct(index)}>Corregir</button>}</header>{details(draft, fields)}{index === 0 && <p className="review-age">Edad calculada: {ageAt(draft.fecha_nacimiento)} años</p>}</section>)}
+        <section className="review-section" aria-labelledby={`${id}-contacts`}><header className="review-section-heading"><h3 id={`${id}-contacts`}>Contacto de emergencia</h3>{!editing && correct && <button type="button" className="secondary" disabled={busy} aria-label="Corregir contacto de emergencia" onClick={() => correct(3)}>Corregir</button>}</header>
             {editing && contacts === null && !contactsError && <p role="status">Consultando contactos guardados…</p>}
             {contactsError && <p role="alert">{contactsError}</p>}
             {entries.map((c, index) => <div className="review-contact" key={value(c, 'id') || index}><p><strong>Contacto {index + 1}</strong>{editing && <> · <StatusBadge value={c.activo ? 'Activo' : 'Inactivo'}/></>}</p>{details(c, contactFields)}</div>)}
             {(!editing || contacts !== null) && !contactsError && noActiveContacts && <p className="review-contact-notice">No hay un contacto de emergencia activo. Puedes guardar la ficha del alumno, pero para matricularlo necesitará al menos un contacto activo y válido.</p>}
             {editing && <p className="help-text">Los contactos guardados se conservan. Puedes administrarlos desde la pestaña Contactos de la ficha.</p>}
-        </section><p className="help-text">{editing ? 'Los cambios se guardarán al confirmar.' : 'El alumno se creará únicamente al pulsar Guardar.'}</p>
+        </section>{!readOnly && <p className="help-text">{editing ? 'Los cambios se guardarán al confirmar.' : 'El alumno se creará únicamente al pulsar Guardar.'}</p>}
     </div>;
 }
 function NewStudentIcon() {
@@ -159,15 +165,16 @@ function NewStudentIcon() {
 function NewStudentLabel() {
     return <span className="icon-label"><NewStudentIcon/><span>Nuevo Alumno</span></span>;
 }
-export function StudentEditor({ initial, done, cancel, initialStep = 0 }: {
+export function StudentEditor({ initial, done, cancel }: {
     initial?: Row;
-    initialStep?: number;
     done: (row: Row) => void;
     cancel: () => void;
 }) {
     const { client } = useSession(), { refs, error } = useReferences();
-    const [draft, setDraft] = useState<Draft>(() => ({ ...Object.fromEntries(studentGroups.flat().map(([k]) => [k, value(initial, k)])), ocupacion: value(initial, 'ocupacion') }));
-    const [contact, setContact] = useState<Draft>({}), [step, setStep] = useState(initialStep), [saved, setSaved] = useState<Row | undefined>(initial);
+    const [draft, setDraft] = useState<Draft>(() => studentDraft(initial));
+    const [contact, setContact] = useState<Draft | null>(null), [draftContacts, setDraftContacts] = useState<Row[]>([]), [editingContactId, setEditingContactId] = useState<string | null>(null);
+    const nextContactId = useRef(0);
+    const [step, setStep] = useState(0), [saved, setSaved] = useState<Row | undefined>(initial);
     const [message, setMessage] = useState(''), [busy, setBusy] = useState(false);
     const [returnToReview, setReturnToReview] = useState(false), [reviewContacts, setReviewContacts] = useState<Row[] | null>(null), [contactsError, setContactsError] = useState('');
     useEffect(() => {
@@ -183,13 +190,13 @@ export function StudentEditor({ initial, done, cancel, initialStep = 0 }: {
         return () => { active = false; };
     }, [client, initial?.id, step]);
     function correctReview(index: number) { setMessage(''); setReturnToReview(true); setStep(index); }
-    function change(k: string, v: string) { setDraft(d => ({ ...d, [k]: v, ...(k === 'tipo_di_id' && v !== d.tipo_di_id ? { numero_di: '' } : {}), ...(/departamento_id$/.test(k) ? { [k.replace('departamento', 'provincia')]: '', [k.replace('departamento', 'distrito')]: '' } : /provincia_id$/.test(k) ? { [k.replace('provincia', 'distrito')]: '' } : {}) })); }
+    function change(k: string, v: string) { setDraft(d => updateStudentDraft(d, k, v)); }
     async function save() {
         setBusy(true);
         setMessage('');
         try {
             const p = Object.fromEntries(Object.entries(draft).map(([k, v]) => [k, v.trim() || null]));
-            const result = await client.rpc('guardar_alumno', { p: { ...p, contactos: !initial && contact.apellido ? [contact] : [], ...(saved ? { id: saved.id, expected_updated_at: saved.updated_at } : {}) } });
+            const result = await client.rpc('guardar_alumno', { p: { ...p, contactos: initial ? [] : draftContacts.map(c => Object.fromEntries(contactFields.map(([key]) => [key, value(c, key).trim() || null]))), ...(saved ? { id: saved.id, expected_updated_at: saved.updated_at } : {}) } });
             if (result.error) { setMessage(enrollmentError(result.error)); return; }
             const row = result.data as Row;
             setSaved(row);
@@ -206,9 +213,13 @@ export function StudentEditor({ initial, done, cancel, initialStep = 0 }: {
     <fieldset disabled={busy || !refs.catalogo}><legend>{['Identificación', 'Domicilio', 'Información adicional', 'Contacto de emergencia', 'Revisar'][step]}</legend>
       {step < 3 && <Fields fields={studentGroups[step]} draft={draft} change={change} refs={refs}/>}
       {step === 0 && <p>Edad calculada: {ageAt(draft.fecha_nacimiento ?? '') || '—'}</p>}
-      {step === 3 && (initial ? <p>Los contactos se mantienen desde la pestaña Contactos de la ficha.</p> : <><p>Puedes guardar una ficha sin contactos; para matricular se exige al menos uno activo y válido.</p><Fields fields={contactFields.map(([k, l, kind]) => [k, l, kind === 'required' && !Object.values(contact).some(v => v.trim()) ? 'optional' : kind])} draft={contact} change={(k, v) => setContact({ ...contact, [k]: v })} refs={refs}/></>)}
-      {step === 4 && <StudentReview draft={draft} contact={contact} refs={refs} editing={!!initial} contacts={reviewContacts} contactsError={contactsError} busy={busy} correct={correctReview}/> }
-    </fieldset><div className="form-actions"><button type="button" disabled={busy} onClick={cancel}>Cancelar</button>{step > 0 && <button type="button" disabled={busy} onClick={() => { setReturnToReview(false); setStep(step - 1); }}>Anterior</button>}<button disabled={busy || !refs.catalogo}>{step < 4 ? returnToReview ? 'Volver al resumen' : 'Siguiente' : busy ? 'Guardando…' : 'Guardar'}</button></div></InlineForm></section>;
+      {step === 3 && (initial ? <p>Los contactos se mantienen desde la pestaña Contactos de la ficha.</p> : <><div className="student-contacts-heading"><p>Puedes guardar una ficha sin contactos; para matricular se exige al menos uno activo y válido.</p><button type="button" onClick={() => { setEditingContactId(null); setContact({}); }}>Agregar contacto</button></div><ContactGrid contacts={draftContacts} refs={refs} draft onEdit={c => { setEditingContactId(c.id); setContact(Object.fromEntries(contactFields.map(([key]) => [key, value(c, key)]))); }} onRemove={c => setDraftContacts(list => list.filter(item => item.id !== c.id))}/><p className="help-text">Los contactos de esta lista se guardarán junto con el alumno al pulsar Guardar al final de Revisar.</p></>)}
+      {step === 4 && <StudentReview draft={draft} refs={refs} editing={!!initial} contacts={initial ? reviewContacts : draftContacts} contactsError={contactsError} busy={busy} correct={correctReview}/> }
+    </fieldset>{returnToReview && <p className="help-text">Al continuar conservarás lo corregido y volverás a Revisar. El alumno todavía no se guarda.</p>}<div className="form-actions"><button type="button" disabled={busy} onClick={cancel}>Cancelar</button>{step > 0 && <button type="button" disabled={busy} onClick={() => { setReturnToReview(false); setStep(step - 1); }}>Anterior</button>}<button disabled={busy || !refs.catalogo}>{step < 4 ? returnToReview ? 'Aplicar cambios y revisar' : 'Siguiente' : busy ? 'Guardando…' : 'Guardar'}</button></div></InlineForm>{contact && <ContactDialog close={() => setContact(null)}><InlineForm onSubmit={() => {
+        const entry: Row = { ...contact, id: editingContactId ?? `draft-contact-${++nextContactId.current}`, activo: true };
+        setDraftContacts(list => editingContactId ? list.map(c => c.id === editingContactId ? entry : c) : [...list, entry]);
+        setContact(null); setEditingContactId(null);
+    }}><h3>{editingContactId ? 'Editar contacto' : 'Agregar contacto'}</h3><p className="help-text">Se guardará junto con el alumno al confirmar el registro.</p><Fields fields={contactFields} draft={contact} change={(key, text) => setContact({ ...contact, [key]: text })} refs={refs}/><div className="form-actions"><button type="button" onClick={() => setContact(null)}>Cancelar</button><button>{editingContactId ? 'Aplicar cambios' : 'Agregar a la lista'}</button></div></InlineForm></ContactDialog>}</section>;
 }
 function StudentRowAction({ id, name, action }: { id: string; name: string; action: 'view' | 'edit' }) {
     const tooltip = useId(), [dismissed, setDismissed] = useState(false), label = action === 'view' ? 'Ver alumno' : 'Editar alumno';
@@ -232,55 +243,87 @@ export function Students() {
     return <section><h2>Alumnos</h2><div className="filters students-toolbar" role="search" aria-label="Búsqueda de alumnos"><label className="student-search"><span className="field-label">Buscar alumnos</span><span className="search-input"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input type="search" placeholder="Documento o apellido paterno" value={search} onChange={e => { setSearch(formTextValue(e.currentTarget)); setPage(0); }}/></span></label>{canEdit && <span className="toolbar-action" onMouseEnter={() => setTooltipDismissed(false)}><Link to="/alumnos/nuevo" className="icon-action" aria-labelledby={tooltipId} onFocus={() => setTooltipDismissed(false)} onKeyDown={e => { if (e.key === 'Escape') setTooltipDismissed(true); }}><NewStudentIcon/></Link><span id={tooltipId} role="tooltip" className="toolbar-tooltip" hidden={tooltipDismissed}>Nuevo Alumno</span></span>}</div><Message>{message}</Message><div className="students-grid"><table aria-label="Alumnos por fecha de registro descendente"><thead><tr><th scope="col">Alumno</th><th scope="col">Documento</th><th scope="col">Registro ↓</th><th scope="col" className="student-actions-heading">Acciones</th></tr></thead><tbody>{rows.map(r => { const name = `${value(r, 'apellido_paterno')} ${value(r, 'apellido_materno')}, ${value(r, 'nombres')}`; return <tr key={r.id}><td><Link className="student-row-name" to={`/alumnos/${r.id}`}>{name}</Link></td><td className="student-row-document">{value(r, 'numero_di')}</td><td className="student-row-date">{r.created_at ? new Date(String(r.created_at)).toLocaleString('es-PE', { timeZone:'America/Lima', dateStyle:'short', timeStyle:'short' }) : '—'}</td><td><div className="student-row-actions"><StudentRowAction id={r.id} name={name} action="view"/>{canEdit && <StudentRowAction id={r.id} name={name} action="edit"/>}</div></td></tr>; })}</tbody></table></div><div className="student-list-pagination"><span>{rows.length ? `Página ${page + 1} · ${rows.length} alumnos` : `Página ${page + 1}`}</span><div className="pagination-actions"><button disabled={!page} onClick={() => setPage(page - 1)}>Anterior</button><button disabled={rows.length < 30} onClick={() => setPage(page + 1)}>Siguiente página</button></div></div></section>;
 }
 export function NewStudent() { const navigate = useNavigate(); return <StudentEditor done={r => navigate(`/alumnos/${r.id}`)} cancel={() => navigate('/alumnos')}/>; }
+function ContactAction({ label, name, remove = false, disabled, onClick }: { label: string; name: string; remove?: boolean; disabled: boolean; onClick: () => void }) {
+    const id = useId(), [dismissed, setDismissed] = useState(false);
+    return <span className="toolbar-action" onMouseEnter={() => setDismissed(false)}><button type="button" className="icon-action student-row-action" aria-label={`${label}: ${name}`} aria-describedby={id} disabled={disabled} onClick={onClick} onFocus={() => setDismissed(false)} onKeyDown={e => { if (e.key === 'Escape') setDismissed(true); }}><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{remove ? <><circle cx="9" cy="7" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 12h7"/></> : <><path d="m15 5 4 4M4 20l4-1L20 7a2.8 2.8 0 0 0-4-4L4 15l-1 6Z"/></>}</svg></button><span id={id} role="tooltip" className="toolbar-tooltip" hidden={dismissed}>{label}</span></span>;
+}
+function ContactGrid({ contacts, refs, disabled = false, draft = false, onEdit, onRemove }: { contacts: Row[]; refs: Record<string, Row[]>; disabled?: boolean; draft?: boolean; onEdit?: (contact: Row) => void; onRemove?: (contact: Row) => void }) {
+    return <div className="table-scroll contacts-grid"><table aria-label="Contactos de emergencia"><thead><tr><th scope="col">Apellidos</th><th scope="col">Nombres</th><th scope="col">Parentesco</th><th scope="col">Celular</th><th scope="col">Dirección</th><th scope="col">Estado</th><th scope="col" className="student-actions-heading">Acciones</th></tr></thead><tbody>{contacts.map(c => { const name = `${value(c, 'apellido')} ${value(c, 'nombre')}`; return <tr key={c.id}><td>{value(c, 'apellido')}</td><td>{value(c, 'nombre')}</td><td>{value(refs.catalogo_valor?.find(v => v.id === c.parentesco_id), 'nombre') || 'Referencia no disponible'}</td><td className="student-row-document">{value(c, 'celular')}</td><td className="contact-address">{value(c, 'direccion') || 'No indicado'}</td><td><StatusBadge value={draft ? 'Por guardar' : c.activo ? 'Activo' : 'Inactivo'}/></td><td><div className="student-row-actions">{c.activo === true && (onEdit || onRemove) ? <>{onEdit && <ContactAction label="Editar contacto" name={name} disabled={disabled} onClick={() => onEdit(c)}/>} {onRemove && <ContactAction label={draft ? 'Quitar contacto' : 'Retirar contacto'} name={name} remove disabled={disabled} onClick={() => onRemove(c)}/>}</> : <span className="help-text">Sin acciones</span>}</div></td></tr>; })}{!contacts.length && <tr><td colSpan={7}>No hay contactos registrados.</td></tr>}</tbody></table></div>;
+}
 export function StudentDetail() {
-    const { id } = useParams(), { client } = useSession(), { refs, error: referencesError } = useReferences();
+    const { id } = useParams(), { client, state } = useSession(), { refs, error: referencesError } = useReferences();
     const [searchParams, setSearchParams] = useSearchParams();
-    const [row, setRow] = useState<Row>(), [tab, setTab] = useState(1), [edit, setEdit] = useState(() => searchParams.get('editar') === '1'), [contacts, setContacts] = useState<Row[]>([]), [enrollments, setEnrollments] = useState<Row[]>([]), [message, setMessage] = useState('Cargando…'), [revision, setRevision] = useState(0);
+    const [row, setRow] = useState<Row>(), [tab, setTab] = useState(1), [edit, setEdit] = useState(() => searchParams.get('editar') === '1');
+    const [draft, setDraft] = useState<Draft | null>(null), [editVersion, setEditVersion] = useState<string>();
+    const [contacts, setContacts] = useState<Row[]>([]), [contactsError, setContactsError] = useState(''), [enrollments, setEnrollments] = useState<Row[]>([]), [message, setMessage] = useState('Cargando…'), [revision, setRevision] = useState(0);
     const [contact, setContact] = useState<Draft | null>(null), [contactRow, setContactRow] = useState<Row>(), [busy, setBusy] = useState(false);
     const { ask, dialog } = useConfirmation(busy);
+    const canEdit = state.roles?.some(role => ['DIRECTOR_ACADEMICO', 'COORDINADOR_ACADEMICO'].includes(role));
+    const editing = edit && !!canEdit;
     useEffect(() => {
         let active = true;
         void Promise.all([client.from('alumno').select('*').eq('id', id).single(), client.from('alumno_contacto_emergencia').select('*').eq('alumno_id', id), client.from('matricula').select('id,codigo_matricula,estado_codigo').eq('alumno_id', id)]).then(([a, c, m]) => { if (active) {
             setRow(a.error ? undefined : a.data as Row);
+            if (!a.error) { setDraft(previous => previous ?? studentDraft(a.data as Row)); setEditVersion(previous => previous ?? value(a.data, 'updated_at')); }
             setContacts(c.error ? [] : c.data as Row[]);
+            setContactsError(c.error ? 'No se pudieron consultar los contactos guardados. Recarga la ficha.' : '');
             setEnrollments(m.error ? [] : m.data as Row[]);
             setMessage(a.error || c.error || m.error ? 'No se pudo cargar la ficha completa. Recarga.' : '');
-        } });
+        } }).catch(() => { if (active) setMessage('No se pudo cargar la ficha completa. Recarga.'); });
         return () => { active = false; };
     }, [client, id, revision]);
-    function closeEditor() { setEdit(false); if (searchParams.has('editar')) { const next = new URLSearchParams(searchParams); next.delete('editar'); setSearchParams(next, { replace: true }); } }
-    if (edit && row)
-        return <StudentEditor initial={row} initialStep={tab > 0 && tab < 4 ? tab - 1 : 0} done={() => { closeEditor(); setRevision(revision + 1); }} cancel={closeEditor}/>;
-    const tabs = ['Resumen', 'Identificación', 'Domicilio', 'Información adicional', 'Contactos', 'Matrículas'];
-
-    async function saveContact() {
-        if (!row || !contact)
-            return;
-        setBusy(true);
-        const r = await client.rpc('guardar_contacto_emergencia', { p: { ...contact, alumno_id: row.id, expected_alumno_updated_at: row.updated_at, ...(contactRow ? { id: contactRow.id, expected_updated_at: contactRow.updated_at } : {}) } });
-        setBusy(false);
-        if (r.error)
-            setMessage(enrollmentError(r.error));
-        else {
-            setContact(null);
-            setRevision(revision + 1);
-        }
+    function closeEditor() {
+        setEdit(false); setDraft(null); setEditVersion(undefined); setMessage('');
+        if (searchParams.has('editar')) { const next = new URLSearchParams(searchParams); next.delete('editar'); setSearchParams(next, { replace: true }); }
     }
-    return <section className="student-detail"><EditorHeading>Ficha del alumno</EditorHeading><Message>{message || referencesError}</Message>{row && <><header className="student-detail-header"><div><h3>{value(row, 'apellido_paterno')} {value(row, 'apellido_materno')}, {value(row, 'nombres')}</h3><p>{value(refs.catalogo_valor?.find(v => v.id === row.tipo_di_id), 'nombre') || 'Documento'} · {value(row, 'numero_di')} · {ageAt(value(row, 'fecha_nacimiento')) || '—'} años</p><small>Consulta los datos registrados. Para modificarlos, selecciona Editar alumno.</small></div><button onClick={() => setEdit(true)}>Editar alumno</button></header><div className="student-section-tabs" role="tablist" aria-label="Ficha Alumno">{tabs.map((name, i) => <button key={name} role="tab" id={`student-tab-${i}`} aria-controls={`student-panel-${i}`} aria-selected={tab === i} tabIndex={tab === i ? 0 : -1} onClick={() => setTab(i)} onKeyDown={e => { const n = e.key === 'ArrowRight' ? (i + 1) % 6 : e.key === 'ArrowLeft' ? (i + 5) % 6 : e.key === 'Home' ? 0 : e.key === 'End' ? 5 : -1; if (n >= 0) {
-            e.preventDefault();
-            setTab(n);
-            document.getElementById(`student-tab-${n}`)?.focus();
-        } }}>{name}</button>)}</div><div className="student-section-panel" role="tabpanel" tabIndex={0} id={`student-panel-${tab}`} aria-labelledby={`student-tab-${tab}`}><h3>{tabs[tab]}</h3>
-    {tab === 0 && <dl className="review-fields"><div><dt>Documento</dt><dd>{value(row, 'numero_di')}</dd></div><div><dt>Edad calculada</dt><dd>{ageAt(value(row, 'fecha_nacimiento')) || '—'} años</dd></div><div><dt>Contactos activos</dt><dd>{contacts.filter(c => c.activo === true).length}</dd></div><div className="review-wide"><dt>Domicilio</dt><dd>{value(row, 'domicilio') || 'No indicado'}</dd></div><div><dt>Matrículas registradas</dt><dd>{enrollments.length}</dd></div></dl>}
-    {tab > 0 && tab < 4 && <Fields fields={studentGroups[tab - 1]} draft={Object.fromEntries(Object.entries(row).map(([k, v]) => [k, v == null ? '' : String(v)]))} refs={refs} change={() => undefined} readOnly/>}
-    {tab === 4 && <>{!contacts.length && <p>No hay contactos registrados.</p>}<button onClick={() => { setContactRow(undefined); setContact({}); }}>Agregar contacto</button><ul>{contacts.map(c => <li key={c.id}>{value(c, 'apellido')} {value(c, 'nombre')} — {value(refs.catalogo_valor?.find(v => v.id === c.parentesco_id), 'nombre')} — {value(c, 'celular')} — {c.activo ? 'Activo' : 'Inactivo'}{c.activo === true && <><button onClick={() => { setContactRow(c); setContact(Object.fromEntries(contactFields.map(([k]) => [k, value(c, k)]))); }}>Editar contacto</button><button disabled={busy} onClick={() => { void (async () => { const ok = await ask({ title: 'Retirar contacto', description: 'El contacto quedará inactivo y su historia se conservará.' }); if (ok === null)
-            return; setBusy(true); const r = await client.rpc('retirar_contacto_emergencia', { id: c.id, expected_alumno_updated_at: row.updated_at }); setBusy(false); if (r.error)
-            setMessage(enrollmentError(r.error));
-        else
-            setRevision(revision + 1); })(); }}>Retirar</button></>}</li>)}</ul></>}
-    {tab === 5 && <>{!enrollments.length && <p>No hay matrículas registradas.</p>}<ul>{enrollments.map(m => <li key={m.id}><Link to={`/matriculas/${m.id}`}>{value(m, 'codigo_matricula')}</Link> — {value(m, 'estado_codigo')}</li>)}</ul></>}
-    </div></>}{contact && <ContactDialog close={() => { if (!busy)
-        setContact(null); }}><InlineForm onSubmit={() => void saveContact()}><Fields fields={contactFields} draft={contact} change={(k, v) => setContact({ ...contact, [k]: v })} refs={refs}/><button disabled={busy}>Guardar contacto</button><button type="button" disabled={busy} onClick={() => setContact(null)}>Cancelar</button></InlineForm></ContactDialog>}{dialog}</section>;
+    function beginEdit() { if (row) { setDraft(studentDraft(row)); setEditVersion(row.updated_at); setEdit(true); setMessage(''); } }
+    async function saveStudent() {
+        if (!row || !draft || !editing) return;
+        setBusy(true); setMessage('');
+        try {
+            const p = Object.fromEntries(Object.entries(draft).map(([key, text]) => [key, text.trim() || null]));
+            const result = await client.rpc('guardar_alumno', { p: { ...p, id: row.id, expected_updated_at: editVersion, contactos: [] } });
+            if (result.error) { setMessage(enrollmentError(result.error)); return; }
+            setRow(result.data as Row); closeEditor();
+        } catch { setMessage(enrollmentError(null)); }
+        finally { setBusy(false); }
+    }
+    async function saveContact() {
+        if (!row || !contact || editing) return;
+        setBusy(true);
+        try {
+            const r = await client.rpc('guardar_contacto_emergencia', { p: { ...contact, alumno_id: row.id, expected_alumno_updated_at: row.updated_at, ...(contactRow ? { id: contactRow.id, expected_updated_at: contactRow.updated_at } : {}) } });
+            if (r.error) setMessage(enrollmentError(r.error));
+            else { setContact(null); setRevision(v => v + 1); }
+        } catch { setMessage(enrollmentError(null)); }
+        finally { setBusy(false); }
+    }
+    async function retireContact(c: Row) {
+        if (!row || editing) return;
+        const ok = await ask({ title: 'Retirar contacto', description: 'El contacto quedará inactivo y su historia se conservará.' });
+        if (ok === null) return;
+        setBusy(true);
+        try {
+            const r = await client.rpc('retirar_contacto_emergencia', { id: c.id, expected_alumno_updated_at: row.updated_at });
+            if (r.error) setMessage(enrollmentError(r.error)); else setRevision(v => v + 1);
+        } catch { setMessage(enrollmentError(null)); }
+        finally { setBusy(false); }
+    }
+    const tabs = ['Resumen', 'Identificación', 'Domicilio', 'Información adicional', 'Contactos', 'Matrículas'];
+    const current = editing ? draft ?? studentDraft(row) : studentDraft(row);
+    function revealField(field: HTMLElement) { const panel = field.closest<HTMLElement>('[data-student-section]'); if (panel) setTab(Number(panel.dataset.studentSection)); }
+    return <section className="student-detail"><EditorHeading>Ficha del alumno</EditorHeading><Message>{message || referencesError}</Message>{row && <><header className="student-detail-header"><div><h3>{value(row, 'apellido_paterno')} {value(row, 'apellido_materno')}, {value(row, 'nombres')}</h3><p>{value(refs.catalogo_valor?.find(v => v.id === row.tipo_di_id), 'nombre') || 'Documento'} · {value(row, 'numero_di')} · {ageAt(value(row, 'fecha_nacimiento')) || '—'} años</p><small>{editing ? 'Modo edición. Puedes cambiar de pestaña sin perder lo ingresado. Guarda para confirmar los cambios.' : 'Consulta los datos registrados. Para modificarlos, selecciona Editar alumno.'}</small></div>{editing ? <span className="student-edit-mode" role="status">Editando alumno</span> : canEdit && <button type="button" onClick={beginEdit}>Editar alumno</button>}</header>
+    <InlineForm key={editing ? 'editing' : 'viewing'} className="student-record-form" onInvalidField={revealField} onSubmit={() => { if (editing) void saveStudent(); }}>
+        <div className="student-section-tabs" role="tablist" aria-label="Ficha Alumno">{tabs.map((name, i) => <button type="button" disabled={busy} key={name} role="tab" id={`student-tab-${i}`} aria-controls={`student-panel-${i}`} aria-selected={tab === i} tabIndex={tab === i ? 0 : -1} onClick={() => setTab(i)} onKeyDown={e => { const n = e.key === 'ArrowRight' ? (i + 1) % tabs.length : e.key === 'ArrowLeft' ? (i + tabs.length - 1) % tabs.length : e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : -1; if (n >= 0) { e.preventDefault(); setTab(n); document.getElementById(`student-tab-${n}`)?.focus(); } }}>{name}</button>)}</div>
+        <div className="student-section-panel" role="tabpanel" hidden={tab !== 0} tabIndex={0} id="student-panel-0" aria-labelledby="student-tab-0"><h3>Resumen</h3><StudentReview draft={current} refs={refs} editing contacts={contactsError ? null : contacts} contactsError={contactsError} busy={busy} readOnly={!editing} correct={editing ? index => setTab(index + 1) : undefined}/></div>
+        {studentGroups.map((fields, index) => <div className="student-section-panel" key={index} role="tabpanel" hidden={tab !== index + 1} tabIndex={0} id={`student-panel-${index + 1}`} aria-labelledby={`student-tab-${index + 1}`} data-student-section={index + 1}><h3>{tabs[index + 1]}</h3><fieldset disabled={busy || (editing && !refs.catalogo)}><Fields fields={fields} draft={current} refs={refs} change={(key, text) => setDraft(d => updateStudentDraft(d ?? current, key, text))} readOnly={!editing}/>{index === 0 && <p>Edad calculada: {ageAt(current.fecha_nacimiento) || '—'} años</p>}</fieldset></div>)}
+        <div className="student-section-panel" role="tabpanel" hidden={tab !== 4} tabIndex={0} id="student-panel-4" aria-labelledby="student-tab-4"><div className="student-contacts-heading"><h3>Contactos</h3>{canEdit && <button type="button" disabled={busy || editing} onClick={() => { setContactRow(undefined); setContact({}); }}>Agregar contacto</button>}</div>{editing && <p className="help-text">Guarda o cancela los cambios del alumno para modificar sus contactos.</p>}<Message>{contactsError}</Message>
+            <ContactGrid contacts={contacts} refs={refs} disabled={busy || editing} onEdit={canEdit ? c => { setContactRow(c); setContact(Object.fromEntries(contactFields.map(([key]) => [key, value(c, key)]))); } : undefined} onRemove={canEdit ? c => void retireContact(c) : undefined}/>
+
+        </div>
+        <div className="student-section-panel" role="tabpanel" hidden={tab !== 5} tabIndex={0} id="student-panel-5" aria-labelledby="student-tab-5"><h3>Matrículas</h3>{!enrollments.length && <p>No hay matrículas registradas.</p>}<ul>{enrollments.map(m => <li key={m.id}><Link to={`/matriculas/${m.id}`}>{value(m, 'codigo_matricula')}</Link> — {value(m, 'estado_codigo')}</li>)}</ul></div>
+        {editing && <div className="form-actions student-record-actions"><button type="button" disabled={busy} onClick={closeEditor}>Cancelar</button><button disabled={busy || !refs.catalogo}>{busy ? 'Guardando…' : 'Guardar cambios'}</button></div>}
+    </InlineForm></>}{contact && <ContactDialog close={() => { if (!busy) setContact(null); }}><InlineForm onSubmit={() => void saveContact()}><h3>{contactRow ? 'Editar contacto' : 'Agregar contacto'}</h3><Fields fields={contactFields} draft={contact} change={(key, text) => setContact({ ...contact, [key]: text })} refs={refs}/><div className="form-actions"><button type="button" disabled={busy} onClick={() => setContact(null)}>Cancelar</button><button disabled={busy}>Guardar contacto</button></div></InlineForm></ContactDialog>}{dialog}</section>;
 }
 function ContactDialog({ close, children }: {
     close: () => void;

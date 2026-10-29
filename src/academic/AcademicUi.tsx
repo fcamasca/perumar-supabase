@@ -58,7 +58,7 @@ export function ConfirmDialog({ title, description, reason, confirmLabel = 'Conf
 }
 
 // Native constraints remain useful, but feedback is inline and owned by the app.
-export function InlineForm({ children, onSubmit, ...props }: { children: ReactNode; onSubmit: (event: FormEvent<HTMLFormElement>) => void; 'aria-describedby'?: string }) {
+export function InlineForm({ children, onSubmit, onInvalidField, ...props }: { children: ReactNode; onSubmit: (event: FormEvent<HTMLFormElement>) => void; onInvalidField?: (field: HTMLElement) => void; className?: string; 'aria-describedby'?: string }) {
   const [errors, setErrors] = useState<{ id: string; label: string; text: string }[]>([])
   const id = useId(), ref = useRef<HTMLFormElement>(null), focusAfterSubmit = useRef(false)
   function validate(event: FormEvent<HTMLFormElement>) {
@@ -84,6 +84,7 @@ export function InlineForm({ children, onSubmit, ...props }: { children: ReactNo
     })
     focusAfterSubmit.current = failures.length > 0
     setErrors(failures)
+    if (failures.length) { const first = document.getElementById(failures[0].id); if (first) onInvalidField?.(first) }
     if (!failures.length) onSubmit(event)
   }
   useEffect(() => {
@@ -106,7 +107,7 @@ export function InlineForm({ children, onSubmit, ...props }: { children: ReactNo
   function clearResolvedError(field: EventTarget) {
     if ((field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement) && field.validity.valid && (!field.required || field.value.trim())) setErrors(previous => previous.some(e => e.id === field.id) ? previous.filter(e => e.id !== field.id) : previous)
   }
-  return <form {...props} ref={ref} noValidate onSubmit={validate} onChange={event => clearResolvedError(event.target)} onPaste={event => clearResolvedError(event.target)}>{errors.length > 0 && <div role="alert" className="validation-errors"><p>Revisa los campos indicados:</p><ul>{errors.map(e => <li key={e.id}><a href={`#${e.id}`} onClick={event => { event.preventDefault(); const field = document.getElementById(e.id); field?.focus({ preventScroll: true }); field?.scrollIntoView?.({ block: 'center', behavior: 'auto' }) }}>{e.label}: {e.text}</a></li>)}</ul></div>}{children}{errors.map(e => {
+  return <form {...props} ref={ref} noValidate onSubmit={validate} onChange={event => clearResolvedError(event.target)} onPaste={event => clearResolvedError(event.target)}>{errors.length > 0 && <div role="alert" className="validation-errors"><p>Revisa los campos indicados:</p><ul>{errors.map(e => <li key={e.id}><a href={`#${e.id}`} onClick={event => { event.preventDefault(); const field = document.getElementById(e.id); if (field) onInvalidField?.(field); focusAfterSubmit.current = true; setErrors(previous => [e, ...previous.filter(item => item.id !== e.id)]) }}>{e.label}: {e.text}</a></li>)}</ul></div>}{children}{errors.map(e => {
     const field = document.getElementById(e.id)
     const target = field?.closest('label')
     return target && ref.current?.contains(target) ? createPortal(<span className="field-error" id={`${e.id}-error`}>Error: {e.text}</span>, target, e.id) : null
