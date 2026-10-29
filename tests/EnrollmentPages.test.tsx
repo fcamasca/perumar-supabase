@@ -608,3 +608,28 @@ it('retains the company draft on a version conflict and does not retry automatic
     expect(screen.getByRole('textbox',{name:/^Razón social/})).toHaveValue('BORRADOR');expect(client.rpc).toHaveBeenCalledOnce();
     fireEvent.click(screen.getByRole('button',{name:'Cancelar'}));expect(client.rpc).toHaveBeenCalledOnce();
 });
+
+it('replaces the company grid with its record, puts Edit above fields and restores list search/page on return',async()=>{
+    const rows=companyRows(30),range=vi.fn(),filter=vi.fn();
+    const q={select:()=>q,order:()=>q,range:(...args:unknown[])=>{range(...args);return q},ilike:(...args:unknown[])=>{filter(...args);return q},then:(resolve:(r:{data:unknown[];error:null})=>unknown)=>Promise.resolve({data:rows,error:null}).then(resolve)};
+    client.from.mockReturnValue(q);render(<Companies/>);
+    await screen.findByRole('button',{name:'Ver empresa: EMPRESA 0'});
+    fireEvent.change(screen.getByRole('searchbox'),{target:{value:'empresa'}});
+    await waitFor(()=>expect(filter).toHaveBeenCalledWith('razon_social','%EMPRESA%'));
+    fireEvent.click(screen.getByRole('button',{name:'Siguiente página'}));
+    await waitFor(()=>expect(range).toHaveBeenLastCalledWith(30,59));
+    fireEvent.click(screen.getByRole('button',{name:'Ver empresa: EMPRESA 0'}));
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();expect(screen.queryByRole('search')).not.toBeInTheDocument();
+    const edit=screen.getByRole('button',{name:'Editar empresa'}),ruc=screen.getByRole('textbox',{name:'RUC'});
+    expect(edit.compareDocumentPosition(ruc) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(ruc).toHaveAttribute('readonly');
+    fireEvent.click(edit);expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    fireEvent.change(screen.getByRole('textbox',{name:/^Razón social/}),{target:{value:'cambio sin guardar'}});
+    fireEvent.click(screen.getByRole('button',{name:'Cancelar'}));
+    expect(screen.getByRole('textbox',{name:'Razón social'})).toHaveValue('EMPRESA 0');
+    expect(screen.getByRole('textbox',{name:'Razón social'})).toHaveAttribute('readonly');
+    fireEvent.click(screen.getByRole('button',{name:'Volver a empresas'}));
+    expect(screen.getByRole('searchbox',{name:'Buscar empresas'})).toHaveValue('EMPRESA');
+    expect(screen.getByText('Página 2 · 30 empresas')).toBeVisible();
+    expect(screen.getByRole('table')).toBeVisible();expect(client.rpc).not.toHaveBeenCalled();
+});

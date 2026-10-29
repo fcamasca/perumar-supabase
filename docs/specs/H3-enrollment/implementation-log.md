@@ -151,3 +151,10 @@ Solicitud humana: misma barra de búsqueda, acciones y grilla que Alumnos. Compa
 Ver usa el mismo formulario de campos en readOnly, sin escribir; Editar habilita los campos existentes. Creación/edición visibles para Director/Coordinador, con autorización real en RLS/RPC intacta. guardar_empresa_patrocinadora conserva id/expected_updated_at, RUC de 11 dígitos, mayúsculas de texto y email intacto. Conflicto/error mantiene borrador sin retry. Sin DELETE, contratos nuevos ni migraciones. En Matrícula se conserva Elegir empresa, Sin patrocinador y selección de la empresa recién creada/guardada.
 
 Lint, typecheck, 184 tests unitarios, build y diff --check correctos. Cobertura nueva de barra/iconos/grilla, orden, búsqueda/páginas, consulta readOnly, guardado versionado, roles, selección desde matrícula y conflicto sin retry. Se mantienen los cuatro documentos aprobados; verificación visual humana y Gate 2 pendientes.
+
+
+## 2026-10-29 — Navegación lista/ficha de Empresa patrocinadora
+
+Solicitud humana: al Ver empresa ocultar la grilla y colocar Editar arriba, con comportamiento similar a Alumno. Companies muestra exclusivamente lista o ficha/alta. Ver oculta búsqueda, grilla y paginación; encabezado con razón social/RUC, Editar empresa y Volver a empresas precede al formulario readOnly. Editar directo o desde ficha conserva ese contexto. Cancelar edición retorna a la consulta con datos originales; cancelar alta vuelve a lista. Guardar en mantenimiento retorna a la ficha del resultado DB, conservando la nueva versión; desde Matrícula mantiene selección mediante choose. Búsqueda/página de la lista se conservan al volver.
+
+Lint, typecheck, 185 pruebas unitarias, build y diff --check correctos. Caso nuevo verifica reemplazo de lista, botón Editar anterior a campos, cancelación sin escritura y recuperación de filtro/página; regresión de guardado versionado/selección Matrícula vigente. Sin cambios DB/RPC ni Spec aprobado. Gate 2 y ensayo visual humano pendientes.

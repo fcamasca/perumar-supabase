@@ -323,3 +323,6 @@ button.company-row-name:hover { background:transparent; text-decoration:underlin
 .company-selection-actions { display:flex; gap:.65rem; margin-bottom:1rem; }
 
 button.icon-action { padding:0; }
+
+.company-record-actions { display:flex; flex-wrap:wrap; gap:.65rem; align-items:center; }
+.company-record > .student-detail-header { margin-top:1.25rem; }
