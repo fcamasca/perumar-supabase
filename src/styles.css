@@ -230,3 +230,24 @@ footer > .technical-details { opacity:1; }
 }
 
 .search-input input::-webkit-search-decoration { -webkit-appearance:none; }
+
+.student-review { display:grid; gap:1.1rem; }
+.student-review > p { margin:0; }
+.review-identity { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.5rem 1.5rem; padding:1rem 1.15rem; border:1px solid var(--border-soft); border-radius:.65rem; background:var(--brand-soft); overflow-wrap:anywhere; }
+.review-identity strong { font-size:1.05rem; }
+.review-section { margin:0; padding:1.15rem; border:1px solid var(--border-soft); border-radius:.75rem; background:var(--surface); }
+.review-section-heading { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem; margin-bottom:1rem; }
+.review-section-heading h3 { margin:0; font-size:1rem; }
+.review-section-heading button { min-height:2.5rem; padding:.45rem .8rem; }
+.review-fields { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1rem 1.5rem; margin:0; }
+.review-fields > div { min-width:0; }
+.review-fields dt { color:var(--text-secondary); font-size:.8rem; margin-bottom:.2rem; }
+.review-fields dd { margin:0; font-weight:600; white-space:pre-wrap; overflow-wrap:anywhere; }
+.review-fields dd.review-empty { font-weight:400; color:var(--text-secondary); }
+.review-wide { grid-column:1 / -1; }
+.review-age { margin:.9rem 0 0; color:var(--text-secondary); font-size:.85rem; }
+.review-contact + .review-contact { border-top:1px solid var(--border-soft); margin-top:1rem; padding-top:1rem; }
+.review-contact-notice { margin:1rem 0 0; padding:.8rem 1rem; border-inline-start:3px solid var(--warning); background:var(--surface-elevated); }
+.review-section > .help-text { margin:1rem 0 0; }
+@media(max-width:60rem) { .review-fields { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:40rem) { .review-fields { grid-template-columns:minmax(0,1fr); } .review-section { padding:1rem; } }

@@ -67,3 +67,12 @@ Verificación final: lint/types/build y 154 pruebas PASSED (12 archivos), incluy
 Se reemplazó la etiqueta aislada por una barra identificada como búsqueda: rótulo Buscar alumnos, lupa decorativa e indicación Documento o apellido paterno. La acción de nuevo alumno se ubica al extremo derecho de la misma barra, solo con icono; tooltip asociado como nombre accesible, visible por hover/foco y descartable con Escape. Se reutiliza el icono persona+ existente. La consulta y paginación conservan su comportamiento.
 
 Verificación: prueba del buscador con nombre accesible, filtro por documento, destino del enlace de alta sin texto interior y tooltip descartable; 14 pruebas del módulo H3 satisfactorias, typecheck/lint/build y diff --check. Sin cambios DB ni Spec aprobado; Gate 2 permanece pendiente.
+
+
+## Resumen Revisar de Alumno solicitado el 28/10/2026
+
+Se sustituyó el resumen mínimo por identificación del alumno/documento y cuatro secciones de revisión: identificación, domicilio, información adicional y contactos. Se muestran etiquetas de catálogos/ubicaciones en vez de UUID, fecha dd/mm/aaaa, edad derivada, unidades de medidas y opcionales no indicados. Las secciones tienen Corregir; Volver al resumen valida la sección modificada y conserva los demás datos antes de Guardar. Se informa ausencia de contacto activo sin impedir guardar Alumno, conforme a la regla independiente de matrícula.
+
+En edición de alumno existente se consultan sus contactos de solo lectura bajo RLS; se conserva su gestión en la pestaña Contactos y no se agregan al payload de edición. La revisión no guarda ni modifica datos; Guardar conserva el comando previo y su control de versión. Diseño responsive con pares etiqueta/valor y acciones accesibles por sección, usando tokens H2.
+
+Verificación: 158 pruebas PASSED (12 archivos), incluyendo revisión con descripciones y geografía legibles, corrección sin pérdida/escrituras, validación antes de volver al resumen, guardado del payload corregido y contactos existentes de solo lectura; lint/typecheck/build y diff --check satisfactorios. Sin cambios SQL/Spec aprobado; Gate 2 pendiente.

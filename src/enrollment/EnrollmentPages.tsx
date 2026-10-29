@@ -85,6 +85,39 @@ function Fields({ fields, draft, change, refs }: {
             return <label key={key} data-field={key}><span className="field-label">{label}{required ? ' *' : ''}</span>{options ? <select required={required} value={draft[key] ?? ''} onChange={e => change(key, formTextValue(e.currentTarget))}><option value="">Seleccionar</option>{options.map(r => <option key={r.id} value={r.id} disabled={r.activo === false || r.active === false}>{value(r, 'nombre')}{r.activo === false || r.active === false ? ' (inactivo)' : ''}</option>)}</select> : <input required={required} type={kind === 'date' ? 'date' : kind === 'number' ? 'number' : kind === 'email' ? 'email' : 'text'} step={kind === 'number' ? 'any' : undefined} min={kind === 'number' ? '0.000001' : undefined} max={kind === 'date' ? new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' }) : undefined} id={rule ? `${id}-${key}` : undefined} aria-describedby={rule ? `${id}-${key}-help` : undefined} disabled={key === 'numero_di' && !rule} inputMode={rule?.numeric ? 'numeric' : undefined} minLength={rule?.minLength} maxLength={rule?.maxLength ?? max} data-pattern-error={key === 'ruc' ? 'El RUC debe tener exactamente 11 dígitos.' : key === 'numero_di' ? 'DNI: exactamente 8 dígitos. Carné de extranjería: 1 a 30 caracteres alfanuméricos.' : undefined} pattern={rule?.pattern} value={draft[key] ?? ''} onChange={e => change(key, rule ? documentInputValue(e.currentTarget, rule.kind) : formTextValue(e.currentTarget))} onPaste={rule ? e => { e.preventDefault(); change(key, pasteDocumentValue(e.currentTarget, e.clipboardData.getData('text'), rule.kind)); } : undefined}/>} {rule && <small id={`${id}-${key}-help`}>{rule.hint}</small>}{key === 'numero_di' && !rule && <small>Selecciona primero el tipo de documento.</small>}</label>;
         })}</div>;
 }
+function StudentReview({ draft, contact, refs, editing, contacts, contactsError, busy, correct }: {
+    draft: Draft; contact: Draft; refs: Record<string, Row[]>; editing: boolean; contacts: Row[] | null; contactsError: string; busy: boolean; correct: (step: number) => void;
+}) {
+    const id = useId();
+    function display(data: Record<string, unknown>, key: string) {
+        const text = value(data, key).trim();
+        if (!text) return 'No indicado';
+        if (catalogFields[key]) return value(refs.catalogo_valor?.find(v => v.id === text), 'nombre') || 'Referencia no disponible';
+        const geo = key.match(/_(departamento|provincia|distrito)_id$/);
+        if (geo) return value(refs[geo[1]]?.find(v => v.id === text), 'nombre') || 'Referencia no disponible';
+        if (key === 'fecha_nacimiento') return text.split('-').reverse().join('/');
+        if (key === 'estatura_cm') return `${text} cm`;
+        if (key === 'peso_kg') return `${text} kg`;
+        return text;
+    }
+    function details(data: Record<string, unknown>, fields: string[][]) {
+        return <dl className="review-fields">{fields.map(([key, label]) => <div key={key} className={['domicilio', 'direccion', 'senas_particulares'].includes(key) ? 'review-wide' : undefined}><dt>{label}</dt><dd className={!value(data, key).trim() ? 'review-empty' : undefined}>{display(data, key)}</dd></div>)}</dl>;
+    }
+    const titles = ['Identificación', 'Domicilio', 'Información adicional'];
+    const entries: Record<string, unknown>[] = editing ? contacts ?? [] : Object.values(contact).some(v => v.trim()) ? [contact] : [];
+    const noActiveContacts = !entries.some(c => !editing || c.activo === true);
+    return <div className="student-review"><p>Verifica los datos antes de guardar. Puedes corregir cada sección sin perder lo que ingresaste.</p>
+        <div className="review-identity"><strong>{draft.apellido_paterno} {draft.apellido_materno}, {draft.nombres}</strong><span>{display(draft, 'tipo_di_id')} · {draft.numero_di}</span></div>
+        {studentGroups.map((fields, index) => <section className="review-section" key={titles[index]} aria-labelledby={`${id}-${index}`}><header className="review-section-heading"><h3 id={`${id}-${index}`}>{titles[index]}</h3><button type="button" className="secondary" disabled={busy} aria-label={`Corregir ${titles[index].toLocaleLowerCase('es')}`} onClick={() => correct(index)}>Corregir</button></header>{details(draft, fields)}{index === 0 && <p className="review-age">Edad calculada: {ageAt(draft.fecha_nacimiento)} años</p>}</section>)}
+        <section className="review-section" aria-labelledby={`${id}-contacts`}><header className="review-section-heading"><h3 id={`${id}-contacts`}>Contacto de emergencia</h3>{!editing && <button type="button" className="secondary" disabled={busy} aria-label="Corregir contacto de emergencia" onClick={() => correct(3)}>Corregir</button>}</header>
+            {editing && contacts === null && !contactsError && <p role="status">Consultando contactos guardados…</p>}
+            {contactsError && <p role="alert">{contactsError}</p>}
+            {entries.map((c, index) => <div className="review-contact" key={value(c, 'id') || index}><p><strong>Contacto {index + 1}</strong>{editing && <> · <StatusBadge value={c.activo ? 'Activo' : 'Inactivo'}/></>}</p>{details(c, contactFields)}</div>)}
+            {(!editing || contacts !== null) && !contactsError && noActiveContacts && <p className="review-contact-notice">No hay un contacto de emergencia activo. Puedes guardar la ficha del alumno, pero para matricularlo necesitará al menos un contacto activo y válido.</p>}
+            {editing && <p className="help-text">Los contactos guardados se conservan. Puedes administrarlos desde la pestaña Contactos de la ficha.</p>}
+        </section><p className="help-text">{editing ? 'Los cambios se guardarán al confirmar.' : 'El alumno se creará únicamente al pulsar Guardar.'}</p>
+    </div>;
+}
 function NewStudentIcon() {
     return <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="7" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M19 8v8M15 12h8"/></svg>;
 }
@@ -100,6 +133,20 @@ export function StudentEditor({ initial, done, cancel }: {
     const [draft, setDraft] = useState<Draft>(() => Object.fromEntries(studentGroups.flat().map(([k]) => [k, value(initial, k)])));
     const [contact, setContact] = useState<Draft>({}), [step, setStep] = useState(0), [saved, setSaved] = useState<Row | undefined>(initial);
     const [message, setMessage] = useState(''), [busy, setBusy] = useState(false);
+    const [returnToReview, setReturnToReview] = useState(false), [reviewContacts, setReviewContacts] = useState<Row[] | null>(null), [contactsError, setContactsError] = useState('');
+    useEffect(() => {
+        if (!initial?.id || step !== 4) return;
+        let active = true;
+        setReviewContacts(null); setContactsError('');
+        void (async () => {
+            const result = await client.from('alumno_contacto_emergencia').select('id,apellido,nombre,parentesco_id,celular,direccion,activo').eq('alumno_id', initial.id).order('created_at');
+            if (!active) return;
+            if (result.error) { setContactsError('No se pudieron consultar los contactos guardados. Sus datos se conservarán.'); return; }
+            setReviewContacts(result.data as Row[]);
+        })().catch(() => { if (active) setContactsError('No se pudieron consultar los contactos guardados. Sus datos se conservarán.'); });
+        return () => { active = false; };
+    }, [client, initial?.id, step]);
+    function correctReview(index: number) { setMessage(''); setReturnToReview(true); setStep(index); }
     function change(k: string, v: string) { setDraft(d => ({ ...d, [k]: v, ...(k === 'tipo_di_id' && v !== d.tipo_di_id ? { numero_di: '' } : {}), ...(/departamento_id$/.test(k) ? { [k.replace('departamento', 'provincia')]: '', [k.replace('departamento', 'distrito')]: '' } : /provincia_id$/.test(k) ? { [k.replace('provincia', 'distrito')]: '' } : {}) })); }
     async function save() {
         setBusy(true);
@@ -119,16 +166,13 @@ export function StudentEditor({ initial, done, cancel }: {
             setBusy(false);
         }
     }
-    return <section><EditorHeading>{initial ? 'Editar Alumno' : <NewStudentLabel/>}</EditorHeading><Steps names={['Identificación', 'Domicilio', 'Información adicional', 'Contacto de emergencia', 'Revisar']} step={step}/><Message>{error || message}</Message><InlineForm onSubmit={() => { if (step < 4)
-        setStep(step + 1);
-    else
-        void save(); }}>
+    return <section><EditorHeading>{initial ? 'Editar Alumno' : <NewStudentLabel/>}</EditorHeading><Steps names={['Identificación', 'Domicilio', 'Información adicional', 'Contacto de emergencia', 'Revisar']} step={step}/><Message>{error || message}</Message><InlineForm onSubmit={() => { if (step < 4) { setStep(returnToReview ? 4 : step + 1); setReturnToReview(false); } else void save(); }}>
     <fieldset disabled={busy || !refs.catalogo}><legend>{['Identificación', 'Domicilio', 'Información adicional', 'Contacto de emergencia', 'Revisar'][step]}</legend>
       {step < 3 && <Fields fields={studentGroups[step]} draft={draft} change={change} refs={refs}/>}
       {step === 0 && <p>Edad calculada: {ageAt(draft.fecha_nacimiento ?? '') || '—'}</p>}
       {step === 3 && (initial ? <p>Los contactos se mantienen desde la pestaña Contactos de la ficha.</p> : <><p>Puedes guardar una ficha sin contactos; para matricular se exige al menos uno activo y válido.</p><Fields fields={contactFields.map(([k, l, kind]) => [k, l, kind === 'required' && !Object.values(contact).some(v => v.trim()) ? 'optional' : kind])} draft={contact} change={(k, v) => setContact({ ...contact, [k]: v })} refs={refs}/></>)}
-      {step === 4 && <><p>Revisa los pasos anteriores antes de guardar.</p><p>{draft.apellido_paterno} {draft.apellido_materno}, {draft.nombres} — {draft.numero_di}</p><p>{draft.domicilio}</p></>}
-    </fieldset><div className="form-actions"><button type="button" disabled={busy} onClick={cancel}>Cancelar</button>{step > 0 && <button type="button" disabled={busy} onClick={() => setStep(step - 1)}>Anterior</button>}<button disabled={busy || !refs.catalogo}>{step < 4 ? 'Siguiente' : busy ? 'Guardando…' : 'Guardar'}</button></div></InlineForm></section>;
+      {step === 4 && <StudentReview draft={draft} contact={contact} refs={refs} editing={!!initial} contacts={reviewContacts} contactsError={contactsError} busy={busy} correct={correctReview}/> }
+    </fieldset><div className="form-actions"><button type="button" disabled={busy} onClick={cancel}>Cancelar</button>{step > 0 && <button type="button" disabled={busy} onClick={() => { setReturnToReview(false); setStep(step - 1); }}>Anterior</button>}<button disabled={busy || !refs.catalogo}>{step < 4 ? returnToReview ? 'Volver al resumen' : 'Siguiente' : busy ? 'Guardando…' : 'Guardar'}</button></div></InlineForm></section>;
 }
 export function Students() {
     const tooltipId = useId(), [tooltipDismissed, setTooltipDismissed] = useState(false);

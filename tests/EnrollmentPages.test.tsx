@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ageAt, enrollmentError, StudentEditor } from '../src/enrollment/EnrollmentPages';
 const { client } = vi.hoisted(() => ({ client: { from: vi.fn(), rpc: vi.fn() } }));
 vi.mock('../src/security/SessionProvider', () => ({ useSession: () => ({ client, state: { phase: 'authorized', roles: ['COORDINADOR_ACADEMICO'] } }) }));
@@ -139,4 +139,73 @@ it('identifies student search and keeps icon-only creation accessible with a dis
   expect(screen.getByRole('tooltip')).toBeInTheDocument()
   fireEvent.change(search,{target:{value:'00123456'}})
   await waitFor(()=>expect(like).toHaveBeenCalledWith('numero_di','%00123456%'))
+})
+async function openFilledReview(editing=false) {
+  const references:Record<string,unknown[]>={
+    catalogo:[{id:'type-cat',codigo:'TIPO_DI'},{id:'sex-cat',codigo:'SEXO'},{id:'parent-cat',codigo:'PARENTESCO'},{id:'eyes-cat',codigo:'COLOR_OJOS'}],
+    catalogo_valor:[{id:'doc-dni',catalogo_id:'type-cat',codigo:'DNI',nombre:'DNI',activo:true},{id:'sex-f',catalogo_id:'sex-cat',codigo:'F',nombre:'FEMENINO',activo:true},{id:'rel-mother',catalogo_id:'parent-cat',codigo:'MADRE',nombre:'MADRE',activo:true},{id:'eyes-brown',catalogo_id:'eyes-cat',codigo:'MARRONES',nombre:'MARRONES',activo:true}],
+    departamento:[{id:'geo-dep',nombre:'LIMA',active:true}],provincia:[{id:'geo-prov',departamento_id:'geo-dep',nombre:'LIMA',active:true}],distrito:[{id:'geo-dist',provincia_id:'geo-prov',nombre:'MIRAFLORES',active:true}]
+  }
+  client.from.mockImplementation((table:string)=>table==='alumno_contacto_emergencia'?resultQuery([{id:'existing-contact',apellido:'PÉREZ',nombre:'ELENA',parentesco_id:'rel-mother',celular:'999111222',direccion:'AV. MAR',activo:true}]):{select:()=>({range:async(start:number)=>({data:start===0?references[table]??[]:[],error:null})})})
+  const filled={apellido_paterno:'MUÑOZ',apellido_materno:'GÓMEZ',nombres:'ANA',tipo_di_id:'doc-dni',numero_di:'00123456',fecha_nacimiento:'2000-01-02',sexo_id:'sex-f',nacimiento_departamento_id:'geo-dep',nacimiento_provincia_id:'geo-prov',nacimiento_distrito_id:'geo-dist',celular:'999123456',email:'ana@example.invalid',domicilio:'AV. MAR',domicilio_departamento_id:'geo-dep',domicilio_provincia_id:'geo-prov',domicilio_distrito_id:'geo-dist',color_ojos_id:'eyes-brown',estatura_cm:'165',peso_kg:'60'}
+  const done=vi.fn()
+  render(<StudentEditor initial={editing?{id:'existing-student',updated_at:'version-1',...filled}:undefined} done={done} cancel={vi.fn()}/>)
+  await screen.findByRole('option',{name:'DNI'})
+  const enter=(label:RegExp,value:string)=>fireEvent.change(screen.getByLabelText(label),{target:{value}})
+  if(!editing){
+    enter(/^Apellido paterno/,'muñoz');enter(/^Apellido materno/,'gómez');enter(/^Nombres/,'ana');enter(/^Tipo DI/,'doc-dni');enter(/^Número DI/,'00123456');enter(/^Fecha de nacimiento/,'2000-01-02');enter(/^Sexo/,'sex-f');enter(/^Departamento nacimiento/,'geo-dep');enter(/^Provincia nacimiento/,'geo-prov');enter(/^Distrito nacimiento/,'geo-dist')
+  }
+  fireEvent.click(screen.getByRole('button',{name:'Siguiente'}))
+  if(!editing){enter(/^Celular/,'999123456');enter(/^Email/,'ana@example.invalid');enter(/^Domicilio/,'av. mar');enter(/^Departamento domicilio/,'geo-dep');enter(/^Provincia domicilio/,'geo-prov');enter(/^Distrito domicilio/,'geo-dist')}
+  fireEvent.click(screen.getByRole('button',{name:'Siguiente'}))
+  if(!editing){enter(/^Color de ojos/,'eyes-brown');enter(/^Estatura/,'165');enter(/^Peso/,'60')}
+  fireEvent.click(screen.getByRole('button',{name:'Siguiente'}))
+  fireEvent.click(screen.getByRole('button',{name:'Siguiente'}))
+  return {done,enter}
+}
+it('reviews complete readable data and allows correcting one section without saving or losing the other steps', async()=>{
+  const {done,enter}=await openFilledReview()
+  const identity=screen.getByRole('region',{name:'Identificación'}),address=screen.getByRole('region',{name:'Domicilio'}),extra=screen.getByRole('region',{name:'Información adicional'})
+  expect(within(identity).getByText('FEMENINO')).toBeInTheDocument()
+  expect(within(identity).getByText('02/01/2000')).toBeInTheDocument()
+  expect(within(address).getByText('MIRAFLORES')).toBeInTheDocument()
+  expect(within(extra).getByText('MARRONES')).toBeInTheDocument()
+  expect(within(extra).getByText('165 cm')).toBeInTheDocument()
+  expect(within(extra).getByText('60 kg')).toBeInTheDocument()
+  expect(screen.getByText(/No hay un contacto de emergencia activo/)).toBeInTheDocument()
+  expect(screen.queryByText('geo-dist')).not.toBeInTheDocument()
+  expect(client.rpc).not.toHaveBeenCalled()
+  fireEvent.click(screen.getByRole('button',{name:'Corregir domicilio'}))
+  expect(screen.getByLabelText(/^Celular/)).toHaveValue('999123456')
+  enter(/^Domicilio/,'av. nueva')
+  fireEvent.click(screen.getByRole('button',{name:'Volver al resumen'}))
+  expect(within(screen.getByRole('region',{name:'Domicilio'})).getByText('AV. NUEVA')).toBeInTheDocument()
+  expect(within(screen.getByRole('region',{name:'Identificación'})).getByText('00123456')).toBeInTheDocument()
+  expect(client.rpc).not.toHaveBeenCalled()
+  client.rpc.mockResolvedValue({data:{id:'saved-student',updated_at:'v2'},error:null})
+  fireEvent.click(screen.getByRole('button',{name:'Guardar'}))
+  await waitFor(()=>expect(done).toHaveBeenCalledOnce())
+  expect(client.rpc).toHaveBeenCalledWith('guardar_alumno',{p:expect.objectContaining({nombres:'ANA',numero_di:'00123456',domicilio:'AV. NUEVA',contactos:[]})})
+})
+it('validates a contact correction before returning to review and shows its relationship as a label', async()=>{
+  const {enter}=await openFilledReview()
+  fireEvent.click(screen.getByRole('button',{name:'Corregir contacto de emergencia'}))
+  enter(/^Apellido contacto/,'pérez')
+  fireEvent.click(screen.getByRole('button',{name:'Volver al resumen'}))
+  await waitFor(()=>expect(screen.getByRole('textbox',{name:/^Nombre contacto/})).toHaveFocus())
+  enter(/^Nombre contacto/,'elena');enter(/^Parentesco/,'rel-mother');enter(/^Celular contacto/,'999111222')
+  fireEvent.click(screen.getByRole('button',{name:'Volver al resumen'}))
+  const contacts=screen.getByRole('region',{name:'Contacto de emergencia'})
+  expect(within(contacts).getByText('ELENA')).toBeInTheDocument()
+  expect(within(contacts).getByText('MADRE')).toBeInTheDocument()
+  expect(screen.queryByText(/No hay un contacto de emergencia activo/)).not.toBeInTheDocument()
+  expect(client.rpc).not.toHaveBeenCalled()
+})
+it('reviews existing contacts read-only without pretending they are missing or replacing them',async()=>{
+  await openFilledReview(true)
+  const contacts=screen.getByRole('region',{name:'Contacto de emergencia'})
+  expect(await within(contacts).findByText('ELENA')).toBeInTheDocument()
+  expect(within(contacts).queryByRole('button',{name:/Corregir/})).not.toBeInTheDocument()
+  expect(screen.queryByText(/No hay un contacto de emergencia activo/)).not.toBeInTheDocument()
+  expect(client.rpc).not.toHaveBeenCalled()
 })
