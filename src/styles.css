@@ -314,3 +314,12 @@ form.student-record-form { display:block; max-width:none; margin:0; padding:0; b
 .contact-dialog .form-grid > label[data-field] { grid-column:span 6; }
 .contact-dialog .form-grid > label[data-field="direccion"] { grid-column:1 / -1; }
 @media(max-width:40rem) { .contact-dialog .form-grid > label[data-field] { grid-column:1 / -1; } }
+
+.companies-grid { overflow-x:auto; padding-bottom:2rem; }
+.companies-grid table { min-width:65rem; }
+button.company-row-name { border:0; background:transparent; color:var(--primary); text-align:left; min-height:0; padding:.35rem 0; border-radius:0; }
+button.company-row-name:hover { background:transparent; text-decoration:underline; }
+.companies-grid .student-row-actions .toolbar-tooltip { bottom:auto; top:calc(100% + .25rem); }
+.company-selection-actions { display:flex; gap:.65rem; margin-bottom:1rem; }
+
+button.icon-action { padding:0; }

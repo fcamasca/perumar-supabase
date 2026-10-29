@@ -29,3 +29,6 @@ Pendiente de ejecución humana sobre el candidato correspondiente, dentro de TES
 
 
 Actualización humana del 29/10/2026: Ocupación usa combo nativo sin búsqueda personalizada. Ensayar apertura, desplazamiento y selección con ratón/teclado; OTROS primero entre valores, opción vacía permitida y detalle obligatorio solo para OTROS. La búsqueda mencionada en evidencias anteriores queda sustituida por esta instrucción posterior.
+
+
+Empresa patrocinadora (ajuste de interfaz 29/10/2026): comparar barra/lupa, Nuevo con tooltip y grilla/acciones con Alumnos; comprobar búsqueda por RUC/razón social, orden reciente primero y paginación. Ensayar Ver sin escritura, Editar/Cancelar/Guardar con concurrencia y roles existentes. Desde Matrícula comprobar Elegir empresa, Sin patrocinador y selección automática tras guardar empresa. Revisar scroll horizontal, tooltips y teclado en móvil/escritorio y los temas, sin dar por ejecutada la revisión humana por las pruebas DOM.

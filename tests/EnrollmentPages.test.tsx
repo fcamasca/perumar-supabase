@@ -22,7 +22,7 @@ describe('H3 student flow and safe feedback', () => {
 import { MemoryRouter } from 'react-router-dom';
 import { StudentDetail, NewEnrollment } from '../src/enrollment/EnrollmentPages';
 function resultQuery(data: unknown) {
-    const q = { select: () => q, eq: () => q, in: () => q, order: () => q, limit: () => q, single: () => q,
+    const q = { select: () => q, eq: () => q, in: () => q, order: () => q, range: () => q, limit: () => q, single: () => q,
         then: (resolve: (r: {
             data: unknown;
             error: null;
@@ -539,4 +539,72 @@ it('keeps contact keyboard focus inside the modal and restores the opener withou
     expect(within(screen.getByRole('region',{name:'Identificación'})).getByText('00123456')).toBeVisible();
     expect(within(screen.getByRole('region',{name:'Domicilio'})).getByText('AV. MAR')).toBeVisible();
     expect(client.rpc).not.toHaveBeenCalled();
+});
+
+function companyRows(count=1) { return Array.from({length:count},(_,i)=>({id:`company-${i}`,ruc:`201234567${String(i).padStart(2,'0')}`,razon_social:`EMPRESA ${i}`,persona_contacto:'CONTACTO SINTETICO',telefono:'999111222',email:'contacto@example.invalid',created_at:'2026-10-29T15:00:00Z',updated_at:'company-v1'})); }
+it('gives companies the pupil search toolbar, icon actions, grid and newest-first pagination',async()=>{
+    const rows=companyRows(30),order=vi.fn(),range=vi.fn(),filter=vi.fn();
+    const q={select:()=>q,order:(...args:unknown[])=>{order(...args);return q},range:(...args:unknown[])=>{range(...args);return q},ilike:(...args:unknown[])=>{filter(...args);return q},then:(resolve:(r:{data:unknown[];error:null})=>unknown)=>Promise.resolve({data:rows,error:null}).then(resolve)};
+    client.from.mockReturnValue(q);render(<Companies/>);
+    expect(screen.getByRole('search',{name:'Búsqueda de empresas'})).toBeInTheDocument();
+    const search=screen.getByRole('searchbox',{name:'Buscar empresas'});
+    expect(search).toHaveAttribute('placeholder','RUC o razón social');
+    const create=screen.getByRole('button',{name:'Nueva empresa'});
+    expect(create.textContent).toBe('');expect(create.querySelector('svg')).toHaveAttribute('aria-hidden','true');
+    const table=screen.getByRole('table',{name:'Empresas patrocinadoras por fecha de registro descendente'});
+    await waitFor(()=>expect(within(table).getAllByRole('row')).toHaveLength(31));
+    expect(within(table).getAllByRole('columnheader').map(h=>h.textContent)).toEqual(['Empresa','RUC','Registro ↓','Contacto','Teléfono','Email','Acciones']);
+    expect(within(table).getAllByRole('row')[1]).toHaveTextContent('CONTACTO SINTETICO');
+    expect(screen.getByRole('button',{name:'Ver empresa: EMPRESA 0'})).toBeVisible();
+    expect(screen.getByRole('button',{name:'Editar empresa: EMPRESA 0'})).toBeVisible();
+    expect(order).toHaveBeenCalledWith('created_at',{ascending:false});expect(order).toHaveBeenCalledWith('id',{ascending:false});
+    fireEvent.click(screen.getByRole('button',{name:'Siguiente página'}));
+    await waitFor(()=>expect(range).toHaveBeenCalledWith(30,59));
+    fireEvent.change(search,{target:{value:'mar'}});
+    await waitFor(()=>expect(filter).toHaveBeenCalledWith('razon_social','%MAR%'));
+    expect(range).toHaveBeenLastCalledWith(0,29);
+    fireEvent.change(search,{target:{value:'201'}});
+    await waitFor(()=>expect(filter).toHaveBeenCalledWith('ruc','%201%'));
+    expect(client.rpc).not.toHaveBeenCalled();
+});
+it('views company data read-only and edits through the existing command with its version',async()=>{
+    const row=companyRows()[0];client.from.mockReturnValue(resultQuery([row]));render(<Companies/>);
+    fireEvent.click(await screen.findByRole('button',{name:'Ver empresa: EMPRESA 0'}));
+    expect(screen.getByRole('textbox',{name:'RUC'})).toHaveValue(row.ruc);
+    expect(screen.getByRole('textbox',{name:'RUC'})).toHaveAttribute('readonly');
+    expect(screen.getByRole('textbox',{name:'Persona de contacto'})).toHaveValue(row.persona_contacto);
+    expect(client.rpc).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button',{name:'Editar empresa'}));
+    const name=screen.getByRole('textbox',{name:/^Razón social/});
+    expect(name).not.toHaveAttribute('readonly');fireEvent.change(name,{target:{value:'empresa actualizada'}});
+    client.rpc.mockResolvedValue({data:{...row,razon_social:'EMPRESA ACTUALIZADA',updated_at:'company-v2'},error:null});
+    fireEvent.click(screen.getByRole('button',{name:'Guardar empresa'}));
+    await waitFor(()=>expect(client.rpc).toHaveBeenCalledWith('guardar_empresa_patrocinadora',{p:expect.objectContaining({id:row.id,expected_updated_at:'company-v1',ruc:row.ruc,razon_social:'EMPRESA ACTUALIZADA'})}));
+    await waitFor(()=>expect(screen.queryByRole('button',{name:'Guardar empresa'})).not.toBeInTheDocument());
+});
+it('preserves choosing/no sponsor and auto-selects a newly saved company in enrollment',async()=>{
+    const row=companyRows()[0],choose=vi.fn();client.from.mockReturnValue(resultQuery([row]));render(<Companies choose={choose}/>);
+    fireEvent.click(await screen.findByRole('button',{name:'Elegir empresa: EMPRESA 0'}));expect(choose).toHaveBeenLastCalledWith(row);
+    fireEvent.click(screen.getByRole('button',{name:'Sin patrocinador'}));expect(choose).toHaveBeenLastCalledWith(null);
+    fireEvent.click(screen.getByRole('button',{name:'Nueva empresa'}));
+    fireEvent.change(screen.getByRole('textbox',{name:/^RUC/}),{target:{value:'20987654321'}});
+    fireEvent.change(screen.getByRole('textbox',{name:/^Razón social/}),{target:{value:'nueva patrocinadora'}});
+    const saved={...row,id:'created-company',ruc:'20987654321',razon_social:'NUEVA PATROCINADORA'};
+    client.rpc.mockResolvedValue({data:saved,error:null});
+    fireEvent.click(screen.getByRole('button',{name:'Guardar empresa'}));await waitFor(()=>expect(choose).toHaveBeenLastCalledWith(saved));
+});
+it('offers company consultation without new/edit actions if existing editing roles are absent',async()=>{
+    sessionState.roles=[];client.from.mockReturnValue(resultQuery(companyRows()));render(<Companies/>);
+    await screen.findByRole('button',{name:'Ver empresa: EMPRESA 0'});
+    expect(screen.queryByRole('button',{name:'Nueva empresa'})).not.toBeInTheDocument();
+    expect(screen.queryByRole('button',{name:/Editar empresa/})).not.toBeInTheDocument();
+});
+it('retains the company draft on a version conflict and does not retry automatically',async()=>{
+    client.from.mockReturnValue(resultQuery(companyRows()));render(<Companies/>);
+    fireEvent.click(await screen.findByRole('button',{name:'Editar empresa: EMPRESA 0'}));
+    fireEvent.change(screen.getByRole('textbox',{name:/^Razón social/}),{target:{value:'borrador'}});
+    client.rpc.mockResolvedValue({data:null,error:{code:'40001'}});
+    fireEvent.click(screen.getByRole('button',{name:'Guardar empresa'}));await screen.findByText(/La información cambió/);
+    expect(screen.getByRole('textbox',{name:/^Razón social/})).toHaveValue('BORRADOR');expect(client.rpc).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByRole('button',{name:'Cancelar'}));expect(client.rpc).toHaveBeenCalledOnce();
 });

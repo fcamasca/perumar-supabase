@@ -336,26 +336,41 @@ function ContactDialog({ close, children }: {
         }
     } }}>{children}</div></div>, document.body);
 }
-export function Companies({ choose }: {
-    choose?: (r: Row | null) => void;
-}) {
-    const { client } = useSession(), [search, setSearch] = useState(''), [rows, setRows] = useState<Row[]>([]), [selected, setSelected] = useState<Row>(), [draft, setDraft] = useState<Draft>({}), [open, setOpen] = useState(false), [message, setMessage] = useState(''), [revision, setRevision] = useState(0), [busy, setBusy] = useState(false);
-    useEffect(() => { let active = true; let q = client.from('empresa_patrocinadora').select('id,ruc,razon_social,persona_contacto,telefono,email,updated_at').order('razon_social').limit(40); if (search)
-        q = /^\d/.test(search) ? q.ilike('ruc', `%${search}%`) : q.ilike('razon_social', `%${search}%`); void q.then(r => { if (active) {
-        setRows(r.error ? [] : r.data as Row[]);
-        if (r.error)
-            setMessage('No se pudieron consultar empresas.');
-    } }); return () => { active = false; }; }, [client, search, revision]);
-    const fields = [['ruc', 'RUC', 'required'], ['razon_social', 'Razón social', 'required'], ['persona_contacto', 'Persona de contacto', 'optional'], ['telefono', 'Teléfono / celular', 'optional'], ['email', 'Email empresa', 'email']];
-    function edit(r?: Row) { setSelected(r); setDraft(Object.fromEntries(fields.map(([k]) => [k, value(r, k)]))); setOpen(true); }
-    async function save() { setBusy(true); const r = await client.rpc('guardar_empresa_patrocinadora', { p: { ...Object.fromEntries(Object.entries(draft).map(([k, v]) => [k, v.trim() || null])), ...(selected ? { id: selected.id, expected_updated_at: selected.updated_at } : {}) } }); setBusy(false); if (r.error)
-        setMessage(enrollmentError(r.error));
-    else {
-        setOpen(false);
-        setRevision(revision + 1);
-        choose?.(r.data as Row);
-    } }
-    return <section><h3>Empresa patrocinadora</h3><Message>{message}</Message><label>Buscar por RUC o razón social<input value={search} onChange={e => setSearch(formTextValue(e.currentTarget))}/></label><button type="button" onClick={() => edit()}>Nueva empresa</button>{choose && <button type="button" onClick={() => choose(null)}>Sin patrocinador</button>}<ul>{rows.map(r => <li key={r.id}>{value(r, 'ruc')} — {value(r, 'razon_social')} <button type="button" onClick={() => edit(r)}>Editar empresa</button>{choose && <button type="button" onClick={() => choose(r)}>Elegir empresa</button>}</li>)}</ul>{open && <InlineForm onSubmit={() => void save()}><Fields fields={fields} draft={draft} change={(k, v) => setDraft({ ...draft, [k]: v })} refs={{}}/><button disabled={busy}>Guardar empresa</button><button type="button" disabled={busy} onClick={() => setOpen(false)}>Cancelar</button></InlineForm>}</section>;
+function CompanyAction({ action, name, disabled = false, onClick }: { action: 'new' | 'view' | 'edit' | 'choose'; name?: string; disabled?: boolean; onClick: () => void }) {
+    const id = useId(), [dismissed, setDismissed] = useState(false);
+    const label = { new:'Nueva empresa', view:'Ver empresa', edit:'Editar empresa', choose:'Elegir empresa' }[action];
+    return <span className="toolbar-action" onMouseEnter={() => setDismissed(false)}><button type="button" className={`icon-action${action === 'new' ? '' : ' student-row-action'}`} aria-label={name ? `${label}: ${name}` : label} aria-describedby={id} disabled={disabled} onClick={onClick} onFocus={() => setDismissed(false)} onKeyDown={e => { if (e.key === 'Escape') setDismissed(true); }}><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{action === 'view' ? <><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></> : action === 'edit' ? <path d="m15 5 4 4M4 20l4-1L20 7a2.8 2.8 0 0 0-4-4L4 15l-1 6Z"/> : action === 'choose' ? <path d="m5 12 4 4L19 6"/> : <><path d="M3 21V4h11v17M7 8h3M7 12h3M7 16h3M2 21h14M19 5v8M15 9h8"/></>}</svg></button><span id={id} role="tooltip" className="toolbar-tooltip" hidden={dismissed}>{label}</span></span>;
+}
+export function Companies({ choose }: { choose?: (r: Row | null) => void }) {
+    const { client, state } = useSession(), [search, setSearch] = useState(''), [page, setPage] = useState(0), [rows, setRows] = useState<Row[]>([]);
+    const [selected, setSelected] = useState<Row>(), [draft, setDraft] = useState<Draft>({}), [mode, setMode] = useState<'new' | 'view' | 'edit' | null>(null), [message, setMessage] = useState('Cargando…'), [revision, setRevision] = useState(0), [busy, setBusy] = useState(false);
+    const canEdit = state.roles?.some(role => ['DIRECTOR_ACADEMICO', 'COORDINADOR_ACADEMICO'].includes(role));
+    useEffect(() => {
+        let active = true;
+        let q = client.from('empresa_patrocinadora').select('id,ruc,razon_social,persona_contacto,telefono,email,created_at,updated_at').order('created_at', { ascending:false }).order('id', { ascending:false }).range(page * 30, page * 30 + 29);
+        if (search) q = /^\d/.test(search) ? q.ilike('ruc', `%${search}%`) : q.ilike('razon_social', `%${search}%`);
+        void q.then(r => { if (active) { setRows(r.error ? [] : r.data as Row[]); setMessage(r.error ? 'No se pudieron consultar empresas.' : !r.data.length ? 'No hay empresas para esta búsqueda.' : ''); } });
+        return () => { active = false; };
+    }, [client, search, page, revision]);
+    const fields = [['ruc','RUC','required'],['razon_social','Razón social','required'],['persona_contacto','Persona de contacto','optional'],['telefono','Teléfono / celular','optional'],['email','Email empresa','email']];
+    function open(next: 'new' | 'view' | 'edit', row?: Row) {
+        setSelected(row); setDraft(Object.fromEntries(fields.map(([key]) => [key,value(row,key)]))); setMode(next);
+    }
+    async function save() {
+        if (!canEdit || mode === 'view') return;
+        setBusy(true);
+        try {
+            const r = await client.rpc('guardar_empresa_patrocinadora', { p: { ...Object.fromEntries(Object.entries(draft).map(([key,text]) => [key,text.trim() || null])), ...(selected ? { id:selected.id,expected_updated_at:selected.updated_at } : {}) } });
+            if (r.error) { setMessage(enrollmentError(r.error)); return; }
+            setMode(null); setRevision(v => v + 1); choose?.(r.data as Row);
+        } catch { setMessage(enrollmentError(null)); }
+        finally { setBusy(false); }
+    }
+    return <section><h2>Empresa patrocinadora</h2><div className="filters students-toolbar" role="search" aria-label="Búsqueda de empresas"><label className="student-search"><span className="field-label">Buscar empresas</span><span className="search-input"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input type="search" placeholder="RUC o razón social" value={search} onChange={e => { setSearch(formTextValue(e.currentTarget)); setPage(0); }}/></span></label>{canEdit && <CompanyAction action="new" disabled={busy} onClick={() => open('new')}/>}</div><Message>{message}</Message>{choose && <div className="company-selection-actions"><button type="button" className="secondary" disabled={busy} onClick={() => choose(null)}>Sin patrocinador</button></div>}
+        <div className="students-grid companies-grid"><table aria-label="Empresas patrocinadoras por fecha de registro descendente"><thead><tr><th scope="col">Empresa</th><th scope="col">RUC</th><th scope="col">Registro ↓</th><th scope="col">Contacto</th><th scope="col">Teléfono</th><th scope="col">Email</th><th scope="col" className="student-actions-heading">Acciones</th></tr></thead><tbody>{rows.map(r => <tr key={r.id}><td><button type="button" className="student-row-name company-row-name" onClick={() => open('view',r)}>{value(r,'razon_social')}</button></td><td className="student-row-document">{value(r,'ruc')}</td><td className="student-row-date">{r.created_at ? new Date(String(r.created_at)).toLocaleString('es-PE',{timeZone:'America/Lima',dateStyle:'short',timeStyle:'short'}) : '—'}</td><td>{value(r,'persona_contacto') || 'No indicado'}</td><td>{value(r,'telefono') || 'No indicado'}</td><td>{value(r,'email') || 'No indicado'}</td><td><div className="student-row-actions"><CompanyAction action="view" name={value(r,'razon_social')} disabled={busy} onClick={() => open('view',r)}/>{canEdit && <CompanyAction action="edit" name={value(r,'razon_social')} disabled={busy} onClick={() => open('edit',r)}/>} {choose && <CompanyAction action="choose" name={value(r,'razon_social')} disabled={busy} onClick={() => choose(r)}/>}</div></td></tr>)}</tbody></table></div>
+        <div className="student-list-pagination"><span>{rows.length ? `Página ${page + 1} · ${rows.length} empresas` : `Página ${page + 1}`}</span><div className="pagination-actions"><button disabled={!page || busy} onClick={() => setPage(v => v - 1)}>Anterior</button><button disabled={rows.length < 30 || busy} onClick={() => setPage(v => v + 1)}>Siguiente página</button></div></div>
+        {mode && <InlineForm key={`${selected?.id ?? 'new'}-${mode}`} onSubmit={() => void save()}><EditorHeading>{mode === 'new' ? 'Nueva empresa' : 'Ficha de empresa patrocinadora'}</EditorHeading><fieldset disabled={busy}><Fields fields={fields} draft={draft} change={(key,text) => setDraft(d => ({...d,[key]:text}))} refs={{}} readOnly={mode === 'view'}/></fieldset><div className="form-actions"><button type="button" disabled={busy} onClick={() => setMode(null)}>{mode === 'view' ? 'Cerrar' : 'Cancelar'}</button>{mode === 'view' ? canEdit && <button type="button" onClick={() => setMode('edit')}>Editar empresa</button> : <button disabled={busy}>{busy ? 'Guardando…' : 'Guardar empresa'}</button>}</div></InlineForm>}
+    </section>;
 }
 export function NewEnrollment() {
     const { client, state } = useSession(), navigate = useNavigate();
