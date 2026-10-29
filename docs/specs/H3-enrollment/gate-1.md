@@ -9,3 +9,8 @@ Declaración humana: «Gate 1 de H3 fue aprobado humanamente sobre: 551cd00ed295
 Los cuatro documentos aprobados se conservan íntegros, incluidos sus estados históricos de bloqueo previo. Este registro posterior levanta Gate 1 exclusivamente para su alcance. Siguiendo H2, crear feature/h3-enrollment desde el commit exacto aprobado e incorporar después este registro documental, sin partir de main posterior.
 
 Se autoriza construcción y validación progresiva TASK-H3-002…020. EVOL-001/002 y H4+ excluidos. Gate 2, pruebas humanas, acceptance e integración a main requieren decisión independiente; este registro no las aprueba.
+
+
+## Enmienda posterior registrada
+
+[CHG-H3-001 — Ocupación](approved-occupation-amendment.md), solicitada por la persona el 28/10/2026: catálogo OCUPACION, búsqueda y detalle OTROS. Es un cambio funcional autorizado después del SHA aprobado; no formaba parte del Gate 1 original. La enmienda registra alcance, implementación y evidencia por separado, sin alterar los cuatro documentos aprobados. Gate 2 sigue pendiente e incluye su revisión humana.

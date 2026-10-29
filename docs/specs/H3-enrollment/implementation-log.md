@@ -90,3 +90,8 @@ Migración aditiva `20261028200000_h3_occupation_catalog.sql`, sin nuevas tablas
 Causa del reporte humano: cada evento Auth, incluido SIGNED_IN de la misma identidad y TOKEN_REFRESHED, establecía loading y desmontaba ProtectedArea/Outlet, perdiendo el estado local del formulario. SessionProvider conserva el árbol autorizado mientras revalida en segundo plano la misma identidad. Sigue consultando getUser, perfil y roles; cambio de identidad, logout, revocación o error retiran el acceso y descartan resultados tardíos. No se almacenan borradores/PII en storage. No incluye recuperación tras F5 o navegación a otra pantalla.
 
 Pruebas de regresión: misma instancia y contenido del formulario antes/durante/después de SIGNED_IN y TOKEN_REFRESHED; retiro inmediato ante cambio de usuario/logout y bloqueo ante revocación. Lint, typecheck, 165 tests unitarios, build y diff --check satisfactorios. Sin cambios de DB, Spec ni Gates.
+
+
+## 2026-10-28 — Formalización de CHG-H3-001 respecto a Gate 1
+
+A solicitud humana se registra [la enmienda de Ocupación](approved-occupation-amendment.md) como cambio funcional posterior al Spec aprobado en `551cd00ed2957178400dca8fe9d945cf3f9e8d20`, implementado previamente en `f60936f03386436f1891ffe8de0169e9d1fae3e9`. No se presenta como parte del Gate 1 original. Se vinculan solicitud humana, alcance, OQ-H3-001/REQ-DES-TASK afectados, migración, cobertura técnica y revisión humana pendiente. Los cuatro documentos aprobados permanecen idénticos a la base y conservan sus IDs. Registro de Gate 1 y catálogo enlazan la enmienda. Este cambio es documental; no altera código/DB ni aprueba Gate 2.
