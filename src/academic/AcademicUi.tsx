@@ -1,3 +1,4 @@
+import { formTextValue } from '../lib/formText'
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 
@@ -50,7 +51,7 @@ export function ConfirmDialog({ title, description, reason, confirmLabel = 'Conf
   }, [onFinish])
   return createPortal(<div className="dialog-backdrop"><div ref={panel} role="dialog" aria-modal="true" aria-labelledby={`${id}-title`} aria-describedby={`${id}-description`} className="confirm-dialog">
     <h2 id={`${id}-title`}>{title}</h2><p id={`${id}-description`}>{description}</p>
-    {reason && <label>Motivo obligatorio<textarea value={value} aria-invalid={!!error} aria-describedby={error ? `${id}-error` : undefined} onChange={e => setValue(e.target.value)} /></label>}
+    {reason && <label>Motivo obligatorio<textarea value={value} aria-invalid={!!error} aria-describedby={error ? `${id}-error` : undefined} onChange={e => setValue(formTextValue(e.currentTarget))} /></label>}
     {error && <p id={`${id}-error`} role="alert">{error}</p>}
     <div className="dialog-actions"><button type="button" ref={cancel} className="secondary" onClick={() => onFinish(null)}>Cancelar operación</button><button type="button" onClick={() => { if (reason && !value.trim()) { setError('Indica el motivo antes de confirmar.'); return }; onFinish(reason ? value.trim() : '') }} className={sensitive ? "sensitive" : undefined}>{confirmLabel}</button></div>
   </div></div>, document.body)

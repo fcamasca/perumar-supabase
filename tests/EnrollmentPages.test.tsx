@@ -55,3 +55,19 @@ it('returns from the new pupil flow to enrollment without losing its selected cy
     expect(screen.getByRole('combobox')).toHaveValue('cycle');
     expect(client.rpc).not.toHaveBeenCalled();
 });
+import { Companies } from '../src/enrollment/EnrollmentPages'
+it('uppercases typed and pasted company text in both controls and the saved request, preserving email', async () => {
+  client.from.mockImplementation(() => resultQuery([]))
+  client.rpc.mockResolvedValue({data:{id:'company',updated_at:'v1'},error:null})
+  render(<Companies />)
+  fireEvent.click(screen.getByRole('button',{name:'Nueva empresa'}))
+  fireEvent.change(screen.getByLabelText(/^RUC/),{target:{value:'20123456789'}})
+  const name=screen.getByLabelText(/^Razón social/)
+  fireEvent.input(name,{target:{value:'mar del perú'},inputType:'insertFromPaste'})
+  expect(name).toHaveValue('MAR DEL PERÚ')
+  const email=screen.getByLabelText(/^Email empresa/)
+  fireEvent.change(email,{target:{value:'Contacto@Example.invalid'}})
+  expect(email).toHaveValue('Contacto@Example.invalid')
+  fireEvent.click(screen.getByRole('button',{name:'Guardar empresa'}))
+  await waitFor(()=>expect(client.rpc).toHaveBeenCalledWith('guardar_empresa_patrocinadora',expect.objectContaining({p:expect.objectContaining({razon_social:'MAR DEL PERÚ',email:'Contacto@Example.invalid'})})))
+})

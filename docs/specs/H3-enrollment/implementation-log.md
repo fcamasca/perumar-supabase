@@ -43,3 +43,10 @@ Regresión del 23/10/2026 PASSED: reset/local, seguridad (14 escenarios), acadé
 El usuario observó que cada campo de Nuevo Alumno ocupaba una línea completa. Se añadió distribución responsive al contenedor form-grid: nombres en tres columnas; documento/fecha/sexo y catálogos de identificación en campos compactos; domicilio y textos extensos con mayor espacio. Dos columnas en anchos intermedios y una en móvil, conservando orden DOM/teclado, etiquetas, errores inline y colores semánticos existentes. El componente de campos compartido aplica la distribución también a domicilio, información adicional, contactos y empresa. Se corrigió además la numeración duplicada de los pasos (marcador de lista y número explícito).
 
 Verificación: typecheck y build; revisión visual humana de esta distribución pendiente. Gate 2 permanece pendiente.
+
+
+## Ingreso en mayúsculas solicitado el 28/10/2026
+
+El usuario solicitó texto en mayúsculas al ingresar datos en los formularios. Se normaliza el valor de los controles de texto antes de actualizar el estado React, tanto al escribir como al pegar, en formularios académicos/H3 y motivos de los diálogos. El payload guarda el texto convertido; no es una transformación CSS de apariencia. Se conserva la posición de edición. Email, contraseña, fechas, importes y UUID de selectores conservan sus valores originales.
+
+Verificación: typecheck/lint satisfactorios y 151 pruebas PASSED (12 archivos), incluidas edición con tildes/cursor, excepciones de controles no textuales y guardado real del request de empresa con razón social MAYÚSCULA/email intacto. Build verificado. Gate 2 sigue pendiente; Spec aprobado intacto.
