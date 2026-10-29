@@ -72,9 +72,17 @@ function updateStudentDraft(draft: Draft, key: string, text: string): Draft {
 }
 const contactFields = [['apellido', 'Apellido contacto', 'required'], ['nombre', 'Nombre contacto', 'required'], ['parentesco_id', 'Parentesco', 'required'], ['celular', 'Celular contacto', 'required'], ['direccion', 'Dirección contacto', 'optional']];
 export function OccupationField({ draft, change, options }: { draft: Draft; change: (key: string, text: string) => void; options: Row[] }) {
-    const id = useId(), input = useRef<HTMLInputElement>(null);
+    const id = useId(), input = useRef<HTMLInputElement>(null), popup = useRef<HTMLDivElement>(null);
     const selected = options.find(r => r.id === draft.ocupacion_id);
     const [query, setQuery] = useState<string | null>(null), [open, setOpen] = useState(false), [active, setActive] = useState(0);
+    useEffect(() => {
+        if (!open) return;
+        const outside = (event: PointerEvent) => {
+            if (event.target instanceof Node && !popup.current?.contains(event.target)) setOpen(false);
+        };
+        document.addEventListener('pointerdown', outside);
+        return () => document.removeEventListener('pointerdown', outside);
+    }, [open]);
     const normalize = (text: string) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
     const matches = options.filter(r => r.activo !== false && normalize(value(r, 'nombre')).includes(normalize(query ?? ''))).sort((a, b) => Number(a.orden ?? 999) - Number(b.orden ?? 999));
     function choose(row?: Row) {
@@ -82,8 +90,12 @@ export function OccupationField({ draft, change, options }: { draft: Draft; chan
         change('ocupacion', row?.codigo === 'OTROS' ? '' : value(row, 'nombre'));
         setQuery(null); setOpen(false); setActive(0); input.current?.setCustomValidity('');
     }
-    return <div data-field="ocupacion_id" className="occupation-field"><label htmlFor={id}>Ocupación</label><div className="occupation-combobox">
-        <input ref={input} id={id} role="combobox" autoComplete="off" aria-autocomplete="list" aria-expanded={open} aria-controls={`${id}-list`} aria-activedescendant={open && matches[active] ? `${id}-${matches[active].id}` : undefined} placeholder="Escribe para buscar una ocupación" value={query ?? value(selected, 'nombre')} onFocus={() => setOpen(true)} onBlur={() => setOpen(false)} onChange={e => { const text = formTextValue(e.currentTarget); setQuery(text); setOpen(true); setActive(0); if (!text) choose(); else e.currentTarget.setCustomValidity('Selecciona una ocupación de la lista o borra la búsqueda.'); }} onKeyDown={e => {
+    return <div data-field="ocupacion_id" className="occupation-field"><label htmlFor={id}>Ocupación</label><div ref={popup} className="occupation-combobox">
+        <input ref={input} id={id} role="combobox" autoComplete="off" aria-autocomplete="list" aria-expanded={open} aria-controls={`${id}-list`} aria-activedescendant={open && matches[active] ? `${id}-${matches[active].id}` : undefined} placeholder="Escribe para buscar una ocupación" value={query ?? value(selected, 'nombre')} onFocus={() => setOpen(true)} onBlur={e => {
+            // Native scrollbar interaction may blur the input without moving focus elsewhere.
+            if (e.relatedTarget instanceof Node && e.relatedTarget !== document.body && e.relatedTarget !== document.documentElement && !popup.current?.contains(e.relatedTarget)) setOpen(false);
+        }} onChange={e => { const text = formTextValue(e.currentTarget); setQuery(text); setOpen(true); setActive(0); if (!text) choose(); else e.currentTarget.setCustomValidity('Selecciona una ocupación de la lista o borra la búsqueda.'); }} onKeyDown={e => {
+            if (e.key === 'Tab') setOpen(false);
             if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); setOpen(true); setActive(i => Math.max(0, Math.min(matches.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1)))); }
             if (e.key === 'Enter' && open) { e.preventDefault(); if (matches[active]) choose(matches[active]); }
             if (e.key === 'Escape') { setOpen(false); setQuery(null); input.current?.setCustomValidity(''); }

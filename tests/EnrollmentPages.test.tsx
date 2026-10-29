@@ -232,6 +232,38 @@ describe('occupation catalog entry', () => {
         expect(screen.getByTestId('draft')).toHaveTextContent('"ocupacion_id":"mechanic"');
         expect(screen.queryByLabelText('Especifica la ocupación *')).not.toBeInTheDocument();
     });
+    it('keeps the list open while its scrollbar blurs the input and still permits selection', () => {
+        render(<Form/>);
+        const input = screen.getByRole('combobox', { name:'Ocupación' });
+        fireEvent.focus(input);
+        const list = screen.getByRole('listbox', { name:'Ocupaciones' });
+        // Do not cancel the native scrollbar pointer gesture.
+        expect(fireEvent.pointerDown(list)).toBe(true);
+        fireEvent.blur(input, { relatedTarget:null });
+        fireEvent.blur(input, { relatedTarget:document.body });
+        fireEvent.pointerMove(list); fireEvent.scroll(list, { target:{scrollTop:100} }); fireEvent.pointerUp(list);
+        expect(screen.getByRole('listbox')).toBe(list);
+        expect(input).toHaveAttribute('aria-expanded','true');
+        fireEvent.click(screen.getByRole('option', { name:'MECÁNICO' }));
+        expect(input).toHaveValue('MECÁNICO');
+        expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+        expect(screen.getByTestId('draft')).toHaveTextContent('"ocupacion_id":"mechanic"');
+    });
+    it('closes for outside interaction, Tab, Escape and focus moving to another control', () => {
+        render(<Form/>);
+        const input = screen.getByRole('combobox');
+        fireEvent.focus(input); fireEvent.pointerDown(document.body);
+        expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+        fireEvent.focus(input); fireEvent.keyDown(input, { key:'Tab' });
+        expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+        fireEvent.focus(input); fireEvent.change(input,{target:{value:'mec'}});
+        fireEvent.keyDown(input, { key:'Escape' });
+        expect(input).toHaveValue(''); expect(input).toBeValid();
+        expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+        fireEvent.focus(input);
+        fireEvent.blur(input, { relatedTarget:screen.getByTestId('draft') });
+        expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    });
     it('requires a separate uppercase detail for OTROS and clears it when changing selection', () => {
         render(<Form/>); const input = screen.getByRole('combobox'); fireEvent.focus(input);
         fireEvent.click(screen.getByRole('option', { name: 'OTROS' }));

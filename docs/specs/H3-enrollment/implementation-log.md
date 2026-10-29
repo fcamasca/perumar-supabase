@@ -128,3 +128,10 @@ Validación: lint, typecheck, 177 pruebas unitarias en 12 archivos, build y diff
 Reporte humano al agregar contacto: el diálogo aparecía al final de body, desplazado y cortado. Causa: ContactDialog usaba modal-backdrop, clase sin definición CSS, en lugar de la capa fija dialog-backdrop existente. Se reutiliza esa capa para centrar el diálogo sobre el viewport con scrim y z-index; aplica tanto a contactos iniciales como persistidos. Se amplía el panel a un máximo de 52rem, se elimina la tarjeta duplicada del formulario interior y se distribuyen campos en dos columnas con Dirección a todo el ancho; una columna en móvil. Se conserva max-height/scroll del modal existente para pantallas bajas.
 
 Validación: lint, typecheck, 178 tests unitarios, build y diff --check. Regresión de contacto prueba foco inicial, Tab/Shift+Tab cíclicos, fondo inert, Escape, retorno al botón Agregar contacto y conservación del borrador Alumno, sin escrituras. No hay cambios DB, de permisos ni del Spec aprobado; no se reinicia el entorno local. Revisión visual humana/Gate 2 pendiente.
+
+
+## 2026-10-29 — Barra de desplazamiento de Ocupación
+
+Reporte humano: el combo se cerraba al hacer clic/arrastrar su scrollbar. Causa: el onBlur del input cerraba incondicionalmente la lista, incluyendo blur del control nativo de scroll. La lista permanece abierta al perder foco hacia ningún control o body/documentElement; no se cancela el gesto nativo de la barra. Se cierra al elegir, hacer pointerdown fuera del contenedor, Tab/Escape o mover foco a otro control. El listener exterior existe solo mientras la lista está abierta y se retira al cerrar/desmontar.
+
+Verificación: lint, typecheck, 180 pruebas unitarias, build y diff --check. Regresión reproduce pointerdown sobre la lista, blur sin destino/body y scroll/move/up antes de seleccionar; comprueba también cierre exterior, Tab, Escape y foco a otro control. Se conservan catálogo, validación de selección y OTROS. Sin cambios DB, Spec o Gates. Ensayo humano con scrollbar nativo pendiente de confirmación visual.
