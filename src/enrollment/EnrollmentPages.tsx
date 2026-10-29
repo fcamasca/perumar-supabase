@@ -85,8 +85,11 @@ function Fields({ fields, draft, change, refs }: {
             return <label key={key} data-field={key}><span className="field-label">{label}{required ? ' *' : ''}</span>{options ? <select required={required} value={draft[key] ?? ''} onChange={e => change(key, formTextValue(e.currentTarget))}><option value="">Seleccionar</option>{options.map(r => <option key={r.id} value={r.id} disabled={r.activo === false || r.active === false}>{value(r, 'nombre')}{r.activo === false || r.active === false ? ' (inactivo)' : ''}</option>)}</select> : <input required={required} type={kind === 'date' ? 'date' : kind === 'number' ? 'number' : kind === 'email' ? 'email' : 'text'} step={kind === 'number' ? 'any' : undefined} min={kind === 'number' ? '0.000001' : undefined} max={kind === 'date' ? new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' }) : undefined} id={rule ? `${id}-${key}` : undefined} aria-describedby={rule ? `${id}-${key}-help` : undefined} disabled={key === 'numero_di' && !rule} inputMode={rule?.numeric ? 'numeric' : undefined} minLength={rule?.minLength} maxLength={rule?.maxLength ?? max} data-pattern-error={key === 'ruc' ? 'El RUC debe tener exactamente 11 dígitos.' : key === 'numero_di' ? 'DNI: exactamente 8 dígitos. Carné de extranjería: 1 a 30 caracteres alfanuméricos.' : undefined} pattern={rule?.pattern} value={draft[key] ?? ''} onChange={e => change(key, rule ? documentInputValue(e.currentTarget, rule.kind) : formTextValue(e.currentTarget))} onPaste={rule ? e => { e.preventDefault(); change(key, pasteDocumentValue(e.currentTarget, e.clipboardData.getData('text'), rule.kind)); } : undefined}/>} {rule && <small id={`${id}-${key}-help`}>{rule.hint}</small>}{key === 'numero_di' && !rule && <small>Selecciona primero el tipo de documento.</small>}</label>;
         })}</div>;
 }
+function NewStudentIcon() {
+    return <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="7" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M19 8v8M15 12h8"/></svg>;
+}
 function NewStudentLabel() {
-    return <span className="icon-label"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="7" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M19 8v8M15 12h8"/></svg><span>Nuevo Alumno</span></span>;
+    return <span className="icon-label"><NewStudentIcon/><span>Nuevo Alumno</span></span>;
 }
 export function StudentEditor({ initial, done, cancel }: {
     initial?: Row;
@@ -128,6 +131,7 @@ export function StudentEditor({ initial, done, cancel }: {
     </fieldset><div className="form-actions"><button type="button" disabled={busy} onClick={cancel}>Cancelar</button>{step > 0 && <button type="button" disabled={busy} onClick={() => setStep(step - 1)}>Anterior</button>}<button disabled={busy || !refs.catalogo}>{step < 4 ? 'Siguiente' : busy ? 'Guardando…' : 'Guardar'}</button></div></InlineForm></section>;
 }
 export function Students() {
+    const tooltipId = useId(), [tooltipDismissed, setTooltipDismissed] = useState(false);
     const { client } = useSession(), [rows, setRows] = useState<Row[]>([]), [search, setSearch] = useState(''), [page, setPage] = useState(0), [message, setMessage] = useState('Cargando…');
     useEffect(() => {
         let active = true;
@@ -140,7 +144,7 @@ export function Students() {
         } });
         return () => { active = false; };
     }, [client, search, page]);
-    return <section><h2>Alumnos</h2><Link to="/alumnos/nuevo"><NewStudentLabel/></Link><label>Documento o apellido paterno<input value={search} onChange={e => { setSearch(formTextValue(e.currentTarget)); setPage(0); }}/></label><Message>{message}</Message><ul>{rows.map(r => <li key={r.id}><Link to={`/alumnos/${r.id}`}>{value(r, 'apellido_paterno')} {value(r, 'apellido_materno')}, {value(r, 'nombres')} — {value(r, 'numero_di')}</Link></li>)}</ul><button disabled={!page} onClick={() => setPage(page - 1)}>Anterior</button><button disabled={rows.length < 30} onClick={() => setPage(page + 1)}>Siguiente página</button></section>;
+    return <section><h2>Alumnos</h2><div className="filters students-toolbar" role="search" aria-label="Búsqueda de alumnos"><label className="student-search"><span className="field-label">Buscar alumnos</span><span className="search-input"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input type="search" placeholder="Documento o apellido paterno" value={search} onChange={e => { setSearch(formTextValue(e.currentTarget)); setPage(0); }}/></span></label><span className="toolbar-action" onMouseEnter={() => setTooltipDismissed(false)}><Link to="/alumnos/nuevo" className="icon-action" aria-labelledby={tooltipId} onFocus={() => setTooltipDismissed(false)} onKeyDown={e => { if (e.key === 'Escape') setTooltipDismissed(true); }}><NewStudentIcon/></Link><span id={tooltipId} role="tooltip" className="toolbar-tooltip" hidden={tooltipDismissed}>Nuevo Alumno</span></span></div><Message>{message}</Message><ul>{rows.map(r => <li key={r.id}><Link to={`/alumnos/${r.id}`}>{value(r, 'apellido_paterno')} {value(r, 'apellido_materno')}, {value(r, 'nombres')} — {value(r, 'numero_di')}</Link></li>)}</ul><button disabled={!page} onClick={() => setPage(page - 1)}>Anterior</button><button disabled={rows.length < 30} onClick={() => setPage(page + 1)}>Siguiente página</button></section>;
 }
 export function NewStudent() { const navigate = useNavigate(); return <StudentEditor done={r => navigate(`/alumnos/${r.id}`)} cancel={() => navigate('/alumnos')}/>; }
 export function StudentDetail() {

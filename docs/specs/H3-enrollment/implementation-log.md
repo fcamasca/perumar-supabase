@@ -60,3 +60,10 @@ Verificación: typecheck/lint satisfactorios y 151 pruebas PASSED (12 archivos),
 - Nuevo Alumno muestra icono vectorial persona+ y texto en los accesos y título; icono decorativo aria-hidden, sin dependencia ni cambio del nombre accesible.
 
 Verificación final: lint/types/build y 154 pruebas PASSED (12 archivos), incluyendo caracteres/longitudes por tipo, ceros iniciales, pegado, cambio de tipo, error de RUC incompleto/corregido y etiquetas de sexo con IDs intactos. Inventario real tras migración comprobado; cuatro documentos aprobados preservados. Revisión humana visual/Gate 2 pendientes, sin acceptance ni merge.
+
+
+## Barra de búsqueda de Alumnos solicitada el 28/10/2026
+
+Se reemplazó la etiqueta aislada por una barra identificada como búsqueda: rótulo Buscar alumnos, lupa decorativa e indicación Documento o apellido paterno. La acción de nuevo alumno se ubica al extremo derecho de la misma barra, solo con icono; tooltip asociado como nombre accesible, visible por hover/foco y descartable con Escape. Se reutiliza el icono persona+ existente. La consulta y paginación conservan su comportamiento.
+
+Verificación: prueba del buscador con nombre accesible, filtro por documento, destino del enlace de alta sin texto interior y tooltip descartable; 14 pruebas del módulo H3 satisfactorias, typecheck/lint/build y diff --check. Sin cambios DB ni Spec aprobado; Gate 2 permanece pendiente.
