@@ -331,7 +331,7 @@ function ContactDialog({ close, children }: {
 }) {
     const panel = useRef<HTMLDivElement>(null);
     useEffect(() => { const opener = document.activeElement as HTMLElement; const background = [...document.body.children].filter(x => !x.contains(panel.current)) as HTMLElement[]; background.forEach(x => { x.inert = true; }); panel.current?.querySelector<HTMLElement>('input,select,button')?.focus(); return () => { background.forEach(x => { x.inert = false; }); opener?.focus(); }; }, []);
-    return createPortal(<div className="modal-backdrop"><div ref={panel} role="dialog" aria-modal="true" aria-label="Contacto de emergencia" className="confirm-dialog" onKeyDown={e => { if (e.key === 'Escape')
+    return createPortal(<div className="dialog-backdrop"><div ref={panel} role="dialog" aria-modal="true" aria-label="Contacto de emergencia" className="confirm-dialog contact-dialog" onKeyDown={e => { if (e.key === 'Escape')
         close(); if (e.key === 'Tab') {
         const items = [...panel.current!.querySelectorAll<HTMLElement>('input,select,button:not(:disabled)')];
         if (e.shiftKey && document.activeElement === items[0]) {

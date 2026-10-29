@@ -121,3 +121,10 @@ Nuevo Alumno reutiliza esa grilla para varios contactos iniciales, con estado Po
 Se reemplaza Volver al resumen por Aplicar cambios y revisar. La ayuda indica que conserva lo corregido y vuelve a Revisar, sin guardar aún el alumno; Guardar final conserva su significado. Sin migraciones/RPC/helpers/policies nuevos ni almacenamiento de PII en navegador. Los cuatro documentos aprobados y Gates no cambian.
 
 Validación: lint, typecheck, 177 pruebas unitarias en 12 archivos, build y diff --check satisfactorios. Cobertura: conservación entre pestañas, comparación de ficha Ver/Editar, revisión completa, foco de errores en secciones ocultas, cancelación/conflicto sin retry, datos/acciones de contactos, versiones y confirmación de retiro, varios contactos iniciales con edición/quitado local y payload atómico sin IDs/estado, cancelación de diálogo y conservación tras error. Sin reset ni escrituras sobre los datos humanos locales. Verificación visual humana continúa pendiente para Gate 2.
+
+
+## 2026-10-29 — Diálogo de contacto fuera de pantalla
+
+Reporte humano al agregar contacto: el diálogo aparecía al final de body, desplazado y cortado. Causa: ContactDialog usaba modal-backdrop, clase sin definición CSS, en lugar de la capa fija dialog-backdrop existente. Se reutiliza esa capa para centrar el diálogo sobre el viewport con scrim y z-index; aplica tanto a contactos iniciales como persistidos. Se amplía el panel a un máximo de 52rem, se elimina la tarjeta duplicada del formulario interior y se distribuyen campos en dos columnas con Dirección a todo el ancho; una columna en móvil. Se conserva max-height/scroll del modal existente para pantallas bajas.
+
+Validación: lint, typecheck, 178 tests unitarios, build y diff --check. Regresión de contacto prueba foco inicial, Tab/Shift+Tab cíclicos, fondo inert, Escape, retorno al botón Agregar contacto y conservación del borrador Alumno, sin escrituras. No hay cambios DB, de permisos ni del Spec aprobado; no se reinicia el entorno local. Revisión visual humana/Gate 2 pendiente.

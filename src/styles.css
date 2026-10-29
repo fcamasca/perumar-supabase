@@ -311,3 +311,10 @@ form.student-record-form { display:block; max-width:none; margin:0; padding:0; b
 .contacts-grid .contact-address { min-width:10rem; max-width:20rem; white-space:pre-wrap; overflow-wrap:anywhere; }
 .contacts-grid th:last-child { text-align:right; }
 @media(max-width:70rem) { .contacts-grid { overflow-x:auto; padding-bottom:2.5rem; } .contacts-grid .student-row-actions .toolbar-tooltip { bottom:auto; top:calc(100% + .2rem); } }
+
+/* The contact editor shares the fixed modal layer; the inner form is not another card. */
+.contact-dialog { width:min(100%,52rem); }
+.contact-dialog > form { max-width:none; margin:0; padding:0; border:0; border-radius:0; box-shadow:none; background:transparent; }
+.contact-dialog .form-grid > label[data-field] { grid-column:span 6; }
+.contact-dialog .form-grid > label[data-field="direccion"] { grid-column:1 / -1; }
+@media(max-width:40rem) { .contact-dialog .form-grid > label[data-field] { grid-column:1 / -1; } }

@@ -510,3 +510,25 @@ it('retains staged contacts if final registration fails and makes no contact wri
     expect(screen.getByRole('table',{name:'Contactos de emergencia'})).toHaveTextContent('ELENA');
     expect(client.rpc).toHaveBeenCalledOnce();
 });
+
+it('keeps contact keyboard focus inside the modal and restores the opener without losing the pupil draft',async()=>{
+    await openFilledReview();
+    fireEvent.click(screen.getByRole('button',{name:'Corregir contacto de emergencia'}));
+    const opener=screen.getByRole('button',{name:'Agregar contacto'});
+    opener.focus();fireEvent.click(opener);
+    const modal=screen.getByRole('dialog',{name:'Contacto de emergencia'});
+    const first=within(modal).getByRole('textbox',{name:/^Apellido contacto/});
+    const last=within(modal).getByRole('button',{name:'Agregar a la lista'});
+    expect(first).toHaveFocus();
+    expect(opener.closest('body > div')).toHaveProperty('inert',true);
+    first.focus();fireEvent.keyDown(first,{key:'Tab',shiftKey:true});expect(last).toHaveFocus();
+    fireEvent.keyDown(last,{key:'Tab'});expect(first).toHaveFocus();
+    fireEvent.change(first,{target:{value:'borrador de contacto'}});
+    fireEvent.keyDown(first,{key:'Escape'});
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(opener).toHaveFocus();expect(opener.closest('body > div')).toHaveProperty('inert',false);
+    fireEvent.click(screen.getByRole('button',{name:'Aplicar cambios y revisar'}));
+    expect(within(screen.getByRole('region',{name:'Identificación'})).getByText('00123456')).toBeVisible();
+    expect(within(screen.getByRole('region',{name:'Domicilio'})).getByText('AV. MAR')).toBeVisible();
+    expect(client.rpc).not.toHaveBeenCalled();
+});
