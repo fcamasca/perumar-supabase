@@ -58,13 +58,39 @@ function useReferences() {
     }, [client]);
     return { refs, error };
 }
-const catalogFields: Record<string, string> = { tipo_di_id: 'TIPO_DI', sexo_id: 'SEXO', estado_civil_id: 'ESTADO_CIVIL', grupo_sanguineo_id: 'GRUPO_SANGUINEO', grado_instruccion_id: 'GRADO_INSTRUCCION', color_ojos_id: 'COLOR_OJOS', color_cabello_id: 'COLOR_CABELLO', parentesco_id: 'PARENTESCO' };
+const catalogFields: Record<string, string> = { tipo_di_id: 'TIPO_DI', sexo_id: 'SEXO', estado_civil_id: 'ESTADO_CIVIL', grupo_sanguineo_id: 'GRUPO_SANGUINEO', grado_instruccion_id: 'GRADO_INSTRUCCION', color_ojos_id: 'COLOR_OJOS', color_cabello_id: 'COLOR_CABELLO', parentesco_id: 'PARENTESCO', ocupacion_id: 'OCUPACION' };
 const studentGroups = [
     [['apellido_paterno', 'Apellido paterno', 'required'], ['apellido_materno', 'Apellido materno', 'required'], ['nombres', 'Nombres', 'required'], ['tipo_di_id', 'Tipo DI', 'required'], ['numero_di', 'Número DI', 'required'], ['fecha_nacimiento', 'Fecha de nacimiento', 'date'], ['sexo_id', 'Sexo', 'required'], ['estado_civil_id', 'Estado civil', 'optional'], ['nacimiento_departamento_id', 'Departamento nacimiento', 'required'], ['nacimiento_provincia_id', 'Provincia nacimiento', 'required'], ['nacimiento_distrito_id', 'Distrito nacimiento', 'required']],
     [['celular', 'Celular', 'required'], ['telefono_fijo', 'Teléfono fijo', 'optional'], ['email', 'Email', 'email'], ['domicilio', 'Domicilio', 'required'], ['numero_mz_lt', 'N° / Mz Lt', 'optional'], ['domicilio_departamento_id', 'Departamento domicilio', 'required'], ['domicilio_provincia_id', 'Provincia domicilio', 'required'], ['domicilio_distrito_id', 'Distrito domicilio', 'required']],
-    [['grupo_sanguineo_id', 'Grupo sanguíneo', 'optional'], ['grado_instruccion_id', 'Grado de instrucción', 'optional'], ['color_ojos_id', 'Color de ojos', 'optional'], ['color_cabello_id', 'Color de cabello', 'optional'], ['estatura_cm', 'Estatura (cm)', 'number'], ['peso_kg', 'Peso (kg)', 'number'], ['senas_particulares', 'Señas particulares', 'optional'], ['ocupacion', 'Ocupación', 'optional']],
+    [['grupo_sanguineo_id', 'Grupo sanguíneo', 'optional'], ['grado_instruccion_id', 'Grado de instrucción', 'optional'], ['color_ojos_id', 'Color de ojos', 'optional'], ['color_cabello_id', 'Color de cabello', 'optional'], ['estatura_cm', 'Estatura (cm)', 'number'], ['peso_kg', 'Peso (kg)', 'number'], ['ocupacion_id', 'Ocupación', 'optional'], ['senas_particulares', 'Señas particulares', 'optional']],
 ];
 const contactFields = [['apellido', 'Apellido contacto', 'required'], ['nombre', 'Nombre contacto', 'required'], ['parentesco_id', 'Parentesco', 'required'], ['celular', 'Celular contacto', 'required'], ['direccion', 'Dirección contacto', 'optional']];
+export function OccupationField({ draft, change, options }: { draft: Draft; change: (key: string, text: string) => void; options: Row[] }) {
+    const id = useId(), input = useRef<HTMLInputElement>(null);
+    const selected = options.find(r => r.id === draft.ocupacion_id);
+    const [query, setQuery] = useState<string | null>(null), [open, setOpen] = useState(false), [active, setActive] = useState(0);
+    const normalize = (text: string) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+    const matches = options.filter(r => r.activo !== false && normalize(value(r, 'nombre')).includes(normalize(query ?? ''))).sort((a, b) => Number(a.orden ?? 999) - Number(b.orden ?? 999));
+    function choose(row?: Row) {
+        change('ocupacion_id', row?.id ?? '');
+        change('ocupacion', row?.codigo === 'OTROS' ? '' : value(row, 'nombre'));
+        setQuery(null); setOpen(false); setActive(0); input.current?.setCustomValidity('');
+    }
+    return <div data-field="ocupacion_id" className="occupation-field"><label htmlFor={id}>Ocupación</label><div className="occupation-combobox">
+        <input ref={input} id={id} role="combobox" autoComplete="off" aria-autocomplete="list" aria-expanded={open} aria-controls={`${id}-list`} aria-activedescendant={open && matches[active] ? `${id}-${matches[active].id}` : undefined} placeholder="Escribe para buscar una ocupación" value={query ?? value(selected, 'nombre')} onFocus={() => setOpen(true)} onBlur={() => setOpen(false)} onChange={e => { const text = formTextValue(e.currentTarget); setQuery(text); setOpen(true); setActive(0); if (!text) choose(); else e.currentTarget.setCustomValidity('Selecciona una ocupación de la lista o borra la búsqueda.'); }} onKeyDown={e => {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); setOpen(true); setActive(i => Math.max(0, Math.min(matches.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1)))); }
+            if (e.key === 'Enter' && open) { e.preventDefault(); if (matches[active]) choose(matches[active]); }
+            if (e.key === 'Escape') { setOpen(false); setQuery(null); input.current?.setCustomValidity(''); }
+        }}/>
+        {open && <ul id={`${id}-list`} role="listbox" aria-label="Ocupaciones">{matches.map((r, i) => <li id={`${id}-${r.id}`} key={r.id} role="option" aria-selected={r.id === draft.ocupacion_id} className={i === active ? 'highlighted' : undefined} onMouseDown={e => e.preventDefault()} onClick={() => choose(r)}>{value(r, 'nombre')}</li>)}{!matches.length && <li role="presentation">Sin coincidencias. Busca OTROS para especificar.</li>}</ul>}
+        </div>{selected?.codigo === 'OTROS' && <label>Especifica la ocupación *<input required maxLength={150} value={draft.ocupacion ?? ''} onChange={e => change('ocupacion', formTextValue(e.currentTarget))}/></label>}
+        {!selected && draft.ocupacion && <small>Ocupación guardada anteriormente: {draft.ocupacion}. Selecciona una opción para actualizarla.</small>}
+    </div>;
+}
+function occupationLabel(data: Record<string, unknown> | null | undefined, refs: Record<string, Row[]>) {
+    const selected = refs.catalogo_valor?.find(r => r.id === data?.ocupacion_id);
+    return selected?.codigo === 'OTROS' ? `OTROS — ${value(data, 'ocupacion')}` : value(selected, 'nombre') || value(data, 'ocupacion') || 'No indicado';
+}
 function Fields({ fields, draft, change, refs }: {
     fields: string[][];
     draft: Draft;
@@ -73,6 +99,8 @@ function Fields({ fields, draft, change, refs }: {
 }) {
     const id = useId();
     return <div className="form-grid">{fields.map(([key, label, kind]) => {
+            if (key === 'ocupacion_id') return <OccupationField key={key} draft={draft} change={change} options={(refs.catalogo_valor ?? []).filter(r => r.catalogo_id === refs.catalogo?.find(c => c.codigo === 'OCUPACION')?.id)}/>;
+            if (key === 'senas_particulares') return <label key={key} data-field={key}><span className="field-label">{label}</span><textarea rows={3} maxLength={500} value={draft[key] ?? ''} onChange={e => change(key, formTextValue(e.currentTarget))}/></label>;
             const cat = catalogFields[key], required = kind === 'required' || kind === 'date';
             const rule = documentRule(key === 'ruc' ? 'RUC' : key === 'numero_di' ? value(refs.catalogo_valor?.find(v => v.id === draft.tipo_di_id), 'codigo') : '');
             let options: Row[] | undefined;
@@ -90,6 +118,7 @@ function StudentReview({ draft, contact, refs, editing, contacts, contactsError,
 }) {
     const id = useId();
     function display(data: Record<string, unknown>, key: string) {
+        if (key === 'ocupacion_id') return occupationLabel(data, refs);
         const text = value(data, key).trim();
         if (!text) return 'No indicado';
         if (catalogFields[key]) return value(refs.catalogo_valor?.find(v => v.id === text), 'nombre') || 'Referencia no disponible';
@@ -130,7 +159,7 @@ export function StudentEditor({ initial, done, cancel }: {
     cancel: () => void;
 }) {
     const { client } = useSession(), { refs, error } = useReferences();
-    const [draft, setDraft] = useState<Draft>(() => Object.fromEntries(studentGroups.flat().map(([k]) => [k, value(initial, k)])));
+    const [draft, setDraft] = useState<Draft>(() => ({ ...Object.fromEntries(studentGroups.flat().map(([k]) => [k, value(initial, k)])), ocupacion: value(initial, 'ocupacion') }));
     const [contact, setContact] = useState<Draft>({}), [step, setStep] = useState(0), [saved, setSaved] = useState<Row | undefined>(initial);
     const [message, setMessage] = useState(''), [busy, setBusy] = useState(false);
     const [returnToReview, setReturnToReview] = useState(false), [reviewContacts, setReviewContacts] = useState<Row[] | null>(null), [contactsError, setContactsError] = useState('');
@@ -209,7 +238,7 @@ export function StudentDetail() {
     if (edit && row)
         return <StudentEditor initial={row} done={() => { setEdit(false); setRevision(revision + 1); }} cancel={() => setEdit(false)}/>;
     const tabs = ['Resumen', 'Datos personales', 'Domicilio', 'Información adicional', 'Contactos', 'Matrículas'];
-    const display = (k: string) => k in catalogFields ? value(refs.catalogo_valor?.find(v => v.id === row?.[k]), 'nombre') : /_(departamento|provincia|distrito)_id$/.test(k) ? value(refs[k.split('_').at(-2)!]?.find(v => v.id === row?.[k]), 'nombre') : value(row, k);
+    const display = (k: string) => k === 'ocupacion_id' ? occupationLabel(row, refs) : k in catalogFields ? value(refs.catalogo_valor?.find(v => v.id === row?.[k]), 'nombre') : /_(departamento|provincia|distrito)_id$/.test(k) ? value(refs[k.split('_').at(-2)!]?.find(v => v.id === row?.[k]), 'nombre') : value(row, k);
     async function saveContact() {
         if (!row || !contact)
             return;

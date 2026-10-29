@@ -76,3 +76,10 @@ Se sustituyó el resumen mínimo por identificación del alumno/documento y cuat
 En edición de alumno existente se consultan sus contactos de solo lectura bajo RLS; se conserva su gestión en la pestaña Contactos y no se agregan al payload de edición. La revisión no guarda ni modifica datos; Guardar conserva el comando previo y su control de versión. Diseño responsive con pares etiqueta/valor y acciones accesibles por sección, usando tokens H2.
 
 Verificación: 158 pruebas PASSED (12 archivos), incluyendo revisión con descripciones y geografía legibles, corrección sin pérdida/escrituras, validación antes de volver al resumen, guardado del payload corregido y contactos existentes de solo lectura; lint/typecheck/build y diff --check satisfactorios. Sin cambios SQL/Spec aprobado; Gate 2 pendiente.
+
+
+## 2026-10-28 — Ocupación y señas particulares
+
+Solicitud humana: colocar Ocupación antes de Señas particulares, dejar Señas al final como textarea de tres líneas ampliable verticalmente, y registrar las 15 ocupaciones proporcionadas más OTROS en el catálogo genérico, sin CNO/perfil. Combo con búsqueda insensible a tildes, teclado y selección explícita; OTROS exige detalle en mayúsculas. Se mantienen 500 caracteres para señas y 150 para el detalle de ocupación.
+
+Migración aditiva `20261028200000_h3_occupation_catalog.sql`, sin nuevas tablas/RPC/helpers/policies. Reutiliza guardar_alumno, validate_alumno y enrollment_snapshot. Conserva ocupaciones anteriores y snapshots históricos. Validación local incremental sin reset: hashes de fichas y snapshots previos iguales, contactos conservados, 16 valores activos e inventario de seguridad validado. `tests/sql/h3-occupation.sql` prueba RPC real, etiqueta canónica, OTROS, snapshot con ID/etiqueta/detalle, rechazos de catálogo incorrecto/inactivo, detalle vacío o largo; transacción revertida. Se amplía integración H3 para ejecución limpia en CI; no se ejecuta reset sobre los datos humanos locales. Lint/typecheck/build y 161 pruebas unitarias pasan. No se modifican los cuatro documentos aprobados, ni se aprueba Gate 2.

@@ -65,6 +65,14 @@ try {
         reject(await O.rpc('guardar_alumno',{p:{...payload(),contactos:[{...initialContact,parentesco_id:cat.SEXO}]}}));
         assert.equal((await rows('alumno')).length,beforeInitial);
         a = await student();
+        const occupation = approvedValue('OCUPACION','MECANICO'), other = approvedValue('OCUPACION','OTROS');
+        const employed = await rpc(O,'guardar_alumno',{p:{...payload(),ocupacion_id:occupation,ocupacion:'FORGED'}});
+        assert.equal(employed.ocupacion,'MECÁNICO');
+        const custom = await rpc(O,'guardar_alumno',{p:{...payload(),ocupacion_id:other,ocupacion:'soldador naval'}});
+        assert.equal(custom.ocupacion,'SOLDADOR NAVAL');
+        reject(await O.rpc('guardar_alumno',{p:{...payload(),ocupacion_id:other}}));
+        reject(await O.rpc('guardar_alumno',{p:{...payload(),ocupacion_id:cat.SEXO}}));
+        reject(await O.rpc('guardar_alumno',{p:{...payload(),ocupacion:'SIN CATALOGO'}}));
         reject(await O.rpc('guardar_alumno', { p: { ...payload(), numero_di: '1234567' } }));
         reject(await O.rpc('guardar_alumno', { p: { ...payload(), color_ojos_id: cat.PARENTESCO } }));
         reject(await O.rpc('guardar_alumno', { p: { ...payload(), sexo_id: randomUUID() } }));

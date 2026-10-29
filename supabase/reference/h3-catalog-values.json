@@ -1,5 +1,5 @@
 {
-  "source": "Human user replies 2026-10-23 and readable SEXO labels 2026-10-28 America/Lima",
+  "source": "Human authorized catalog values 2026-10-23; sex labels and occupation list 2026-10-28 America/Lima",
   "catalogs": {
     "SEXO": [
       {
@@ -177,6 +177,72 @@
       {
         "codigo": "VECINO",
         "nombre": "Vecino (a)"
+      }
+    ],
+    "OCUPACION": [
+      {
+        "codigo": "OTROS",
+        "nombre": "OTROS"
+      },
+      {
+        "codigo": "PESCADOR",
+        "nombre": "PESCADOR"
+      },
+      {
+        "codigo": "VENDEDOR",
+        "nombre": "VENDEDOR"
+      },
+      {
+        "codigo": "CHOFER",
+        "nombre": "CHOFER"
+      },
+      {
+        "codigo": "ALBANIL",
+        "nombre": "ALBAÑIL"
+      },
+      {
+        "codigo": "MECANICO",
+        "nombre": "MECÁNICO"
+      },
+      {
+        "codigo": "COCINERO",
+        "nombre": "COCINERO"
+      },
+      {
+        "codigo": "MOZO",
+        "nombre": "MOZO"
+      },
+      {
+        "codigo": "VIGILANTE",
+        "nombre": "VIGILANTE"
+      },
+      {
+        "codigo": "PANADERO",
+        "nombre": "PANADERO"
+      },
+      {
+        "codigo": "CARPINTERO",
+        "nombre": "CARPINTERO"
+      },
+      {
+        "codigo": "AGRICULTOR",
+        "nombre": "AGRICULTOR"
+      },
+      {
+        "codigo": "TECNICO",
+        "nombre": "TÉCNICO"
+      },
+      {
+        "codigo": "LIMPIADOR",
+        "nombre": "LIMPIADOR"
+      },
+      {
+        "codigo": "GASFITERO",
+        "nombre": "GASFITERO"
+      },
+      {
+        "codigo": "ELECTRICISTA",
+        "nombre": "ELECTRICISTA"
       }
     ]
   }

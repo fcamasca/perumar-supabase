@@ -251,3 +251,16 @@ footer > .technical-details { opacity:1; }
 .review-section > .help-text { margin:1rem 0 0; }
 @media(max-width:60rem) { .review-fields { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media(max-width:40rem) { .review-fields { grid-template-columns:minmax(0,1fr); } .review-section { padding:1rem; } }
+
+.form-grid > label[data-field="senas_particulares"] { grid-column: 1 / -1; }
+.form-grid textarea { width: 100%; box-sizing: border-box; resize: vertical; min-height: 5.5rem; }
+.occupation-field > label { display: block; }
+.occupation-combobox { position: relative; }
+.occupation-combobox ul { position: absolute; z-index: 5; top: 100%; left: 0; right: 0; margin: 0; padding: .25rem; list-style: none; max-height: 15rem; overflow-y: auto; background: var(--surface, Canvas); color: var(--text-primary); border: 1px solid currentColor; border-radius: .4rem; box-shadow: 0 4px 12px #0003; }
+.occupation-combobox li { padding: .6rem; cursor: pointer; }
+.occupation-combobox li:hover, .occupation-combobox li.highlighted { background: Highlight; color: HighlightText; }
+
+.form-grid > .occupation-field { grid-column: span 6; min-width: 0; }
+.occupation-field > label { width: 100%; max-width: none; margin: 0; }
+.occupation-field > label:last-child:not(:first-child) { margin-top: .75rem; }
+@media (max-width:40rem) { .form-grid > .occupation-field { grid-column: 1 / -1; } }

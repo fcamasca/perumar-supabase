@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { ageAt, enrollmentError, StudentEditor } from '../src/enrollment/EnrollmentPages';
+import { ageAt, enrollmentError, StudentEditor, OccupationField } from '../src/enrollment/EnrollmentPages';
 const { client } = vi.hoisted(() => ({ client: { from: vi.fn(), rpc: vi.fn() } }));
 vi.mock('../src/security/SessionProvider', () => ({ useSession: () => ({ client, state: { phase: 'authorized', roles: ['COORDINADOR_ACADEMICO'] } }) }));
 beforeEach(() => { client.from.mockImplementation(() => ({ select: () => ({ range: async () => ({ data: [], error: null }) }) })); client.rpc.mockReset(); });
@@ -209,3 +210,44 @@ it('reviews existing contacts read-only without pretending they are missing or r
   expect(screen.queryByText(/No hay un contacto de emergencia activo/)).not.toBeInTheDocument()
   expect(client.rpc).not.toHaveBeenCalled()
 })
+
+describe('occupation catalog entry', () => {
+    const options = [{ id: 'other', codigo: 'OTROS', nombre: 'OTROS', orden: 0 }, { id: 'mechanic', codigo: 'MECANICO', nombre: 'MECÁNICO', orden: 1 }, { id: 'inactive', codigo: 'OLD', nombre: 'INACTIVO', activo: false }];
+    function Form() {
+        const [draft, setDraft] = useState<Record<string, string>>({});
+        return <form><OccupationField draft={draft} change={(key, text) => setDraft(d => ({ ...d, [key]: text }))} options={options}/><output data-testid="draft">{JSON.stringify(draft)}</output></form>;
+    }
+    it('filters without accents, supports keyboard selection and stores catalog identity', () => {
+        render(<Form/>); const input = screen.getByRole('combobox', { name: 'Ocupación' });
+        fireEvent.focus(input);
+        expect(screen.getAllByRole('option')[0]).toHaveTextContent('OTROS');
+        expect(screen.queryByRole('option', { name: 'INACTIVO' })).not.toBeInTheDocument();
+        fireEvent.change(input, { target: { value: 'mecan' } });
+        expect(input).toHaveValue('MECAN'); expect(input).toBeInvalid();
+        expect(screen.getAllByRole('option')).toHaveLength(1);
+        fireEvent.keyDown(input, { key: 'Enter' });
+        expect(input).toHaveValue('MECÁNICO'); expect(input).toBeValid();
+        expect(screen.getByTestId('draft')).toHaveTextContent('"ocupacion_id":"mechanic"');
+        expect(screen.queryByLabelText('Especifica la ocupación *')).not.toBeInTheDocument();
+    });
+    it('requires a separate uppercase detail for OTROS and clears it when changing selection', () => {
+        render(<Form/>); const input = screen.getByRole('combobox'); fireEvent.focus(input);
+        fireEvent.click(screen.getByRole('option', { name: 'OTROS' }));
+        const detail = screen.getByRole('textbox', { name: 'Especifica la ocupación *' });
+        expect(detail).toBeRequired(); expect(detail).toBeInvalid();
+        fireEvent.change(detail, { target: { value: 'soldador naval' } });
+        expect(detail).toHaveValue('SOLDADOR NAVAL');
+        fireEvent.focus(input); fireEvent.change(input, { target: { value: 'mec' } });
+        fireEvent.click(screen.getByRole('option', { name: 'MECÁNICO' }));
+        expect(screen.getByTestId('draft')).not.toHaveTextContent('SOLDADOR');
+    });
+});
+
+it('places resizable three-line distinguishing marks last after occupation', async () => {
+    await openFilledReview();
+    fireEvent.click(screen.getByRole('button', { name: 'Corregir información adicional' }));
+    const notes = screen.getByRole('textbox', { name: 'Señas particulares' });
+    expect(notes.tagName).toBe('TEXTAREA'); expect(notes).toHaveAttribute('rows','3'); expect(notes).toHaveAttribute('maxlength','500');
+    expect(notes.closest('.form-grid')?.lastElementChild).toBe(notes.closest('label'));
+    fireEvent.change(notes, { target: { value: 'cicatriz en brazo' } }); expect(notes).toHaveValue('CICATRIZ EN BRAZO');
+});
