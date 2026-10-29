@@ -50,3 +50,13 @@ Verificación: typecheck y build; revisión visual humana de esta distribución 
 El usuario solicitó texto en mayúsculas al ingresar datos en los formularios. Se normaliza el valor de los controles de texto antes de actualizar el estado React, tanto al escribir como al pegar, en formularios académicos/H3 y motivos de los diálogos. El payload guarda el texto convertido; no es una transformación CSS de apariencia. Se conserva la posición de edición. Email, contraseña, fechas, importes y UUID de selectores conservan sus valores originales.
 
 Verificación: typecheck/lint satisfactorios y 151 pruebas PASSED (12 archivos), incluidas edición con tildes/cursor, excepciones de controles no textuales y guardado real del request de empresa con razón social MAYÚSCULA/email intacto. Build verificado. Gate 2 sigue pendiente; Spec aprobado intacto.
+
+
+## Ajustes de documentos y presentación solicitados el 28/10/2026
+
+- Documento según tipo: DNI solo 8 dígitos, CE 1–30 caracteres alfanuméricos en mayúsculas, RUC solo 11 dígitos; controles siguen siendo texto para conservar ceros iniciales. Se filtra escritura/pegado, se muestran límites asociados al campo y se habilita teclado numérico donde corresponde. Cambiar tipo DI limpia el número para evitar interpretar un CE como DNI. Una corrección por pegado retira el error inline cuando ya es válida. Las validaciones servidor previamente aprobadas se mantienen.
+- SEXO: etiquetas FEMENINO/MASCULINO con códigos F/M e IDs estables, mediante migración aditiva 20261028190000. Referencia versionada de etiquetas y lista exacta de migraciones actualizadas. Se aplicó con migration up --local tras comprobar el guard existente: comparación anterior/posterior confirmó IDs, hash de snapshots y cantidades de alumnos/contactos/matrículas iguales, sin reset ni stop del stack humano.
+- Cancelar/Anterior/Siguiente usan la barra form-actions existente, con gap y flex-wrap, tanto en alta de Alumno como en matrícula.
+- Nuevo Alumno muestra icono vectorial persona+ y texto en los accesos y título; icono decorativo aria-hidden, sin dependencia ni cambio del nombre accesible.
+
+Verificación final: lint/types/build y 154 pruebas PASSED (12 archivos), incluyendo caracteres/longitudes por tipo, ceros iniciales, pegado, cambio de tipo, error de RUC incompleto/corregido y etiquetas de sexo con IDs intactos. Inventario real tras migración comprobado; cuatro documentos aprobados preservados. Revisión humana visual/Gate 2 pendientes, sin acceptance ni merge.

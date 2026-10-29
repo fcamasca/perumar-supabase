@@ -209,3 +209,6 @@ footer > .technical-details { opacity:1; }
   .form-grid { grid-template-columns:minmax(0,1fr); }
   .form-grid > label[data-field] { grid-column:1 / -1; }
 }
+
+.icon-label { display:inline-flex; align-items:center; gap:.5rem; vertical-align:middle; }
+.icon-label > svg { width:1.2rem; height:1.2rem; flex:none; }

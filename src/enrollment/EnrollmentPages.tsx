@@ -1,5 +1,6 @@
+import { documentRule, documentInputValue, pasteDocumentValue } from '../lib/documentInput'
 import { formTextValue } from '../lib/formText'
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useSession } from '../security/SessionProvider';
@@ -70,8 +71,10 @@ function Fields({ fields, draft, change, refs }: {
     change: (key: string, v: string) => void;
     refs: Record<string, Row[]>;
 }) {
+    const id = useId();
     return <div className="form-grid">{fields.map(([key, label, kind]) => {
             const cat = catalogFields[key], required = kind === 'required' || kind === 'date';
+            const rule = documentRule(key === 'ruc' ? 'RUC' : key === 'numero_di' ? value(refs.catalogo_valor?.find(v => v.id === draft.tipo_di_id), 'codigo') : '');
             let options: Row[] | undefined;
             if (cat)
                 options = (refs.catalogo_valor ?? []).filter(v => v.catalogo_id === refs.catalogo?.find(c => c.codigo === cat)?.id);
@@ -79,8 +82,11 @@ function Fields({ fields, draft, change, refs }: {
             if (geo)
                 options = (refs[geo[2]] ?? []).filter(r => geo[2] === 'departamento' || value(r, geo[2] === 'provincia' ? 'departamento_id' : 'provincia_id') === draft[`${geo[1]}_${geo[2] === 'provincia' ? 'departamento' : 'provincia'}_id`]);
             const max = key === 'razon_social' ? 200 : key === 'codigo' ? 30 : key === 'descripcion' ? 500 : key === 'numero_di' ? 30 : /domicilio$|direccion|senas_particulares/.test(key) ? 500 : key === 'numero_mz_lt' ? 100 : key === 'email' ? 254 : /celular|telefono/.test(key) ? 30 : 150;
-            return <label key={key} data-field={key}><span className="field-label">{label}{required ? ' *' : ''}</span>{options ? <select required={required} value={draft[key] ?? ''} onChange={e => change(key, formTextValue(e.currentTarget))}><option value="">Seleccionar</option>{options.map(r => <option key={r.id} value={r.id} disabled={r.activo === false || r.active === false}>{value(r, 'nombre')}{r.activo === false || r.active === false ? ' (inactivo)' : ''}</option>)}</select> : <input required={required} type={kind === 'date' ? 'date' : kind === 'number' ? 'number' : kind === 'email' ? 'email' : 'text'} step={kind === 'number' ? 'any' : undefined} min={kind === 'number' ? '0.000001' : undefined} max={kind === 'date' ? new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' }) : undefined} maxLength={max} data-pattern-error={key === 'ruc' ? 'El RUC debe tener exactamente 11 dígitos.' : key === 'numero_di' ? 'DNI: exactamente 8 dígitos. Carné de extranjería: 1 a 30 caracteres alfanuméricos.' : undefined} pattern={key === 'ruc' ? '[0-9]{11}' : key === 'numero_di' ? refs.catalogo_valor?.find(v => v.id === draft.tipo_di_id)?.codigo === 'DNI' ? '[0-9]{8}' : '[A-Za-z0-9]{1,30}' : undefined} value={draft[key] ?? ''} onChange={e => change(key, formTextValue(e.currentTarget))}/>}</label>;
+            return <label key={key} data-field={key}><span className="field-label">{label}{required ? ' *' : ''}</span>{options ? <select required={required} value={draft[key] ?? ''} onChange={e => change(key, formTextValue(e.currentTarget))}><option value="">Seleccionar</option>{options.map(r => <option key={r.id} value={r.id} disabled={r.activo === false || r.active === false}>{value(r, 'nombre')}{r.activo === false || r.active === false ? ' (inactivo)' : ''}</option>)}</select> : <input required={required} type={kind === 'date' ? 'date' : kind === 'number' ? 'number' : kind === 'email' ? 'email' : 'text'} step={kind === 'number' ? 'any' : undefined} min={kind === 'number' ? '0.000001' : undefined} max={kind === 'date' ? new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' }) : undefined} id={rule ? `${id}-${key}` : undefined} aria-describedby={rule ? `${id}-${key}-help` : undefined} disabled={key === 'numero_di' && !rule} inputMode={rule?.numeric ? 'numeric' : undefined} minLength={rule?.minLength} maxLength={rule?.maxLength ?? max} data-pattern-error={key === 'ruc' ? 'El RUC debe tener exactamente 11 dígitos.' : key === 'numero_di' ? 'DNI: exactamente 8 dígitos. Carné de extranjería: 1 a 30 caracteres alfanuméricos.' : undefined} pattern={rule?.pattern} value={draft[key] ?? ''} onChange={e => change(key, rule ? documentInputValue(e.currentTarget, rule.kind) : formTextValue(e.currentTarget))} onPaste={rule ? e => { e.preventDefault(); change(key, pasteDocumentValue(e.currentTarget, e.clipboardData.getData('text'), rule.kind)); } : undefined}/>} {rule && <small id={`${id}-${key}-help`}>{rule.hint}</small>}{key === 'numero_di' && !rule && <small>Selecciona primero el tipo de documento.</small>}</label>;
         })}</div>;
+}
+function NewStudentLabel() {
+    return <span className="icon-label"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="7" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M19 8v8M15 12h8"/></svg><span>Nuevo Alumno</span></span>;
 }
 export function StudentEditor({ initial, done, cancel }: {
     initial?: Row;
@@ -91,7 +97,7 @@ export function StudentEditor({ initial, done, cancel }: {
     const [draft, setDraft] = useState<Draft>(() => Object.fromEntries(studentGroups.flat().map(([k]) => [k, value(initial, k)])));
     const [contact, setContact] = useState<Draft>({}), [step, setStep] = useState(0), [saved, setSaved] = useState<Row | undefined>(initial);
     const [message, setMessage] = useState(''), [busy, setBusy] = useState(false);
-    function change(k: string, v: string) { setDraft(d => ({ ...d, [k]: v, ...(/departamento_id$/.test(k) ? { [k.replace('departamento', 'provincia')]: '', [k.replace('departamento', 'distrito')]: '' } : /provincia_id$/.test(k) ? { [k.replace('provincia', 'distrito')]: '' } : {}) })); }
+    function change(k: string, v: string) { setDraft(d => ({ ...d, [k]: v, ...(k === 'tipo_di_id' && v !== d.tipo_di_id ? { numero_di: '' } : {}), ...(/departamento_id$/.test(k) ? { [k.replace('departamento', 'provincia')]: '', [k.replace('departamento', 'distrito')]: '' } : /provincia_id$/.test(k) ? { [k.replace('provincia', 'distrito')]: '' } : {}) })); }
     async function save() {
         setBusy(true);
         setMessage('');
@@ -110,7 +116,7 @@ export function StudentEditor({ initial, done, cancel }: {
             setBusy(false);
         }
     }
-    return <section><EditorHeading>{initial ? 'Editar Alumno' : 'Nuevo Alumno'}</EditorHeading><Steps names={['Identificación', 'Domicilio', 'Información adicional', 'Contacto de emergencia', 'Revisar']} step={step}/><Message>{error || message}</Message><InlineForm onSubmit={() => { if (step < 4)
+    return <section><EditorHeading>{initial ? 'Editar Alumno' : <NewStudentLabel/>}</EditorHeading><Steps names={['Identificación', 'Domicilio', 'Información adicional', 'Contacto de emergencia', 'Revisar']} step={step}/><Message>{error || message}</Message><InlineForm onSubmit={() => { if (step < 4)
         setStep(step + 1);
     else
         void save(); }}>
@@ -119,7 +125,7 @@ export function StudentEditor({ initial, done, cancel }: {
       {step === 0 && <p>Edad calculada: {ageAt(draft.fecha_nacimiento ?? '') || '—'}</p>}
       {step === 3 && (initial ? <p>Los contactos se mantienen desde la pestaña Contactos de la ficha.</p> : <><p>Puedes guardar una ficha sin contactos; para matricular se exige al menos uno activo y válido.</p><Fields fields={contactFields.map(([k, l, kind]) => [k, l, kind === 'required' && !Object.values(contact).some(v => v.trim()) ? 'optional' : kind])} draft={contact} change={(k, v) => setContact({ ...contact, [k]: v })} refs={refs}/></>)}
       {step === 4 && <><p>Revisa los pasos anteriores antes de guardar.</p><p>{draft.apellido_paterno} {draft.apellido_materno}, {draft.nombres} — {draft.numero_di}</p><p>{draft.domicilio}</p></>}
-    </fieldset><div className="actions"><button type="button" disabled={busy} onClick={cancel}>Cancelar</button>{step > 0 && <button type="button" disabled={busy} onClick={() => setStep(step - 1)}>Anterior</button>}<button disabled={busy || !refs.catalogo}>{step < 4 ? 'Siguiente' : busy ? 'Guardando…' : 'Guardar'}</button></div></InlineForm></section>;
+    </fieldset><div className="form-actions"><button type="button" disabled={busy} onClick={cancel}>Cancelar</button>{step > 0 && <button type="button" disabled={busy} onClick={() => setStep(step - 1)}>Anterior</button>}<button disabled={busy || !refs.catalogo}>{step < 4 ? 'Siguiente' : busy ? 'Guardando…' : 'Guardar'}</button></div></InlineForm></section>;
 }
 export function Students() {
     const { client } = useSession(), [rows, setRows] = useState<Row[]>([]), [search, setSearch] = useState(''), [page, setPage] = useState(0), [message, setMessage] = useState('Cargando…');
@@ -134,7 +140,7 @@ export function Students() {
         } });
         return () => { active = false; };
     }, [client, search, page]);
-    return <section><h2>Alumnos</h2><Link to="/alumnos/nuevo">Nuevo Alumno</Link><label>Documento o apellido paterno<input value={search} onChange={e => { setSearch(formTextValue(e.currentTarget)); setPage(0); }}/></label><Message>{message}</Message><ul>{rows.map(r => <li key={r.id}><Link to={`/alumnos/${r.id}`}>{value(r, 'apellido_paterno')} {value(r, 'apellido_materno')}, {value(r, 'nombres')} — {value(r, 'numero_di')}</Link></li>)}</ul><button disabled={!page} onClick={() => setPage(page - 1)}>Anterior</button><button disabled={rows.length < 30} onClick={() => setPage(page + 1)}>Siguiente página</button></section>;
+    return <section><h2>Alumnos</h2><Link to="/alumnos/nuevo"><NewStudentLabel/></Link><label>Documento o apellido paterno<input value={search} onChange={e => { setSearch(formTextValue(e.currentTarget)); setPage(0); }}/></label><Message>{message}</Message><ul>{rows.map(r => <li key={r.id}><Link to={`/alumnos/${r.id}`}>{value(r, 'apellido_paterno')} {value(r, 'apellido_materno')}, {value(r, 'nombres')} — {value(r, 'numero_di')}</Link></li>)}</ul><button disabled={!page} onClick={() => setPage(page - 1)}>Anterior</button><button disabled={rows.length < 30} onClick={() => setPage(page + 1)}>Siguiente página</button></section>;
 }
 export function NewStudent() { const navigate = useNavigate(); return <StudentEditor done={r => navigate(`/alumnos/${r.id}`)} cancel={() => navigate('/alumnos')}/>; }
 export function StudentDetail() {
@@ -278,11 +284,11 @@ export function NewEnrollment() {
     else
         void confirm(); }}><fieldset disabled={busy}><legend>{['Ciclo', 'Alumno', 'Patrocinador', 'Tarifas', 'Confirmación'][step]}</legend>
     {step === 0 && <label>Ciclo *<select required value={cycle?.id ?? ''} onChange={e => setCycle(cycles.find(c => c.id === formTextValue(e.currentTarget)))}><option value="">Seleccionar Ciclo</option>{cycles.map(c => <option key={c.id} value={c.id}>{value(c, 'codigo_ciclo')} — {value(c, 'estado_codigo')}</option>)}</select></label>}
-    {step === 1 && <><label>Buscar por documento<input value={search} onChange={e => setSearch(formTextValue(e.currentTarget))}/></label><button type="button" onClick={() => void find()}>Buscar Alumno</button><ul>{found.map(a => <li key={a.id}>{value(a, 'nombres')} {value(a, 'apellido_paterno')} <button type="button" onClick={() => setStudent(a)}>Seleccionar Alumno</button></li>)}</ul><button type="button" onClick={() => { setEditing(false); setEditor(true); }}>Nuevo Alumno</button>{student && <><p>{value(student, 'nombres')} — {value(student, 'numero_di')}</p><button type="button" onClick={() => { setEditing(true); setEditor(true); }}>Completar / editar ficha</button><Link to={`/alumnos/${student.id}`}>Ver ficha y contactos</Link></>}</>}
+    {step === 1 && <><label>Buscar por documento<input value={search} onChange={e => setSearch(formTextValue(e.currentTarget))}/></label><button type="button" onClick={() => void find()}>Buscar Alumno</button><ul>{found.map(a => <li key={a.id}>{value(a, 'nombres')} {value(a, 'apellido_paterno')} <button type="button" onClick={() => setStudent(a)}>Seleccionar Alumno</button></li>)}</ul><button type="button" onClick={() => { setEditing(false); setEditor(true); }}><NewStudentLabel/></button>{student && <><p>{value(student, 'nombres')} — {value(student, 'numero_di')}</p><button type="button" onClick={() => { setEditing(true); setEditor(true); }}>Completar / editar ficha</button><Link to={`/alumnos/${student.id}`}>Ver ficha y contactos</Link></>}</>}
     {step === 2 && <p>{company ? value(company, 'razon_social') : 'Sin patrocinador'} — selecciona o crea una empresa en el panel inferior.</p>}
     {step === 3 && <><p>Las obligatorias se incluyen siempre. El servidor valida configuración, selección e importes.</p>{charges.map(c => { const t = c.tarifa as Record<string, unknown>; return <label key={c.id}><input type="checkbox" disabled={c.obligatorio === true} checked={c.obligatorio === true || options.includes(c.id)} onChange={e => setOptions(e.target.checked ? [...options, c.id] : options.filter(id => id !== c.id))}/>{value(t, 'nombre')} — S/{value(c, 'importe')} {c.obligatorio ? '(Obligatoria)' : '(Opcional)'}</label>; })}{director && <><label>Descuento Carrera (S/)<input type="number" min="0" step="0.01" value={discount} onChange={e => setDiscount(formTextValue(e.currentTarget))}/></label><label>Motivo descuento (sin datos personales)<textarea required={Number(discount) > 0} maxLength={500} value={reason} onChange={e => setReason(formTextValue(e.currentTarget))}/></label></>}</>}
     {step === 4 && <><p>{value(cycle, 'codigo_ciclo')} — {value(student, 'nombres')} — {company ? value(company, 'razon_social') : 'Sin patrocinador'}</p><ul>{charges.filter(c => c.obligatorio === true || options.includes(c.id)).map(c => <li key={c.id}>{value(c.tarifa as Record<string, unknown>, 'nombre')} — S/{value(c, 'importe')}</li>)}</ul><p>Descuento solicitado: S/{discount}. Total de referencia: S/{(charges.filter(c => c.obligatorio === true || options.includes(c.id)).reduce((sum, c) => sum + Number(c.importe), 0) - Number(discount)).toFixed(2)}.</p><p>Importes mostrados según configuración consultada; la confirmación obtiene y calcula cargos desde el servidor.</p><label>Código manual opcional<input value={code} pattern="[0-9]{4}-[A-Za-z0-9]{2,10}-[0-9]{3,}" data-pattern-error="Usa YYYY-SIGLA-CORRELATIVO, sigla alfanumérica de 2 a 10 y correlativo de al menos 3 dígitos." onChange={e => setCode(formTextValue(e.currentTarget))}/></label></>}
-    </fieldset><div className="actions">{step > 0 && <button type="button" disabled={busy} onClick={() => setStep(step - 1)}>Anterior</button>}<button disabled={busy || (step === 1 && !student) || (step >= 3 && !charges.length)}>{step < 4 ? 'Siguiente' : busy ? 'Registrando…' : 'Confirmar matrícula'}</button></div></InlineForm>{step === 2 && <Companies choose={setCompany}/>}</section>;
+    </fieldset><div className="form-actions">{step > 0 && <button type="button" disabled={busy} onClick={() => setStep(step - 1)}>Anterior</button>}<button disabled={busy || (step === 1 && !student) || (step >= 3 && !charges.length)}>{step < 4 ? 'Siguiente' : busy ? 'Registrando…' : 'Confirmar matrícula'}</button></div></InlineForm>{step === 2 && <Companies choose={setCompany}/>}</section>;
 }
 export function EnrollmentDetail() {
     const { id } = useParams(), { client, state } = useSession(), [row, setRow] = useState<Row>(), [student, setStudent] = useState<Row>(), [cycle, setCycle] = useState<Row>(), [cycles, setCycles] = useState<Row[]>([]), [charges, setCharges] = useState<Row[]>([]), [tariffs, setTariffs] = useState<Row[]>([]), [options, setOptions] = useState<string[]>([]), [target, setTarget] = useState(''), [code, setCode] = useState(''), [discount, setDiscount] = useState(''), [reason, setReason] = useState(''), [message, setMessage] = useState('Cargando…'), [revision, setRevision] = useState(0), [busy, setBusy] = useState(false), [history, setHistory] = useState(false);

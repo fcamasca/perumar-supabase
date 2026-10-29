@@ -103,10 +103,10 @@ export function InlineForm({ children, onSubmit, ...props }: { children: ReactNo
       first?.scrollIntoView?.({ block: 'center', behavior: 'auto' })
     }
   }, [errors])
-  return <form {...props} ref={ref} noValidate onSubmit={validate} onChange={event => {
-    const field = event.target
+  function clearResolvedError(field: EventTarget) {
     if ((field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement) && field.validity.valid && (!field.required || field.value.trim())) setErrors(previous => previous.some(e => e.id === field.id) ? previous.filter(e => e.id !== field.id) : previous)
-  }}>{errors.length > 0 && <div role="alert" className="validation-errors"><p>Revisa los campos indicados:</p><ul>{errors.map(e => <li key={e.id}><a href={`#${e.id}`} onClick={event => { event.preventDefault(); const field = document.getElementById(e.id); field?.focus({ preventScroll: true }); field?.scrollIntoView?.({ block: 'center', behavior: 'auto' }) }}>{e.label}: {e.text}</a></li>)}</ul></div>}{children}{errors.map(e => {
+  }
+  return <form {...props} ref={ref} noValidate onSubmit={validate} onChange={event => clearResolvedError(event.target)} onPaste={event => clearResolvedError(event.target)}>{errors.length > 0 && <div role="alert" className="validation-errors"><p>Revisa los campos indicados:</p><ul>{errors.map(e => <li key={e.id}><a href={`#${e.id}`} onClick={event => { event.preventDefault(); const field = document.getElementById(e.id); field?.focus({ preventScroll: true }); field?.scrollIntoView?.({ block: 'center', behavior: 'auto' }) }}>{e.label}: {e.text}</a></li>)}</ul></div>}{children}{errors.map(e => {
     const field = document.getElementById(e.id)
     const target = field?.closest('label')
     return target && ref.current?.contains(target) ? createPortal(<span className="field-error" id={`${e.id}-error`}>Error: {e.text}</span>, target, e.id) : null

@@ -1,14 +1,14 @@
 {
-  "source": "Human user reply 2026-10-23 America/Lima",
+  "source": "Human user replies 2026-10-23 and readable SEXO labels 2026-10-28 America/Lima",
   "catalogs": {
     "SEXO": [
       {
         "codigo": "F",
-        "nombre": "F"
+        "nombre": "FEMENINO"
       },
       {
         "codigo": "M",
-        "nombre": "M"
+        "nombre": "MASCULINO"
       }
     ],
     "ESTADO_CIVIL": [

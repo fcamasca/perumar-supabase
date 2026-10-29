@@ -19,3 +19,8 @@ TIPO_DI conserva exclusivamente DNI y CARNET_EXTRANJERIA. El usuario confirmó e
 Se conservan por separado Castaño y Marrón en COLOR_CABELLO, y Conviviente en sus respectivos catálogos ESTADO_CIVIL/PARENTESCO. GRUPO_SANGUINEO mantiene etiquetas A-/A+/AB-/AB+/B-/B+/O-/O+ con códigos técnicos inequívocos. Ninguna etiqueta implica un permiso o comportamiento adicional.
 
 No cambia el Spec aprobado, Gate 1 ni alcance; pruebas humanas/Gate 2 siguen pendientes. EVOL-001/002 excluidas.
+
+
+## Etiquetas de sexo — ajuste humano del 28/10/2026
+
+El usuario solicitó palabras completas. La migración aditiva `20261028190000_h3_sex_labels.sql` cambia únicamente las etiquetas del catálogo SEXO: F → FEMENINO, M → MASCULINO. Códigos e IDs estables, sin reescribir snapshots históricos. La referencia JSON y la comparación de integración usan estas etiquetas vigentes; la tabla anterior conserva la procedencia original de F/M.
