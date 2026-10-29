@@ -95,3 +95,14 @@ Pruebas de regresión: misma instancia y contenido del formulario antes/durante/
 ## 2026-10-28 — Formalización de CHG-H3-001 respecto a Gate 1
 
 A solicitud humana se registra [la enmienda de Ocupación](approved-occupation-amendment.md) como cambio funcional posterior al Spec aprobado en `551cd00ed2957178400dca8fe9d945cf3f9e8d20`, implementado previamente en `f60936f03386436f1891ffe8de0169e9d1fae3e9`. No se presenta como parte del Gate 1 original. Se vinculan solicitud humana, alcance, OQ-H3-001/REQ-DES-TASK afectados, migración, cobertura técnica y revisión humana pendiente. Los cuatro documentos aprobados permanecen idénticos a la base y conservan sus IDs. Registro de Gate 1 y catálogo enlazan la enmienda. Este cambio es documental; no altera código/DB ni aprueba Gate 2.
+
+
+## 2026-10-28 — Ficha con formulario de consulta y grilla de alumnos
+
+Solicitudes humanas: consultar Alumno con la misma presentación del registro y secciones como pestañas; reemplazar la lista por grilla de filas compactas con acciones a la derecha; ordenar por fecha de registro descendente.
+
+Fields reutiliza los metadatos y distribución del alta en modo readOnly, con etiquetas de catálogo/geografía, fecha legible, opcionales sin dato y señas en textarea. Ficha abre en Identificación; conserva Resumen, Domicilio, Información adicional, Contactos y Matrículas, con estado activo visible y navegación por flechas/Home/End. Encabezado muestra nombre completo/documento/edad y acción Editar alumno; la edición abre la sección consultada y cancelar regresa a la misma pestaña. Mensajes explícitos para contactos/matrículas vacíos.
+
+Grilla semántica con nombre, documento, fecha/hora de registro en America/Lima y acciones de ver/editar con iconos y tooltips accesibles. Nombre también abre consulta. Editar enlaza directamente al editor; cancelar vuelve a consulta. Creación/edición se muestran para Director/Coordinador según roles existentes; rutas, RLS y RPC conservan autoridad DB. Sin borrar, nuevas acciones funcionales ni grants. Se consulta proyección mínima más created_at; orden DB created_at DESC e id DESC como desempate, aplicado antes de paginar (30 filas) y filtrar. Buscar reinicia a página 1. Responsive conserva nombre/documento/acciones y oculta la columna de fecha en pantallas estrechas; el orden no cambia.
+
+Validación: lint, typecheck, 169 tests unitarios, build y diff --check. Casos nuevos verifican consulta readOnly y valores/ceros/etiquetas, cambio de pestaña y edición/cancelación de sección, acciones por rol, acceso directo al editor, orden DB, búsqueda y paginación. Revisión visual humana en entorno real pendiente. Sin migraciones ni cambios de los cuatro documentos aprobados; Gate 2 pendiente.

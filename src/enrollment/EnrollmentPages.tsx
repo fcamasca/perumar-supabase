@@ -2,7 +2,7 @@ import { documentRule, documentInputValue, pasteDocumentValue } from '../lib/doc
 import { formTextValue } from '../lib/formText'
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useSession } from '../security/SessionProvider';
 import { InlineForm, EditorHeading, StatusBadge, useConfirmation } from '../academic/AcademicUi';
 type Row = Record<string, unknown> & {
@@ -91,14 +91,20 @@ function occupationLabel(data: Record<string, unknown> | null | undefined, refs:
     const selected = refs.catalogo_valor?.find(r => r.id === data?.ocupacion_id);
     return selected?.codigo === 'OTROS' ? `OTROS — ${value(data, 'ocupacion')}` : value(selected, 'nombre') || value(data, 'ocupacion') || 'No indicado';
 }
-function Fields({ fields, draft, change, refs }: {
+function Fields({ fields, draft, change, refs, readOnly = false }: {
     fields: string[][];
+    readOnly?: boolean;
     draft: Draft;
     change: (key: string, v: string) => void;
     refs: Record<string, Row[]>;
 }) {
     const id = useId();
     return <div className="form-grid">{fields.map(([key, label, kind]) => {
+            if (readOnly) {
+                const raw = draft[key] ?? '', geo = key.match(/_(departamento|provincia|distrito)_id$/);
+                const text = key === 'ocupacion_id' ? occupationLabel(draft, refs) : catalogFields[key] ? value(refs.catalogo_valor?.find(r => r.id === raw), 'nombre') || (raw ? 'Referencia no disponible' : '') : geo ? value(refs[geo[1]]?.find(r => r.id === raw), 'nombre') || (raw ? 'Referencia no disponible' : '') : kind === 'date' && raw ? raw.split('-').reverse().join('/') : raw;
+                return <label key={key} data-field={key}><span className="field-label">{label}</span>{key === 'senas_particulares' ? <textarea readOnly rows={3} value={text} placeholder="No indicado"/> : <input readOnly value={text} placeholder="No indicado"/>}</label>;
+            }
             if (key === 'ocupacion_id') return <OccupationField key={key} draft={draft} change={change} options={(refs.catalogo_valor ?? []).filter(r => r.catalogo_id === refs.catalogo?.find(c => c.codigo === 'OCUPACION')?.id)}/>;
             if (key === 'senas_particulares') return <label key={key} data-field={key}><span className="field-label">{label}</span><textarea rows={3} maxLength={500} value={draft[key] ?? ''} onChange={e => change(key, formTextValue(e.currentTarget))}/></label>;
             const cat = catalogFields[key], required = kind === 'required' || kind === 'date';
@@ -153,14 +159,15 @@ function NewStudentIcon() {
 function NewStudentLabel() {
     return <span className="icon-label"><NewStudentIcon/><span>Nuevo Alumno</span></span>;
 }
-export function StudentEditor({ initial, done, cancel }: {
+export function StudentEditor({ initial, done, cancel, initialStep = 0 }: {
     initial?: Row;
+    initialStep?: number;
     done: (row: Row) => void;
     cancel: () => void;
 }) {
     const { client } = useSession(), { refs, error } = useReferences();
     const [draft, setDraft] = useState<Draft>(() => ({ ...Object.fromEntries(studentGroups.flat().map(([k]) => [k, value(initial, k)])), ocupacion: value(initial, 'ocupacion') }));
-    const [contact, setContact] = useState<Draft>({}), [step, setStep] = useState(0), [saved, setSaved] = useState<Row | undefined>(initial);
+    const [contact, setContact] = useState<Draft>({}), [step, setStep] = useState(initialStep), [saved, setSaved] = useState<Row | undefined>(initial);
     const [message, setMessage] = useState(''), [busy, setBusy] = useState(false);
     const [returnToReview, setReturnToReview] = useState(false), [reviewContacts, setReviewContacts] = useState<Row[] | null>(null), [contactsError, setContactsError] = useState('');
     useEffect(() => {
@@ -203,12 +210,17 @@ export function StudentEditor({ initial, done, cancel }: {
       {step === 4 && <StudentReview draft={draft} contact={contact} refs={refs} editing={!!initial} contacts={reviewContacts} contactsError={contactsError} busy={busy} correct={correctReview}/> }
     </fieldset><div className="form-actions"><button type="button" disabled={busy} onClick={cancel}>Cancelar</button>{step > 0 && <button type="button" disabled={busy} onClick={() => { setReturnToReview(false); setStep(step - 1); }}>Anterior</button>}<button disabled={busy || !refs.catalogo}>{step < 4 ? returnToReview ? 'Volver al resumen' : 'Siguiente' : busy ? 'Guardando…' : 'Guardar'}</button></div></InlineForm></section>;
 }
+function StudentRowAction({ id, name, action }: { id: string; name: string; action: 'view' | 'edit' }) {
+    const tooltip = useId(), [dismissed, setDismissed] = useState(false), label = action === 'view' ? 'Ver alumno' : 'Editar alumno';
+    return <span className="toolbar-action" onMouseEnter={() => setDismissed(false)}><Link className="icon-action student-row-action" to={`/alumnos/${id}${action === 'edit' ? '?editar=1' : ''}`} aria-label={`${label}: ${name}`} aria-describedby={tooltip} onFocus={() => setDismissed(false)} onKeyDown={e => { if (e.key === 'Escape') setDismissed(true); }}><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{action === 'view' ? <><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></> : <><path d="m15 5 4 4M4 20l4-1L20 7a2.8 2.8 0 0 0-4-4L4 15l-1 6Z"/></>}</svg></Link><span id={tooltip} role="tooltip" className="toolbar-tooltip" hidden={dismissed}>{label}</span></span>;
+}
 export function Students() {
     const tooltipId = useId(), [tooltipDismissed, setTooltipDismissed] = useState(false);
-    const { client } = useSession(), [rows, setRows] = useState<Row[]>([]), [search, setSearch] = useState(''), [page, setPage] = useState(0), [message, setMessage] = useState('Cargando…');
+    const { client, state } = useSession(), [rows, setRows] = useState<Row[]>([]), [search, setSearch] = useState(''), [page, setPage] = useState(0), [message, setMessage] = useState('Cargando…');
+    const canEdit = state.roles?.some(role => ['DIRECTOR_ACADEMICO', 'COORDINADOR_ACADEMICO'].includes(role));
     useEffect(() => {
         let active = true;
-        let query = client.from('alumno').select('id,apellido_paterno,apellido_materno,nombres,numero_di').order('apellido_paterno').range(page * 30, page * 30 + 29);
+        let query = client.from('alumno').select('id,apellido_paterno,apellido_materno,nombres,numero_di,created_at').order('created_at', { ascending: false }).order('id', { ascending: false }).range(page * 30, page * 30 + 29);
         if (search)
             query = /^\d/.test(search) ? query.ilike('numero_di', `%${search}%`) : query.ilike('apellido_paterno', `%${search}%`);
         void query.then(r => { if (active) {
@@ -217,12 +229,13 @@ export function Students() {
         } });
         return () => { active = false; };
     }, [client, search, page]);
-    return <section><h2>Alumnos</h2><div className="filters students-toolbar" role="search" aria-label="Búsqueda de alumnos"><label className="student-search"><span className="field-label">Buscar alumnos</span><span className="search-input"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input type="search" placeholder="Documento o apellido paterno" value={search} onChange={e => { setSearch(formTextValue(e.currentTarget)); setPage(0); }}/></span></label><span className="toolbar-action" onMouseEnter={() => setTooltipDismissed(false)}><Link to="/alumnos/nuevo" className="icon-action" aria-labelledby={tooltipId} onFocus={() => setTooltipDismissed(false)} onKeyDown={e => { if (e.key === 'Escape') setTooltipDismissed(true); }}><NewStudentIcon/></Link><span id={tooltipId} role="tooltip" className="toolbar-tooltip" hidden={tooltipDismissed}>Nuevo Alumno</span></span></div><Message>{message}</Message><ul>{rows.map(r => <li key={r.id}><Link to={`/alumnos/${r.id}`}>{value(r, 'apellido_paterno')} {value(r, 'apellido_materno')}, {value(r, 'nombres')} — {value(r, 'numero_di')}</Link></li>)}</ul><button disabled={!page} onClick={() => setPage(page - 1)}>Anterior</button><button disabled={rows.length < 30} onClick={() => setPage(page + 1)}>Siguiente página</button></section>;
+    return <section><h2>Alumnos</h2><div className="filters students-toolbar" role="search" aria-label="Búsqueda de alumnos"><label className="student-search"><span className="field-label">Buscar alumnos</span><span className="search-input"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input type="search" placeholder="Documento o apellido paterno" value={search} onChange={e => { setSearch(formTextValue(e.currentTarget)); setPage(0); }}/></span></label>{canEdit && <span className="toolbar-action" onMouseEnter={() => setTooltipDismissed(false)}><Link to="/alumnos/nuevo" className="icon-action" aria-labelledby={tooltipId} onFocus={() => setTooltipDismissed(false)} onKeyDown={e => { if (e.key === 'Escape') setTooltipDismissed(true); }}><NewStudentIcon/></Link><span id={tooltipId} role="tooltip" className="toolbar-tooltip" hidden={tooltipDismissed}>Nuevo Alumno</span></span>}</div><Message>{message}</Message><div className="students-grid"><table aria-label="Alumnos por fecha de registro descendente"><thead><tr><th scope="col">Alumno</th><th scope="col">Documento</th><th scope="col">Registro ↓</th><th scope="col" className="student-actions-heading">Acciones</th></tr></thead><tbody>{rows.map(r => { const name = `${value(r, 'apellido_paterno')} ${value(r, 'apellido_materno')}, ${value(r, 'nombres')}`; return <tr key={r.id}><td><Link className="student-row-name" to={`/alumnos/${r.id}`}>{name}</Link></td><td className="student-row-document">{value(r, 'numero_di')}</td><td className="student-row-date">{r.created_at ? new Date(String(r.created_at)).toLocaleString('es-PE', { timeZone:'America/Lima', dateStyle:'short', timeStyle:'short' }) : '—'}</td><td><div className="student-row-actions"><StudentRowAction id={r.id} name={name} action="view"/>{canEdit && <StudentRowAction id={r.id} name={name} action="edit"/>}</div></td></tr>; })}</tbody></table></div><div className="student-list-pagination"><span>{rows.length ? `Página ${page + 1} · ${rows.length} alumnos` : `Página ${page + 1}`}</span><div className="pagination-actions"><button disabled={!page} onClick={() => setPage(page - 1)}>Anterior</button><button disabled={rows.length < 30} onClick={() => setPage(page + 1)}>Siguiente página</button></div></div></section>;
 }
 export function NewStudent() { const navigate = useNavigate(); return <StudentEditor done={r => navigate(`/alumnos/${r.id}`)} cancel={() => navigate('/alumnos')}/>; }
 export function StudentDetail() {
-    const { id } = useParams(), { client } = useSession(), { refs } = useReferences();
-    const [row, setRow] = useState<Row>(), [tab, setTab] = useState(0), [edit, setEdit] = useState(false), [contacts, setContacts] = useState<Row[]>([]), [enrollments, setEnrollments] = useState<Row[]>([]), [message, setMessage] = useState('Cargando…'), [revision, setRevision] = useState(0);
+    const { id } = useParams(), { client } = useSession(), { refs, error: referencesError } = useReferences();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [row, setRow] = useState<Row>(), [tab, setTab] = useState(1), [edit, setEdit] = useState(() => searchParams.get('editar') === '1'), [contacts, setContacts] = useState<Row[]>([]), [enrollments, setEnrollments] = useState<Row[]>([]), [message, setMessage] = useState('Cargando…'), [revision, setRevision] = useState(0);
     const [contact, setContact] = useState<Draft | null>(null), [contactRow, setContactRow] = useState<Row>(), [busy, setBusy] = useState(false);
     const { ask, dialog } = useConfirmation(busy);
     useEffect(() => {
@@ -235,10 +248,11 @@ export function StudentDetail() {
         } });
         return () => { active = false; };
     }, [client, id, revision]);
+    function closeEditor() { setEdit(false); if (searchParams.has('editar')) { const next = new URLSearchParams(searchParams); next.delete('editar'); setSearchParams(next, { replace: true }); } }
     if (edit && row)
-        return <StudentEditor initial={row} done={() => { setEdit(false); setRevision(revision + 1); }} cancel={() => setEdit(false)}/>;
-    const tabs = ['Resumen', 'Datos personales', 'Domicilio', 'Información adicional', 'Contactos', 'Matrículas'];
-    const display = (k: string) => k === 'ocupacion_id' ? occupationLabel(row, refs) : k in catalogFields ? value(refs.catalogo_valor?.find(v => v.id === row?.[k]), 'nombre') : /_(departamento|provincia|distrito)_id$/.test(k) ? value(refs[k.split('_').at(-2)!]?.find(v => v.id === row?.[k]), 'nombre') : value(row, k);
+        return <StudentEditor initial={row} initialStep={tab > 0 && tab < 4 ? tab - 1 : 0} done={() => { closeEditor(); setRevision(revision + 1); }} cancel={closeEditor}/>;
+    const tabs = ['Resumen', 'Identificación', 'Domicilio', 'Información adicional', 'Contactos', 'Matrículas'];
+
     async function saveContact() {
         if (!row || !contact)
             return;
@@ -252,19 +266,19 @@ export function StudentDetail() {
             setRevision(revision + 1);
         }
     }
-    return <section><h2>Ficha Alumno</h2><Message>{message}</Message>{row && <><h3>{value(row, 'nombres')} {value(row, 'apellido_paterno')}</h3><button onClick={() => setEdit(true)}>Completar / editar Alumno</button><div role="tablist" aria-label="Ficha Alumno">{tabs.map((name, i) => <button key={name} role="tab" id={`student-tab-${i}`} aria-controls={`student-panel-${i}`} aria-selected={tab === i} tabIndex={tab === i ? 0 : -1} onClick={() => setTab(i)} onKeyDown={e => { const n = e.key === 'ArrowRight' ? (i + 1) % 6 : e.key === 'ArrowLeft' ? (i + 5) % 6 : e.key === 'Home' ? 0 : e.key === 'End' ? 5 : -1; if (n >= 0) {
+    return <section className="student-detail"><EditorHeading>Ficha del alumno</EditorHeading><Message>{message || referencesError}</Message>{row && <><header className="student-detail-header"><div><h3>{value(row, 'apellido_paterno')} {value(row, 'apellido_materno')}, {value(row, 'nombres')}</h3><p>{value(refs.catalogo_valor?.find(v => v.id === row.tipo_di_id), 'nombre') || 'Documento'} · {value(row, 'numero_di')} · {ageAt(value(row, 'fecha_nacimiento')) || '—'} años</p><small>Consulta los datos registrados. Para modificarlos, selecciona Editar alumno.</small></div><button onClick={() => setEdit(true)}>Editar alumno</button></header><div className="student-section-tabs" role="tablist" aria-label="Ficha Alumno">{tabs.map((name, i) => <button key={name} role="tab" id={`student-tab-${i}`} aria-controls={`student-panel-${i}`} aria-selected={tab === i} tabIndex={tab === i ? 0 : -1} onClick={() => setTab(i)} onKeyDown={e => { const n = e.key === 'ArrowRight' ? (i + 1) % 6 : e.key === 'ArrowLeft' ? (i + 5) % 6 : e.key === 'Home' ? 0 : e.key === 'End' ? 5 : -1; if (n >= 0) {
             e.preventDefault();
             setTab(n);
             document.getElementById(`student-tab-${n}`)?.focus();
-        } }}>{name}</button>)}</div><div role="tabpanel" id={`student-panel-${tab}`} aria-labelledby={`student-tab-${tab}`}>
-    {tab === 0 && <><p>{value(row, 'numero_di')} — Edad: {ageAt(value(row, 'fecha_nacimiento'))}</p><p>{value(row, 'domicilio')}</p></>}
-    {tab > 0 && tab < 4 && <dl>{studentGroups[tab - 1].map(([k, l]) => <div key={k}><dt>{l}</dt><dd>{display(k) || 'Sin dato'}</dd></div>)}</dl>}
-    {tab === 4 && <><button onClick={() => { setContactRow(undefined); setContact({}); }}>Agregar contacto</button><ul>{contacts.map(c => <li key={c.id}>{value(c, 'apellido')} {value(c, 'nombre')} — {value(refs.catalogo_valor?.find(v => v.id === c.parentesco_id), 'nombre')} — {value(c, 'celular')} — {c.activo ? 'Activo' : 'Inactivo'}{c.activo === true && <><button onClick={() => { setContactRow(c); setContact(Object.fromEntries(contactFields.map(([k]) => [k, value(c, k)]))); }}>Editar contacto</button><button disabled={busy} onClick={() => { void (async () => { const ok = await ask({ title: 'Retirar contacto', description: 'El contacto quedará inactivo y su historia se conservará.' }); if (ok === null)
+        } }}>{name}</button>)}</div><div className="student-section-panel" role="tabpanel" tabIndex={0} id={`student-panel-${tab}`} aria-labelledby={`student-tab-${tab}`}><h3>{tabs[tab]}</h3>
+    {tab === 0 && <dl className="review-fields"><div><dt>Documento</dt><dd>{value(row, 'numero_di')}</dd></div><div><dt>Edad calculada</dt><dd>{ageAt(value(row, 'fecha_nacimiento')) || '—'} años</dd></div><div><dt>Contactos activos</dt><dd>{contacts.filter(c => c.activo === true).length}</dd></div><div className="review-wide"><dt>Domicilio</dt><dd>{value(row, 'domicilio') || 'No indicado'}</dd></div><div><dt>Matrículas registradas</dt><dd>{enrollments.length}</dd></div></dl>}
+    {tab > 0 && tab < 4 && <Fields fields={studentGroups[tab - 1]} draft={Object.fromEntries(Object.entries(row).map(([k, v]) => [k, v == null ? '' : String(v)]))} refs={refs} change={() => undefined} readOnly/>}
+    {tab === 4 && <>{!contacts.length && <p>No hay contactos registrados.</p>}<button onClick={() => { setContactRow(undefined); setContact({}); }}>Agregar contacto</button><ul>{contacts.map(c => <li key={c.id}>{value(c, 'apellido')} {value(c, 'nombre')} — {value(refs.catalogo_valor?.find(v => v.id === c.parentesco_id), 'nombre')} — {value(c, 'celular')} — {c.activo ? 'Activo' : 'Inactivo'}{c.activo === true && <><button onClick={() => { setContactRow(c); setContact(Object.fromEntries(contactFields.map(([k]) => [k, value(c, k)]))); }}>Editar contacto</button><button disabled={busy} onClick={() => { void (async () => { const ok = await ask({ title: 'Retirar contacto', description: 'El contacto quedará inactivo y su historia se conservará.' }); if (ok === null)
             return; setBusy(true); const r = await client.rpc('retirar_contacto_emergencia', { id: c.id, expected_alumno_updated_at: row.updated_at }); setBusy(false); if (r.error)
             setMessage(enrollmentError(r.error));
         else
             setRevision(revision + 1); })(); }}>Retirar</button></>}</li>)}</ul></>}
-    {tab === 5 && <ul>{enrollments.map(m => <li key={m.id}><Link to={`/matriculas/${m.id}`}>{value(m, 'codigo_matricula')}</Link> — {value(m, 'estado_codigo')}</li>)}</ul>}
+    {tab === 5 && <>{!enrollments.length && <p>No hay matrículas registradas.</p>}<ul>{enrollments.map(m => <li key={m.id}><Link to={`/matriculas/${m.id}`}>{value(m, 'codigo_matricula')}</Link> — {value(m, 'estado_codigo')}</li>)}</ul></>}
     </div></>}{contact && <ContactDialog close={() => { if (!busy)
         setContact(null); }}><InlineForm onSubmit={() => void saveContact()}><Fields fields={contactFields} draft={contact} change={(k, v) => setContact({ ...contact, [k]: v })} refs={refs}/><button disabled={busy}>Guardar contacto</button><button type="button" disabled={busy} onClick={() => setContact(null)}>Cancelar</button></InlineForm></ContactDialog>}{dialog}</section>;
 }

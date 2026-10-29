@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ageAt, enrollmentError, StudentEditor, OccupationField } from '../src/enrollment/EnrollmentPages';
-const { client } = vi.hoisted(() => ({ client: { from: vi.fn(), rpc: vi.fn() } }));
-vi.mock('../src/security/SessionProvider', () => ({ useSession: () => ({ client, state: { phase: 'authorized', roles: ['COORDINADOR_ACADEMICO'] } }) }));
-beforeEach(() => { client.from.mockImplementation(() => ({ select: () => ({ range: async () => ({ data: [], error: null }) }) })); client.rpc.mockReset(); });
+const { client, sessionState } = vi.hoisted(() => ({ client: { from: vi.fn(), rpc: vi.fn() }, sessionState: { phase: 'authorized', roles: ['COORDINADOR_ACADEMICO'] } }));
+vi.mock('../src/security/SessionProvider', () => ({ useSession: () => ({ client, state: sessionState }) }));
+beforeEach(() => { sessionState.roles = ['COORDINADOR_ACADEMICO']; client.from.mockImplementation(() => ({ select: () => ({ range: async () => ({ data: [], error: null }) }) })); client.rpc.mockReset(); });
 describe('H3 student flow and safe feedback', () => {
     it.each([['2000-10-23', '2026-10-22', '25'], ['2000-10-22', '2026-10-22', '26'], ['2000-10-21', '2026-10-22', '26'], ['', '2026-10-22', '']])('derives age without persistence for %s', (birth, today, expected) => expect(ageAt(birth, today)).toBe(expected));
     it('keeps business/SQL details out of errors and requires explicit reload', () => { expect(enrollmentError({ code: '40001' })).toContain('Recarga'); expect(enrollmentError({ code: '42501' })).toContain('permiso'); expect(enrollmentError({ code: '23505' })).toContain('registrado'); expect(enrollmentError(null)).not.toMatch(/SQL|JWT|token/); });
@@ -39,7 +39,7 @@ it('supports Tabs with arrows/Home/End and exposes the selected panel', async ()
     fireEvent.keyDown(screen.getByRole('tab', { name: 'Matrículas' }), { key: 'Home' });
     expect(summary).toHaveFocus();
     fireEvent.keyDown(summary, { key: 'ArrowRight' });
-    expect(screen.getByRole('tab', { name: 'Datos personales' })).toHaveFocus();
+    expect(screen.getByRole('tab', { name: 'Identificación' })).toHaveFocus();
     expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', 'student-tab-1');
 });
 it('returns from the new pupil flow to enrollment without losing its selected cycle', async () => {
@@ -250,4 +250,74 @@ it('places resizable three-line distinguishing marks last after occupation', asy
     expect(notes.tagName).toBe('TEXTAREA'); expect(notes).toHaveAttribute('rows','3'); expect(notes).toHaveAttribute('maxlength','500');
     expect(notes.closest('.form-grid')?.lastElementChild).toBe(notes.closest('label'));
     fireEvent.change(notes, { target: { value: 'cicatriz en brazo' } }); expect(notes).toHaveValue('CICATRIZ EN BRAZO');
+});
+
+it('shows the registered form read-only in section tabs and edits the current section', async () => {
+    const row = { id:'student', apellido_paterno:'ROBLES', apellido_materno:'CASTILLO', nombres:'PEDRO', numero_di:'01234987', tipo_di_id:'dni', sexo_id:'male', fecha_nacimiento:'1984-08-14', domicilio:'CALLE 1', ocupacion_id:'other', ocupacion:'SOLDADOR NAVAL', senas_particulares:'CICATRIZ EN BRAZO' };
+    const refs: Record<string, unknown[]> = { catalogo:[], catalogo_valor:[{ id:'dni', nombre:'DNI' },{ id:'male', nombre:'MASCULINO' },{ id:'other', codigo:'OTROS', nombre:'OTROS' }], departamento:[], provincia:[], distrito:[] };
+    client.from.mockImplementation((table: string) => table in refs ? { select: () => ({ range: async () => ({ data:refs[table], error:null }) }) } : resultQuery(table === 'alumno' ? row : []));
+    render(<MemoryRouter><StudentDetail/></MemoryRouter>);
+    const identification = await screen.findByRole('tab', { name:'Identificación' });
+    expect(identification).toHaveAttribute('aria-selected','true');
+    expect(screen.getByRole('heading', { name:'ROBLES CASTILLO, PEDRO' })).toBeInTheDocument();
+    const document = screen.getByRole('textbox', { name:'Número DI' });
+    expect(document).toHaveValue('01234987'); expect(document).toHaveAttribute('readonly');
+    await waitFor(() => expect(screen.getByRole('textbox', { name:'Sexo' })).toHaveValue('MASCULINO'));
+    expect(screen.getByRole('textbox', { name:'Fecha de nacimiento' })).toHaveValue('14/08/1984');
+    fireEvent.click(screen.getByRole('tab', { name:'Información adicional' }));
+    expect(screen.getByRole('textbox', { name:'Ocupación' })).toHaveValue('OTROS — SOLDADOR NAVAL');
+    expect(screen.getByRole('textbox', { name:'Señas particulares' })).toHaveAttribute('rows','3');
+    fireEvent.click(screen.getByRole('tab', { name:'Domicilio' }));
+    expect(screen.getByRole('textbox', { name:'Domicilio' })).toHaveValue('CALLE 1');
+    fireEvent.click(screen.getByRole('button', { name:'Editar alumno' }));
+    expect(screen.getByRole('textbox', { name:/^Domicilio/ })).not.toHaveAttribute('readonly');
+    fireEvent.click(screen.getByRole('button', { name:'Cancelar' }));
+    expect(screen.getByRole('tab', { name:'Domicilio' })).toHaveAttribute('aria-selected','true');
+    expect(screen.getByRole('textbox', { name:'Domicilio' })).toHaveAttribute('readonly');
+    fireEvent.click(screen.getByRole('tab', { name:'Contactos' }));
+    expect(screen.getByText('No hay contactos registrados.')).toBeVisible();
+    fireEvent.click(screen.getByRole('tab', { name:'Matrículas' }));
+    expect(screen.getByText('No hay matrículas registradas.')).toBeVisible();
+    expect(client.rpc).not.toHaveBeenCalled();
+});
+
+it('lists pupils in compact rows with view/edit actions and newest-first pagination/search', async () => {
+    const rows = Array.from({ length:30 }, (_,i) => ({ id:`s${i}`, apellido_paterno:`APELLIDO${i}`, apellido_materno:'PRUEBA', nombres:'ALUMNO', numero_di:`000000${String(i).padStart(2,'0')}`, created_at:'2026-10-28T16:00:00Z' }));
+    const order = vi.fn(), range = vi.fn(), filter = vi.fn();
+    const q = { select:()=>q, order:(...args:unknown[])=>{order(...args);return q}, range:(...args:unknown[])=>{range(...args);return q}, ilike:(...args:unknown[])=>{filter(...args);return q}, then:(resolve:(r:{data:unknown[];error:null})=>unknown)=>Promise.resolve({data:rows,error:null}).then(resolve) };
+    client.from.mockReturnValue(q);
+    render(<MemoryRouter><Students/></MemoryRouter>);
+    const table = await screen.findByRole('table', { name:'Alumnos por fecha de registro descendente' });
+    await waitFor(()=>expect(within(table).getAllByRole('row')).toHaveLength(31));
+    expect(order).toHaveBeenCalledWith('created_at',{ascending:false});
+    expect(order).toHaveBeenCalledWith('id',{ascending:false});
+    expect(screen.getByRole('link',{name:'Ver alumno: APELLIDO0 PRUEBA, ALUMNO'})).toHaveAttribute('href','/alumnos/s0');
+    expect(screen.getByRole('link',{name:'Editar alumno: APELLIDO0 PRUEBA, ALUMNO'})).toHaveAttribute('href','/alumnos/s0?editar=1');
+    expect(within(table).getAllByRole('cell')[1]).toHaveTextContent('00000000');
+    fireEvent.click(screen.getByRole('button',{name:'Siguiente página'}));
+    await waitFor(()=>expect(range).toHaveBeenCalledWith(30,59));
+    fireEvent.change(screen.getByRole('searchbox'),{target:{value:'robles'}});
+    await waitFor(()=>expect(filter).toHaveBeenCalledWith('apellido_paterno','%ROBLES%'));
+    expect(range).toHaveBeenLastCalledWith(0,29);
+    expect(client.rpc).not.toHaveBeenCalled();
+});
+it('does not offer creation or edit when the existing academic editing roles are absent', async () => {
+    sessionState.roles = [];
+    const q = { select:()=>q, order:()=>q, range:()=>q, then:(resolve:(r:{data:unknown[];error:null})=>unknown)=>Promise.resolve({data:[{id:'s',nombres:'PRUEBA'}],error:null}).then(resolve) };
+    client.from.mockReturnValue(q);
+    render(<MemoryRouter><Students/></MemoryRouter>);
+    await screen.findByRole('link',{name:/Ver alumno:/});
+    expect(screen.queryByRole('link',{name:/Editar alumno:/})).not.toBeInTheDocument();
+    expect(screen.queryByRole('link',{name:'Nuevo Alumno'})).not.toBeInTheDocument();
+});
+it('opens the editor from the list edit link and cancel returns to consultation', async () => {
+    const refs = ['catalogo','catalogo_valor','departamento','provincia','distrito'];
+    client.from.mockImplementation((table:string)=>refs.includes(table) ? {select:()=>({range:async()=>({data:[],error:null})})} : resultQuery(table==='alumno'?{id:'s',nombres:'PRUEBA',apellido_paterno:'ALUMNO'}:[]));
+    render(<MemoryRouter initialEntries={['/alumnos/s?editar=1']}><StudentDetail/></MemoryRouter>);
+    await screen.findByRole('heading',{name:'Editar Alumno'});
+    expect(screen.getByRole('textbox',{name:/Apellido paterno/})).not.toHaveAttribute('readonly');
+    fireEvent.click(screen.getByRole('button',{name:'Cancelar'}));
+    expect(screen.getByRole('heading',{name:'Ficha del alumno'})).toBeInTheDocument();
+    expect(screen.getByRole('textbox',{name:'Apellido paterno'})).toHaveAttribute('readonly');
+    expect(client.rpc).not.toHaveBeenCalled();
 });
