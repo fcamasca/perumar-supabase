@@ -4,6 +4,8 @@ Fecha de solicitud e implementación: 28/10/2026 (America/Lima). Formalización 
 
 **CHG-H3-001: CAMBIO AUTORIZADO POR SOLICITUD HUMANA, IMPLEMENTADO; PRUEBAS HUMANAS Y GATE 2 PENDIENTES.**
 
+La búsqueda personalizada se sustituye por un combo nativo según la decisión humana del 29/10/2026 registrada al final de este documento. El resto de la enmienda se conserva.
+
 ## Base y autoridad
 
 El [registro de Gate 1](gate-1.md) aprueba exclusivamente el Spec del SHA `551cd00ed2957178400dca8fe9d945cf3f9e8d20`. Esa base contemplaba ocupación opcional, pero no incluía OCUPACION entre los ocho catálogos acordados ni el selector con OTROS. Por tanto, convertir Ocupación a referencia de catálogo constituye una enmienda funcional posterior; no se atribuye retrospectivamente al Gate 1 original.
@@ -52,3 +54,8 @@ Pendiente de comprobación humana: búsqueda y selección con ratón/teclado, OT
 Se conserva React + Supabase/PostgreSQL + RLS + constraints + RPC concretas. Se mantienen autorización DB, auditoría sin copia genérica de PII, concurrencia optimista, conflictos explícitos y ausencia de retries silenciosos. No se amplían permisos ni decisiones de matrícula/cargos, no se modifica H4+, y EVOL-001/002 continúan excluidas.
 
 Esta enmienda no reemite ni amplía retrospectivamente la aprobación original de Gate 1, no crea `acceptance.md`, no aprueba Gate 2 y no autoriza merge a main. La entrega H3 continúa pendiente de pruebas humanas y Gate 2, incluyendo esta enmienda.
+
+
+## Ajuste posterior de interfaz — 29/10/2026
+
+Instrucción humana explícita: «dejalo como combo quita el q busque». Esta decisión posterior sustituye exclusivamente la búsqueda por escritura del selector personalizado descrita arriba: Ocupación usa un select nativo, sin filtro/buscador ni lista emergente controlada por React. OTROS conserva la primera posición de las opciones de negocio; el placeholder sin valor permite mantener el campo opcional. OTROS sigue exigiendo detalle y se conservan catálogo, UUID, validación servidor, límites, legado y snapshot. No hay migración ni cambio de contrato RPC. La solicitud actualiza la interfaz de CHG-H3-001, sin atribuirla al Gate 1 original ni aprobar Gate 2.

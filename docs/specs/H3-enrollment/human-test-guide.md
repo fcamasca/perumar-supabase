@@ -26,3 +26,6 @@ Pendiente de ejecución humana sobre el candidato correspondiente, dentro de TES
 - En Contactos comprobar todas las columnas, tooltips/foco de acciones a la derecha, edición validada y Retirar con confirmación sin borrar historia. Inactivos sin acciones de modificación. Con edición de Alumno pendiente, consultar contactos sin modificarlos hasta guardar/cancelar.
 - En Nuevo Alumno, agregar varios contactos a la misma grilla, editar uno, cancelar otra edición y quitar uno. Estado Por guardar; no deben persistir hasta Guardar final. Revisar debe reflejar la lista final. Comprobar Aplicar cambios y revisar y la ayuda que aclara conservación sin guardado inmediato.
 - Revisar tablas, formularios y diálogos en móvil/escritorio, cuatro temas y forced-colors; comprobar scroll horizontal y que no se oculten datos/acciones de Contactos. No marcar como PASSED sin ensayo real.
+
+
+Actualización humana del 29/10/2026: Ocupación usa combo nativo sin búsqueda personalizada. Ensayar apertura, desplazamiento y selección con ratón/teclado; OTROS primero entre valores, opción vacía permitida y detalle obligatorio solo para OTROS. La búsqueda mencionada en evidencias anteriores queda sustituida por esta instrucción posterior.

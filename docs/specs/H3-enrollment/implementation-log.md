@@ -135,3 +135,10 @@ Validación: lint, typecheck, 178 tests unitarios, build y diff --check. Regresi
 Reporte humano: el combo se cerraba al hacer clic/arrastrar su scrollbar. Causa: el onBlur del input cerraba incondicionalmente la lista, incluyendo blur del control nativo de scroll. La lista permanece abierta al perder foco hacia ningún control o body/documentElement; no se cancela el gesto nativo de la barra. Se cierra al elegir, hacer pointerdown fuera del contenedor, Tab/Escape o mover foco a otro control. El listener exterior existe solo mientras la lista está abierta y se retira al cerrar/desmontar.
 
 Verificación: lint, typecheck, 180 pruebas unitarias, build y diff --check. Regresión reproduce pointerdown sobre la lista, blur sin destino/body y scroll/move/up antes de seleccionar; comprueba también cierre exterior, Tab, Escape y foco a otro control. Se conservan catálogo, validación de selección y OTROS. Sin cambios DB, Spec o Gates. Ensayo humano con scrollbar nativo pendiente de confirmación visual.
+
+
+## 2026-10-29 — Ocupación como combo nativo por decisión humana
+
+El usuario informó que el problema de la barra seguía presente y finalmente pidió explícitamente quitar la búsqueda y dejar un combo normal. Se reemplaza OccupationField por select nativo: desaparecen popup/listbox personalizado, filtro, control de apertura/cierre, handlers blur/pointer/teclado y CSS asociados. OTROS primero entre valores del catálogo, selección vacía opcional, detalle obligatorio en mayúsculas hasta 150 si OTROS. Cambiar a otra opción limpia el detalle; una selección histórica inactiva sigue visible y deshabilitada, sin ofrecerla como valor nuevo. Sin cambios DB/RPC/validación servidor ni pérdida de referencias existentes.
+
+CHG-H3-001 registra la decisión posterior que sustituye solo la búsqueda; Spec histórico/Gates intactos. Lint, typecheck, 179 tests unitarios, build y diff --check correctos. Las pruebas de popup personalizado se sustituyen por selección nativa, orden, opcionalidad, UUID/etiqueta, detalle OTROS y vigencia. No se atribuye una prueba visual de la scrollbar nativa a esta ejecución; continúa la revisión humana.

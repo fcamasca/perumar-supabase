@@ -214,66 +214,42 @@ it('reviews existing contacts read-only without pretending they are missing or r
 })
 
 describe('occupation catalog entry', () => {
-    const options = [{ id: 'other', codigo: 'OTROS', nombre: 'OTROS', orden: 0 }, { id: 'mechanic', codigo: 'MECANICO', nombre: 'MECÁNICO', orden: 1 }, { id: 'inactive', codigo: 'OLD', nombre: 'INACTIVO', activo: false }];
+    const options = [{ id:'mechanic',codigo:'MECANICO',nombre:'MECÁNICO',orden:1 }, { id:'other',codigo:'OTROS',nombre:'OTROS',orden:0 }, { id:'inactive',codigo:'OLD',nombre:'INACTIVO',activo:false }];
     function Form() {
-        const [draft, setDraft] = useState<Record<string, string>>({});
-        return <form><OccupationField draft={draft} change={(key, text) => setDraft(d => ({ ...d, [key]: text }))} options={options}/><output data-testid="draft">{JSON.stringify(draft)}</output></form>;
+        const [draft,setDraft] = useState<Record<string,string>>({});
+        return <form><OccupationField draft={draft} change={(key,text)=>setDraft(d=>({...d,[key]:text}))} options={options}/><output data-testid="draft">{JSON.stringify(draft)}</output></form>;
     }
-    it('filters without accents, supports keyboard selection and stores catalog identity', () => {
-        render(<Form/>); const input = screen.getByRole('combobox', { name: 'Ocupación' });
-        fireEvent.focus(input);
-        expect(screen.getAllByRole('option')[0]).toHaveTextContent('OTROS');
-        expect(screen.queryByRole('option', { name: 'INACTIVO' })).not.toBeInTheDocument();
-        fireEvent.change(input, { target: { value: 'mecan' } });
-        expect(input).toHaveValue('MECAN'); expect(input).toBeInvalid();
-        expect(screen.getAllByRole('option')).toHaveLength(1);
-        fireEvent.keyDown(input, { key: 'Enter' });
-        expect(input).toHaveValue('MECÁNICO'); expect(input).toBeValid();
-        expect(screen.getByTestId('draft')).toHaveTextContent('"ocupacion_id":"mechanic"');
-        expect(screen.queryByLabelText('Especifica la ocupación *')).not.toBeInTheDocument();
-    });
-    it('keeps the list open while its scrollbar blurs the input and still permits selection', () => {
+    it('uses an optional native select with OTROS first and stores catalog identity without a search field',()=>{
         render(<Form/>);
-        const input = screen.getByRole('combobox', { name:'Ocupación' });
-        fireEvent.focus(input);
-        const list = screen.getByRole('listbox', { name:'Ocupaciones' });
-        // Do not cancel the native scrollbar pointer gesture.
-        expect(fireEvent.pointerDown(list)).toBe(true);
-        fireEvent.blur(input, { relatedTarget:null });
-        fireEvent.blur(input, { relatedTarget:document.body });
-        fireEvent.pointerMove(list); fireEvent.scroll(list, { target:{scrollTop:100} }); fireEvent.pointerUp(list);
-        expect(screen.getByRole('listbox')).toBe(list);
-        expect(input).toHaveAttribute('aria-expanded','true');
-        fireEvent.click(screen.getByRole('option', { name:'MECÁNICO' }));
-        expect(input).toHaveValue('MECÁNICO');
-        expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+        const combo=screen.getByRole('combobox',{name:'Ocupación'});
+        expect(combo.tagName).toBe('SELECT');expect(combo).not.toBeRequired();
+        expect(combo).toHaveValue('');
+        expect(screen.getAllByRole('option')[1]).toHaveTextContent('OTROS');
+        expect(screen.queryByRole('option',{name:'INACTIVO'})).not.toBeInTheDocument();
+        expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+        fireEvent.change(combo,{target:{value:'mechanic'}});
+        expect(combo).toHaveValue('mechanic');
         expect(screen.getByTestId('draft')).toHaveTextContent('"ocupacion_id":"mechanic"');
+        expect(screen.getByTestId('draft')).toHaveTextContent('"ocupacion":"MECÁNICO"');
+        fireEvent.change(combo,{target:{value:''}});
+        expect(screen.getByTestId('draft')).toHaveTextContent('"ocupacion_id":""');
     });
-    it('closes for outside interaction, Tab, Escape and focus moving to another control', () => {
+    it('requires uppercase custom detail for OTROS and clears it when another occupation is selected',()=>{
         render(<Form/>);
-        const input = screen.getByRole('combobox');
-        fireEvent.focus(input); fireEvent.pointerDown(document.body);
-        expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
-        fireEvent.focus(input); fireEvent.keyDown(input, { key:'Tab' });
-        expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
-        fireEvent.focus(input); fireEvent.change(input,{target:{value:'mec'}});
-        fireEvent.keyDown(input, { key:'Escape' });
-        expect(input).toHaveValue(''); expect(input).toBeValid();
-        expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
-        fireEvent.focus(input);
-        fireEvent.blur(input, { relatedTarget:screen.getByTestId('draft') });
-        expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
-    });
-    it('requires a separate uppercase detail for OTROS and clears it when changing selection', () => {
-        render(<Form/>); const input = screen.getByRole('combobox'); fireEvent.focus(input);
-        fireEvent.click(screen.getByRole('option', { name: 'OTROS' }));
-        const detail = screen.getByRole('textbox', { name: 'Especifica la ocupación *' });
-        expect(detail).toBeRequired(); expect(detail).toBeInvalid();
-        fireEvent.change(detail, { target: { value: 'soldador naval' } });
+        const combo=screen.getByRole('combobox',{name:'Ocupación'});
+        fireEvent.change(combo,{target:{value:'other'}});
+        const detail=screen.getByRole('textbox',{name:'Especifica la ocupación *'});
+        expect(detail).toBeRequired();expect(detail).toBeInvalid();expect(detail).toHaveAttribute('maxlength','150');
+        fireEvent.change(detail,{target:{value:'soldador naval'}});
         expect(detail).toHaveValue('SOLDADOR NAVAL');
-        fireEvent.focus(input); fireEvent.change(input, { target: { value: 'mec' } });
-        fireEvent.click(screen.getByRole('option', { name: 'MECÁNICO' }));
+        fireEvent.change(combo,{target:{value:'mechanic'}});
+        expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
         expect(screen.getByTestId('draft')).not.toHaveTextContent('SOLDADOR');
+    });
+    it('displays an existing inactive selection without allowing it as a new choice',()=>{
+        render(<OccupationField draft={{ocupacion_id:'inactive',ocupacion:'LEGADO'}} change={vi.fn()} options={options}/>);
+        expect(screen.getByRole('combobox')).toHaveValue('inactive');
+        expect(screen.getByRole('option',{name:'INACTIVO (inactivo)'})).toBeDisabled();
     });
 });
 
