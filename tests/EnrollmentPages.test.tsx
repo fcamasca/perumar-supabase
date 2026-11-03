@@ -745,9 +745,9 @@ it('Director explicitly opens discount, cancels without writing, and applies wit
  sessionState.roles=['DIRECTOR_ACADEMICO'];showIndividualEnrollment(true,[{id:'fee',activo:true,tipo:'CARRERA',descuento:10,importe_original:100,importe_final:90}]);
  await screen.findByRole('button',{name:'Guardar código'});fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));
  expect(screen.queryByRole('spinbutton',{name:'Nuevo descuento Carrera (S/)'})).not.toBeInTheDocument();
- fireEvent.click(screen.getByRole('button',{name:'Modificar descuento'}));expect(screen.getByRole('spinbutton')).toHaveValue(10);
+ fireEvent.click(screen.getByRole('button',{name:'Modificar descuento'}));expect(screen.getByRole('dialog',{name:'Descuento de matrícula'})).toBeVisible();expect(screen.getByRole('spinbutton')).toHaveValue(10);
  fireEvent.change(screen.getByRole('spinbutton'),{target:{value:'20'}});fireEvent.click(screen.getByRole('button',{name:'Cancelar descuento'}));expect(client.rpc).not.toHaveBeenCalled();
- fireEvent.click(screen.getByRole('button',{name:'Modificar descuento'}));expect(screen.getByRole('spinbutton')).toHaveValue(10);
+ fireEvent.click(screen.getByRole('button',{name:'Modificar descuento'}));expect(screen.getByRole('dialog',{name:'Descuento de matrícula'})).toBeVisible();expect(screen.getByRole('spinbutton')).toHaveValue(10);
  fireEvent.change(screen.getByRole('spinbutton'),{target:{value:'20'}});fireEvent.change(screen.getByLabelText('Motivo (sin datos personales)'),{target:{value:'AUTORIZADO'}});
  client.rpc.mockResolvedValue({data:{id:'m1'},error:null});fireEvent.click(screen.getByRole('button',{name:'Aplicar'}));
  await waitFor(()=>expect(client.rpc).toHaveBeenCalledExactlyOnceWith('editar_matricula',{p:{id:'m1',expected_updated_at:'mv1',descuento:'20',motivo_descuento:'AUTORIZADO'}}));
@@ -779,4 +779,12 @@ it('uses one compact charge grid, selected defaults and updates totals when opti
  expect(optional).toBeChecked();expect(screen.getByRole('checkbox',{name:'Incluir CURSO'})).toBeDisabled();expect(grid.querySelector('tfoot')).toHaveTextContent('S/122.00DescuentoS/10.00TotalS/112.00');
  fireEvent.click(optional);expect(grid.querySelector('tfoot')).toHaveTextContent('S/100.00DescuentoS/10.00TotalS/90.00');expect(client.rpc).not.toHaveBeenCalled();
  client.rpc.mockResolvedValue({data:{id:'m1'},error:null});fireEvent.click(screen.getByRole('button',{name:'Guardar cargos'}));await waitFor(()=>expect(client.rpc).toHaveBeenCalledExactlyOnceWith('editar_matricula',{p:{id:'m1',expected_updated_at:'mv1',ciclo_id:'c1',expected_ciclo_updated_at:'cv1'},opcionales:[]}));
+});
+
+it('discount modal preserves input on conflict and blocks cancellation while submitting',async()=>{
+ sessionState.roles=['DIRECTOR_ACADEMICO'];showIndividualEnrollment(true,[{id:'fee',activo:true,tipo:'CARRERA',descuento:0,importe_original:100,importe_final:100}]);await screen.findByRole('button',{name:'Guardar código'});fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));const opener=screen.getByRole('button',{name:'Aplicar descuento'});opener.focus();fireEvent.click(opener);
+ const dialog=screen.getByRole('dialog',{name:'Descuento de matrícula'});fireEvent.change(within(dialog).getByRole('spinbutton'),{target:{value:'15'}});fireEvent.change(within(dialog).getByLabelText('Motivo (sin datos personales)'),{target:{value:'AUTORIZADO'}});
+ let finish:(r:unknown)=>void=()=>{};client.rpc.mockReturnValue(new Promise(resolve=>{finish=resolve}));fireEvent.click(within(dialog).getByRole('button',{name:'Aplicar'}));expect(within(dialog).getByRole('button',{name:'Cancelar descuento'})).toBeDisabled();fireEvent.keyDown(dialog,{key:'Escape'});expect(dialog).toBeVisible();
+ await act(async()=>finish({error:{code:'40001'}}));expect(within(dialog).getByRole('alert')).toHaveTextContent('La información cambió');expect(within(dialog).getByRole('spinbutton')).toHaveValue(15);expect(client.rpc).toHaveBeenCalledTimes(1);
+ fireEvent.keyDown(dialog,{key:'Escape'});expect(screen.queryByRole('dialog',{name:'Descuento de matrícula'})).not.toBeInTheDocument();expect(opener).toHaveFocus();
 });

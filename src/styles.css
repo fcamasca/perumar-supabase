@@ -466,3 +466,5 @@ form.enrollment-detail-form { max-width:none; margin:1rem 0 0; padding:1rem 0 0;
 .enrollment-detail .enrollment-charges-grid tfoot td,
 .enrollment-saved-charges :is(th,td):nth-child(n+2):nth-child(-n+4),
 .enrollment-charge-totals dd { text-align:right; font-variant-numeric:tabular-nums; }
+
+.enrollment-charge-actions { justify-content:space-between; }

@@ -303,3 +303,8 @@ Validación Cargos: lint, typecheck, 265 pruebas en 16 archivos, build y git dif
 UX 03/11/2026: traslado de matrícula como acción Cambiar Ciclo en grilla, con diálogo específico y RPC editar_matricula existente. Se elimina selector/consulta de destinos de la ficha Cargos, que guarda únicamente conceptos del Ciclo actual. Versiones, terminalidad, historia y reinicio de descuento conservados. Diálogo bloquea cierre durante transacción, recarga grilla tras éxito y trata respuesta incierta sin retry. Sin SQL, nuevas tablas/RPC ni cambio del Spec aprobado; precisión registrada en CHG-H3-006.
 
 Validación traslado: lint, typecheck, 268 pruebas en 16 archivos, build y diff --check correctos. Casos nuevos: diálogo desde grilla, exclusión Ciclo actual, confirmación con versiones sin descuento/código enviados, actualización de origen, conflicto sin retry, ausencia para anuladas y bloqueo por borrador. Pruebas humanas y Gate 2 pendientes.
+
+
+UX 03/11/2026: Aplicar/Modificar descuento abre modal centrado reutilizando el diálogo existente, con importe vigente, motivo y Cancelar/Aplicar. Botón en misma fila que Guardar cargos, al extremo derecho de la tabla. Conserva rol Director y bloqueo por cargos pendientes; Escape/cancelación bloqueados durante RPC, error visible dentro del modal y conflicto conserva borrador sin retry. Sin SQL ni cambios funcionales del Spec.
+
+Validación modal: lint, typecheck, 55 pruebas de EnrollmentPages, build y git diff --check correctos. Incluye apertura/cancelación, payload con versión, bloqueo de cierre durante RPC, conflicto visible con borrador conservado y restauración de foco. Revisión visual humana y Gate 2 pendientes.

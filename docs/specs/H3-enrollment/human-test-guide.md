@@ -116,3 +116,5 @@ Cargos individuales: Editar/Cargos muestra una sola grilla con todas las tarifas
 
 
 Ubicación vigente del traslado: desde Ciclo/Matrículas, acción Cambiar Ciclo de una matrícula activa (sustituye la ubicación previa en Cargos). Elegir otro Ciclo elegible y confirmar: conserva código/historial, reinicia descuento y crea obligatorios del destino. Revisar grilla origen/destino y completar opcionales después desde Cargos. Cancelar sin escritura, conflicto conserva selección sin retry, cierre bloqueado durante operación y respuesta incierta obliga a consultar. Anuladas/terminales/roles no autorizados sin acción; borrador del Ciclo bloquea apertura.
+
+Descuento: acción al extremo derecho de la fila Guardar cargos. Abre modal centrado; verificar importe/motivo, Cancelar/Escape sin escritura y foco de regreso. Durante guardado no cerrar; error/conflicto se muestra dentro y conserva datos. Solo éxito cierra y actualiza cargos.
