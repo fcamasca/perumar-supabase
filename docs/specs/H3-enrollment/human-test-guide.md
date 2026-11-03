@@ -32,3 +32,14 @@ Actualización humana del 29/10/2026: Ocupación usa combo nativo sin búsqueda 
 
 
 Empresa patrocinadora (ajuste de interfaz 29/10/2026): comparar barra/lupa, Nuevo con tooltip y grilla/acciones con Alumnos; comprobar búsqueda por RUC/razón social, orden reciente primero y paginación. Ensayar Ver sin escritura, Editar/Cancelar/Guardar con concurrencia y roles existentes. Desde Matrícula comprobar Elegir empresa, Sin patrocinador y selección automática tras guardar empresa. Revisar scroll horizontal, tooltips y teclado en móvil/escritorio y los temas, sin dar por ejecutada la revisión humana por las pruebas DOM.
+
+
+## Regresión de interfaz académica estandarizada — 02/11/2026
+
+Ensayo humano pendiente sobre el candidato H3; conserva las decisiones y aceptación históricas de H2:
+
+- Materias/Carreras/Ciclos: comparar barra con lupa, filtros, crear/recargar, iconos/tooltips, grilla y navegación con Alumno/Empresa. Recorrer más de 30 registros, filtrar desde otra página y volver desde una ficha conservando el contexto. Recargar no debe estar disponible mientras se edita.
+- Ver oculta la lista y muestra la misma distribución que Editar, con Volver arriba. Consultar como Coordinador Materia/Carrera sin controles de mantenimiento; Director debe conservar inactivación/reactivación con confirmación/motivo y las restricciones académicas.
+- Carrera: Datos generales/Materias con ratón y flechas/Home/End. Cambiar campos y selección, filtrar materias y volver sin pérdida; guardar con un obligatorio inválido en otra pestaña debe revelar y enfocar el campo. Verificar carga fallida de asociaciones antes de permitir guardado.
+- Ciclo: Datos/Materias/Estado; fechas legibles; origen/historia de materias. Director y Coordinador editan solo estados permitidos; solo Director cambia estado. No ofrecer edición/reapertura a terminales. Con borrador pendiente, conservarlo y pedir guardar/cancelar antes de cambiar una relación o el estado; cancelar debe seguir accesible.
+- Regresión de confirmaciones de cambio de Carrera/sigla/estado y retiro/reactivación; verificar conflictos explícitos sin retries ni pérdida del borrador. Ensayar tamaños móvil/escritorio, cuatro temas y forced-colors, especialmente scroll de tablas, tooltips, foco y campos readOnly.
