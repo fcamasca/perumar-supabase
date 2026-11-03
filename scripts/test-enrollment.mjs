@@ -116,9 +116,10 @@ try {
     });
     await scenario('TEST-H3-010-011 snapshot-historia-auditoria', async () => {
         const shot = JSON.stringify(reg.alumno_snapshot);
-        const { id, updated_at, created_at, ...data } = a;
+        const { id, updated_at, created_at, codigo_alumno, ...data } = a;
         void created_at;
         a = await rpc(O, 'guardar_alumno', { p: Object.fromEntries(Object.entries({ ...data, id, expected_updated_at: updated_at, nombres: 'Cambio' }).map(([k, v]) => [k, v === null ? null : String(v)])) });
+        assert.equal(a.codigo_alumno, codigo_alumno);
         inspectDatabase("update public.catalogo_valor set nombre='ETIQUETA_MODIFICADA' where id=:'value'::uuid;", { value: cat.COLOR_OJOS });
         assert.equal(JSON.stringify((await byId('matricula', reg.id)).alumno_snapshot), shot);
         const audit = await rows('auditoria');
