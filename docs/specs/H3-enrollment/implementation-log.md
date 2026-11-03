@@ -216,3 +216,6 @@ Ajuste UX 02/11/2026: altas/ediciones guardadas correctamente de Materia, Carrer
 
 
 Ajuste visual 02/11/2026: selector Materias de Carrera con filas compactas, nombre y estado en la misma línea cuando hay espacio, menor padding y altura mínima 2.5rem. Conserva selección por checkbox/fila, resaltado, buscador y wrap en espacios estrechos. Sin cambios funcionales.
+
+
+Ajuste visual 02/11/2026: Datos del Ciclo ordena Carrera/Nombre de promoción en primera fila e Inicio/Fin en segunda, seguido de Ubicación. Se elimina el subtítulo redundante Datos principales y la ayuda repetitiva de longitud para Promoción; conserva límite 150. Panel, separaciones y footer compactos; campos de fecha alineados al ancho de su columna, con una columna en móvil. Mismo orden en consulta/edición y reglas/validaciones intactas.

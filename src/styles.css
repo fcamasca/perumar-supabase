@@ -370,3 +370,13 @@ form.academic-record-form { max-width:none; padding:0; margin:0; background:tran
 .career-record .subject-options label { min-height:2.5rem; padding:.35rem .65rem; gap:.65rem; border-inline-start-width:4px; }
 .career-record .subject-options label > span { display:flex; align-items:center; justify-content:space-between; flex:1; flex-wrap:wrap; gap:.2rem .75rem; min-width:0; overflow-wrap:anywhere; }
 .career-record .subject-options small { margin:0; flex-shrink:0; }
+
+/* Cycle data: two compact rows for identity/dates, followed by location. */
+.cycle-record .academic-record-heading { margin-top:.75rem; margin-bottom:.75rem; }
+.cycle-record .cycle-data-panel { padding:1rem; }
+.cycle-record .cycle-data { gap:.75rem; }
+.cycle-record .cycle-data > legend { margin-bottom:.5rem; }
+.cycle-record .cycle-data > .academic-fields { padding:0; border:0; gap:.65rem 1.25rem; }
+.cycle-record .cycle-data > .academic-fields + .academic-fields { padding-top:.5rem; }
+.cycle-record .academic-fields > label { width:100%; max-width:none; }
+.cycle-record .academic-record-form > .form-actions { padding:.75rem 1rem; }
