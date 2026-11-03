@@ -108,3 +108,5 @@ Descuento en ficha de matrícula: Director abre Editar/Cargos y pulsa Aplicar de
 
 
 Agregar alumnos: resultados muestran Alumno con formato APELLIDO PATERNO APELLIDO MATERNO, NOMBRES y DI. Probar rechazo por contacto ausente/inactivo y por tarifa Carrera obligatoria ausente: cada caso debe indicar la causa, conservar resultados y no crear matrícula parcial.
+
+Contactos desde Completar ficha de matrícula: abrir Contactos y Agregar sin tener que salir del modo edición si no hay cambios pendientes. Guardar contacto debe actualizar grilla; después editar/guardar alumno sin conflicto por la versión del propio contacto. Si se cambió un dato del alumno sin guardar, Contactos informa el bloqueo y conserva borrador. Conflictos externos siguen explícitos.

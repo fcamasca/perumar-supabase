@@ -288,3 +288,8 @@ Ajuste UX 03/11/2026: búsqueda para agregar matrículas presenta tabla Alumno (
 Validación: lint, typecheck, 263 pruebas en 16 archivos, build y git diff --check correctos. Una primera ejecución tuvo un timeout de una prueba previa de carga de Tarifas; la repetición completa pasó. Tabla del buscador sin ancho mínimo global, DI compacto y acción Agregar con ancho propio/texto sin salto. Revisión visual humana y Gate 2 pendientes.
 
 Precisión humana: resultados incluyen Tipo DI obtenido de catalogo_valor mediante la FK existente y número con ancho de unos 20 caracteres en escritorio; panel ampliado, adaptación móvil y botón Agregar sin partir texto. Sin cambios DB.
+
+
+Corrección UX 03/11/2026: Contactos ya no se bloquea únicamente por abrir Editar alumno (incluido retorno desde matrícula). Permite alta/edición/retiro cuando la ficha no tiene cambios pendientes. Si hay borrador real, explica que debe guardarse/cancelarse antes de la operación independiente. Tras guardar/retirar contacto recarga ficha y versión del alumno antes de seguir editando, evitando conflicto por la propia actualización del contacto. RPC y conflictos DB permanecen intactos; sin cambios SQL.
+
+Validación: lint, typecheck, 53 pruebas de EnrollmentPages (incluido alta de contacto en modo edición y guardado posterior con versión actualizada), build y diff --check correctos. Revisión humana y Gate 2 pendientes.

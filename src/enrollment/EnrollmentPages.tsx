@@ -250,6 +250,8 @@ export function StudentDetail() {
     const { ask, dialog } = useConfirmation(busy);
     const canEdit = state.roles?.some(role => ['DIRECTOR_ACADEMICO', 'COORDINADOR_ACADEMICO'].includes(role));
     const editing = edit && !!canEdit;
+    const studentDirty=editing&&!!row&&!!draft&&Object.entries(studentDraft(row)).some(([key,text])=>draft[key]!==text);
+    function reloadAfterContact(){setDraft(null);setEditVersion(undefined);setRow(undefined);setRevision(v=>v+1)}
     useEffect(() => {
         let active = true;
         void Promise.all([client.from('alumno').select('*').eq('id', id).single(), client.from('alumno_contacto_emergencia').select('*').eq('alumno_id', id), client.from('matricula').select('id,codigo_matricula,estado_codigo').eq('alumno_id', id)]).then(([a, c, m]) => { if (active) {
@@ -279,23 +281,23 @@ export function StudentDetail() {
         finally { setBusy(false); }
     }
     async function saveContact() {
-        if (!row || !contact || editing) return;
+        if (!row || !contact || studentDirty || busy || !canEdit) return;
         setBusy(true);
         try {
             const r = await client.rpc('guardar_contacto_emergencia', { p: { ...contact, alumno_id: row.id, expected_alumno_updated_at: row.updated_at, ...(contactRow ? { id: contactRow.id, expected_updated_at: contactRow.updated_at } : {}) } });
             if (r.error) setMessage(enrollmentError(r.error));
-            else { setContact(null); setRevision(v => v + 1); }
+            else { setContact(null); reloadAfterContact(); }
         } catch { setMessage(enrollmentError(null)); }
         finally { setBusy(false); }
     }
     async function retireContact(c: Row) {
-        if (!row || editing) return;
+        if (!row || studentDirty || busy || !canEdit) return;
         const ok = await ask({ title: 'Retirar contacto', description: 'El contacto quedará inactivo y su historia se conservará.' });
         if (ok === null) return;
         setBusy(true);
         try {
             const r = await client.rpc('retirar_contacto_emergencia', { id: c.id, expected_alumno_updated_at: row.updated_at });
-            if (r.error) setMessage(enrollmentError(r.error)); else setRevision(v => v + 1);
+            if (r.error) setMessage(enrollmentError(r.error)); else reloadAfterContact();
         } catch { setMessage(enrollmentError(null)); }
         finally { setBusy(false); }
     }
@@ -307,8 +309,8 @@ export function StudentDetail() {
         <div className="student-section-tabs" role="tablist" aria-label="Ficha Alumno">{tabs.map((name, i) => <button type="button" disabled={busy} key={name} role="tab" id={`student-tab-${i}`} aria-controls={`student-panel-${i}`} aria-selected={tab === i} tabIndex={tab === i ? 0 : -1} onClick={() => setTab(i)} onKeyDown={e => { const n = e.key === 'ArrowRight' ? (i + 1) % tabs.length : e.key === 'ArrowLeft' ? (i + tabs.length - 1) % tabs.length : e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : -1; if (n >= 0) { e.preventDefault(); setTab(n); document.getElementById(`student-tab-${n}`)?.focus(); } }}>{name}</button>)}</div>
         <div className="student-section-panel" role="tabpanel" hidden={tab !== 0} tabIndex={0} id="student-panel-0" aria-labelledby="student-tab-0"><h3>Resumen</h3><StudentReview studentCode={value(row, 'codigo_alumno')} draft={current} refs={refs} editing contacts={contactsError ? null : contacts} contactsError={contactsError} busy={busy} readOnly={!editing} correct={editing ? index => setTab(index + 1) : undefined}/></div>
         {studentGroups.map((fields, index) => <div className="student-section-panel" key={index} role="tabpanel" hidden={tab !== index + 1} tabIndex={0} id={`student-panel-${index + 1}`} aria-labelledby={`student-tab-${index + 1}`} data-student-section={index + 1}><h3>{tabs[index + 1]}</h3><fieldset disabled={busy || (editing && !refs.catalogo)}><Fields fields={fields} draft={current} refs={refs} change={(key, text) => setDraft(d => updateStudentDraft(d ?? current, key, text))} readOnly={!editing}/>{index === 0 && <p>Edad calculada: {ageAt(current.fecha_nacimiento) || '—'} años</p>}</fieldset></div>)}
-        <div className="student-section-panel" role="tabpanel" hidden={tab !== 4} tabIndex={0} id="student-panel-4" aria-labelledby="student-tab-4"><div className="student-contacts-heading"><h3>Contactos</h3>{canEdit && <button type="button" disabled={busy || editing} onClick={() => { setContactRow(undefined); setContact({}); }}>Agregar contacto</button>}</div>{editing && <p className="help-text">Guarda o cancela los cambios del alumno para modificar sus contactos.</p>}<Message>{contactsError}</Message>
-            <ContactGrid contacts={contacts} refs={refs} disabled={busy || editing} onEdit={canEdit ? c => { setContactRow(c); setContact(Object.fromEntries(contactFields.map(([key]) => [key, value(c, key)]))); } : undefined} onRemove={canEdit ? c => void retireContact(c) : undefined}/>
+        <div className="student-section-panel" role="tabpanel" hidden={tab !== 4} tabIndex={0} id="student-panel-4" aria-labelledby="student-tab-4"><div className="student-contacts-heading"><h3>Contactos</h3>{canEdit && <button type="button" disabled={busy || studentDirty} onClick={() => { setContactRow(undefined); setContact({}); }}>Agregar contacto</button>}</div>{studentDirty && <p className="help-text">Hay cambios pendientes en la ficha. Guarda o cancela esos cambios antes de modificar contactos; cada contacto se guarda por separado.</p>}<Message>{contactsError}</Message>
+            <ContactGrid contacts={contacts} refs={refs} disabled={busy || studentDirty} onEdit={canEdit ? c => { setContactRow(c); setContact(Object.fromEntries(contactFields.map(([key]) => [key, value(c, key)]))); } : undefined} onRemove={canEdit ? c => void retireContact(c) : undefined}/>
 
         </div>
         <div className="student-section-panel" role="tabpanel" hidden={tab !== 5} tabIndex={0} id="student-panel-5" aria-labelledby="student-tab-5"><h3>Matrículas</h3>{!enrollments.length && <p>No hay matrículas registradas.</p>}<ul>{enrollments.map(m => <li key={m.id}><Link to={`/matriculas/${m.id}`}>{value(m, 'codigo_matricula')}</Link> — {value(m, 'estado_codigo')}</li>)}</ul></div>

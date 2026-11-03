@@ -757,3 +757,16 @@ it('Coordinador cannot open the discount editor',async()=>{
  showIndividualEnrollment(true);await screen.findByRole('button',{name:'Guardar código'});fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));
  expect(screen.queryByRole('button',{name:'Aplicar descuento'})).not.toBeInTheDocument();expect(screen.queryByRole('button',{name:'Modificar descuento'})).not.toBeInTheDocument();
 });
+
+it('allows adding contacts while editing a clean pupil and refreshes the parent version',async()=>{
+ const {row,contacts}=await openTabbedStudent({editing:true,emptyContacts:true});
+ fireEvent.click(screen.getByRole('tab',{name:'Contactos'}));expect(screen.getByRole('button',{name:'Agregar contacto'})).toBeEnabled();
+ fireEvent.click(screen.getByRole('button',{name:'Agregar contacto'}));const dialog=screen.getByRole('dialog',{name:'Contacto de emergencia'});
+ fireEvent.change(within(dialog).getByLabelText(/^Apellido contacto/),{target:{value:'PEREZ'}});fireEvent.change(within(dialog).getByLabelText(/^Nombre contacto/),{target:{value:'JUAN'}});fireEvent.change(within(dialog).getByLabelText(/^Parentesco/),{target:{value:'mother'}});fireEvent.change(within(dialog).getByLabelText(/^Celular contacto/),{target:{value:'999111222'}});
+ client.rpc.mockImplementation(async()=>{row.updated_at='student-v2';contacts.push({id:'new',updated_at:'contact-v3',apellido:'PEREZ',nombre:'JUAN',parentesco_id:'mother',celular:'999111222',direccion:'',activo:true});return {data:contacts[0],error:null}});
+ fireEvent.click(within(dialog).getByRole('button',{name:'Guardar contacto'}));await waitFor(()=>expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+ await waitFor(()=>expect(screen.getByRole('table',{name:'Contactos de emergencia'})).toHaveTextContent('JUAN'));
+ expect(client.rpc).toHaveBeenCalledWith('guardar_contacto_emergencia',{p:expect.objectContaining({alumno_id:'s',expected_alumno_updated_at:'student-v1'})});
+ fireEvent.click(screen.getByRole('tab',{name:'Identificación'}));fireEvent.change(screen.getByRole('textbox',{name:/^Nombres/}),{target:{value:'ANA NUEVA'}});
+ fireEvent.click(screen.getByRole('button',{name:'Guardar cambios'}));await waitFor(()=>expect(client.rpc).toHaveBeenCalledWith('guardar_alumno',{p:expect.objectContaining({expected_updated_at:'student-v2',nombres:'ANA NUEVA'})}));
+});
