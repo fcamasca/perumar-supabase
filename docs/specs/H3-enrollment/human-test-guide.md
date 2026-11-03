@@ -46,3 +46,6 @@ Ensayo humano pendiente sobre el candidato H3; conserva las decisiones y aceptac
 
 
 Ajuste posterior del 02/11/2026: Materias/Carreras usan un único cuadro por código o nombre; Ciclos por código de Ciclo o nombre de Carrera (sin promoción). Probar búsquedas parciales por cada alternativa, combinar con estado, limpiar y regresar desde ficha conservando el contexto. Recargar información se elimina de las tres listas para igualarlas a Alumnos/Empresas; se mantienen las actualizaciones automáticas tras guardar o cambiar estado.
+
+
+Carrera — ajuste autorizado 02/11/2026: comprobar Modalidad/Sigla debajo de Código/Nombre y Descripción al final, al consultar y editar. Crear Carrera con Materias válidas sin seleccionar Modalidad; asignarla y quitarla después; consulta debe mostrar No indicado cuando esté vacía. Sigla y mínimo una Materia activa siguen siendo obligatorios. Véase CHG-H3-002; no reemitir la aprobación histórica del Spec ni marcar Gate 2 por estas pruebas técnicas.

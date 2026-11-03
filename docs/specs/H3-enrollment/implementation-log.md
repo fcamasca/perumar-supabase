@@ -189,3 +189,12 @@ Ciclos usa código de Ciclo OR nombre de Carrera. Se resuelven IDs de Carrera de
 El usuario señaló que Recargar información no existe en Alumno/Empresas. Se elimina de las tres listas académicas, incluido el icono sin uso. Se conservan las actualizaciones automáticas tras las operaciones existentes; no se descarta un borrador por una acción de recarga manual.
 
 Verificación: lint, typecheck, 198 pruebas unitarias/DOM, build y diff --check. Casos nuevos comprueban un solo cuadro, OR por ambos campos, estado independiente, limpieza, texto con puntuación y búsqueda de Ciclos por nombre de Carrera excluyendo promoción/código de Carrera. Las tres listas verifican ausencia de Recargar y conservación de paginación/retorno. Spec aprobado y Gate 2 intactos; sin reset/escrituras sobre datos humanos locales.
+
+
+## 2026-11-02 — Modalidad opcional y orden de Carrera
+
+Por solicitud humana se suben Modalidad/Sigla debajo de Código/Nombre y se deja Descripción al final. Modalidad deja de ser obligatoria en React y PostgreSQL; Sigla, catálogo, autorizaciones, asociaciones, mínimos y concurrencia mantienen sus reglas. [CHG-H3-002](approved-career-modality-amendment.md) registra la diferencia funcional posterior a la base aprobada.
+
+Migración aditiva `20261102010000_h2_optional_career_modality.sql` aplicada localmente sin reset; Carreras, Ciclos, snapshots, asociaciones y auditoría existentes conservados. Inventario exacto de seguridad validado. Regresión SQL de RPC reales con datos sintéticos/rollback satisface opcionalidad y valida catálogo/activos, legado, mínimo de Materias, Sigla, permisos y versiones, sin cambios persistentes. 198 tests unitarios, lint/typecheck/build/diff --check correctos; integración de entorno limpio actualizada sin ejecutarla sobre datos humanos. Gate 2 y revisión visual pendientes.
+
+Comprobación adicional posterior a la migración: `npm run test:local` PASÓ; Data API pública sin rutas protegidas e inventario exacto de grants/RLS/helpers/RPC.

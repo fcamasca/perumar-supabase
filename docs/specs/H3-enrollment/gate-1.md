@@ -14,3 +14,6 @@ Se autoriza construcción y validación progresiva TASK-H3-002…020. EVOL-001/0
 ## Enmienda posterior registrada
 
 [CHG-H3-001 — Ocupación](approved-occupation-amendment.md), solicitada por la persona el 28/10/2026: catálogo OCUPACION, búsqueda y detalle OTROS. Es un cambio funcional autorizado después del SHA aprobado; no formaba parte del Gate 1 original. La enmienda registra alcance, implementación y evidencia por separado, sin alterar los cuatro documentos aprobados. Gate 2 sigue pendiente e incluye su revisión humana.
+
+
+[CHG-H3-002 — Modalidad de Carrera opcional](approved-career-modality-amendment.md), solicitud humana del 02/11/2026: modifica la obligatoriedad de una propiedad H2 usada por la construcción H3. Es posterior a la base aprobada, sin reescribir el Spec histórico ni aprobar Gate 2.
