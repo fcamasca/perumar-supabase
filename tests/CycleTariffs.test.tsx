@@ -1,4 +1,4 @@
-import {fireEvent,render,screen,waitFor} from '@testing-library/react'
+import {act,fireEvent,render,screen,waitFor} from '@testing-library/react'
 import {beforeEach,expect,it,vi} from 'vitest'
 import {CycleTariffs} from '../src/enrollment/CycleTariffs'
 const {client,roles}=vi.hoisted(()=>({client:{from:vi.fn(),rpc:vi.fn()},roles:{current:['DIRECTOR_ACADEMICO']}}))
@@ -14,7 +14,7 @@ beforeEach(()=>{
 })
 function show(props:Partial<Parameters<typeof CycleTariffs>[0]>={}){return render(<CycleTariffs cycle={cycle} onChanged={changed} onDirtyChange={dirty} onBusyChange={busy} onReadyChange={ready} {...props}/>)}
 it('shows assigned tariffs and indicates eligibility for matriculation',async()=>{
- show();await screen.findByRole('table',{name:'Tarifas del Ciclo'});expect(screen.getByRole('spinbutton',{name:'Importe de CARRERA'})).toHaveValue(600);expect(screen.getByRole('checkbox',{name:'Obligatoria CARRERA'})).toBeChecked();expect(screen.getByRole('status')).toHaveTextContent('listas para matricular');expect(ready).toHaveBeenLastCalledWith(true);expect(screen.queryByText('TS — SEGURO')).not.toBeInTheDocument();expect(client.rpc).not.toHaveBeenCalled()
+ show();await screen.findByRole('table',{name:'Tarifas del Ciclo'});expect(screen.getByRole('spinbutton',{name:'Importe de CARRERA'})).toHaveValue(600);expect(screen.getByRole('checkbox',{name:'Obligatoria CARRERA'})).toBeChecked();expect(screen.getByRole('status')).toHaveTextContent('listas para matricular');await waitFor(()=>expect(ready).toHaveBeenLastCalledWith(true));expect(screen.queryByText('TS — SEGURO')).not.toBeInTheDocument();expect(client.rpc).not.toHaveBeenCalled()
 })
 it('adds an active catalog tariff with its default, stages edits and saves only through the existing RPC',async()=>{
  show();await screen.findByRole('table',{name:'Tarifas del Ciclo'});const search=screen.getByRole('searchbox',{name:'Agregar tarifa del catálogo'});fireEvent.change(search,{target:{value:'segur'}});fireEvent.click(screen.getByRole('button',{name:'Agregar TS — SEGURO'}));expect(screen.getByRole('spinbutton',{name:'Importe de SEGURO'})).toHaveValue(25);expect(screen.getByRole('checkbox',{name:'Obligatoria SEGURO'})).not.toBeChecked();expect(client.rpc).not.toHaveBeenCalled();expect(dirty).toHaveBeenLastCalledWith(true);expect(ready).toHaveBeenLastCalledWith(false)
@@ -41,3 +41,12 @@ it('failed configuration load cannot save an empty replacement',async()=>{
 it('missing or optional Career pricing is explained before matriculation',async()=>{
  assigned=[];const rendered=show();await screen.findByRole('table',{name:'Tarifas del Ciclo'});expect(screen.getByRole('alert')).toHaveTextContent('Falta asignar una tarifa CARRERA');rendered.unmount();assigned=[{tarifa_id:'career',importe:'600',obligatorio:false,activo:true}];show();await screen.findByRole('table',{name:'Tarifas del Ciclo'});expect(screen.getByRole('alert')).toHaveTextContent('debe ser obligatoria')
 })
+
+it('keeps eligibility unknown until both catalog and assignments finish loading',async()=>{
+ let finishCatalog:(result:unknown)=>void=()=>{},finishAssigned:(result:unknown)=>void=()=>{};
+ const catalogResponse=new Promise(resolve=>{finishCatalog=resolve}),assignedResponse=new Promise(resolve=>{finishAssigned=resolve});
+ client.from.mockImplementation((table:string)=>{const q={select:()=>q,order:()=>q,eq:()=>q,then:(resolve:(r:unknown)=>unknown)=>(table==='tarifa'?catalogResponse:assignedResponse).then(resolve)};return q});
+ show();expect(ready).toHaveBeenLastCalledWith(null);expect(screen.queryByRole('table')).not.toBeInTheDocument();
+ await act(async()=>finishCatalog({data:catalog,error:null}));expect(ready).toHaveBeenLastCalledWith(null);expect(screen.queryByRole('table')).not.toBeInTheDocument();
+ await act(async()=>finishAssigned({data:assigned,error:null}));await waitFor(()=>expect(ready).toHaveBeenLastCalledWith(true));expect(screen.getByRole('table',{name:'Tarifas del Ciclo'})).toBeVisible();expect(client.rpc).not.toHaveBeenCalled();
+});

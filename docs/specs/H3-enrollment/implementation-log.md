@@ -316,3 +316,8 @@ Validación límite descuento: lint, typecheck, 271 pruebas en 16 archivos, buil
 
 
 Corrección harness CI 03/11/2026: TEST-H3-010-011 construía actualización de Alumno desde fila completa y reenviaba codigo_alumno, rechazado correctamente por assert_fields de guardar_alumno con 22023. Se excluye ese campo automático igual que id/fechas técnicas y se comprueba que el código devuelto no cambie tras editar nombres. Se revisó la otra reconstrucción de payload (ficha incompleta), que ya lo excluía. Sin cambios a ci.yml, RPC, migraciones, permisos ni reglas; sin reset de DB humana. Sintaxis Node, lint y git diff --check correctos. Reejecución DB/API completa pendiente de CI aislada.
+
+
+Corrección prueba asíncrona CI 03/11/2026: CycleTariffs comprobaba onReadyChange inmediatamente después de encontrar la tabla, antes de que el efecto posterior al render notificara true. Se espera explícitamente el callback con waitFor; sin sleeps, ampliación de timeout ni retries de suite. Caso adicional con promesas controladas comprueba null hasta completar catálogo y asignaciones, y true solo después. Sin cambio al componente, contratos, DB ni ci.yml.
+
+Validación: lint, typecheck, 272 pruebas en 16 archivos y git diff --check correctos. CI aislada pendiente de nueva ejecución; sin reset ni operaciones sobre datos humanos.
