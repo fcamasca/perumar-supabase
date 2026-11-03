@@ -308,3 +308,8 @@ Validación traslado: lint, typecheck, 268 pruebas en 16 archivos, build y diff 
 UX 03/11/2026: Aplicar/Modificar descuento abre modal centrado reutilizando el diálogo existente, con importe vigente, motivo y Cancelar/Aplicar. Botón en misma fila que Guardar cargos, al extremo derecho de la tabla. Conserva rol Director y bloqueo por cargos pendientes; Escape/cancelación bloqueados durante RPC, error visible dentro del modal y conflicto conserva borrador sin retry. Sin SQL ni cambios funcionales del Spec.
 
 Validación modal: lint, typecheck, 55 pruebas de EnrollmentPages, build y git diff --check correctos. Incluye apertura/cancelación, payload con versión, bloqueo de cierre durante RPC, conflicto visible con borrador conservado y restauración de foco. Revisión visual humana y Gate 2 pendientes.
+
+
+Corrección de validación 03/11/2026: modal de descuento muestra máximo según importe original del cargo Carrera vigente (no total con otros conceptos) y marca/focaliza importe excesivo con mensaje específico antes de RPC. Permite exactamente el límite. Constraint DB existente permanece autoridad; rechazo conocido de ese constraint se traduce sin SQL ni detalles de fila. Se mantiene motivo/rol/versiones. Sin migraciones ni cambio de reglas del Spec.
+
+Validación límite descuento: lint, typecheck, 271 pruebas en 16 archivos, build y git diff --check correctos. Casos: exceso sin RPC, importe máximo aceptado, límite solo Carrera y traducción de constraint DB sin SQL. Revisión humana y Gate 2 pendientes.
