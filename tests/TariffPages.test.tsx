@@ -55,3 +55,11 @@ it('creates a tariff from the explicit New action and returns to the grid',async
 it('rejects a negative default amount inline before sending any command',async()=>{
  render(<Tariffs/>);fireEvent.click(await screen.findByRole('button',{name:'Editar CARRERA'}));const amount=screen.getByRole('spinbutton',{name:'Monto por defecto (S/)'});fireEvent.change(amount,{target:{value:'-1'}});fireEvent.click(screen.getByRole('button',{name:'Guardar tarifa'}));await waitFor(()=>expect(amount).toHaveFocus());expect(client.rpc).not.toHaveBeenCalled();expect(amount).toHaveAttribute('min','0');expect(amount).toHaveAttribute('step','0.01')
 })
+
+it('identifies the repeated tariff code inline, focuses it and preserves the rest of the draft',async()=>{
+ render(<Tariffs/>);fireEvent.click(await screen.findByRole('button',{name:'Editar CARRERA'}));fireEvent.change(screen.getByRole('textbox',{name:'Nombre tarifa'}),{target:{value:'NOMBRE CONSERVADO'}});
+ client.rpc.mockResolvedValue({error:{code:'23505',message:'duplicate key value violates unique constraint tarifa_codigo_key SQL INTERNAL'}});fireEvent.click(screen.getByRole('button',{name:'Guardar tarifa'}));
+ const alert=await screen.findByRole('alert');expect(alert).toHaveTextContent('Ya existe una tarifa con el código «TC»');expect(alert).toHaveTextContent('inactiva');expect(alert).not.toHaveTextContent(/RUC|documento|Alumno|SQL|INTERNAL/);
+ const code=screen.getByRole('textbox',{name:'Código tarifa'});await waitFor(()=>expect(code).toHaveFocus());expect(code).toHaveAttribute('aria-invalid','true');expect(document.getElementById(code.getAttribute('aria-describedby')!)).toHaveTextContent('Este código ya está registrado.');expect(screen.getByRole('textbox',{name:'Nombre tarifa'})).toHaveValue('NOMBRE CONSERVADO');expect(client.rpc).toHaveBeenCalledTimes(1);
+ fireEvent.change(code,{target:{value:'OTRO-CODIGO'}});expect(code).toHaveAttribute('aria-invalid','false');expect(screen.queryByRole('alert')).not.toBeInTheDocument();expect(screen.getByRole('textbox',{name:'Nombre tarifa'})).toHaveValue('NOMBRE CONSERVADO');expect(client.rpc).toHaveBeenCalledTimes(1);
+})

@@ -1,4 +1,4 @@
-import {useEffect,useRef,useState} from 'react'
+import {useEffect,useId,useRef,useState} from 'react'
 import {useSession} from '../security/SessionProvider'
 import {AcademicAction,AcademicPagination,AcademicRecordHeader,AcademicSearch} from '../academic/AcademicLayout'
 import {InlineForm,StatusBadge,useConfirmation} from '../academic/AcademicUi'
@@ -12,7 +12,7 @@ export function Tariffs(){
  const {client,state}=useSession(),director=state.roles?.includes('DIRECTOR_ACADEMICO')
  const [rows,setRows]=useState<Row[]>([]),[search,setSearch]=useState(''),[status,setStatus]=useState(''),[page,setPage]=useState(0),[revision,setRevision]=useState(0),[loading,setLoading]=useState(true),[loadError,setLoadError]=useState(false),[message,setMessage]=useState(''),[busy,setBusy]=useState(false)
  const [selected,setSelected]=useState<Row>(),[draft,setDraft]=useState<Draft>(blank),[mode,setMode]=useState<'view'|'edit'|'new'|null>(null),[cycleView,setCycleView]=useState(false)
- const previous=useRef(false),{ask,dialog}=useConfirmation(busy)
+ const previous=useRef(false),codeInput=useRef<HTMLInputElement>(null),codeErrorId=useId(),[codeError,setCodeError]=useState(''),{ask,dialog}=useConfirmation(busy)
  useEffect(()=>{const open=!!mode||cycleView;if(previous.current&&!open)(document.querySelector<HTMLElement>('[data-create="Tarifas"]:not(:disabled)')??document.querySelector<HTMLElement>('[role=search] input'))?.focus();previous.current=open},[mode,cycleView])
  useEffect(()=>{
   let active=true;setLoading(true);setLoadError(false)
@@ -22,11 +22,11 @@ export function Tariffs(){
   void query.then(r=>{if(!active)return;setLoading(false);setLoadError(!!r.error);setRows(r.error?[]:r.data as Row[]);if(r.error)setMessage('No se pudieron cargar las tarifas.');else setMessage(current=>current==='No se pudieron cargar las tarifas.'?'':current)})
   return()=>{active=false}
  },[client,search,status,page,revision])
- function open(row?:Row,edit=false){setSelected(row);setDraft(row?{codigo:row.codigo,nombre:row.nombre,descripcion:row.descripcion??'',tipo:row.tipo,monto_por_defecto:String(row.monto_por_defecto)}:blank);setMode(row?edit&&director?'edit':'view':'new');setMessage('')}
+ function open(row?:Row,edit=false){setCodeError('');setSelected(row);setDraft(row?{codigo:row.codigo,nombre:row.nombre,descripcion:row.descripcion??'',tipo:row.tipo,monto_por_defecto:String(row.monto_por_defecto)}:blank);setMode(row?edit&&director?'edit':'view':'new');setMessage('')}
  async function save(){
   if(!director||mode==='view')return
-  setBusy(true);setMessage('')
-  try{const r=await client.rpc('guardar_tarifa',{p:{...draft,descripcion:draft.descripcion||null,...(selected?{id:selected.id,expected_updated_at:selected.updated_at}:{})}});if(r.error){setMessage(enrollmentError(r.error));return}setMode(null);setRevision(v=>v+1);setMessage('Tarifa guardada correctamente.')}
+  setBusy(true);setMessage('');setCodeError('')
+  try{const r=await client.rpc('guardar_tarifa',{p:{...draft,descripcion:draft.descripcion||null,...(selected?{id:selected.id,expected_updated_at:selected.updated_at}:{})}});if(r.error){if(r.error.code==='23505'){const text=`Ya existe una tarifa con el código «${draft.codigo.trim().toUpperCase()}», incluso si está inactiva. Usa otro código o edita la tarifa existente.`;setCodeError(text);setMessage(text);setTimeout(()=>codeInput.current?.focus(),0)}else setMessage(enrollmentError(r.error));return}setMode(null);setRevision(v=>v+1);setMessage('Tarifa guardada correctamente.')}
   catch{setMessage('No se confirmó el guardado. Consulta la grilla antes de reintentar.')}
   finally{setBusy(false)}
  }
@@ -39,7 +39,7 @@ export function Tariffs(){
  const readOnly=mode==='view'||!director
  if(mode)return <section className="academic-record tariff-record">{dialog}<AcademicRecordHeader title={selected?'Ficha de Tarifa':'Nueva tarifa'} name={selected?`${selected.codigo} — ${selected.nombre}`:undefined} status={selected&&<StatusBadge value={selected.activo?'Activo':'Inactivo'}/>} editing={!readOnly} busy={busy} backLabel="Volver a tarifas" editLabel="Editar tarifa" onBack={()=>setMode(null)} onEdit={readOnly&&director?()=>setMode('edit'):undefined}/>{message&&<p role="alert">{message}</p>}
   <InlineForm onSubmit={()=>void save()}><fieldset className="academic-fields" disabled={busy}><legend>Datos de tarifa</legend>
-   <label>Código tarifa{!readOnly&&' *'}<input aria-label="Código tarifa" readOnly={readOnly} required={!readOnly} maxLength={30} value={draft.codigo} onChange={e=>setDraft({...draft,codigo:formTextValue(e.currentTarget)})}/></label>
+   <label>Código tarifa{!readOnly&&' *'}<input ref={codeInput} aria-invalid={!!codeError} aria-describedby={codeError?codeErrorId:undefined} aria-label="Código tarifa" readOnly={readOnly} required={!readOnly} maxLength={30} value={draft.codigo} onChange={e=>{setDraft({...draft,codigo:formTextValue(e.currentTarget)});if(codeError){setCodeError('');setMessage('')}}}/>{codeError&&<span id={codeErrorId} className="field-error">Este código ya está registrado.</span>}</label>
    <label>Nombre tarifa{!readOnly&&' *'}<input aria-label="Nombre tarifa" readOnly={readOnly} required={!readOnly} maxLength={150} value={draft.nombre} onChange={e=>setDraft({...draft,nombre:formTextValue(e.currentTarget)})}/></label>
    <label>Tipo{readOnly?<input aria-label="Tipo" readOnly value={draft.tipo}/>:<select aria-label="Tipo" value={draft.tipo} onChange={e=>setDraft({...draft,tipo:e.currentTarget.value})}><option>CARRERA</option><option>OTRO</option></select>}</label>
    <label>Monto por defecto (S/){!readOnly&&' *'}<input aria-label="Monto por defecto (S/)" type={readOnly?'text':'number'} readOnly={readOnly} required={!readOnly} min="0" step="0.01" value={draft.monto_por_defecto} onChange={e=>setDraft({...draft,monto_por_defecto:e.currentTarget.value})}/></label>
