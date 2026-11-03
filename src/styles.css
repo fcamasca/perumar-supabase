@@ -424,3 +424,8 @@ form.enrollment-record-form { max-width:none; padding:0; margin:0; border:0; box
 .enrollment-pupil-matches small { display:block; }
 .cycle-enrollments table td { padding:.55rem .85rem; vertical-align:middle; }
 .back-link { display:inline-block; margin-bottom:1rem; }
+
+.tariff-record > form { margin-top:1rem; padding:1rem; max-width:none; }
+.cycle-tariffs-form { max-width:none; padding:1rem; }
+.cycle-tariffs-form td { vertical-align:middle; padding:.55rem .85rem; }
+.cycle-tariffs-form input[type=number] { min-width:7rem; max-width:10rem; }

@@ -1,3 +1,6 @@
+import { enrollmentError } from '../lib/enrollmentError'
+export { enrollmentError } from '../lib/enrollmentError'
+export { Tariffs } from './TariffPages'
 import { EnrollmentDrawer } from './EnrollmentDrawer'
 import { studentSearchFilter } from '../lib/studentSearch'
 import { documentRule, documentInputValue, pasteDocumentValue } from '../lib/documentInput'
@@ -18,17 +21,6 @@ export function ageAt(birth: string, today = new Date().toLocaleDateString('en-C
     if (!/^\d{4}-\d{2}-\d{2}$/.test(birth))
         return '';
     return String(Number(today.slice(0, 4)) - Number(birth.slice(0, 4)) - (today.slice(5) < birth.slice(5) ? 1 : 0));
-}
-export function enrollmentError(error: {
-    code?: string;
-} | null) {
-    if (error?.code === '40001' || error?.code === '40P01')
-        return 'La información cambió. Recarga y revisa antes de volver a guardar.';
-    if (error?.code === '23505')
-        return 'El documento, RUC, código o par Alumno y Ciclo ya está registrado.';
-    if (error?.code === '42501')
-        return 'No tienes permiso para esta operación.';
-    return 'No se pudo guardar. Revisa los campos, referencias activas, tarifas y estado del Ciclo. Recarga para consultar el resultado antes de reintentar.';
 }
 function Steps({ names, step }: {
     names: string[];
@@ -521,50 +513,4 @@ export function EnrollmentDetail() {
     return <section>{row && <Link className="back-link" to={`/academico/ciclos?ciclo=${String(row.ciclo_id)}&seccion=matriculas`}>Volver a matrículas del Ciclo</Link>}<h2>Matrícula {value(row, 'codigo_matricula')}</h2><Message>{message}</Message>{editable&&!editing&&<button type="button" onClick={()=>setEditing(true)}>Editar matrícula</button>}{editing&&editable&&<button type="button" className="secondary" disabled={busy} onClick={leaveEdit}>Cancelar edición</button>}{row && <><StatusBadge value={value(row, 'estado_codigo')}/><p>{value(cycle, 'codigo_ciclo')}</p><p>Ficha vigente: {value(student, 'nombres')} {value(student, 'apellido_paterno')} — {value(student, 'numero_di')} <Link to={`/alumnos/${String(row.alumno_id)}`}>Ver Alumno</Link></p><button onClick={() => setHistory(!history)}>Ver / ocultar fotografía histórica</button>{history && <pre className="snapshot-detail">{JSON.stringify(row.alumno_snapshot, null, 2)}</pre>}<p>Total vigente calculado de cargos servidor: S/{charges.filter(c => c.activo).reduce((sum, c) => sum + Number(c.importe_final), 0).toFixed(2)}</p><div className="table-scroll"><table><caption>Cargos actuales e históricos</caption><thead><tr><th>Concepto</th><th>Original</th><th>Descuento</th><th>Final</th><th>Vigencia</th></tr></thead><tbody>{charges.map(c => <tr key={c.id}><td>{value(c, 'nombre')}</td><td>S/{value(c, 'importe_original')}</td><td>S/{value(c, 'descuento')}</td><td>S/{value(c, 'importe_final')}</td><td>{c.activo ? 'Activo' : `Inactivo — ${value(c, 'motivo_inactivacion')}`}</td></tr>)}</tbody></table></div>
     {editable && editing && <><InlineForm onSubmit={() => void save({ codigo_matricula: code })}><label>Código visible<input required value={code} pattern="[0-9]{4}-[A-Za-z0-9]{2,10}-[0-9]{3,}" data-pattern-error="Usa YYYY-SIGLA-CORRELATIVO, sigla alfanumérica de 2 a 10 y correlativo de al menos 3 dígitos." onChange={e => setCode(formTextValue(e.currentTarget))}/></label><button disabled={busy}>Guardar código</button></InlineForm><InlineForm onSubmit={() => void save({}, options.filter(id => tariffs.find(t => t.id === id)?.obligatorio === false))}><label>Ciclo destino<select value={target} onChange={e => setTarget(formTextValue(e.currentTarget))}>{cycles.map(c => <option key={c.id} value={c.id}>{value(c, 'codigo_ciclo')}</option>)}</select></label><p>Cambiar Ciclo conserva e inactiva los cargos anteriores; crea cargos nuevos con descuento cero. Solo Director podrá aplicar un nuevo descuento.</p>{tariffs.map(t => <label key={t.id}><input type="checkbox" disabled={t.obligatorio === true} checked={t.obligatorio === true || options.includes(t.id)} onChange={e => setOptions(e.target.checked ? [...options, t.id] : options.filter(x => x !== t.id))}/>{value(t.tarifa as Record<string, unknown>, 'nombre')} — S/{value(t, 'importe')}</label>)}<button disabled={busy}>Guardar Ciclo / opciones</button></InlineForm><Companies choose={c => void save({ empresa_patrocinadora_id: c?.id ?? '' })}/>{director && <InlineForm onSubmit={() => void save({ descuento: discount, motivo_descuento: reason })}><label>Nuevo descuento Carrera (S/)<input required type="number" min="0" step="0.01" value={discount} onChange={e => setDiscount(formTextValue(e.currentTarget))}/></label><label>Motivo (sin datos personales)<textarea required={Number(discount) > 0} maxLength={500} value={reason} onChange={e => setReason(formTextValue(e.currentTarget))}/></label><button disabled={busy}>Aplicar descuento</button></InlineForm>}</>}
     {!editable && <p>Solo consulta. La matrícula activa en Ciclo terminal aún puede anularse con motivo.</p>}{row.estado_codigo === 'ACTIVO' && <button disabled={busy} className="sensitive" onClick={() => void annul()}>Anular matrícula</button>}</>}{dialog}</section>;
-}
-export function Tariffs() {
-    const { client, state } = useSession(), [rows, setRows] = useState<Row[]>([]), [cycles, setCycles] = useState<Row[]>([]), [selected, setSelected] = useState<Row>(), [draft, setDraft] = useState<Draft>({ tipo: 'OTRO', monto_por_defecto: '0' }), [cycle, setCycle] = useState<Row>(), [config, setConfig] = useState<Record<string, {
-        selected: boolean;
-        importe: string;
-        obligatorio: boolean;
-    }>>({}), [message, setMessage] = useState(''), [revision, setRevision] = useState(0), [busy, setBusy] = useState(false);
-    const director = state.roles?.includes('DIRECTOR_ACADEMICO');
-    useEffect(() => { let active = true; void Promise.all([client.from('tarifa').select('*').order('codigo'), client.from('ciclo').select('id,codigo_ciclo,estado_codigo,updated_at').order('codigo_ciclo')]).then(([t, c]) => { if (active) {
-        setRows(t.error ? [] : t.data as Row[]);
-        setCycles(c.error ? [] : c.data as Row[]);
-        if (t.error || c.error)
-            setMessage('No se pudo cargar tarifas.');
-    } }); return () => { active = false; }; }, [client, revision]);
-    useEffect(() => { let active = true; if (!cycle)
-        return; void client.from('ciclo_tarifa').select('*').eq('ciclo_id', cycle.id).then(r => { if (active) {
-        const cfg: typeof config = {};
-        for (const t of rows) {
-            const old = r.data?.find(x => x.tarifa_id === t.id);
-            cfg[t.id] = { selected: old?.activo ?? false, importe: old ? String(old.importe) : value(t, 'monto_por_defecto'), obligatorio: old?.obligatorio ?? t.tipo === 'CARRERA' };
-        }
-        setConfig(cfg);
-        if (r.error)
-            setMessage('No se pudo cargar configuración del Ciclo.');
-    } }); return () => { active = false; }; }, [client, cycle, rows]);
-    async function save() { setBusy(true); const r = await client.rpc('guardar_tarifa', { p: { ...draft, ...(selected ? { id: selected.id, expected_updated_at: selected.updated_at } : {}) } }); setBusy(false); if (r.error)
-        setMessage(enrollmentError(r.error));
-    else {
-        setSelected(undefined);
-        setDraft({ tipo: 'OTRO', monto_por_defecto: '0' });
-        setRevision(revision + 1);
-        setMessage('Tarifa guardada.');
-    } }
-    async function configure() { if (!cycle)
-        return; setBusy(true); const r = await client.rpc('guardar_ciclo_tarifas', { ciclo_id: cycle.id, expected_updated_at: cycle.updated_at, configuracion: Object.entries(config).filter(([, v]) => v.selected).map(([tarifa_id, v]) => ({ tarifa_id, importe: v.importe, obligatorio: String(v.obligatorio) })) }); setBusy(false); if (r.error)
-        setMessage(enrollmentError(r.error));
-    else {
-        setCycle(r.data as Row);
-        setRevision(revision + 1);
-        setMessage('Configuración de Ciclo guardada.');
-    } }
-    return <section><h2>Tarifas</h2><Message>{message}</Message><ul>{rows.map(r => <li key={r.id}>{value(r, 'codigo')} — {value(r, 'nombre')} — S/{value(r, 'monto_por_defecto')} — {r.activo ? 'Activo' : 'Inactivo'}{director && <><button onClick={() => { setSelected(r); setDraft(Object.fromEntries(['codigo', 'nombre', 'descripcion', 'tipo', 'monto_por_defecto'].map(k => [k, value(r, k)]))); }}>Editar tarifa</button><button disabled={busy} onClick={() => { setBusy(true); void client.rpc('cambiar_activo_tarifa', { id: r.id, expected_updated_at: r.updated_at, activo: !r.activo }).then(result => { setBusy(false); if (result.error)
-        setMessage(enrollmentError(result.error));
-    else
-        setRevision(revision + 1); }); }}>{r.activo ? 'Inactivar' : 'Activar'}</button></>}</li>)}</ul>{director && <InlineForm onSubmit={() => void save()}><h3>{selected ? 'Editar tarifa' : 'Nueva tarifa'}</h3><Fields fields={[["codigo", "Código tarifa", "required"], ["nombre", "Nombre tarifa", "required"], ["descripcion", "Descripción tarifa", "optional"], ["monto_por_defecto", "Monto por defecto (S/)", "required"]]} draft={draft} change={(k, v) => setDraft({ ...draft, [k]: v })} refs={{}}/><label>Tipo<select value={draft.tipo} onChange={e => setDraft({ ...draft, tipo: formTextValue(e.currentTarget) })}><option>CARRERA</option><option>OTRO</option></select></label><button disabled={busy}>Guardar tarifa</button><button type="button" onClick={() => { setSelected(undefined); setDraft({ tipo: 'OTRO', monto_por_defecto: '0' }); }}>Nueva</button></InlineForm>}
-    <h3>Tarifas por Ciclo</h3><label>Ciclo<select value={cycle?.id ?? ''} onChange={e => setCycle(cycles.find(c => c.id === formTextValue(e.currentTarget)))}><option value="">Seleccionar</option>{cycles.map(c => <option key={c.id} value={c.id}>{value(c, 'codigo_ciclo')} — {value(c, 'estado_codigo')}</option>)}</select></label>{cycle && <InlineForm onSubmit={() => void configure()}><fieldset disabled={busy || !director || !['PROGRAMADO', 'EN_CURSO'].includes(value(cycle, 'estado_codigo'))}><legend>Selección manual; exactamente una Carrera activa obligatoria para matricular</legend>{rows.map(t => { const c = config[t.id]; return c && <div key={t.id}><label><input type="checkbox" disabled={!t.activo} checked={c.selected} onChange={e => setConfig({ ...config, [t.id]: { ...c, selected: e.target.checked } })}/>{value(t, 'nombre')}</label><label>Importe Ciclo (S/)<input type="number" min="0" step="0.01" value={c.importe} onChange={e => setConfig({ ...config, [t.id]: { ...c, importe: formTextValue(e.currentTarget) } })}/></label><label><input type="checkbox" checked={c.obligatorio} onChange={e => setConfig({ ...config, [t.id]: { ...c, obligatorio: e.target.checked } })}/>Obligatoria</label></div>; })}<button>Guardar tarifas del Ciclo</button></fieldset></InlineForm>}</section>;
 }

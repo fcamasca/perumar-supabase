@@ -4,7 +4,7 @@ import {useSession} from '../security/SessionProvider'
 import {formTextValue} from '../lib/formText'
 import {studentSearchFilter} from '../lib/studentSearch'
 import {EnrollmentDrawer} from './EnrollmentDrawer'
-import {enrollmentError} from './EnrollmentPages'
+import {enrollmentError} from '../lib/enrollmentError'
 
 type Cycle={id:string;codigo_ciclo:string;estado_codigo:string;updated_at:string}
 type Pupil={id:string;codigo_alumno:string;apellido_paterno:string;apellido_materno:string;nombres:string;numero_di:string}

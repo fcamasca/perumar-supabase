@@ -87,3 +87,8 @@ Datos de matrícula/Cargos/Resumen reemplazan los cinco pasos anteriores. Navega
 ## Recorrido vigente — Buscar y Agregar, CHG-H3-006
 
 Abrir Ciclo/Matrículas/Matricular alumno. Buscar por apellidos/nombres/documento: lista de candidatos y Agregar, sin cargos ni confirmación adicional. Agregar debe registrar una vez con cargos obligatorios y actualizar la grilla; mantener búsqueda abierta para el siguiente. No debe listar ya matriculados, incluso anulados. Si faltan obligatorios/ficha/contactos/tarifas, no crear matrícula parcial ni fila ficticia y permitir revisar/completar ficha. Probar cierre/navegación bloqueados durante RPC y respuesta incierta sin reintentos automáticos. Desde la grilla, Ver matrícula solo consulta y Editar matrícula abre pantalla completa con las opciones individuales autorizadas. Probar roles/terminalidad, edición/anulación/historia existentes y retorno contextual desde alta/ficha/detalle. Revisión visual/teclado/SO y Gate 2 pendientes.
+
+
+## Tarifas — estándar visual vigente (02/11/2026)
+
+Buscar por código/nombre y combinar estado; revisar orden/paginación, iconos/tooltips a la derecha. Ver abre ficha sin grilla, Editar conserva distribución; cancelar/restaurar y guardar/volver a grilla con filtros. Director crea/edita/confirma activar/inactivar; Coordinador solo consulta. Tarifas por Ciclo abre vista propia con grilla compacta: comparar carga, selección, importe y obligatoriedad con configuración DB. Solo Director en PROGRAMADO/EN_CURSO guarda; fallo de carga y terminales bloquean edición. Cambiar valores/defaults no debe recalcular cargos históricos. Probar conflicto sin retry, teclado/temas/móvil y regreso. Gate 2 pendiente.
