@@ -722,7 +722,7 @@ function showIndividualEnrollment(editing=false, charges:Record<string,unknown>[
 }
 it('Ver matricula is read-only until the explicit Edit action opens full controls',async()=>{
  showIndividualEnrollment();await screen.findByRole('heading',{name:'2026-NAV-001'});expect(screen.queryByRole('button',{name:'Guardar código'})).not.toBeInTheDocument();
- fireEvent.click(screen.getByRole('button',{name:'Editar matrícula'}));expect(screen.getByRole('button',{name:'Guardar código'})).toBeVisible();fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));expect(screen.queryByRole('combobox',{name:'Ciclo destino'})).not.toBeInTheDocument();fireEvent.click(screen.getByRole('button',{name:'Cambiar Ciclo'}));expect(screen.getByRole('combobox',{name:'Ciclo destino'})).toBeVisible();
+ fireEvent.click(screen.getByRole('button',{name:'Editar matrícula'}));expect(screen.getByRole('button',{name:'Guardar código'})).toBeVisible();fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));expect(screen.queryByRole('combobox',{name:'Ciclo destino'})).not.toBeInTheDocument();expect(screen.queryByRole('button',{name:'Cambiar Ciclo'})).not.toBeInTheDocument();
  fireEvent.click(screen.getByRole('button',{name:'Cancelar edición'}));expect(screen.queryByRole('button',{name:'Guardar código'})).not.toBeInTheDocument();expect(client.rpc).not.toHaveBeenCalled();
 });
 it('the grid Edit route enables the individual command with its optimistic version',async()=>{

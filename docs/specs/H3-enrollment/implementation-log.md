@@ -298,3 +298,8 @@ Validación: lint, typecheck, 53 pruebas de EnrollmentPages (incluido alta de co
 UX Cargos 03/11/2026: precisión humana registrada en CHG-H3-006. Tabla única compacta con tarifas seleccionables y totales; vista previa respeta importes/descuentos históricos vigentes y suma solo seleccionadas, sin escribir hasta Guardar cargos. Traslado se abre mediante Cambiar Ciclo, con selector y reinicio de descuento existente. Descuento se bloquea ante cambios pendientes de cargos. Sin SQL/migraciones ni modificaciones de Spec aprobado.
 
 Validación Cargos: lint, typecheck, 265 pruebas en 16 archivos, build y git diff --check correctos. Incluye grilla única, selección/obligatorias, totales al desmarcar, importe histórico conservado, payload/versiones de guardado y traslado explícito. Sin reset ni migraciones. Revisión visual humana y Gate 2 pendientes.
+
+
+UX 03/11/2026: traslado de matrícula como acción Cambiar Ciclo en grilla, con diálogo específico y RPC editar_matricula existente. Se elimina selector/consulta de destinos de la ficha Cargos, que guarda únicamente conceptos del Ciclo actual. Versiones, terminalidad, historia y reinicio de descuento conservados. Diálogo bloquea cierre durante transacción, recarga grilla tras éxito y trata respuesta incierta sin retry. Sin SQL, nuevas tablas/RPC ni cambio del Spec aprobado; precisión registrada en CHG-H3-006.
+
+Validación traslado: lint, typecheck, 268 pruebas en 16 archivos, build y diff --check correctos. Casos nuevos: diálogo desde grilla, exclusión Ciclo actual, confirmación con versiones sin descuento/código enviados, actualización de origen, conflicto sin retry, ausencia para anuladas y bloqueo por borrador. Pruebas humanas y Gate 2 pendientes.

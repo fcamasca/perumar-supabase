@@ -4,6 +4,7 @@ import {useSession} from '../security/SessionProvider'
 import {AcademicPagination,AcademicSearch} from '../academic/AcademicLayout'
 import {StatusBadge} from '../academic/AcademicUi'
 import {studentSearchFilter} from '../lib/studentSearch'
+import {ChangeEnrollmentCycle} from './ChangeEnrollmentCycle'
 import {QuickEnrollmentSearch} from './QuickEnrollmentSearch'
 
 type Cycle={id:string;codigo_ciclo:string;estado_codigo:string;updated_at:string}
@@ -12,10 +13,11 @@ export function CycleEnrollments({cycle,blocked=false,blockedMessage,onPanelChan
  const {client,state}=useSession()
  const [rows,setRows]=useState<Enrollment[]>([]),[count,setCount]=useState(0),[filter,setFilter]=useState(''),[page,setPage]=useState(0),[revision,setRevision]=useState(0),[loading,setLoading]=useState(true),[error,setError]=useState(''),[notice,setNotice]=useState('')
  const [panelCycle,setPanelCycle]=useState<Cycle>(),[opening,setOpening]=useState(false)
+ const [changingEnrollment,setChangingEnrollment]=useState<string>()
  const trigger=useRef<HTMLButtonElement>(null),epoch=useRef(0)
  const academic=state.roles?.some(r=>r==='DIRECTOR_ACADEMICO'||r==='COORDINADOR_ACADEMICO')
  const eligible=['PROGRAMADO','EN_CURSO'].includes(cycle.estado_codigo)
- useEffect(()=>{onPanelChange?.(!!panelCycle);return()=>onPanelChange?.(false)},[panelCycle,onPanelChange])
+ useEffect(()=>{onPanelChange?.(!!panelCycle||!!changingEnrollment);return()=>onPanelChange?.(false)},[panelCycle,changingEnrollment,onPanelChange])
  useEffect(()=>()=>{++epoch.current},[])
  useEffect(()=>{
   let active=true;setLoading(true);setError('')
@@ -38,13 +40,14 @@ export function CycleEnrollments({cycle,blocked=false,blockedMessage,onPanelChan
  return <section className="cycle-enrollments">
   <div>
    <h3>Alumnos matriculados · {count}</h3>
-   <div className="filters academic-toolbar" role="search" aria-label="Filtrar alumnos matriculados"><AcademicSearch label="Filtrar matriculados" placeholder="Filtrar matriculados…" value={filter} onChange={text=>{setFilter(text);setPage(0)}}/>{academic&&eligible&&<button type="button" ref={trigger} disabled={blocked||opening||!!panelCycle} onClick={()=>void openPanel()}>{opening?'Consultando…':'+ Matricular alumno'}</button>}</div>
+   <div className="filters academic-toolbar" role="search" aria-label="Filtrar alumnos matriculados"><AcademicSearch label="Filtrar matriculados" placeholder="Filtrar matriculados…" value={filter} onChange={text=>{setFilter(text);setPage(0)}}/>{academic&&eligible&&<button type="button" ref={trigger} disabled={blocked||opening||!!panelCycle||!!changingEnrollment} onClick={()=>void openPanel()}>{opening?'Consultando…':'+ Matricular alumno'}</button>}</div>
    {blocked&&blockedMessage!==''&&<p className="help-text">{blockedMessage??'Guarda o cancela los cambios del Ciclo antes de matricular alumnos.'}</p>}
    {!eligible&&<p className="help-text">Este Ciclo solo permite consultar sus matrículas.</p>}
    {notice&&<p role="status">{notice}</p>}{error&&<p role="alert">{error}</p>}{loading&&<p role="status">Cargando matriculados…</p>}
-   <div className="table-scroll"><table aria-label="Alumnos matriculados en el Ciclo"><thead><tr><th>Alumno</th><th>Documento</th><th>Código de matrícula</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{!loading&&!error&&rows.map(row=><tr key={row.id}><td>{row.alumno.apellido_paterno} {row.alumno.apellido_materno}, {row.alumno.nombres}<small className="secondary-text">{row.alumno.codigo_alumno}</small></td><td>{row.alumno.numero_di}</td><td>{row.codigo_matricula}</td><td><StatusBadge value={row.estado_codigo==='ACTIVO'?'Activa':'Anulada'}/></td><td><div className="record-header-actions"><Link to={`/matriculas/${row.id}`}>Ver matrícula</Link>{academic&&eligible&&row.estado_codigo==='ACTIVO'&&<Link to={`/matriculas/${row.id}?editar=1`}>Editar matrícula</Link>}</div></td></tr>)}{!loading&&!error&&!rows.length&&<tr><td colSpan={5}>{filter?'No hay matriculados que coincidan con el filtro.':'No hay alumnos matriculados en este Ciclo.'}</td></tr>}</tbody></table></div>
+   <div className="table-scroll"><table aria-label="Alumnos matriculados en el Ciclo"><thead><tr><th>Alumno</th><th>Documento</th><th>Código de matrícula</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{!loading&&!error&&rows.map(row=><tr key={row.id}><td>{row.alumno.apellido_paterno} {row.alumno.apellido_materno}, {row.alumno.nombres}<small className="secondary-text">{row.alumno.codigo_alumno}</small></td><td>{row.alumno.numero_di}</td><td>{row.codigo_matricula}</td><td><StatusBadge value={row.estado_codigo==='ACTIVO'?'Activa':'Anulada'}/></td><td><div className="record-header-actions"><Link to={`/matriculas/${row.id}`}>Ver matrícula</Link>{academic&&eligible&&row.estado_codigo==='ACTIVO'&&<><Link to={`/matriculas/${row.id}?editar=1`}>Editar matrícula</Link><button type="button" className="secondary" disabled={blocked||opening||!!panelCycle||!!changingEnrollment} onClick={()=>setChangingEnrollment(row.id)}>Cambiar Ciclo</button></>}</div></td></tr>)}{!loading&&!error&&!rows.length&&<tr><td colSpan={5}>{filter?'No hay matriculados que coincidan con el filtro.':'No hay alumnos matriculados en este Ciclo.'}</td></tr>}</tbody></table></div>
    <nav aria-label="Páginas de matriculados">{(count>30||page>0)&&<AcademicPagination page={page} count={rows.length} disabled={loading||!!panelCycle} onChange={setPage} labels={{previous:'Página anterior',next:'Página siguiente'}}/>}</nav>
   </div>
+  {changingEnrollment&&<ChangeEnrollmentCycle id={changingEnrollment} source={cycle} close={()=>setChangingEnrollment(undefined)} changed={()=>{setChangingEnrollment(undefined);setNotice('Matrícula trasladada. El código se conserva; consulta sus cargos en el Ciclo destino.');setRevision(v=>v+1)}}/>}
   {panelCycle&&<QuickEnrollmentSearch cycle={panelCycle} close={closePanel} added={code=>{setNotice(`Matrícula ${code} registrada correctamente.`);setRevision(v=>v+1)}}/>}
  </section>
 }

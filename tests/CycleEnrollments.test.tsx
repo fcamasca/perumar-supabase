@@ -7,17 +7,19 @@ const {client,roles}=vi.hoisted(()=>({client:{from:vi.fn(),rpc:vi.fn()},roles:{c
 vi.mock('../src/security/SessionProvider',()=>({useSession:()=>({client,state:{roles:roles.current}})}))
 const cycle={id:'c1',codigo_ciclo:'2026-001-NAV',estado_codigo:'PROGRAMADO',updated_at:'cv1'}
 const candidate={id:'p2',codigo_alumno:'A-0000002',apellido_paterno:'NUEVO',apellido_materno:'ALUMNO',nombres:'ANA',numero_di:'00123456',tipo_di:{nombre:'DNI',codigo:'DNI'},updated_at:'pv1'}
+let availableCycles:typeof cycle[]
 let records:Record<string,unknown>[]
 const queryLog: {table:string;filters:Record<string,unknown>;or?:string;opts?:unknown;range?:number[]}[]=[]
 beforeEach(()=>{
  roles.current=['COORDINADOR_ACADEMICO'];client.rpc.mockReset();queryLog.length=0
  Object.defineProperty(HTMLDialogElement.prototype,'showModal',{configurable:true,value:function(this:HTMLDialogElement){this.setAttribute('open','')}})
  Object.defineProperty(HTMLDialogElement.prototype,'close',{configurable:true,value:function(this:HTMLDialogElement){this.removeAttribute('open')}})
- records=[{id:'m1',alumno_id:'p1',ciclo_id:'c1',codigo_matricula:'2026-NAV-001',estado_codigo:'ACTIVO',alumno:{...candidate,id:'p1',apellido_paterno:'MATRICULADO'}}]
+ availableCycles=[cycle]
+ records=[{updated_at:'mv1',id:'m1',alumno_id:'p1',ciclo_id:'c1',codigo_matricula:'2026-NAV-001',estado_codigo:'ACTIVO',alumno:{...candidate,id:'p1',apellido_paterno:'MATRICULADO'}}]
  client.from.mockImplementation((table:string)=>{
   const call:{table:string;filters:Record<string,unknown>;or?:string;opts?:unknown;range?:number[]}={table,filters:{}};queryLog.push(call);let single=false
   const q={select:()=>q,eq:(key:string,val:unknown)=>{call.filters[key]=val;return q},in:()=>q,order:()=>q,limit:()=>q,range:(start:number,end:number)=>{call.range=[start,end];return q},or:(text:string,opts?:unknown)=>{call.or=text;call.opts=opts;return q},single:()=>{single=true;return q},then:(resolve:(r:unknown)=>unknown)=>{
-   const data=table==='matricula'?records.filter(r=>Object.entries(call.filters).every(([key,val])=>r[key]===val)):table==='ciclo'?[cycle]:table==='alumno'?[candidate]:table==='ciclo_tarifa'?[{id:'fee',importe:'100',obligatorio:true,tarifa:{nombre:'CARRERA',activo:true}},{id:'opt',importe:'20',obligatorio:false,tarifa:{nombre:'SEGURO',activo:true}}]:[]
+   const data=table==='matricula'?records.filter(r=>Object.entries(call.filters).every(([key,val])=>r[key]===val)):table==='ciclo'?availableCycles:table==='alumno'?[candidate]:table==='ciclo_tarifa'?[{id:'fee',importe:'100',obligatorio:true,tarifa:{nombre:'CARRERA',activo:true}},{id:'opt',importe:'20',obligatorio:false,tarifa:{nombre:'SEGURO',activo:true}}]:[]
    return Promise.resolve({data:single?data[0]:data,error:null,count:data.length}).then(resolve)
   }};return q
  })
@@ -85,4 +87,24 @@ it('SDK network errors are treated as uncertain and never auto-retried',async()=
 
 it('hides pagination when the enrolled grid has only one page',async()=>{
  show();const table=await screen.findByRole('table',{name:'Alumnos matriculados en el Ciclo'});await waitFor(()=>expect(table).toHaveTextContent('2026-NAV-001'));expect(screen.queryByRole('button',{name:'Anterior'})).not.toBeInTheDocument();expect(screen.queryByRole('button',{name:'Siguiente página'})).not.toBeInTheDocument();expect(screen.queryByRole('button',{name:'Página siguiente'})).not.toBeInTheDocument();
+});
+
+it('moves an active enrollment from its grid action using explicit destination and optimistic versions',async()=>{
+ availableCycles.push({...cycle,id:'c2',codigo_ciclo:'2026-002-NAV',updated_at:'cv2'});show();await screen.findByRole('link',{name:'Ver matrícula'});
+ fireEvent.click(screen.getByRole('button',{name:'Cambiar Ciclo'}));const dialog=await screen.findByRole('dialog',{name:'Cambiar Ciclo de matrícula'});
+ await within(dialog).findByRole('option',{name:'2026-002-NAV'});expect(within(dialog).queryByRole('option',{name:'2026-001-NAV'})).not.toBeInTheDocument();
+ expect(within(dialog).getByText(/El código de matrícula se conserva/)).toBeVisible();expect(client.rpc).not.toHaveBeenCalled();
+ fireEvent.change(within(dialog).getByRole('combobox',{name:'Ciclo destino'}),{target:{value:'c2'}});
+ client.rpc.mockImplementation(async()=>{records[0].ciclo_id='c2';return {data:records[0],error:null}});
+ fireEvent.click(within(dialog).getByRole('button',{name:'Confirmar cambio de Ciclo'}));
+ await waitFor(()=>expect(client.rpc).toHaveBeenCalledExactlyOnceWith('editar_matricula',{p:{id:'m1',expected_updated_at:'mv1',ciclo_id:'c2',expected_ciclo_updated_at:'cv2'},opcionales:[]}));
+ await waitFor(()=>expect(screen.queryByRole('dialog')).not.toBeInTheDocument());await waitFor(()=>expect(screen.getByRole('heading',{name:'Alumnos matriculados · 0'})).toBeVisible());
+});
+it('retains cycle transfer selection on conflict and never retries',async()=>{
+ availableCycles.push({...cycle,id:'c2',codigo_ciclo:'2026-002-NAV',updated_at:'cv2'});show();await screen.findByRole('link',{name:'Ver matrícula'});fireEvent.click(screen.getByRole('button',{name:'Cambiar Ciclo'}));const dialog=await screen.findByRole('dialog');await within(dialog).findByRole('option',{name:'2026-002-NAV'});
+ fireEvent.change(within(dialog).getByRole('combobox',{name:'Ciclo destino'}),{target:{value:'c2'}});client.rpc.mockResolvedValue({error:{code:'40001'}});fireEvent.click(within(dialog).getByRole('button',{name:'Confirmar cambio de Ciclo'}));
+ expect(await within(dialog).findByRole('alert')).toHaveTextContent('La información cambió');expect(within(dialog).getByRole('combobox')).toHaveValue('c2');expect(client.rpc).toHaveBeenCalledTimes(1);
+});
+it('hides transfer for annulled enrollments and disables it when the Cycle has a pending draft',async()=>{
+ records[0].estado_codigo='ANULADO';const view=show();await screen.findByRole('link',{name:'Ver matrícula'});expect(screen.queryByRole('button',{name:'Cambiar Ciclo'})).not.toBeInTheDocument();view.unmount();records[0].estado_codigo='ACTIVO';show({blocked:true});expect(await screen.findByRole('button',{name:'Cambiar Ciclo'})).toBeDisabled();
 });

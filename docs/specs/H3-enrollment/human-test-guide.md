@@ -113,3 +113,6 @@ Contactos desde Completar ficha de matrícula: abrir Contactos y Agregar sin ten
 
 
 Cargos individuales: Editar/Cargos muestra una sola grilla con todas las tarifas inicialmente seleccionadas como propuesta. Desmarcar opcionales actualiza subtotal/descuento/total; obligatorias no se desmarcan. Verificar que nada se escribe antes de Guardar cargos y que tras guardar se muestra la selección persistida. Conservar importes históricos aunque la tarifa del Ciclo cambie. Cambiar Ciclo abre explícitamente selector, reinicia descuento al confirmar y conserva código/historia. Director guarda cargos pendientes antes de aplicar descuento. Probar teclado, móvil y temas.
+
+
+Ubicación vigente del traslado: desde Ciclo/Matrículas, acción Cambiar Ciclo de una matrícula activa (sustituye la ubicación previa en Cargos). Elegir otro Ciclo elegible y confirmar: conserva código/historial, reinicia descuento y crea obligatorios del destino. Revisar grilla origen/destino y completar opcionales después desde Cargos. Cancelar sin escritura, conflicto conserva selección sin retry, cierre bloqueado durante operación y respuesta incierta obliga a consultar. Anuladas/terminales/roles no autorizados sin acción; borrador del Ciclo bloquea apertura.
