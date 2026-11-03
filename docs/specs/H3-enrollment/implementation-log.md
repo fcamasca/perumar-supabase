@@ -158,3 +158,8 @@ Lint, typecheck, 184 tests unitarios, build y diff --check correctos. Cobertura 
 Solicitud humana: al Ver empresa ocultar la grilla y colocar Editar arriba, con comportamiento similar a Alumno. Companies muestra exclusivamente lista o ficha/alta. Ver oculta búsqueda, grilla y paginación; encabezado con razón social/RUC, Editar empresa y Volver a empresas precede al formulario readOnly. Editar directo o desde ficha conserva ese contexto. Cancelar edición retorna a la consulta con datos originales; cancelar alta vuelve a lista. Guardar en mantenimiento retorna a la ficha del resultado DB, conservando la nueva versión; desde Matrícula mantiene selección mediante choose. Búsqueda/página de la lista se conservan al volver.
 
 Lint, typecheck, 185 pruebas unitarias, build y diff --check correctos. Caso nuevo verifica reemplazo de lista, botón Editar anterior a campos, cancelación sin escritura y recuperación de filtro/página; regresión de guardado versionado/selección Matrícula vigente. Sin cambios DB/RPC ni Spec aprobado. Gate 2 y ensayo visual humano pendientes.
+
+
+## 2026-11-02 — Volver a alumnos desde la ficha
+
+Solicitud humana: botón de retorno al listado en Ficha del alumno, similar a Empresas. En consulta se agrega Volver a alumnos junto a Editar alumno; navega a /alumnos y comparte distribución/espaciado de acciones del encabezado con Empresas. En edición se conserva el flujo Guardar/Cancelar, sin introducir una salida que descarte el borrador desde ese encabezado. Sin cambios DB, permisos ni Spec. Verificación: lint, typecheck, suite EnrollmentPages, build y diff --check. Gate 2 pendiente.

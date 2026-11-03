@@ -324,5 +324,5 @@ button.company-row-name:hover { background:transparent; text-decoration:underlin
 
 button.icon-action { padding:0; }
 
-.company-record-actions { display:flex; flex-wrap:wrap; gap:.65rem; align-items:center; }
+.record-header-actions { display:flex; flex-wrap:wrap; gap:.65rem; align-items:center; }
 .company-record > .student-detail-header { margin-top:1.25rem; }
