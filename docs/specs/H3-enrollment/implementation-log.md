@@ -219,3 +219,6 @@ Ajuste visual 02/11/2026: selector Materias de Carrera con filas compactas, nomb
 
 
 Ajuste visual 02/11/2026: Datos del Ciclo ordena Carrera/Nombre de promoción en primera fila e Inicio/Fin en segunda, seguido de Ubicación. Se elimina el subtítulo redundante Datos principales y la ayuda repetitiva de longitud para Promoción; conserva límite 150. Panel, separaciones y footer compactos; campos de fecha alineados al ancho de su columna, con una columna en móvil. Mismo orden en consulta/edición y reglas/validaciones intactas.
+
+
+Ajuste visual 02/11/2026: Estado del Ciclo integra título/estado actual en una cabecera compacta y elimina la tarjeta de formulario anidada y subtítulo repetido. Selector/motivo comparten grilla; detalle inicia con dos líneas ampliables. Márgenes/padding reducidos; conserva advertencia de irreversibilidad, confirmación, autorización Director, validación, bloqueo por borrador pendiente y Cancelar edición accesible. Sin cambios DB.

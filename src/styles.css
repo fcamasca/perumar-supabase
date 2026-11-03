@@ -380,3 +380,11 @@ form.academic-record-form { max-width:none; padding:0; margin:0; background:tran
 .cycle-record .cycle-data > .academic-fields + .academic-fields { padding-top:.5rem; }
 .cycle-record .academic-fields > label { width:100%; max-width:none; }
 .cycle-record .academic-record-form > .form-actions { padding:.75rem 1rem; }
+
+/* State changes share the existing panel instead of nesting another large card. */
+.cycle-record .cycle-state-panel { padding:1rem; }
+.cycle-state-heading { display:flex; flex-wrap:wrap; align-items:center; gap:.75rem; margin-bottom:.75rem; }
+.cycle-state-heading h3 { margin:0; }
+form.cycle-state-form { max-width:none; margin:0; padding:0; border:0; border-radius:0; box-shadow:none; background:transparent; gap:.75rem; }
+.cycle-state-form > p { margin:0; font-size:.87rem; }
+.cycle-state-form .form-actions { margin:0; padding-top:.75rem; }
