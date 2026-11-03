@@ -417,8 +417,8 @@ it('makes Modalidad optional, places it and Sigla before Description, and keeps 
   rpc.mockResolvedValue({data:{...tables.carrera[0],modalidad_id:null,updated_at:'version-2'},error:null})
   fireEvent.click(screen.getByRole('button',{name:'Guardar Carrera y Materias'}))
   await waitFor(()=>expect(rpc).toHaveBeenCalledExactlyOnceWith('guardar_carrera',{p:expect.objectContaining({id:'career',expected_updated_at:version,modalidad_id:null}),materias:['subject']}))
-  await screen.findByRole('button',{name:'Editar Carrera'})
-  expect(screen.getByRole('textbox',{name:'Modalidad'})).toHaveValue('No indicado')
+  expect(await screen.findByRole('table',{name:'Carreras'})).toBeVisible()
+  expect(screen.queryByRole('button',{name:'Guardar Carrera y Materias'})).not.toBeInTheDocument()
 })
 it('Materia required messages stay beside each field and focus the first missing value', async () => {
   session(['DIRECTOR_ACADEMICO']); render(<Materias />)
@@ -539,14 +539,15 @@ it('Cycle tab changes preserve the draft and prevent separate mutations from dis
   fireEvent.click(screen.getByRole('button',{name:'Cancelar'}));
   expect(screen.getByRole('textbox',{name:'Nombre de promoción (opcional)'})).toHaveValue('');expect(screen.getByRole('textbox',{name:'Carrera'})).toHaveAttribute('readonly');expect(rpc).not.toHaveBeenCalled();
 });
-it('saving Materia returns to its read-only record with the new version and Cancel restores saved values',async()=>{
+it('saving Materia returns to its grid and refreshes the saved data',async()=>{
   session(['DIRECTOR_ACADEMICO']);render(<Materias/>);fireEvent.click(await screen.findByRole('button',{name:'Editar NAVEGACIÓN'}));
   fireEvent.change(screen.getByLabelText('Nombre de Materia'),{target:{value:'ACTUALIZADA'}});
-  rpc.mockResolvedValue({data:{...tables.materia[0],nombre:'ACTUALIZADA',updated_at:'version-2'},error:null});
+  tables.materia[0]={...tables.materia[0],nombre:'ACTUALIZADA',updated_at:'version-2'};
+  rpc.mockResolvedValue({data:tables.materia[0],error:null});
   fireEvent.click(screen.getByRole('button',{name:'Guardar Materia'}));
-  await screen.findByRole('button',{name:'Editar Materia'});expect(screen.getByRole('textbox',{name:'Nombre de Materia'})).toHaveValue('ACTUALIZADA');expect(screen.getByRole('textbox',{name:'Nombre de Materia'})).toHaveAttribute('readonly');
-  fireEvent.click(screen.getByRole('button',{name:'Editar Materia'}));fireEvent.change(screen.getByLabelText('Nombre de Materia'),{target:{value:'DESCARTAR'}});
-  fireEvent.click(screen.getByRole('button',{name:'Cancelar'}));expect(screen.getByLabelText('Nombre de Materia')).toHaveValue('ACTUALIZADA');
+  expect(await screen.findByRole('table',{name:'Materias'})).toBeVisible();
+  expect(await screen.findByRole('button',{name:'Ver ACTUALIZADA'})).toBeVisible();
+  expect(screen.queryByRole('button',{name:'Guardar Materia'})).not.toBeInTheDocument();
   expect(rpc).toHaveBeenCalledExactlyOnceWith('guardar_materia',{p:{id:'subject',expected_updated_at:version,nombre:'ACTUALIZADA',descripcion:null}});
 });
 
@@ -591,17 +592,28 @@ it('searches Cycle code OR matching career names without querying promotion or c
   expect(rpc).not.toHaveBeenCalled();
 });
 
-it('new Career defaults to Presencial and No experience, with Sigla first and a keyboard-operable switch',async()=>{
+it('new Career defaults to Presencial and No experience, with Nombre first and a keyboard-operable switch',async()=>{
   session(['DIRECTOR_ACADEMICO']);render(<Carreras/>);await screen.findByRole('button',{name:'Ver CARRERA'});
   fireEvent.click(screen.getByRole('button',{name:'Crear Carrera'}));
   const flag=screen.getByRole('switch',{name:'Con experiencia'});
   expect(flag).not.toBeChecked();expect(screen.getByLabelText('Modalidad')).toHaveValue('mode');
   expect(screen.queryByLabelText('Código de Carrera')).not.toBeInTheDocument();
-  expect(screen.getByLabelText('Sigla').compareDocumentPosition(screen.getByLabelText('Nombre de Carrera'))&Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(screen.getByLabelText('Nombre de Carrera').compareDocumentPosition(screen.getByLabelText('Sigla'))&Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   fireEvent.click(flag);expect(flag).toBeChecked();
   fireEvent.change(screen.getByLabelText('Nombre de Carrera'),{target:{value:'NUEVA CARRERA'}});
   fireEvent.click(screen.getByRole('tab',{name:'Materias'}));fireEvent.click(await screen.findByLabelText(/NAVEGACIÓN/));
   rpc.mockResolvedValue({error:{code:'40001'}});fireEvent.click(screen.getByRole('button',{name:'Guardar Carrera y Materias'}));
   await waitFor(()=>expect(rpc).toHaveBeenCalledWith('guardar_carrera',{p:expect.objectContaining({con_experiencia:true,modalidad_id:'mode'}),materias:['subject']}));
   expect(rpc.mock.calls[0][1].p).not.toHaveProperty('codigo');
+});
+
+it('saving Cycle returns to its grid after the command succeeds',async()=>{
+ session(['COORDINADOR_ACADEMICO']);render(<Ciclos/>);
+ fireEvent.click(await screen.findByRole('button',{name:'Editar 2026-001-NAV'}));
+ await waitFor(()=>expect(screen.getByRole('button',{name:'Guardar Ciclo'})).toBeEnabled());
+ rpc.mockResolvedValue({data:{...ciclo,updated_at:'v2'},error:null});
+ fireEvent.click(screen.getByRole('button',{name:'Guardar Ciclo'}));
+ expect(await screen.findByRole('table',{name:'Ciclos'})).toBeVisible();
+ expect(screen.queryByRole('button',{name:'Guardar Ciclo'})).not.toBeInTheDocument();
+ expect(rpc).toHaveBeenCalledTimes(1);
 });

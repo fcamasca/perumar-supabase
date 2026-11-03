@@ -234,7 +234,7 @@ export function Students() {
     }, [client, search, page]);
     return <section><h2>Alumnos</h2><div className="filters students-toolbar" role="search" aria-label="Búsqueda de alumnos"><label className="student-search"><span className="field-label">Buscar alumnos</span><span className="search-input"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input type="search" placeholder="Código de alumno, documento o apellido paterno" value={search} onChange={e => { setSearch(formTextValue(e.currentTarget)); setPage(0); }}/></span></label>{canEdit && <span className="toolbar-action" onMouseEnter={() => setTooltipDismissed(false)}><Link to="/alumnos/nuevo" className="icon-action" aria-labelledby={tooltipId} onFocus={() => setTooltipDismissed(false)} onKeyDown={e => { if (e.key === 'Escape') setTooltipDismissed(true); }}><NewStudentIcon/></Link><span id={tooltipId} role="tooltip" className="toolbar-tooltip" hidden={tooltipDismissed}>Nuevo Alumno</span></span>}</div><Message>{message}</Message><div className="students-grid"><table aria-label="Alumnos por fecha de registro descendente"><thead><tr><th scope="col">Código</th><th scope="col">Alumno</th><th scope="col">Documento</th><th scope="col" className="student-row-date">Registro ↓</th><th scope="col" className="student-actions-heading">Acciones</th></tr></thead><tbody>{rows.map(r => { const name = `${value(r, 'apellido_paterno')} ${value(r, 'apellido_materno')}, ${value(r, 'nombres')}`; return <tr key={r.id}><td className="student-row-document">{value(r, 'codigo_alumno')}</td><td><Link className="student-row-name" to={`/alumnos/${r.id}`}>{name}</Link></td><td className="student-row-document">{value(r, 'numero_di')}</td><td className="student-row-date">{r.created_at ? new Date(String(r.created_at)).toLocaleString('es-PE', { timeZone:'America/Lima', dateStyle:'short', timeStyle:'short' }) : '—'}</td><td><div className="student-row-actions"><StudentRowAction id={r.id} name={name} action="view"/>{canEdit && <StudentRowAction id={r.id} name={name} action="edit"/>}</div></td></tr>; })}</tbody></table></div><div className="student-list-pagination"><span>{rows.length ? `Página ${page + 1} · ${rows.length} alumnos` : `Página ${page + 1}`}</span><div className="pagination-actions"><button disabled={!page} onClick={() => setPage(page - 1)}>Anterior</button><button disabled={rows.length < 30} onClick={() => setPage(page + 1)}>Siguiente página</button></div></div></section>;
 }
-export function NewStudent() { const navigate = useNavigate(); return <StudentEditor done={r => navigate(`/alumnos/${r.id}`)} cancel={() => navigate('/alumnos')}/>; }
+export function NewStudent() { const navigate = useNavigate(); return <StudentEditor done={() => navigate('/alumnos')} cancel={() => navigate('/alumnos')}/>; }
 function ContactAction({ label, name, remove = false, disabled, onClick }: { label: string; name: string; remove?: boolean; disabled: boolean; onClick: () => void }) {
     const id = useId(), [dismissed, setDismissed] = useState(false);
     return <span className="toolbar-action" onMouseEnter={() => setDismissed(false)}><button type="button" className="icon-action student-row-action" aria-label={`${label}: ${name}`} aria-describedby={id} disabled={disabled} onClick={onClick} onFocus={() => setDismissed(false)} onKeyDown={e => { if (e.key === 'Escape') setDismissed(true); }}><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{remove ? <><circle cx="9" cy="7" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 12h7"/></> : <><path d="m15 5 4 4M4 20l4-1L20 7a2.8 2.8 0 0 0-4-4L4 15l-1 6Z"/></>}</svg></button><span id={id} role="tooltip" className="toolbar-tooltip" hidden={dismissed}>{label}</span></span>;
@@ -277,7 +277,7 @@ export function StudentDetail() {
             const p = Object.fromEntries(Object.entries(draft).map(([key, text]) => [key, text.trim() || null]));
             const result = await client.rpc('guardar_alumno', { p: { ...p, id: row.id, expected_updated_at: editVersion, contactos: [] } });
             if (result.error) { setMessage(enrollmentError(result.error)); return; }
-            setRow(result.data as Row); closeEditor();
+            navigate('/alumnos');
         } catch { setMessage(enrollmentError(null)); }
         finally { setBusy(false); }
     }
@@ -365,7 +365,7 @@ export function Companies({ choose }: { choose?: (r: Row | null) => void }) {
             if (r.error) { setMessage(enrollmentError(r.error)); return; }
             const saved = r.data as Row;
             setSelected(saved); setDraft(Object.fromEntries(fields.map(([key]) => [key,value(saved,key)])));
-            setMode(choose ? null : 'view'); setRevision(v => v + 1); choose?.(saved);
+            setMode(null); setMessage('Empresa guardada correctamente.'); setRevision(v => v + 1); choose?.(saved);
         } catch { setMessage(enrollmentError(null)); }
         finally { setBusy(false); }
     }

@@ -19,7 +19,7 @@ describe('H3 student flow and safe feedback', () => {
     });
     it('cancels independently without making a write', async () => { const cancel = vi.fn(); render(<StudentEditor done={vi.fn()} cancel={cancel}/>); fireEvent.click(screen.getByRole('button', { name: 'Cancelar' })); expect(cancel).toHaveBeenCalledOnce(); expect(client.rpc).not.toHaveBeenCalled(); });
 });
-import { MemoryRouter } from 'react-router-dom';
+import { Routes, Route, MemoryRouter } from 'react-router-dom';
 import { StudentDetail, NewEnrollment } from '../src/enrollment/EnrollmentPages';
 function resultQuery(data: unknown) {
     const q = { select: () => q, eq: () => q, in: () => q, order: () => q, range: () => q, limit: () => q, single: () => q,
@@ -344,7 +344,7 @@ async function openTabbedStudent({ editing = false, emptyContacts = false } = {}
     const row = {id:'s',updated_at:'student-v1',apellido_paterno:'MUÑOZ',apellido_materno:'GÓMEZ',nombres:'ANA',tipo_di_id:'dni',numero_di:'00123456',fecha_nacimiento:'2000-01-02',sexo_id:'female',nacimiento_departamento_id:'dep',nacimiento_provincia_id:'prov',nacimiento_distrito_id:'dist',celular:'999123456',domicilio:'AV. MAR',domicilio_departamento_id:'dep',domicilio_provincia_id:'prov',domicilio_distrito_id:'dist',email:'ana@example.invalid',ocupacion_id:'other',ocupacion:'SOLDADOR NAVAL',senas_particulares:'CICATRIZ',estatura_cm:'165',peso_kg:'60'};
     const contacts = emptyContacts ? [] : [{id:'c1',updated_at:'contact-v1',apellido:'PÉREZ',nombre:'ELENA',parentesco_id:'mother',celular:'999111222',direccion:'AV. PUERTO 123',activo:true},{id:'c2',updated_at:'contact-v2',apellido:'LÓPEZ',nombre:'LUIS',parentesco_id:'mother',celular:'999333444',direccion:null,activo:false}];
     client.from.mockImplementation((table:string)=>table in refs ? {select:()=>({range:async(start:number)=>({data:start===0?refs[table]:[],error:null})})} : resultQuery(table==='alumno'?row:table==='alumno_contacto_emergencia'?contacts:[]));
-    render(<MemoryRouter initialEntries={[`/alumnos/s${editing?'?editar=1':''}`]}><StudentDetail/></MemoryRouter>);
+    render(<MemoryRouter initialEntries={[`/alumnos/s${editing?'?editar=1':''}`]}><Routes><Route path="/alumnos/s" element={<StudentDetail/>}/><Route path="/alumnos" element={<h2>Grilla de alumnos</h2>}/></Routes></MemoryRouter>);
     await screen.findByRole('heading',{name:'MUÑOZ GÓMEZ, ANA'});
     await waitFor(()=>expect(screen.getByRole(editing?'combobox':'textbox',{name:/^Sexo/})).toHaveValue(editing?'female':'FEMENINO'));
     return {row,contacts};
@@ -373,9 +373,9 @@ it('keeps the same record and tabs for viewing/editing and preserves drafts acro
     expect(client.rpc).not.toHaveBeenCalled();
     client.rpc.mockResolvedValue({data:{...row,nombres:'ANA MARÍA',domicilio:'AV. NUEVA',senas_particulares:'CICATRIZ Y LUNAR',updated_at:'student-v2'},error:null});
     fireEvent.click(screen.getByRole('button',{name:'Guardar cambios'}));
-    await waitFor(()=>expect(screen.getByRole('button',{name:'Editar alumno'})).toBeVisible());
+    expect(await screen.findByRole('heading',{name:'Grilla de alumnos'})).toBeVisible();
     expect(client.rpc).toHaveBeenCalledWith('guardar_alumno',{p:expect.objectContaining({id:'s',expected_updated_at:'student-v1',nombres:'ANA MARÍA',domicilio:'AV. NUEVA',senas_particulares:'CICATRIZ Y LUNAR',contactos:[]})});
-    expect(screen.getByRole('tab',{name:'Resumen'})).toHaveAttribute('aria-selected','true');
+    expect(screen.queryByRole('button',{name:'Guardar cambios'})).not.toBeInTheDocument();
 });
 it('uses the complete review data for Resumen with readable references, all sections and contacts',async()=>{
     await openTabbedStudent();
@@ -584,6 +584,7 @@ it('views company data read-only and edits through the existing command with its
     fireEvent.click(screen.getByRole('button',{name:'Guardar empresa'}));
     await waitFor(()=>expect(client.rpc).toHaveBeenCalledWith('guardar_empresa_patrocinadora',{p:expect.objectContaining({id:row.id,expected_updated_at:'company-v1',ruc:row.ruc,razon_social:'EMPRESA ACTUALIZADA'})}));
     await waitFor(()=>expect(screen.queryByRole('button',{name:'Guardar empresa'})).not.toBeInTheDocument());
+    expect(screen.getByRole('table',{name:'Empresas patrocinadoras por fecha de registro descendente'})).toBeVisible();
 });
 it('preserves choosing/no sponsor and auto-selects a newly saved company in enrollment',async()=>{
     const row=companyRows()[0],choose=vi.fn();client.from.mockReturnValue(resultQuery([row]));render(<Companies choose={choose}/>);

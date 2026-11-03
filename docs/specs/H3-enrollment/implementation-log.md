@@ -210,3 +210,6 @@ Validación CHG-H3-003: lint, typecheck, 199 tests en 12 archivos, build, test:l
 
 
 Ajuste visual 02/11/2026: se elimina el padding heredado de checkboxes en Con experiencia para alinear su etiqueta/control con Modalidad. Carrera reduce márgenes, separaciones y padding del panel; Descripción de Materia/Carrera inicia en dos líneas con altura compacta y conserva redimensionado vertical y límite 500. Sin cambios funcionales ni DB.
+
+
+Ajuste UX 02/11/2026: altas/ediciones guardadas correctamente de Materia, Carrera, Ciclo, Alumno y Empresa retornan a su grilla, recargando los datos. Errores/conflictos conservan el formulario. Los editores de Alumno/Empresa embebidos en matrícula conservan sus callbacks de selección. Carrera ordena Nombre/Sigla en la primera fila por nueva indicación humana. Sin cambios DB, permisos o reglas funcionales.
