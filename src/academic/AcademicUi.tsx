@@ -58,7 +58,7 @@ export function ConfirmDialog({ title, description, reason, confirmLabel = 'Conf
 }
 
 // Native constraints remain useful, but feedback is inline and owned by the app.
-export function InlineForm({ children, onSubmit, onInvalidField, ...props }: { children: ReactNode; onSubmit: (event: FormEvent<HTMLFormElement>) => void; onInvalidField?: (field: HTMLElement) => void; className?: string; 'aria-describedby'?: string }) {
+export function InlineForm({ children, onSubmit, onInvalidField, ...props }: { children: ReactNode; onSubmit: (event: FormEvent<HTMLFormElement>) => void; onInvalidField?: (field: HTMLElement) => void; className?: string; id?: string; 'aria-describedby'?: string }) {
   const [errors, setErrors] = useState<{ id: string; label: string; text: string }[]>([])
   const id = useId(), ref = useRef<HTMLFormElement>(null), focusAfterSubmit = useRef(false)
   function validate(event: FormEvent<HTMLFormElement>) {

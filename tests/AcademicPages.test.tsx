@@ -279,7 +279,7 @@ it('changing cycle career explains preservation rules before sending a command',
   await waitFor(() => expect(screen.getByLabelText('Distrito')).toHaveValue('dist'))
   fireEvent.change(screen.getByLabelText('Carrera'), { target: { value: 'second-career' } })
   await waitFor(()=>expect(screen.getByRole('button',{name:'Guardar Ciclo'})).toBeEnabled())
-  fireEvent.submit(screen.getByRole('button', { name: 'Guardar Ciclo' }).closest('form')!)
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar Ciclo' }))
   expect(await screen.findByRole('dialog')).toHaveTextContent('SC — SEGUNDA CARRERA')
   expect(screen.getByRole('dialog')).toHaveTextContent('materias heredadas de la Carrera actual se retirarán')
   expect(screen.getByRole('dialog')).toHaveTextContent('adicionales se conservarán')
@@ -450,7 +450,7 @@ it('missing Cycle location uses the common inline validation and preserves other
   await screen.findByRole('table', { name: 'Materias del Ciclo' })
   const field = screen.getByLabelText('Capitanía'), scroll = vi.fn(); field.scrollIntoView = scroll
   fireEvent.change(field, { target: { value: '' } })
-  fireEvent.submit(screen.getByRole('button', { name: 'Guardar Ciclo' }).closest('form')!)
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar Ciclo' }))
   expect(field).toHaveFocus(); expect(scroll).toHaveBeenCalledTimes(1)
   expect(document.getElementById(field.getAttribute('aria-describedby')!)).toHaveTextContent('Selecciona una capitanía.')
   expect(screen.getByLabelText('Fecha de inicio')).toHaveValue('2037-01-01')
@@ -544,7 +544,7 @@ it('Cycle tab changes preserve the draft and prevent separate mutations from dis
   fireEvent.click(await screen.findByRole('button',{name:'Editar 2026-001-NAV'}));
   fireEvent.change(screen.getByLabelText('Nombre de promoción (opcional)'),{target:{value:'PROMOCION SIN GUARDAR'}});
   fireEvent.click(screen.getByRole('tab',{name:'Materias'}));expect(await screen.findByRole('button',{name:'Retirar'})).toBeDisabled();
-  fireEvent.click(screen.getByRole('tab',{name:'Estado'}));expect(screen.getByRole('button',{name:'Confirmar transición'})).toBeDisabled();expect(screen.getByRole('button',{name:'Cancelar edición'})).toBeEnabled();
+  fireEvent.click(screen.getByRole('tab',{name:'Estado'}));expect(screen.getByRole('button',{name:'Confirmar transición'})).toBeDisabled();expect(screen.getByRole('button',{name:'Cancelar'})).toBeEnabled();
   fireEvent.click(screen.getByRole('tab',{name:'Datos'}));expect(screen.getByLabelText('Nombre de promoción (opcional)')).toHaveValue('PROMOCION SIN GUARDAR');
   fireEvent.click(screen.getByRole('button',{name:'Cancelar'}));
   expect(screen.getByRole('textbox',{name:'Nombre de promoción (opcional)'})).toHaveValue('');expect(screen.getByRole('textbox',{name:'Carrera'})).toHaveAttribute('readonly');expect(rpc).not.toHaveBeenCalled();
@@ -687,4 +687,10 @@ it('preserves tariff drafts across tabs, blocks registration until saved and use
  fireEvent.change(screen.getByRole('spinbutton',{name:'Importe de TARIFA CARRERA'}),{target:{value:'125'}});fireEvent.click(screen.getByRole('tab',{name:'Matrículas'}));expect(screen.getByRole('button',{name:'+ Matricular alumno'})).toBeDisabled();expect(screen.getByRole('alert')).toHaveTextContent('Guarda o cancela los cambios de Tarifas');
  fireEvent.click(screen.getByRole('tab',{name:'Tarifas'}));expect(screen.getByRole('spinbutton',{name:'Importe de TARIFA CARRERA'})).toHaveValue(125);tables.ciclo_tarifa[0].importe='125';rpc.mockImplementation(async(name:string)=>({data:{...ciclo,updated_at:name==='guardar_ciclo_tarifas'?'cv2':'cv3'},error:null}));fireEvent.click(screen.getByRole('button',{name:'Guardar tarifas del Ciclo'}));await screen.findByText('Tarifas del Ciclo guardadas correctamente.');await screen.findByText('Tarifas listas para matricular.');
  fireEvent.click(screen.getByRole('tab',{name:'Matrículas'}));await waitFor(()=>expect(screen.getByRole('button',{name:'+ Matricular alumno'})).toBeEnabled());fireEvent.click(screen.getByRole('tab',{name:'Datos'}));fireEvent.click(screen.getByRole('button',{name:'Editar Ciclo'}));fireEvent.change(screen.getByLabelText('Nombre de promoción (opcional)'),{target:{value:'PROMOCION'}});fireEvent.click(screen.getByRole('button',{name:'Guardar Ciclo'}));await waitFor(()=>expect(rpc).toHaveBeenCalledWith('guardar_ciclo',{p:expect.objectContaining({id:'cycle',expected_updated_at:'cv2',nombre_promocion:'PROMOCION'}),adicionales:[]}));
+});
+
+it('Cycle editing keeps one shared Cancel/Save bar on every tab and submits the Data form from Matriculas',async()=>{
+ session(['DIRECTOR_ACADEMICO']);render(<MemoryRouter><Ciclos/></MemoryRouter>);fireEvent.click(await screen.findByRole('button',{name:'Editar 2026-001-NAV'}));await waitFor(()=>expect(screen.getByRole('button',{name:'Guardar Ciclo'})).toBeEnabled());
+ for(const name of ['Datos','Materias','Tarifas','Matrículas','Estado']){fireEvent.click(screen.getByRole('tab',{name}));expect(screen.getByRole('button',{name:'Cancelar'})).toBeVisible();expect(screen.getByRole('button',{name:'Guardar Ciclo'})).toBeVisible();expect(screen.getAllByRole('button',{name:'Cancelar'})).toHaveLength(1)}
+ fireEvent.click(screen.getByRole('tab',{name:'Datos'}));fireEvent.change(screen.getByLabelText('Nombre de promoción (opcional)'),{target:{value:'PROMOCION'}});fireEvent.click(screen.getByRole('tab',{name:'Matrículas'}));rpc.mockResolvedValue({data:{...ciclo,updated_at:'v2'},error:null});fireEvent.click(screen.getByRole('button',{name:'Guardar Ciclo'}));await waitFor(()=>expect(rpc).toHaveBeenCalledWith('guardar_ciclo',{p:expect.objectContaining({id:'cycle',nombre_promocion:'PROMOCION'}),adicionales:[]}));
 });

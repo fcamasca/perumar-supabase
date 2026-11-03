@@ -82,3 +82,7 @@ it('an uncertain Add response blocks that candidate until the grid is reviewed',
 it('SDK network errors are treated as uncertain and never auto-retried',async()=>{
  show();fireEvent.click(screen.getByRole('button',{name:'+ Matricular alumno'}));const drawer=await screen.findByRole('dialog');fireEvent.change(within(drawer).getByRole('searchbox',{name:'Buscar Alumno'}),{target:{value:'nuevo'}});const add=await within(drawer).findByRole('button',{name:'Agregar'});client.rpc.mockResolvedValue({error:{code:'',message:'Failed to fetch'}});fireEvent.click(add);expect(await within(drawer).findByRole('alert')).toHaveTextContent('Respuesta no confirmada');expect(within(drawer).getByRole('button',{name:'Agregar'})).toBeDisabled();expect(client.rpc).toHaveBeenCalledTimes(1);
 });
+
+it('hides pagination when the enrolled grid has only one page',async()=>{
+ show();const table=await screen.findByRole('table',{name:'Alumnos matriculados en el Ciclo'});await waitFor(()=>expect(table).toHaveTextContent('2026-NAV-001'));expect(screen.queryByRole('button',{name:'Anterior'})).not.toBeInTheDocument();expect(screen.queryByRole('button',{name:'Siguiente página'})).not.toBeInTheDocument();expect(screen.queryByRole('button',{name:'Página siguiente'})).not.toBeInTheDocument();
+});

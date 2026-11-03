@@ -710,22 +710,33 @@ it('late responses never replace more recent pupil search results',async()=>{
  await act(async()=>pending[0]({data:[pupil('old','ANTERIOR')],error:null}));expect(screen.getByRole('table',{name:'Resultados de alumnos'})).not.toHaveTextContent('ANTERIOR');expect(screen.getByRole('table',{name:'Resultados de alumnos'})).toHaveTextContent('RECIENTE');
 });
 
-function showIndividualEnrollment(editing=false){
+function showIndividualEnrollment(editing=false, charges:Record<string,unknown>[]=[]){
  const row={id:'m1',alumno_id:'s1',ciclo_id:'c1',codigo_matricula:'2026-NAV-001',estado_codigo:'ACTIVO',updated_at:'mv1'};
  client.from.mockImplementation((table:string)=>{
   let single=false;const q={select:()=>q,eq:()=>q,in:()=>q,order:()=>q,range:()=>q,limit:()=>q,single:()=>{single=true;return q},then:(resolve:(r:unknown)=>unknown)=>{
-   const data=table==='matricula'?[row]:table==='alumno'?[{id:'s1',nombres:'ANA',apellido_paterno:'PRUEBA',numero_di:'00123456'}]:table==='ciclo'?[{id:'c1',codigo_ciclo:'2026-001-NAV',estado_codigo:'PROGRAMADO',updated_at:'cv1'}]:[];
+   const data=table==='matricula'?[row]:table==='alumno'?[{id:'s1',nombres:'ANA',apellido_paterno:'PRUEBA',numero_di:'00123456'}]:table==='ciclo'?[{id:'c1',codigo_ciclo:'2026-001-NAV',estado_codigo:'PROGRAMADO',updated_at:'cv1'}]:table==='matricula_cargo'?charges:[];
    return Promise.resolve({data:single?data[0]:data,error:null}).then(resolve)
   }};return q;
  });
  render(<MemoryRouter initialEntries={['/matriculas/m1'+(editing?'?editar=1':'')]}><Routes><Route path="/matriculas/:id" element={<EnrollmentDetail/>}/></Routes></MemoryRouter>);
 }
 it('Ver matricula is read-only until the explicit Edit action opens full controls',async()=>{
- showIndividualEnrollment();await screen.findByRole('heading',{name:'Matrícula 2026-NAV-001'});expect(screen.queryByRole('button',{name:'Guardar código'})).not.toBeInTheDocument();
- fireEvent.click(screen.getByRole('button',{name:'Editar matrícula'}));expect(screen.getByRole('button',{name:'Guardar código'})).toBeVisible();expect(screen.getByRole('combobox',{name:'Ciclo destino'})).toBeVisible();
+ showIndividualEnrollment();await screen.findByRole('heading',{name:'2026-NAV-001'});expect(screen.queryByRole('button',{name:'Guardar código'})).not.toBeInTheDocument();
+ fireEvent.click(screen.getByRole('button',{name:'Editar matrícula'}));expect(screen.getByRole('button',{name:'Guardar código'})).toBeVisible();fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));expect(screen.getByRole('combobox',{name:'Ciclo destino'})).toBeVisible();
  fireEvent.click(screen.getByRole('button',{name:'Cancelar edición'}));expect(screen.queryByRole('button',{name:'Guardar código'})).not.toBeInTheDocument();expect(client.rpc).not.toHaveBeenCalled();
 });
 it('the grid Edit route enables the individual command with its optimistic version',async()=>{
  showIndividualEnrollment(true);await screen.findByRole('button',{name:'Guardar código'});fireEvent.change(screen.getByRole('textbox',{name:'Código visible'}),{target:{value:'2026-NAV-999'}});client.rpc.mockResolvedValue({data:{id:'m1'},error:null});fireEvent.click(screen.getByRole('button',{name:'Guardar código'}));
- await waitFor(()=>expect(client.rpc).toHaveBeenCalledExactlyOnceWith('editar_matricula',{p:{id:'m1',expected_updated_at:'mv1',codigo_matricula:'2026-NAV-999'}}));expect(screen.getByRole('link',{name:'Volver a matrículas del Ciclo'})).toHaveAttribute('href','/academico/ciclos?ciclo=c1&seccion=matriculas');
+ await waitFor(()=>expect(client.rpc).toHaveBeenCalledExactlyOnceWith('editar_matricula',{p:{id:'m1',expected_updated_at:'mv1',codigo_matricula:'2026-NAV-999'}}));fireEvent.click(screen.getByRole('button',{name:'Cancelar edición'}));expect(screen.getByRole('button',{name:'Volver a matrículas del Ciclo'})).toBeVisible();
+});
+
+it('enrollment tabs separate current charges from history without exposing edit commands',async()=>{
+ showIndividualEnrollment(false,[{id:'now',nombre:'CURSO VIGENTE',activo:true,importe_original:130,descuento:10,importe_final:120},{id:'old',nombre:'CURSO ANTERIOR',activo:false,importe_original:90,descuento:0,importe_final:90,motivo_inactivacion:'CAMBIO_CICLO'}]);
+ await screen.findByRole('heading',{name:'2026-NAV-001'});
+ expect(within(screen.getByRole('tabpanel',{name:'Resumen'})).getByText('S/120.00')).toBeVisible();
+ fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));
+ const current=screen.getByRole('table',{name:'Cargos vigentes'});expect(current).toHaveTextContent('CURSO VIGENTE');expect(current).not.toHaveTextContent('CURSO ANTERIOR');
+ expect(screen.queryByRole('button',{name:'Aplicar descuento'})).not.toBeInTheDocument();
+ fireEvent.click(screen.getByRole('tab',{name:'Historial'}));const history=screen.getByRole('table',{name:'Cargos retirados'});expect(history).toHaveTextContent('CURSO ANTERIOR');expect(history).toHaveTextContent('CAMBIO CICLO');expect(history).not.toHaveTextContent('CURSO VIGENTE');
+ expect(screen.getByText('Datos del alumno al matricular')).toBeVisible();expect(client.rpc).not.toHaveBeenCalled();
 });
