@@ -8,13 +8,13 @@ const version = '2026-10-22T00:00:00Z'
 const ciclo = { id: 'cycle', carrera_id: 'career', codigo_ciclo: '2026-001-NAV', fecha_inicio: '2037-01-01', fecha_fin: '2037-01-02', nombre_promocion: '', departamento_id: 'dep', provincia_id: 'prov', distrito_id: 'dist', capitania_id: 'cap', estado_codigo: 'PROGRAMADO', updated_at: version }
 let tables: Record<string, Record<string, unknown>[]>
 const rpc = vi.fn()
-const queryCalls: {table:string;orders:[string,unknown][];likes:[string,string][];bounds?:[number,number]}[] = []
+const queryCalls: {table:string;orders:[string,unknown][];likes:[string,string][];or?:string;filters:[string,unknown][];bounds?:[number,number]}[] = []
 function from(table: string) {
   const filters: [string, unknown][] = []
-  const call: typeof queryCalls[number] = {table,orders:[],likes:[]}; queryCalls.push(call)
+  const call: typeof queryCalls[number] = {table,orders:[],likes:[],filters}; queryCalls.push(call)
   let single = false
   const builder = {
-    select: () => builder, gte: () => builder, lte: () => builder, order: (column:string,options?:unknown) => {call.orders.push([column,options]);return builder}, range: (start:number,end:number) => {call.bounds=[start,end];return builder}, limit: () => builder, ilike: (column:string,text:string) => {call.likes.push([column,text]);return builder}, in: (column: string, values: unknown[]) => { filters.push([column, values]); return builder },
+    select: () => builder, or: (expression:string) => {call.or=expression;return builder}, gte: () => builder, lte: () => builder, order: (column:string,options?:unknown) => {call.orders.push([column,options]);return builder}, range: (start:number,end:number) => {call.bounds=[start,end];return builder}, limit: () => builder, ilike: (column:string,text:string) => {call.likes.push([column,text]);return builder}, in: (column: string, values: unknown[]) => { filters.push([column, values]); return builder },
     eq: (column: string, value: unknown) => { filters.push([column, value]); return builder },
     single: () => { single = true; return builder },
     then: (resolve: (value: unknown) => unknown) => {
@@ -460,14 +460,15 @@ it('sigla suggestion respects the maximum and never contains accents or punctuat
 })
 
 it.each([
-  {Component:Materias,table:'materia',label:'Materias',code:'M',back:'Volver a materias',search:'Buscar Materia por nombre'},
-  {Component:Carreras,table:'carrera',label:'Carreras',code:'C',back:'Volver a carreras',search:'Buscar Carrera por nombre'},
-  {Component:Ciclos,table:'ciclo',label:'Ciclos',code:'CY',back:'Volver a ciclos',search:'Buscar código de Ciclo'},
+  {Component:Materias,table:'materia',label:'Materias',code:'M',back:'Volver a materias',search:'Buscar Materia por código o nombre'},
+  {Component:Carreras,table:'carrera',label:'Carreras',code:'C',back:'Volver a carreras',search:'Buscar Carrera por código o nombre'},
+  {Component:Ciclos,table:'ciclo',label:'Ciclos',code:'CY',back:'Volver a ciclos',search:'Buscar Ciclo por código o Carrera'},
 ])('$label shares newest-first paging, row actions and list/record navigation without resetting filters',async({Component,table,label,code,back,search})=>{
   const base=tables[table][0];tables[table]=Array.from({length:65},(_,i)=>({...base,id:`row-${i}`,codigo:`${code}${i}`,codigo_ciclo:`${code}${i}`,nombre:`NOMBRE ${i}`}));
   session(['DIRECTOR_ACADEMICO']);render(<Component/>);
   await screen.findByRole('button',{name:`Ver ${code}0`});
   expect(screen.getByRole('search',{name:`Búsqueda de ${label.toLowerCase()}`})).toBeVisible();
+  expect(screen.queryByRole('button',{name:'Recargar información'})).not.toBeInTheDocument();
   let request=queryCalls.filter(c=>c.table===table&&c.bounds).at(-1)!;
   expect(request.bounds).toEqual([0,29]);expect(request.orders).toEqual([['created_at',{ascending:false}],['id',{ascending:false}]]);
   fireEvent.click(screen.getByRole('button',{name:'Siguiente página'}));
@@ -482,7 +483,8 @@ it.each([
   fireEvent.change(screen.getByRole('searchbox',{name:search}),{target:{value:'ensayo'}});
   await waitFor(()=>expect(queryCalls.filter(c=>c.table===table&&c.bounds).at(-1)!.bounds).toEqual([0,29]));
   request=queryCalls.filter(c=>c.table===table&&c.bounds).at(-1)!;
-  expect(request.likes).toContainEqual([table==='ciclo'?'codigo_ciclo':'nombre','%ENSAYO%']);
+  if(table==='ciclo') expect(request.or).toBe('codigo_ciclo.ilike."%ENSAYO%"');
+  else expect(request.or).toBe('codigo.ilike."%ENSAYO%",nombre.ilike."%ENSAYO%"');
   expect(rpc).not.toHaveBeenCalled();
 });
 it('Coordinador can view all Materia fields without seeing maintenance actions',async()=>{
@@ -547,4 +549,45 @@ it('saving Materia returns to its read-only record with the new version and Canc
   fireEvent.click(screen.getByRole('button',{name:'Editar Materia'}));fireEvent.change(screen.getByLabelText('Nombre de Materia'),{target:{value:'DESCARTAR'}});
   fireEvent.click(screen.getByRole('button',{name:'Cancelar'}));expect(screen.getByLabelText('Nombre de Materia')).toHaveValue('ACTUALIZADA');
   expect(rpc).toHaveBeenCalledExactlyOnceWith('guardar_materia',{p:{id:'subject',expected_updated_at:version,codigo:'M1',nombre:'ACTUALIZADA',descripcion:null}});
+});
+
+it.each([
+  {Component:Materias,table:'materia',label:'Buscar Materia por código o nombre'},
+  {Component:Carreras,table:'carrera',label:'Buscar Carrera por código o nombre'},
+])('uses one code-or-name search box for $table and retains the status filter',async({Component,table,label})=>{
+  session(['DIRECTOR_ACADEMICO']);render(<Component/>);
+  await screen.findByRole('button',{name:table==='materia'?'Ver M1':'Ver C1'});
+  expect(screen.getAllByRole('searchbox')).toHaveLength(1);
+  const search=screen.getByRole('searchbox',{name:label});
+  expect(search).toHaveAttribute('placeholder','Código o nombre');
+  fireEvent.change(search,{target:{value:'m1'}});
+  await waitFor(()=>expect(queryCalls.filter(c=>c.table===table&&c.bounds).at(-1)?.or).toBe('codigo.ilike."%M1%",nombre.ilike."%M1%"'));
+  fireEvent.change(search,{target:{value:'navegación'}});
+  await waitFor(()=>expect(queryCalls.filter(c=>c.table===table&&c.bounds).at(-1)?.or).toBe('codigo.ilike."%NAVEGACIÓN%",nombre.ilike."%NAVEGACIÓN%"'));
+  fireEvent.change(screen.getByRole('combobox',{name:table==='materia'?'Estado de Materia':'Estado de Carrera'}),{target:{value:'inactive'}});
+  await waitFor(()=>expect(queryCalls.filter(c=>c.table===table&&c.bounds).at(-1)?.filters).toContainEqual(['active',table==='materia'?false:[false]]));
+  await waitFor(()=>expect(queryCalls.filter(c=>c.table===table&&c.bounds).at(-1)?.or).toBe('codigo.ilike."%NAVEGACIÓN%",nombre.ilike."%NAVEGACIÓN%"'));
+  fireEvent.change(search,{target:{value:''}});
+  await waitFor(()=>expect(queryCalls.filter(c=>c.table===table&&c.bounds).at(-1)?.or).toBeUndefined());
+  expect(rpc).not.toHaveBeenCalled();
+});
+it('quotes punctuation in code-or-name search rather than allowing it to become OR filter syntax',async()=>{
+  session(['DIRECTOR_ACADEMICO']);render(<Materias/>);await screen.findByRole('button',{name:'Ver M1'});
+  fireEvent.change(screen.getByRole('searchbox'),{target:{value:'MAR, "NORTE" (A)'}});
+  await waitFor(()=>expect(queryCalls.filter(c=>c.table==='materia'&&c.bounds).at(-1)?.or).toBe('codigo.ilike."%MAR, \\"NORTE\\" (A)%",nombre.ilike."%MAR, \\"NORTE\\" (A)%"'));
+  expect(rpc).not.toHaveBeenCalled();
+});
+it('searches Cycle code OR matching career names without querying promotion or career code',async()=>{
+  tables.carrera.push({...tables.carrera[0],id:'second-career',codigo:'ALTERNATIVA',nombre:'FORMACION MARITIMA'});
+  session(['COORDINADOR_ACADEMICO']);render(<Ciclos/>);await screen.findByRole('button',{name:'Ver 2026-001-NAV'});
+  const search=screen.getByRole('searchbox',{name:'Buscar Ciclo por código o Carrera'});
+  expect(search).toHaveAttribute('placeholder','Código de Ciclo o nombre de Carrera');
+  fireEvent.change(search,{target:{value:'maritima'}});
+  await waitFor(()=>expect(queryCalls.filter(c=>c.table==='ciclo'&&c.bounds).at(-1)?.or).toBe('codigo_ciclo.ilike."%MARITIMA%",carrera_id.in.(second-career)'));
+  fireEvent.change(search,{target:{value:'2026-001'}});
+  await waitFor(()=>expect(queryCalls.filter(c=>c.table==='ciclo'&&c.bounds).at(-1)?.or).toBe('codigo_ciclo.ilike."%2026-001%"'));
+  fireEvent.change(search,{target:{value:'alternativa'}});
+  await waitFor(()=>expect(queryCalls.filter(c=>c.table==='ciclo'&&c.bounds).at(-1)?.or).toBe('codigo_ciclo.ilike."%ALTERNATIVA%"'));
+  expect(queryCalls.filter(c=>c.table==='ciclo'&&c.bounds).at(-1)?.or).not.toContain('nombre_promocion');
+  expect(rpc).not.toHaveBeenCalled();
 });

@@ -30,6 +30,9 @@ export function academicError(error: { code?: string; message?: string } | null,
   if (error?.code === '42501') return 'No tienes permiso para realizar esta operación.'
   return 'No se pudo guardar. Revisa campos, relaciones, materias activas y estado; recarga si cambió la información.'
 }
+// Quote the PostgREST operand so punctuation cannot become filter operators.
+const academicSearchPattern = (text: string) => JSON.stringify(`%${text.trim()}%`)
+const codeOrNameFilter = (text: string) => `codigo.ilike.${academicSearchPattern(text)},nombre.ilike.${academicSearchPattern(text)}`
 const academicDate = (date: string) => date ? date.split('-').reverse().join('/') : '—'
 const academicLabel = (row?: { codigo: string; nombre: string }) => row ? `${row.codigo} — ${row.nombre}` : 'Referencia no disponible'
 export function suggestSigla(name: string) {
@@ -68,7 +71,6 @@ export function Materias() {
   const { client, state } = useSession()
   const director = state.roles?.includes('DIRECTOR_ACADEMICO')
   const [rows, setRows] = useState<Materia[]>([]), [revision, setRevision] = useState(0)
-  const [codeSearch, setCodeSearch] = useState('')
   const [search, setSearch] = useState(''), [status, setStatus] = useState('')
   const [selected, setSelected] = useState<Materia | null>(null)
   const [codigo, setCodigo] = useState(''), [nombre, setNombre] = useState(''), [descripcion, setDescripcion] = useState('')
@@ -78,12 +80,11 @@ export function Materias() {
     let current = true
     setLoading(true); setLoadError(false)
     let query = client.from('materia').select(materiaColumns).order('created_at', { ascending: false }).order('id', { ascending: false }).range(page * 30, page * 30 + 29)
-    if (search) query = query.ilike('nombre', `%${search}%`)
-    if (codeSearch) query = query.ilike('codigo', `%${codeSearch}%`)
+    if (search.trim()) query = query.or(codeOrNameFilter(search))
     if (status) query = query.eq('active', status === 'active')
     void query.then(result => { if (current) { setLoading(false); setLoadError(!!result.error); setRows(result.error ? [] : result.data as Materia[]); if (result.error) setMessage('No se pudo consultar Materias.') } })
     return () => { current = false }
-  }, [client, revision, search, status, codeSearch, page])
+  }, [client, revision, search, status, page])
   function edit(row: Materia | null, view = false) { setReadOnly(view || !director); setOpen(true); setSelected(row); setCodigo(row?.codigo ?? ''); setNombre(row?.nombre ?? ''); setDescripcion(row?.descripcion ?? ''); setMessage('') }
   async function save(event: FormEvent) {
     event.preventDefault(); if (readOnly || !director) return; setBusy(true); setMessage('')
@@ -116,8 +117,8 @@ export function Materias() {
       <label>Descripción de Materia{!readOnly && <small>Máximo 500 caracteres</small>}<textarea aria-label="Descripción de Materia" readOnly={readOnly} maxLength={500} value={descripcion} onChange={e => setDescripcion(formTextValue(e.currentTarget))}/>{!readOnly && <small>{descripcion.length} / 500</small>}</label>
     </fieldset>{!readOnly && <div className="form-actions"><button className="secondary" disabled={busy} type="button" onClick={cancelEditing}>Cancelar</button><button disabled={busy}>Guardar Materia</button></div>}</InlineForm>
   </section>
-  return <section>{dialog}<h2>Materias</h2><div className="filters academic-toolbar" role="search" aria-label="Búsqueda de materias"><AcademicSearch label="Buscar Materia por nombre" value={search} onChange={text => {setSearch(text);setPage(0)}}/><AcademicSearch label="Buscar Materia por código" value={codeSearch} onChange={text => {setCodeSearch(text);setPage(0)}}/><label>Estado de Materia<select value={status} onChange={e => {setStatus(e.currentTarget.value);setPage(0)}}><option value="">Todos</option><option value="active">Activo</option><option value="inactive">Inactivo</option></select></label><div className="record-header-actions"><AcademicAction label="Recargar información" icon="refresh" disabled={busy || loading} onClick={() => {setMessage('');setRevision(x => x + 1)}}/>{director && <AcademicAction label="Crear Materia" createFor="Materias" icon="new" disabled={busy} onClick={() => edit(null)}/>}</div></div><Notice message={message}/>
-    {loading && <p role="status">Cargando materias…</p>}<div className="table-scroll academic-grid"><table aria-label="Materias"><thead><tr><th scope="col">Código</th><th scope="col">Nombre</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr></thead><tbody>{!loading && !loadError && rows.length === 0 && <tr><td colSpan={4}><EmptyState entity="Materias" filtered={!!(codeSearch || search || status)} onCreate={director ? () => edit(null) : undefined}/></td></tr>}{rows.map(row => <tr key={row.id}><td>{row.codigo}</td><td><button className="student-row-name company-row-name" onClick={() => edit(row,true)}>{row.nombre}</button></td><td><StatusBadge value={row.active ? 'Activo' : 'Inactivo'}/></td><td><div className="student-row-actions"><AcademicAction label={`Ver ${row.codigo}`} icon="view" disabled={busy} onClick={() => edit(row,true)}/>{director && <><AcademicAction label={`Editar ${row.codigo}`} icon="edit" disabled={busy} onClick={() => edit(row)}/><AcademicAction label={`${row.active ? 'Inactivar' : 'Reactivar'} ${row.codigo}`} icon={row.active ? 'off' : 'on'} disabled={busy} onClick={() => void activate(row)}/></>}</div></td></tr>)}</tbody></table></div><AcademicPagination page={page} count={rows.length} disabled={busy || loading} onChange={setPage}/>
+  return <section>{dialog}<h2>Materias</h2><div className="filters academic-toolbar" role="search" aria-label="Búsqueda de materias"><AcademicSearch label="Buscar Materia por código o nombre" placeholder="Código o nombre" value={search} onChange={text => {setSearch(text);setPage(0)}}/><label>Estado de Materia<select value={status} onChange={e => {setStatus(e.currentTarget.value);setPage(0)}}><option value="">Todos</option><option value="active">Activo</option><option value="inactive">Inactivo</option></select></label><div className="record-header-actions">{director && <AcademicAction label="Crear Materia" createFor="Materias" icon="new" disabled={busy} onClick={() => edit(null)}/>}</div></div><Notice message={message}/>
+    {loading && <p role="status">Cargando materias…</p>}<div className="table-scroll academic-grid"><table aria-label="Materias"><thead><tr><th scope="col">Código</th><th scope="col">Nombre</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr></thead><tbody>{!loading && !loadError && rows.length === 0 && <tr><td colSpan={4}><EmptyState entity="Materias" filtered={!!(search || status)} onCreate={director ? () => edit(null) : undefined}/></td></tr>}{rows.map(row => <tr key={row.id}><td>{row.codigo}</td><td><button className="student-row-name company-row-name" onClick={() => edit(row,true)}>{row.nombre}</button></td><td><StatusBadge value={row.active ? 'Activo' : 'Inactivo'}/></td><td><div className="student-row-actions"><AcademicAction label={`Ver ${row.codigo}`} icon="view" disabled={busy} onClick={() => edit(row,true)}/>{director && <><AcademicAction label={`Editar ${row.codigo}`} icon="edit" disabled={busy} onClick={() => edit(row)}/><AcademicAction label={`${row.active ? 'Inactivar' : 'Reactivar'} ${row.codigo}`} icon={row.active ? 'off' : 'on'} disabled={busy} onClick={() => void activate(row)}/></>}</div></td></tr>)}</tbody></table></div><AcademicPagination page={page} count={rows.length} disabled={busy || loading} onChange={setPage}/>
   </section>
 }
 
@@ -133,21 +134,23 @@ export function Carreras() {
   const [rows, setRows] = useState<Carrera[]>([]), [materias, setMaterias] = useState<Materia[]>([]), [modalidades, setModalidades] = useState<Valor[]>([])
   const [selected, setSelected] = useState<Carrera | null>(null), [chosen, setChosen] = useState<string[]>([])
   const [codigo, setCodigo] = useState(''), [nombre, setNombre] = useState(''), [descripcion, setDescripcion] = useState(''), [sigla, setSigla] = useState(''), [modalidad, setModalidad] = useState('')
-  const [codeSearch, setCodeSearch] = useState(''), [activeStatus, setActiveStatus] = useState('')
+  const [activeStatus, setActiveStatus] = useState('')
   const [search, setSearch] = useState(''), [message, setMessage] = useState(''), [busy, setBusy] = useState(false), [revision, setRevision] = useState(0)
   const { ask, dialog } = useConfirmation(busy)
   useEffect(() => {
     let current = true
     setLoading(true); setLoadError(false)
     void (async () => {
-      const [c, m, cat] = await Promise.all([client.from('carrera').select(carreraColumns).ilike('nombre', `%${search}%`).ilike('codigo', `%${codeSearch}%`).in('active', activeStatus ? [activeStatus === 'active'] : [true, false]).order('created_at', { ascending:false }).order('id', { ascending:false }).range(page * 30, page * 30 + 29), client.from('materia').select(materiaColumns).order('nombre'), client.from('catalogo').select('id').eq('codigo', 'MODALIDAD_CARRERA').single()])
+      let query = client.from('carrera').select(carreraColumns).in('active', activeStatus ? [activeStatus === 'active'] : [true, false]).order('created_at', { ascending:false }).order('id', { ascending:false }).range(page * 30, page * 30 + 29)
+      if (search.trim()) query = query.or(codeOrNameFilter(search))
+      const [c, m, cat] = await Promise.all([query, client.from('materia').select(materiaColumns).order('nombre'), client.from('catalogo').select('id').eq('codigo', 'MODALIDAD_CARRERA').single()])
       if (!current) return
       if (c.error || m.error || cat.error) { setLoading(false); setLoadError(true); setRows([]); setMessage('No se pudieron consultar las referencias de Carrera.'); return }
       const values = await client.from('catalogo_valor').select('id,catalogo_id,codigo,nombre,activo').eq('catalogo_id', cat.data.id)
       if (current) { setLoading(false); if (values.error) { setLoadError(true); setMessage('No se pudo consultar la modalidad. Recarga la información.'); return }; setRows(c.data as Carrera[]); setMaterias(m.data as Materia[]); setModalidades(values.data ?? []) }
     })()
     return () => { current = false }
-  }, [client, search, revision, codeSearch, activeStatus, page])
+  }, [client, search, revision, activeStatus, page])
   async function edit(row: Carrera | null, view = false, section = 0) {
     setReadOnly(view || !director); setTab(section); setSubjectsStatus(row ? 'loading' : 'ready')
     setOpen(true); setSubjectSearch('')
@@ -193,8 +196,8 @@ export function Carreras() {
       {!readOnly && <div className="form-actions"><button className="secondary" disabled={busy} type="button" onClick={cancelEditing}>Cancelar</button><button disabled={busy || subjectsStatus !== 'ready'}>Guardar Carrera y Materias</button></div>}
     </InlineForm>
   </section>
-  return <section>{dialog}<h2>Carreras</h2><div className="filters academic-toolbar" role="search" aria-label="Búsqueda de carreras"><AcademicSearch label="Buscar Carrera por nombre" value={search} onChange={text => {setSearch(text);setPage(0)}}/><AcademicSearch label="Buscar Carrera por código" value={codeSearch} onChange={text => {setCodeSearch(text);setPage(0)}}/><label>Estado de Carrera<select value={activeStatus} onChange={e => {setActiveStatus(e.currentTarget.value);setPage(0)}}><option value="">Todos</option><option value="active">Activo</option><option value="inactive">Inactivo</option></select></label><div className="record-header-actions"><AcademicAction label="Recargar información" icon="refresh" disabled={busy || loading} onClick={() => {setMessage('');setRevision(x=>x+1)}}/>{director && <AcademicAction label="Crear Carrera" createFor="Carreras" icon="new" disabled={busy} onClick={() => void edit(null)}/>}</div></div><Notice message={message}/>{loading && <p role="status">Cargando carreras…</p>}
-    <div className="table-scroll academic-grid"><table aria-label="Carreras"><thead><tr><th scope="col">Código</th><th scope="col">Nombre</th><th scope="col">Sigla</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr></thead><tbody>{!loading && !loadError && rows.length === 0 && <tr><td colSpan={5}><EmptyState entity="Carreras" filtered={!!(codeSearch || search || activeStatus)} onCreate={director ? () => void edit(null) : undefined}/></td></tr>}{rows.map(row => <tr key={row.id}><td>{row.codigo}</td><td><button className="student-row-name company-row-name" onClick={() => void edit(row,true)}>{row.nombre}</button></td><td>{row.sigla}</td><td><StatusBadge value={row.active ? 'Activo' : 'Inactivo'}/></td><td><div className="student-row-actions"><AcademicAction label={`Ver ${row.codigo}`} icon="view" disabled={busy} onClick={() => void edit(row,true)}/>{director && <><AcademicAction label={`Editar ${row.codigo}`} icon="edit" disabled={busy} onClick={() => void edit(row)}/><AcademicAction label={`${row.active ? 'Inactivar' : 'Reactivar'} ${row.codigo}`} icon={row.active ? 'off' : 'on'} disabled={busy} onClick={() => void activate(row)}/></>}</div></td></tr>)}</tbody></table></div><AcademicPagination page={page} count={rows.length} disabled={busy || loading} onChange={setPage}/>
+  return <section>{dialog}<h2>Carreras</h2><div className="filters academic-toolbar" role="search" aria-label="Búsqueda de carreras"><AcademicSearch label="Buscar Carrera por código o nombre" placeholder="Código o nombre" value={search} onChange={text => {setSearch(text);setPage(0)}}/><label>Estado de Carrera<select value={activeStatus} onChange={e => {setActiveStatus(e.currentTarget.value);setPage(0)}}><option value="">Todos</option><option value="active">Activo</option><option value="inactive">Inactivo</option></select></label><div className="record-header-actions">{director && <AcademicAction label="Crear Carrera" createFor="Carreras" icon="new" disabled={busy} onClick={() => void edit(null)}/>}</div></div><Notice message={message}/>{loading && <p role="status">Cargando carreras…</p>}
+    <div className="table-scroll academic-grid"><table aria-label="Carreras"><thead><tr><th scope="col">Código</th><th scope="col">Nombre</th><th scope="col">Sigla</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr></thead><tbody>{!loading && !loadError && rows.length === 0 && <tr><td colSpan={5}><EmptyState entity="Carreras" filtered={!!(search || activeStatus)} onCreate={director ? () => void edit(null) : undefined}/></td></tr>}{rows.map(row => <tr key={row.id}><td>{row.codigo}</td><td><button className="student-row-name company-row-name" onClick={() => void edit(row,true)}>{row.nombre}</button></td><td>{row.sigla}</td><td><StatusBadge value={row.active ? 'Activo' : 'Inactivo'}/></td><td><div className="student-row-actions"><AcademicAction label={`Ver ${row.codigo}`} icon="view" disabled={busy} onClick={() => void edit(row,true)}/>{director && <><AcademicAction label={`Editar ${row.codigo}`} icon="edit" disabled={busy} onClick={() => void edit(row)}/><AcademicAction label={`${row.active ? 'Inactivar' : 'Reactivar'} ${row.codigo}`} icon={row.active ? 'off' : 'on'} disabled={busy} onClick={() => void activate(row)}/></>}</div></td></tr>)}</tbody></table></div><AcademicPagination page={page} count={rows.length} disabled={busy || loading} onChange={setPage}/>
   </section>
 }
 
@@ -221,13 +224,20 @@ export function Ciclos() {
     let current = true
     setLoading(true); setLoadError(false)
     void (async () => {
-      let q = client.from('ciclo').select(cicloColumns).ilike('codigo_ciclo', `%${search}%`).order('created_at', { ascending: false }).order('id', { ascending:false }).range(page * 30, page * 30 + 29)
-      if (estado) q = q.eq('estado_codigo', estado)
-      const [c, ca, ma, de, pr, cp, cat] = await Promise.all([q, client.from('carrera').select(carreraColumns).order('nombre'), client.from('materia').select(materiaColumns).order('nombre'), client.from('departamento').select('id,nombre,active').order('nombre'), client.from('provincia').select('id,nombre,active,departamento_id').order('nombre'), client.from('capitania').select('id,nombre,active').order('nombre'), client.from('catalogo').select('id').eq('codigo', 'MOTIVO_CICLO_DESIERTO').single()])
+      const [ca, ma, de, pr, cp, cat] = await Promise.all([client.from('carrera').select(carreraColumns).order('nombre'), client.from('materia').select(materiaColumns).order('nombre'), client.from('departamento').select('id,nombre,active').order('nombre'), client.from('provincia').select('id,nombre,active,departamento_id').order('nombre'), client.from('capitania').select('id,nombre,active').order('nombre'), client.from('catalogo').select('id').eq('codigo', 'MOTIVO_CICLO_DESIERTO').single()])
       if (!current) return
-      if (c.error || ca.error || ma.error || de.error || pr.error || cp.error || cat.error) { setLoading(false); setLoadError(true); setRows([]); setMessage('No se pudieron consultar Ciclos y referencias.'); return }
-      const mv = await client.from('catalogo_valor').select('id,catalogo_id,codigo,nombre,activo').eq('catalogo_id', cat.data.id)
-      if (current) { setLoading(false); if (mv.error) { setLoadError(true); setMessage('No se pudieron consultar los motivos. Recarga la información.'); return }; setRows(c.data as Ciclo[]); setCarreras(ca.data as Carrera[]); setMaterias(ma.data as Materia[]); setDepartamentos(de.data); setProvincias(pr.data); setCapitanias(cp.data); setMotivos(mv.data ?? []) }
+      if (ca.error || ma.error || de.error || pr.error || cp.error || cat.error) { setLoading(false); setLoadError(true); setRows([]); setMessage('No se pudieron consultar Ciclos y referencias.'); return }
+      let q = client.from('ciclo').select(cicloColumns).order('created_at', { ascending:false }).order('id', { ascending:false }).range(page * 30, page * 30 + 29)
+      if (search.trim()) {
+        const pattern = academicSearchPattern(search), term = search.trim().toUpperCase()
+        const careerIds = ca.data.filter(c => c.nombre.toUpperCase().includes(term)).map(c => c.id)
+        const alternatives = [`codigo_ciclo.ilike.${pattern}`]
+        if (careerIds.length) alternatives.push(`carrera_id.in.(${careerIds.join(',')})`)
+        q = q.or(alternatives.join(','))
+      }
+      if (estado) q = q.eq('estado_codigo', estado)
+      const [c,mv] = await Promise.all([q,client.from('catalogo_valor').select('id,catalogo_id,codigo,nombre,activo').eq('catalogo_id', cat.data.id)])
+      if (current) { setLoading(false); if (c.error || mv.error) { setLoadError(true);setRows([]);setMessage('No se pudieron consultar Ciclos y motivos. Recarga la información.');return }; setRows(c.data as Ciclo[]); setCarreras(ca.data as Carrera[]); setMaterias(ma.data as Materia[]); setDepartamentos(de.data); setProvincias(pr.data); setCapitanias(cp.data); setMotivos(mv.data ?? []) }
     })()
     return () => { current = false }
   }, [client, revision, search, estado, page])
@@ -302,7 +312,7 @@ export function Ciclos() {
     </fieldset><div className="form-actions"><button type="button" className="secondary" disabled={busy} onClick={cancelEditing}>Cancelar edición</button><button className={destino==='ANULADO'||destino==='DESIERTO'?'sensitive':undefined} disabled={busy||dirty}>Confirmar transición</button></div>
     </InlineForm></> : <p>{!editable ? 'Este Ciclo permanece solo para consulta.' : director?'Para cambiar el estado, selecciona Editar Ciclo.':'Solo el Director puede cambiar el estado.'}</p>}</div>}
   </section>
-  return <section>{dialog}<h2>Ciclos</h2><div className="filters academic-toolbar" role="search" aria-label="Búsqueda de ciclos"><AcademicSearch label="Buscar código de Ciclo" value={search} onChange={text=>{setSearch(text);setPage(0)}}/><label>Estado del listado<select value={estado} onChange={e=>{setEstado(e.currentTarget.value);setPage(0)}}><option value="">Todos</option>{['PROGRAMADO','EN_CURSO','CERRADO','DESIERTO','ANULADO'].map(x=><option key={x} value={x}>{x.replaceAll('_',' ')}</option>)}</select></label><div className="record-header-actions"><AcademicAction label="Recargar información" icon="refresh" disabled={busy||loading} onClick={()=>{setMessage('');setRevision(x=>x+1)}}/>{canModify&&<AcademicAction label="Crear Ciclo" createFor="Ciclos" icon="new" disabled={busy} onClick={()=>void edit(null)}/>}</div></div><Notice message={message}/>{loading&&<p role="status">Cargando ciclos…</p>}
+  return <section>{dialog}<h2>Ciclos</h2><div className="filters academic-toolbar" role="search" aria-label="Búsqueda de ciclos"><AcademicSearch label="Buscar Ciclo por código o Carrera" placeholder="Código de Ciclo o nombre de Carrera" value={search} onChange={text=>{setSearch(text);setPage(0)}}/><label>Estado del listado<select value={estado} onChange={e=>{setEstado(e.currentTarget.value);setPage(0)}}><option value="">Todos</option>{['PROGRAMADO','EN_CURSO','CERRADO','DESIERTO','ANULADO'].map(x=><option key={x} value={x}>{x.replaceAll('_',' ')}</option>)}</select></label><div className="record-header-actions">{canModify&&<AcademicAction label="Crear Ciclo" createFor="Ciclos" icon="new" disabled={busy} onClick={()=>void edit(null)}/>}</div></div><Notice message={message}/>{loading&&<p role="status">Cargando ciclos…</p>}
     <div className="table-scroll academic-grid"><table aria-label="Ciclos"><thead><tr><th scope="col">Código</th><th scope="col">Carrera</th><th scope="col">Capitanía</th><th scope="col">Inicio</th><th scope="col">Fin</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr></thead><tbody>{!loading&&!loadError&&rows.length===0&&<tr><td colSpan={7}><div className="empty-state"><p>{search||estado?'No hay Ciclos que coincidan con los filtros.':'No hay Ciclos registrados.'}</p>{canModify&&!search&&!estado&&<button onClick={()=>void edit(null)}>Crear primer Ciclo</button>}</div></td></tr>}{rows.map(row=><tr key={row.id}><td><button className="student-row-name company-row-name" onClick={()=>void edit(row,true)}>{row.codigo_ciclo}</button></td><td>{academicLabel(carreras.find(c=>c.id===row.carrera_id))}</td><td>{capitanias.find(c=>c.id===row.capitania_id)?.nombre??'—'}</td><td>{academicDate(row.fecha_inicio)}</td><td>{academicDate(row.fecha_fin)}</td><td><StatusBadge value={row.estado_codigo}/></td><td><div className="student-row-actions"><AcademicAction label={`Ver ${row.codigo_ciclo}`} icon="view" disabled={busy} onClick={()=>void edit(row,true)}/>{canEditCycle(row)&&<AcademicAction label={`Editar ${row.codigo_ciclo}`} icon="edit" disabled={busy} onClick={()=>void edit(row)}/>}</div></td></tr>)}</tbody></table></div><AcademicPagination page={page} count={rows.length} disabled={busy||loading} onChange={setPage}/>
   </section>
 }
