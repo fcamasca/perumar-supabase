@@ -1,6 +1,7 @@
+import { studentSearchFilter } from '../src/lib/studentSearch'
 import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ageAt, enrollmentError, StudentEditor, OccupationField } from '../src/enrollment/EnrollmentPages';
 const { client, sessionState } = vi.hoisted(() => ({ client: { from: vi.fn(), rpc: vi.fn() }, sessionState: { phase: 'authorized', roles: ['COORDINADOR_ACADEMICO'] } }));
 vi.mock('../src/security/SessionProvider', () => ({ useSession: () => ({ client, state: sessionState }) }));
@@ -22,7 +23,7 @@ describe('H3 student flow and safe feedback', () => {
 import { Routes, Route, MemoryRouter } from 'react-router-dom';
 import { StudentDetail, NewEnrollment } from '../src/enrollment/EnrollmentPages';
 function resultQuery(data: unknown) {
-    const q = { select: () => q, eq: () => q, in: () => q, order: () => q, range: () => q, limit: () => q, single: () => q,
+    const q = { select: () => q, or: () => q, eq: () => q, in: () => q, order: () => q, range: () => q, limit: () => q, single: () => q,
         then: (resolve: (r: {
             data: unknown;
             error: null;
@@ -47,12 +48,10 @@ it('returns from the new pupil flow to enrollment without losing its selected cy
     render(<MemoryRouter><NewEnrollment /></MemoryRouter>);
     await screen.findByRole('option', { name: /SINTETICO/ });
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'cycle' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
     fireEvent.click(screen.getByRole('button', { name: 'Nuevo Alumno' }));
     expect(screen.getByRole('heading', { name: 'Nuevo Alumno' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
-    expect(document.querySelector('[aria-current="step"]')).toHaveTextContent('Alumno');
-    fireEvent.click(screen.getByRole('button', { name: 'Anterior' }));
+    expect(screen.getByRole('tab',{name:'Datos de matrícula'})).toHaveAttribute('aria-selected','true');
     expect(screen.getByRole('combobox')).toHaveValue('cycle');
     expect(client.rpc).not.toHaveBeenCalled();
 });
@@ -123,12 +122,12 @@ it('shows full sex labels while retaining the catalog value IDs', async () => {
 import { Students } from '../src/enrollment/EnrollmentPages'
 it('identifies student search and keeps icon-only creation accessible with a dismissible tooltip', async () => {
   const like=vi.fn()
-  const q={select:()=>q,order:()=>q,range:()=>q,ilike:(...args:unknown[])=>{like(...args);return q},then:(resolve:(result:{data:unknown[];error:null})=>unknown)=>Promise.resolve({data:[],error:null}).then(resolve)}
+  const q={select:()=>q,order:()=>q,range:()=>q,or:(...args:unknown[])=>{like(...args);return q},ilike:(...args:unknown[])=>{like(...args);return q},then:(resolve:(result:{data:unknown[];error:null})=>unknown)=>Promise.resolve({data:[],error:null}).then(resolve)}
   client.from.mockReturnValue(q)
   render(<MemoryRouter><Students/></MemoryRouter>)
   expect(screen.getByRole('search',{name:'Búsqueda de alumnos'})).toBeInTheDocument()
   const search=screen.getByRole('searchbox',{name:'Buscar alumnos'})
-  expect(search).toHaveAttribute('placeholder','Código de alumno, documento o apellido paterno')
+  expect(search).toHaveAttribute('placeholder','Apellidos, nombres, documento o código de alumno')
   const create=screen.getByRole('link',{name:'Nuevo Alumno'})
   expect(create).toHaveAttribute('href','/alumnos/nuevo')
   expect(create.textContent).toBe('')
@@ -139,7 +138,7 @@ it('identifies student search and keeps icon-only creation accessible with a dis
   fireEvent.focus(create)
   expect(screen.getByRole('tooltip')).toBeInTheDocument()
   fireEvent.change(search,{target:{value:'00123456'}})
-  await waitFor(()=>expect(like).toHaveBeenCalledWith('numero_di','%00123456%'))
+  await waitFor(()=>expect(like).toHaveBeenCalledWith(studentSearchFilter('00123456')))
 })
 async function openFilledReview(editing=false) {
   const references:Record<string,unknown[]>={
@@ -294,7 +293,7 @@ it('shows the registered form read-only in section tabs and edits the current se
 it('lists pupils in compact rows with view/edit actions and newest-first pagination/search', async () => {
     const rows = Array.from({ length:30 }, (_,i) => ({ id:`s${i}`, codigo_alumno:`A-${String(i+1).padStart(7,'0')}`, apellido_paterno:`APELLIDO${i}`, apellido_materno:'PRUEBA', nombres:'ALUMNO', numero_di:`000000${String(i).padStart(2,'0')}`, created_at:'2026-10-28T16:00:00Z' }));
     const order = vi.fn(), range = vi.fn(), filter = vi.fn();
-    const q = { select:()=>q, order:(...args:unknown[])=>{order(...args);return q}, range:(...args:unknown[])=>{range(...args);return q}, ilike:(...args:unknown[])=>{filter(...args);return q}, then:(resolve:(r:{data:unknown[];error:null})=>unknown)=>Promise.resolve({data:rows,error:null}).then(resolve) };
+    const q = { select:()=>q, order:(...args:unknown[])=>{order(...args);return q}, range:(...args:unknown[])=>{range(...args);return q}, or:(...args:unknown[])=>{filter(...args);return q}, ilike:(...args:unknown[])=>{filter(...args);return q}, then:(resolve:(r:{data:unknown[];error:null})=>unknown)=>Promise.resolve({data:rows,error:null}).then(resolve) };
     client.from.mockReturnValue(q);
     render(<MemoryRouter><Students/></MemoryRouter>);
     const table = await screen.findByRole('table', { name:'Alumnos por fecha de registro descendente' });
@@ -308,10 +307,10 @@ it('lists pupils in compact rows with view/edit actions and newest-first paginat
     fireEvent.click(screen.getByRole('button',{name:'Siguiente página'}));
     await waitFor(()=>expect(range).toHaveBeenCalledWith(30,59));
     fireEvent.change(screen.getByRole('searchbox'),{target:{value:'robles'}});
-    await waitFor(()=>expect(filter).toHaveBeenCalledWith('apellido_paterno','%ROBLES%'));
+    await waitFor(()=>expect(filter).toHaveBeenCalledWith(studentSearchFilter('ROBLES')));
     expect(range).toHaveBeenLastCalledWith(0,29);
     fireEvent.change(screen.getByRole('searchbox'),{target:{value:'a-0000001'}});
-    await waitFor(()=>expect(filter).toHaveBeenCalledWith('codigo_alumno','%A-0000001%'));
+    await waitFor(()=>expect(filter).toHaveBeenCalledWith(studentSearchFilter('A-0000001')));
     expect(client.rpc).not.toHaveBeenCalled();
 });
 it('does not offer creation or edit when the existing academic editing roles are absent', async () => {
@@ -636,4 +635,77 @@ it('replaces the company grid with its record, puts Edit above fields and restor
     expect(screen.getByRole('searchbox',{name:'Buscar empresas'})).toHaveValue('EMPRESA');
     expect(screen.getByText('Página 2 · 30 empresas')).toBeVisible();
     expect(screen.getByRole('table')).toBeVisible();expect(client.rpc).not.toHaveBeenCalled();
+});
+
+function enrollmentFixture() {
+    const cycles=[{id:'c1',codigo_ciclo:'2026-001-NAV',estado_codigo:'PROGRAMADO',updated_at:'cv1'},{id:'c2',codigo_ciclo:'2026-002-NAV',estado_codigo:'EN_CURSO',updated_at:'cv2'}];
+    const pupil={id:'s1',codigo_alumno:'A-0000001',apellido_paterno:'MUÑOZ',apellido_materno:'PEREZ',nombres:'ANA MARIA',numero_di:'00123456',updated_at:'sv1',domicilio:'AV. MAR'};
+    const tariffs=[{id:'fee',importe:'100',obligatorio:true,tarifa:{nombre:'CARRERA',activo:true}},{id:'extra',importe:'20',obligatorio:false,tarifa:{nombre:'SEGURO',activo:true}}];
+    const searches=vi.fn();
+    client.from.mockImplementation((table:string)=>{
+        let single=false;const filters:Record<string,unknown>={};
+        const q={select:()=>q,eq:(key:string,val:unknown)=>{filters[key]=val;return q},in:()=>q,order:()=>q,limit:()=>q,single:()=>{single=true;return q},or:(expression:string)=>{searches(expression);return q},then:(resolve:(r:unknown)=>unknown)=>Promise.resolve({data:table==='ciclo'?single?cycles.find(c=>c.id===filters.id):cycles:table==='ciclo_tarifa'?tariffs:table==='alumno'?single?pupil:[pupil]:[],error:null}).then(resolve)};return q;
+    });
+    return {cycles,pupil,searches};
+}
+it('enrollment uses freely navigable tabs, preserves data and registers only on final confirmation',async()=>{
+ const {pupil,searches}=enrollmentFixture();render(<MemoryRouter><NewEnrollment/></MemoryRouter>);
+ expect(screen.queryByRole('button',{name:'Siguiente'})).not.toBeInTheDocument();
+ fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));expect(screen.getByText(/Selecciona un Ciclo en Datos/)).toBeVisible();
+ fireEvent.keyDown(screen.getByRole('tab',{name:'Cargos'}),{key:'Home'});expect(screen.getByRole('tab',{name:'Datos de matrícula'})).toHaveFocus();
+ await screen.findByRole('option',{name:/2026-001-NAV/});fireEvent.change(screen.getByRole('combobox',{name:'Ciclo'}),{target:{value:'c1'}});
+ fireEvent.change(screen.getByRole('searchbox',{name:'Buscar Alumno'}),{target:{value:'muñoz ana'}});
+ fireEvent.click(await screen.findByRole('button',{name:'Seleccionar Alumno'}));await screen.findByText('A-0000001 · MUÑOZ PEREZ, ANA MARIA');
+ expect(searches).toHaveBeenCalledWith(studentSearchFilter('MUÑOZ ANA'));
+ fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));fireEvent.click(await screen.findByRole('checkbox',{name:/SEGURO/}));
+ expect(screen.getByRole('checkbox',{name:/CARRERA/})).toBeDisabled();
+ fireEvent.click(screen.getByRole('tab',{name:'Datos de matrícula'}));expect(screen.getByRole('combobox',{name:'Ciclo'})).toHaveValue('c1');
+ fireEvent.click(screen.getByRole('tab',{name:'Resumen'}));expect(screen.getByRole('table',{name:'Resumen de cargos'})).toHaveTextContent('SEGURO');expect(client.rpc).not.toHaveBeenCalled();
+ client.rpc.mockResolvedValue({data:{id:'m1',codigo_matricula:'2026-NAV-001'},error:null});fireEvent.click(screen.getByRole('button',{name:'Confirmar matrícula'}));
+ await waitFor(()=>expect(client.rpc).toHaveBeenCalledExactlyOnceWith('registrar_matricula',{p:{ciclo_id:'c1',expected_ciclo_updated_at:'cv1',alumno_id:pupil.id,expected_alumno_updated_at:'sv1',empresa_patrocinadora_id:null},opcionales:['extra']}));
+ expect(await screen.findByRole('heading',{name:'Matrícula registrada'})).toBeVisible();
+});
+it('changing enrollment Cycle resets optional charges and Director discount without dropping the pupil',async()=>{
+ sessionState.roles=['DIRECTOR_ACADEMICO'];enrollmentFixture();render(<MemoryRouter><NewEnrollment/></MemoryRouter>);
+ await screen.findByRole('option',{name:/2026-001-NAV/});fireEvent.change(screen.getByRole('combobox',{name:'Ciclo'}),{target:{value:'c1'}});
+ fireEvent.change(screen.getByRole('searchbox',{name:'Buscar Alumno'}),{target:{value:'00123456'}});fireEvent.click(await screen.findByRole('button',{name:'Seleccionar Alumno'}));await screen.findByText('A-0000001 · MUÑOZ PEREZ, ANA MARIA');
+ fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));fireEvent.click(await screen.findByRole('checkbox',{name:/SEGURO/}));fireEvent.change(screen.getByRole('spinbutton',{name:'Descuento Carrera (S/)'}),{target:{value:'10'}});fireEvent.change(screen.getByLabelText(/^Motivo descuento/),{target:{value:'AUTORIZADO'}});
+ fireEvent.click(screen.getByRole('tab',{name:'Datos de matrícula'}));fireEvent.change(screen.getByRole('combobox',{name:'Ciclo'}),{target:{value:'c2'}});
+ fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));await waitFor(()=>expect(screen.getByRole('checkbox',{name:/SEGURO/})).not.toBeChecked());expect(screen.getByRole('spinbutton',{name:'Descuento Carrera (S/)'})).toHaveValue(0);expect(screen.getByLabelText(/^Motivo descuento/)).toHaveValue('');
+ fireEvent.click(screen.getByRole('tab',{name:'Resumen'}));expect(within(screen.getByRole('tabpanel',{name:'Resumen'})).getByText(/MUÑOZ PEREZ, ANA MARIA · 00123456/)).toBeVisible();expect(client.rpc).not.toHaveBeenCalled();
+});
+it('enrollment search is debounced, includes both surnames/name/document and ignores obsolete results',async()=>{
+ const {searches}=enrollmentFixture();render(<MemoryRouter><NewEnrollment/></MemoryRouter>);
+ const search=screen.getByRole('searchbox',{name:'Buscar Alumno'});fireEvent.change(search,{target:{value:'a'}});await new Promise(r=>setTimeout(r,350));expect(searches).not.toHaveBeenCalled();
+ fireEvent.change(search,{target:{value:'perez'}});fireEvent.change(search,{target:{value:'ana 0012'}});
+ await screen.findByRole('button',{name:'Seleccionar Alumno'});expect(searches).toHaveBeenCalledExactlyOnceWith(studentSearchFilter('ANA 0012'));
+ const expression=studentSearchFilter('MAR, "NORTE"');expect(expression).toContain('apellido_materno.ilike.');expect(expression).toContain('nombres.ilike.');expect(expression).toContain('numero_di.ilike.');expect(expression).toContain(JSON.stringify('%MAR,%'));
+});
+it('a registration conflict preserves enrollment selections without retry',async()=>{
+ enrollmentFixture();render(<MemoryRouter><NewEnrollment/></MemoryRouter>);await screen.findByRole('option',{name:/2026-001-NAV/});fireEvent.change(screen.getByRole('combobox',{name:'Ciclo'}),{target:{value:'c1'}});
+ fireEvent.change(screen.getByRole('searchbox',{name:'Buscar Alumno'}),{target:{value:'ana'}});fireEvent.click(await screen.findByRole('button',{name:'Seleccionar Alumno'}));await screen.findByText('A-0000001 · MUÑOZ PEREZ, ANA MARIA');
+ fireEvent.click(screen.getByRole('tab',{name:'Resumen'}));client.rpc.mockResolvedValue({error:{code:'40001'}});fireEvent.click(screen.getByRole('button',{name:'Confirmar matrícula'}));expect(await screen.findByRole('alert')).toHaveTextContent('La información cambió');expect(client.rpc).toHaveBeenCalledTimes(1);
+ fireEvent.click(screen.getByRole('tab',{name:'Datos de matrícula'}));expect(screen.getByRole('combobox',{name:'Ciclo'})).toHaveValue('c1');expect(screen.getByText('A-0000001 · MUÑOZ PEREZ, ANA MARIA')).toBeVisible();
+});
+
+it('confirming an incomplete enrollment reveals Datos and focuses the missing Cycle',async()=>{
+ enrollmentFixture();render(<MemoryRouter><NewEnrollment/></MemoryRouter>);fireEvent.click(screen.getByRole('tab',{name:'Resumen'}));fireEvent.click(screen.getByRole('button',{name:'Confirmar matrícula'}));
+ await waitFor(()=>expect(screen.getByRole('combobox',{name:'Ciclo'})).toHaveFocus());expect(screen.getByRole('tab',{name:'Datos de matrícula'})).toHaveAttribute('aria-selected','true');expect(client.rpc).not.toHaveBeenCalled();
+});
+it('missing discount reason reveals Cargos instead of registering from Resumen',async()=>{
+ sessionState.roles=['DIRECTOR_ACADEMICO'];enrollmentFixture();render(<MemoryRouter><NewEnrollment/></MemoryRouter>);await screen.findByRole('option',{name:/2026-001-NAV/});fireEvent.change(screen.getByRole('combobox',{name:'Ciclo'}),{target:{value:'c1'}});
+ fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));const discount=screen.getByRole('spinbutton',{name:'Descuento Carrera (S/)'});await waitFor(()=>expect(discount).toBeEnabled());fireEvent.change(discount,{target:{value:'10'}});
+ fireEvent.click(screen.getByRole('tab',{name:'Resumen'}));fireEvent.click(screen.getByRole('button',{name:'Confirmar matrícula'}));await waitFor(()=>expect(screen.getByLabelText(/^Motivo descuento/)).toHaveFocus());expect(screen.getByRole('tab',{name:'Cargos'})).toHaveAttribute('aria-selected','true');expect(client.rpc).not.toHaveBeenCalled();
+});
+it('late responses never replace more recent pupil search results',async()=>{
+ const pending:((r:unknown)=>void)[]=[];
+ client.from.mockImplementation((table:string)=>{
+  if(table!=='alumno')return resultQuery([]);
+  const q={select:()=>q,or:()=>q,order:()=>q,limit:()=>q,then:(resolve:(r:unknown)=>void)=>{pending.push(resolve);return Promise.resolve()}};return q;
+ });
+ render(<MemoryRouter><NewEnrollment/></MemoryRouter>);const search=screen.getByRole('searchbox',{name:'Buscar Alumno'});
+ fireEvent.change(search,{target:{value:'ANTERIOR'}});await waitFor(()=>expect(pending).toHaveLength(1));fireEvent.change(search,{target:{value:'RECIENTE'}});await waitFor(()=>expect(pending).toHaveLength(2));
+ const pupil=(id:string,name:string)=>({id,apellido_paterno:name,apellido_materno:'PRUEBA',nombres:'SINTETICO',numero_di:'00123456'});
+ await act(async()=>pending[1]({data:[pupil('new','RECIENTE')],error:null}));expect(screen.getByRole('table',{name:'Resultados de alumnos'})).toHaveTextContent('RECIENTE PRUEBA, SINTETICO');
+ await act(async()=>pending[0]({data:[pupil('old','ANTERIOR')],error:null}));expect(screen.getByRole('table',{name:'Resultados de alumnos'})).not.toHaveTextContent('ANTERIOR');expect(screen.getByRole('table',{name:'Resultados de alumnos'})).toHaveTextContent('RECIENTE');
 });

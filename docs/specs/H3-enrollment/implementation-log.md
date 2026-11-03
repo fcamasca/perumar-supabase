@@ -234,3 +234,8 @@ Validación UX Materias del Ciclo: 205 pruebas en 12 archivos, lint, typecheck, 
 
 
 Ajuste visual 02/11/2026: tabla Materias del Ciclo con padding vertical de celdas .55rem y cabecera .65rem, contenido centrado verticalmente y botones sin margen extra. Densidad moderada, conservando legibilidad/acciones y sin afectar otras grillas ni reglas.
+
+
+[CHG-H3-004 — Matrícula con pestañas y búsqueda de Alumno](approved-enrollment-tabs-amendment.md), autorizada humanamente el 02/11/2026: Datos de matrícula/Cargos/Resumen sustituyen el Stepper; búsqueda reactiva por ambos apellidos, nombres y documento, conservando código de Alumno. Misma transacción DB y reglas funcionales; sin SQL nuevo. Es posterior al Gate 1 original y no modifica los cuatro documentos aprobados. Gate 2 pendiente.
+
+Validación CHG-H3-004: 212 pruebas en 12 archivos, lint, typecheck, build y diff --check satisfactorios. Consulta real de solo lectura a Data API local con Coordinador autenticado sintético: filtros por palabras y puntuación entrecomillada aceptados; fixtures de identidad retirados y sin modificar alumnos. El harness test:enrollment incorpora búsqueda combinada de apellido/documento y puntuación para CI aislada; no se ejecutó su batería completa ni reset sobre la DB humana. Sin cambios en documentos aprobados.

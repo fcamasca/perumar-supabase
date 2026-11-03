@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { studentSearchFilter } from '../src/lib/studentSearch.ts';
 import { readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { createFixtures, publicClient, checked } from './h2-fixtures.mjs';
@@ -66,6 +67,9 @@ try {
         assert.equal((await rows('alumno')).length,beforeInitial);
         a = await student();
         assert.match(a.codigo_alumno,/^A-[0-9]{7,}$/);
+        const matches=checked(await O.from('alumno').select('id').or(studentSearchFilter(`ensayo ${a.numero_di}`)).limit(20),'multiword pupil search');
+        assert.ok(matches.some(row=>row.id===a.id));
+        checked(await O.from('alumno').select('id').or(studentSearchFilter('ZZ, "NORTE" (A)')).limit(20),'quoted pupil search');
         reject(await O.rpc('guardar_alumno',{p:{...payload(),codigo_alumno:'A-9999999'}}));
         const occupation = approvedValue('OCUPACION','MECANICO'), other = approvedValue('OCUPACION','OTROS');
         const employed = await rpc(O,'guardar_alumno',{p:{...payload(),ocupacion_id:occupation,ocupacion:'FORGED'}});

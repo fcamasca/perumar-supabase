@@ -1,9 +1,11 @@
+import { studentSearchFilter } from '../lib/studentSearch'
 import { documentRule, documentInputValue, pasteDocumentValue } from '../lib/documentInput'
 import { formTextValue } from '../lib/formText'
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useSession } from '../security/SessionProvider';
+import { AcademicTabs } from '../academic/AcademicLayout';
 import { InlineForm, EditorHeading, StatusBadge, useConfirmation } from '../academic/AcademicUi';
 type Row = Record<string, unknown> & {
     id: string;
@@ -224,15 +226,15 @@ export function Students() {
     useEffect(() => {
         let active = true;
         let query = client.from('alumno').select('id,codigo_alumno,apellido_paterno,apellido_materno,nombres,numero_di,created_at').order('created_at', { ascending: false }).order('id', { ascending: false }).range(page * 30, page * 30 + 29);
-        if (search)
-            query = /^A-/i.test(search) ? query.ilike('codigo_alumno', `%${search.trim()}%`) : /^\d/.test(search) ? query.ilike('numero_di', `%${search}%`) : query.ilike('apellido_paterno', `%${search}%`);
+        if (search.trim())
+            query = query.or(studentSearchFilter(search));
         void query.then(r => { if (active) {
             setRows(r.error ? [] : r.data as Row[]);
             setMessage(r.error ? 'No se pudo consultar Alumnos.' : !r.data.length ? 'No hay alumnos para esta búsqueda.' : '');
         } });
         return () => { active = false; };
     }, [client, search, page]);
-    return <section><h2>Alumnos</h2><div className="filters students-toolbar" role="search" aria-label="Búsqueda de alumnos"><label className="student-search"><span className="field-label">Buscar alumnos</span><span className="search-input"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input type="search" placeholder="Código de alumno, documento o apellido paterno" value={search} onChange={e => { setSearch(formTextValue(e.currentTarget)); setPage(0); }}/></span></label>{canEdit && <span className="toolbar-action" onMouseEnter={() => setTooltipDismissed(false)}><Link to="/alumnos/nuevo" className="icon-action" aria-labelledby={tooltipId} onFocus={() => setTooltipDismissed(false)} onKeyDown={e => { if (e.key === 'Escape') setTooltipDismissed(true); }}><NewStudentIcon/></Link><span id={tooltipId} role="tooltip" className="toolbar-tooltip" hidden={tooltipDismissed}>Nuevo Alumno</span></span>}</div><Message>{message}</Message><div className="students-grid"><table aria-label="Alumnos por fecha de registro descendente"><thead><tr><th scope="col">Código</th><th scope="col">Alumno</th><th scope="col">Documento</th><th scope="col" className="student-row-date">Registro ↓</th><th scope="col" className="student-actions-heading">Acciones</th></tr></thead><tbody>{rows.map(r => { const name = `${value(r, 'apellido_paterno')} ${value(r, 'apellido_materno')}, ${value(r, 'nombres')}`; return <tr key={r.id}><td className="student-row-document">{value(r, 'codigo_alumno')}</td><td><Link className="student-row-name" to={`/alumnos/${r.id}`}>{name}</Link></td><td className="student-row-document">{value(r, 'numero_di')}</td><td className="student-row-date">{r.created_at ? new Date(String(r.created_at)).toLocaleString('es-PE', { timeZone:'America/Lima', dateStyle:'short', timeStyle:'short' }) : '—'}</td><td><div className="student-row-actions"><StudentRowAction id={r.id} name={name} action="view"/>{canEdit && <StudentRowAction id={r.id} name={name} action="edit"/>}</div></td></tr>; })}</tbody></table></div><div className="student-list-pagination"><span>{rows.length ? `Página ${page + 1} · ${rows.length} alumnos` : `Página ${page + 1}`}</span><div className="pagination-actions"><button disabled={!page} onClick={() => setPage(page - 1)}>Anterior</button><button disabled={rows.length < 30} onClick={() => setPage(page + 1)}>Siguiente página</button></div></div></section>;
+    return <section><h2>Alumnos</h2><div className="filters students-toolbar" role="search" aria-label="Búsqueda de alumnos"><label className="student-search"><span className="field-label">Buscar alumnos</span><span className="search-input"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input type="search" placeholder="Apellidos, nombres, documento o código de alumno" value={search} onChange={e => { setSearch(formTextValue(e.currentTarget)); setPage(0); }}/></span></label>{canEdit && <span className="toolbar-action" onMouseEnter={() => setTooltipDismissed(false)}><Link to="/alumnos/nuevo" className="icon-action" aria-labelledby={tooltipId} onFocus={() => setTooltipDismissed(false)} onKeyDown={e => { if (e.key === 'Escape') setTooltipDismissed(true); }}><NewStudentIcon/></Link><span id={tooltipId} role="tooltip" className="toolbar-tooltip" hidden={tooltipDismissed}>Nuevo Alumno</span></span>}</div><Message>{message}</Message><div className="students-grid"><table aria-label="Alumnos por fecha de registro descendente"><thead><tr><th scope="col">Código</th><th scope="col">Alumno</th><th scope="col">Documento</th><th scope="col" className="student-row-date">Registro ↓</th><th scope="col" className="student-actions-heading">Acciones</th></tr></thead><tbody>{rows.map(r => { const name = `${value(r, 'apellido_paterno')} ${value(r, 'apellido_materno')}, ${value(r, 'nombres')}`; return <tr key={r.id}><td className="student-row-document">{value(r, 'codigo_alumno')}</td><td><Link className="student-row-name" to={`/alumnos/${r.id}`}>{name}</Link></td><td className="student-row-document">{value(r, 'numero_di')}</td><td className="student-row-date">{r.created_at ? new Date(String(r.created_at)).toLocaleString('es-PE', { timeZone:'America/Lima', dateStyle:'short', timeStyle:'short' }) : '—'}</td><td><div className="student-row-actions"><StudentRowAction id={r.id} name={name} action="view"/>{canEdit && <StudentRowAction id={r.id} name={name} action="edit"/>}</div></td></tr>; })}</tbody></table></div><div className="student-list-pagination"><span>{rows.length ? `Página ${page + 1} · ${rows.length} alumnos` : `Página ${page + 1}`}</span><div className="pagination-actions"><button disabled={!page} onClick={() => setPage(page - 1)}>Anterior</button><button disabled={rows.length < 30} onClick={() => setPage(page + 1)}>Siguiente página</button></div></div></section>;
 }
 export function NewStudent() { const navigate = useNavigate(); return <StudentEditor done={() => navigate('/alumnos')} cancel={() => navigate('/alumnos')}/>; }
 function ContactAction({ label, name, remove = false, disabled, onClick }: { label: string; name: string; remove?: boolean; disabled: boolean; onClick: () => void }) {
@@ -385,63 +387,99 @@ export function Companies({ choose }: { choose?: (r: Row | null) => void }) {
     </section>;
 }
 export function NewEnrollment() {
-    const { client, state } = useSession(), navigate = useNavigate();
-    const [cycles, setCycles] = useState<Row[]>([]), [cycle, setCycle] = useState<Row>(), [student, setStudent] = useState<Row>(), [company, setCompany] = useState<Row | null>(null), [charges, setCharges] = useState<Row[]>([]), [options, setOptions] = useState<string[]>([]);
-    const [step, setStep] = useState(0), [search, setSearch] = useState(''), [found, setFound] = useState<Row[]>([]), [editor, setEditor] = useState(false), [editing, setEditing] = useState(false), [busy, setBusy] = useState(false), [message, setMessage] = useState(''), [registered, setRegistered] = useState<Row>(), [discount, setDiscount] = useState('0'), [reason, setReason] = useState(''), [code, setCode] = useState('');
-    const director = state.roles?.includes('DIRECTOR_ACADEMICO');
-    useEffect(() => { let active = true; void client.from('ciclo').select('id,codigo_ciclo,carrera_id,estado_codigo,updated_at').in('estado_codigo', ['PROGRAMADO', 'EN_CURSO']).order('codigo_ciclo').then(r => { if (active) {
-        setCycles(r.error ? [] : r.data as Row[]);
-        if (r.error)
-            setMessage('No se pudieron cargar Ciclos.');
-    } }); return () => { active = false; }; }, [client]);
-    useEffect(() => { let active = true; if (!cycle)
-        return; void client.from('ciclo_tarifa').select('id,tarifa_id,importe,obligatorio,activo,tarifa(codigo,nombre,tipo,activo)').eq('ciclo_id', cycle.id).eq('activo', true).then(r => { if (active) {
-        setCharges(r.error ? [] : (r.data as Row[]).filter(x => (x.tarifa as Record<string, unknown>)?.activo));
-        setOptions([]);
-        if (r.error)
-            setMessage('No se pudieron cargar tarifas.');
-    } }); return () => { active = false; }; }, [client, cycle]);
-    async function find() { setBusy(true); const r = await client.from('alumno').select('*').eq('numero_di', search.trim().toUpperCase()).limit(20); setBusy(false); setFound(r.error ? [] : r.data as Row[]); setMessage(r.error ? 'No se pudo buscar Alumno.' : !r.data.length ? 'No existe Alumno para ese documento. Puedes crearlo.' : ''); }
-    async function confirm() { if (!cycle || !student)
-        return; setBusy(true); const p = { ciclo_id: cycle.id, expected_ciclo_updated_at: cycle.updated_at, alumno_id: student.id, expected_alumno_updated_at: student.updated_at, empresa_patrocinadora_id: company?.id ?? null, ...(code ? { codigo_matricula: code } : {}), ...(director ? { descuento: discount, motivo_descuento: reason } : {}) }; try {
-        const r = await client.rpc('registrar_matricula', { p, opcionales: options });
-        if (r.error)
-            setMessage(enrollmentError(r.error));
-        else {
-            setRegistered(r.data as Row);
-            setMessage('Matrícula registrada correctamente.');
-        }
+    const { client, state }=useSession(), navigate=useNavigate();
+    const [cycles,setCycles]=useState<Row[]>([]),[cycle,setCycle]=useState<Row>(),[student,setStudent]=useState<Row>(),[company,setCompany]=useState<Row|null>(null),[charges,setCharges]=useState<Row[]>([]),[options,setOptions]=useState<string[]>([]);
+    const [tab,setTab]=useState(0),[search,setSearch]=useState(''),[found,setFound]=useState<Row[]>([]),[searchStatus,setSearchStatus]=useState<'idle'|'loading'|'ready'|'error'>('idle');
+    const [editor,setEditor]=useState(false),[editing,setEditing]=useState(false),[choosingCompany,setChoosingCompany]=useState(false),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[registered,setRegistered]=useState<Row>(),[discount,setDiscount]=useState('0'),[reason,setReason]=useState(''),[code,setCode]=useState('');
+    const [tariffsStatus,setTariffsStatus]=useState<'idle'|'loading'|'ready'|'error'>('idle');
+    const studentSearch=useRef<HTMLInputElement>(null);
+    const director=state.roles?.includes('DIRECTOR_ACADEMICO');
+    useEffect(()=>{let active=true;void client.from('ciclo').select('id,codigo_ciclo,carrera_id,estado_codigo,updated_at').in('estado_codigo',['PROGRAMADO','EN_CURSO']).order('codigo_ciclo').then(r=>{if(active){setCycles(r.error?[]:r.data as Row[]);if(r.error)setMessage('No se pudieron cargar Ciclos.')}});return()=>{active=false}},[client]);
+    useEffect(()=>{
+        let active=true;
+        if(!cycle)return;
+        setTariffsStatus('loading');
+        void client.from('ciclo_tarifa').select('id,tarifa_id,importe,obligatorio,activo,tarifa(codigo,nombre,tipo,activo)').eq('ciclo_id',cycle.id).eq('activo',true).then(r=>{
+            if(!active)return;
+            setCharges(r.error?[]:(r.data as Row[]).filter(x=>(x.tarifa as Record<string,unknown>)?.activo));setTariffsStatus(r.error?'error':'ready');
+        });return()=>{active=false};
+    },[client,cycle]);
+    useEffect(()=>{
+        let active=true;setFound([]);
+        if(search.trim().length<2){setSearchStatus('idle');return}
+        setSearchStatus('loading');
+        const timer=setTimeout(()=>{
+            void client.from('alumno').select('id,codigo_alumno,apellido_paterno,apellido_materno,nombres,numero_di,updated_at').or(studentSearchFilter(search)).order('apellido_paterno').order('nombres').limit(20).then(r=>{if(active){setFound(r.error?[]:r.data as Row[]);setSearchStatus(r.error?'error':'ready')}});
+        },300);
+        return()=>{active=false;clearTimeout(timer)};
+    },[client,search]);
+    async function chooseStudent(id:string){
+        setBusy(true);
+        try{const r=await client.from('alumno').select('*').eq('id',id).single();if(r.error)setMessage('No se pudo cargar la ficha del Alumno. Vuelve a seleccionarlo.');else{setStudent(r.data as Row);setSearch('');setFound([])}}
+        catch{setMessage('No se pudo cargar la ficha del Alumno. Vuelve a seleccionarlo.')}
+        finally{setBusy(false)}
     }
-    catch {
-        setMessage('Respuesta no confirmada. Consulta el historial del Alumno antes de reintentar.');
+    function chooseCycle(id:string){
+        if(id===cycle?.id)return;
+        setCycle(cycles.find(c=>c.id===id));setCharges([]);setOptions([]);setDiscount('0');setReason('');setTariffsStatus(id?'loading':'idle');
+        if(cycle)setMessage('Al cambiar de Ciclo se actualizarán los cargos; los opcionales y el descuento se reiniciaron.');
     }
-    finally {
-        setBusy(false);
-    } }
-    async function another() { if (!cycle)
-        return; const r = await client.from('ciclo').select('id,codigo_ciclo,carrera_id,estado_codigo,updated_at').eq('id', cycle.id).single(); if (r.error || !['PROGRAMADO', 'EN_CURSO'].includes(r.data.estado_codigo)) {
-        setMessage('El Ciclo ya no permite matrícula. Selecciona otro.');
-        setCycle(undefined);
-        setStep(0);
+    async function confirm(){
+        if(!cycle || !student){setMessage('Selecciona el Ciclo y el Alumno antes de confirmar.');setTab(0);setTimeout(()=>studentSearch.current?.focus(),0);return}
+        if(tariffsStatus!=='ready' || !charges.length){setMessage('Revisa los cargos del Ciclo antes de confirmar.');setTab(1);return}
+        setBusy(true);const p={ciclo_id:cycle.id,expected_ciclo_updated_at:cycle.updated_at,alumno_id:student.id,expected_alumno_updated_at:student.updated_at,empresa_patrocinadora_id:company?.id??null,...(code?{codigo_matricula:code}:{}),...(director?{descuento:discount,motivo_descuento:reason}:{})};
+        try{const r=await client.rpc('registrar_matricula',{p,opcionales:options});if(r.error)setMessage(enrollmentError(r.error));else{setRegistered(r.data as Row);setMessage('Matrícula registrada correctamente.')}}
+        catch{setMessage('Respuesta no confirmada. Consulta el historial del Alumno antes de reintentar.')}
+        finally{setBusy(false)}
     }
-    else {
-        setCycle(r.data as Row);
-        setStep(1);
-    } setStudent(undefined); setCompany(null); setOptions([]); setDiscount('0'); setReason(''); setCode(''); setSearch(''); setFound([]); setRegistered(undefined); }
-    if (editor)
-        return <StudentEditor initial={editing ? student : undefined} done={r => { setStudent(r); setEditor(false); setMessage('Alumno guardado; revisa contactos antes de confirmar matrícula.'); }} cancel={() => setEditor(false)}/>;
-    if (registered)
-        return <section><h2>Matrícula registrada</h2><p>{value(registered, 'codigo_matricula')}</p><button onClick={() => void another()}>Matricular otro alumno en este Ciclo</button><button onClick={() => navigate(`/matriculas/${registered.id}`)}>Ver matrícula</button></section>;
-    return <section><h2>Registrar Matrícula</h2><Steps names={['Ciclo', 'Alumno', 'Patrocinador', 'Tarifas', 'Confirmación']} step={step}/><Message>{message}</Message><InlineForm onSubmit={() => { if (step < 4)
-        setStep(step + 1);
-    else
-        void confirm(); }}><fieldset disabled={busy}><legend>{['Ciclo', 'Alumno', 'Patrocinador', 'Tarifas', 'Confirmación'][step]}</legend>
-    {step === 0 && <label>Ciclo *<select required value={cycle?.id ?? ''} onChange={e => setCycle(cycles.find(c => c.id === formTextValue(e.currentTarget)))}><option value="">Seleccionar Ciclo</option>{cycles.map(c => <option key={c.id} value={c.id}>{value(c, 'codigo_ciclo')} — {value(c, 'estado_codigo')}</option>)}</select></label>}
-    {step === 1 && <><label>Buscar por documento<input value={search} onChange={e => setSearch(formTextValue(e.currentTarget))}/></label><button type="button" onClick={() => void find()}>Buscar Alumno</button><ul>{found.map(a => <li key={a.id}>{value(a, 'codigo_alumno')} · {value(a, 'nombres')} {value(a, 'apellido_paterno')} <button type="button" onClick={() => setStudent(a)}>Seleccionar Alumno</button></li>)}</ul><button type="button" onClick={() => { setEditing(false); setEditor(true); }}><NewStudentLabel/></button>{student && <><p>{value(student, 'nombres')} — {value(student, 'numero_di')}</p><button type="button" onClick={() => { setEditing(true); setEditor(true); }}>Completar / editar ficha</button><Link to={`/alumnos/${student.id}`}>Ver ficha y contactos</Link></>}</>}
-    {step === 2 && <p>{company ? value(company, 'razon_social') : 'Sin patrocinador'} — selecciona o crea una empresa en el panel inferior.</p>}
-    {step === 3 && <><p>Las obligatorias se incluyen siempre. El servidor valida configuración, selección e importes.</p>{charges.map(c => { const t = c.tarifa as Record<string, unknown>; return <label key={c.id}><input type="checkbox" disabled={c.obligatorio === true} checked={c.obligatorio === true || options.includes(c.id)} onChange={e => setOptions(e.target.checked ? [...options, c.id] : options.filter(id => id !== c.id))}/>{value(t, 'nombre')} — S/{value(c, 'importe')} {c.obligatorio ? '(Obligatoria)' : '(Opcional)'}</label>; })}{director && <><label>Descuento Carrera (S/)<input type="number" min="0" step="0.01" value={discount} onChange={e => setDiscount(formTextValue(e.currentTarget))}/></label><label>Motivo descuento (sin datos personales)<textarea required={Number(discount) > 0} maxLength={500} value={reason} onChange={e => setReason(formTextValue(e.currentTarget))}/></label></>}</>}
-    {step === 4 && <><p>{value(cycle, 'codigo_ciclo')} — {value(student, 'nombres')} — {company ? value(company, 'razon_social') : 'Sin patrocinador'}</p><ul>{charges.filter(c => c.obligatorio === true || options.includes(c.id)).map(c => <li key={c.id}>{value(c.tarifa as Record<string, unknown>, 'nombre')} — S/{value(c, 'importe')}</li>)}</ul><p>Descuento solicitado: S/{discount}. Total de referencia: S/{(charges.filter(c => c.obligatorio === true || options.includes(c.id)).reduce((sum, c) => sum + Number(c.importe), 0) - Number(discount)).toFixed(2)}.</p><p>Importes mostrados según configuración consultada; la confirmación obtiene y calcula cargos desde el servidor.</p><label>Código manual opcional<input value={code} pattern="[0-9]{4}-[A-Za-z0-9]{2,10}-[0-9]{3,}" data-pattern-error="Usa YYYY-SIGLA-CORRELATIVO, sigla alfanumérica de 2 a 10 y correlativo de al menos 3 dígitos." onChange={e => setCode(formTextValue(e.currentTarget))}/></label></>}
-    </fieldset><div className="form-actions">{step > 0 && <button type="button" disabled={busy} onClick={() => setStep(step - 1)}>Anterior</button>}<button disabled={busy || (step === 1 && !student) || (step >= 3 && !charges.length)}>{step < 4 ? 'Siguiente' : busy ? 'Registrando…' : 'Confirmar matrícula'}</button></div></InlineForm>{step === 2 && <Companies choose={setCompany}/>}</section>;
+    async function another(){
+        if(!cycle)return;
+        const r=await client.from('ciclo').select('id,codigo_ciclo,carrera_id,estado_codigo,updated_at').eq('id',cycle.id).single();
+        if(r.error || !['PROGRAMADO','EN_CURSO'].includes(r.data.estado_codigo)){setMessage('El Ciclo ya no permite matrícula. Selecciona otro.');setCycle(undefined);setCharges([]);setTariffsStatus('idle')}
+        else{setCycle(r.data as Row);setCharges([]);setTariffsStatus('loading')}
+        setTab(0);setStudent(undefined);setCompany(null);setOptions([]);setDiscount('0');setReason('');setCode('');setSearch('');setFound([]);setRegistered(undefined);setChoosingCompany(false);
+    }
+    const studentName=(a:Row)=>`${value(a,'apellido_paterno')} ${value(a,'apellido_materno')}, ${value(a,'nombres')}`;
+    const chosenCharges=charges.filter(c=>c.obligatorio===true || options.includes(c.id));
+    if(editor)return <StudentEditor initial={editing?student:undefined} done={r=>{setStudent(r);setEditor(false);setMessage('Alumno guardado; revisa contactos antes de confirmar matrícula.')}} cancel={()=>setEditor(false)}/>;
+    if(registered)return <section><h2>Matrícula registrada</h2><p>{value(registered,'codigo_matricula')}</p><button onClick={()=>void another()}>Matricular otro alumno en este Ciclo</button><button onClick={()=>navigate(`/matriculas/${registered.id}`)}>Ver matrícula</button></section>;
+    return <section className="enrollment-record"><EditorHeading>Registrar Matrícula</EditorHeading>
+        <header className="enrollment-context"><span><strong>Ciclo:</strong> {cycle?value(cycle,'codigo_ciclo'):'Sin seleccionar'}</span><span><strong>Alumno:</strong> {student?`${studentName(student)} · ${value(student,'numero_di')}`:'Sin seleccionar'}</span></header>
+        <AcademicTabs id="enrollment-sections" names={['Datos de matrícula','Cargos','Resumen']} active={tab} disabled={busy} onChange={setTab}/><Message>{message}</Message>
+        <InlineForm className="enrollment-record-form" onInvalidField={field=>setTab(Number(field.closest<HTMLElement>('[data-enrollment-tab]')?.dataset.enrollmentTab??0))} onSubmit={()=>{if(tab===2)void confirm()}}>
+            <div hidden={tab!==0} data-enrollment-tab="0" role="tabpanel" id="enrollment-sections-panel-0" aria-labelledby="enrollment-sections-tab-0" tabIndex={0} className="student-section-panel">
+                <fieldset disabled={busy}><legend>Datos de matrícula</legend>
+                    <label>Ciclo *<select aria-label="Ciclo" required value={cycle?.id??''} onChange={e=>chooseCycle(formTextValue(e.currentTarget))}><option value="">Seleccionar Ciclo</option>{cycles.map(c=><option key={c.id} value={c.id}>{value(c,'codigo_ciclo')} — {value(c,'estado_codigo')}</option>)}</select></label>
+                    <div className="enrollment-student-search"><label><span>Buscar Alumno</span><span className="search-input"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input ref={studentSearch} type="search" maxLength={150} placeholder="Apellidos, nombres o número de documento" value={search} onChange={e=>setSearch(formTextValue(e.currentTarget))} onKeyDown={e=>{if(e.key==='Enter')e.preventDefault()}}/></span></label>
+                        {searchStatus==='idle' && <small>Escribe al menos 2 caracteres. Las coincidencias aparecen mientras escribes.</small>}
+                        {searchStatus==='loading' && <p role="status">Buscando alumnos…</p>}
+                        {searchStatus==='error' && <p role="alert">No se pudo buscar alumnos. Modifica la búsqueda para volver a consultar.</p>}
+                        {searchStatus==='ready' && <><div className="table-scroll"><table aria-label="Resultados de alumnos"><thead><tr><th>Alumno</th><th>Documento</th><th>Acción</th></tr></thead><tbody>{found.map(a=><tr key={a.id}><td>{studentName(a)}<small className="secondary-text">{value(a,'codigo_alumno')}</small></td><td>{value(a,'numero_di')}</td><td><button type="button" onClick={()=>void chooseStudent(a.id)}>Seleccionar Alumno</button></td></tr>)}{!found.length && <tr><td colSpan={3}>No hay alumnos que coincidan. Puedes registrar uno nuevo.</td></tr>}</tbody></table></div>{found.length===20 && <small>Se muestran hasta 20 coincidencias. Escribe más para precisar la búsqueda.</small>}</>}
+                    </div>
+                    <button type="button" className="secondary" onClick={()=>{setEditing(false);setEditor(true)}}><NewStudentLabel/></button>
+                    {student && <div className="enrollment-selected-student"><strong>{value(student,'codigo_alumno')} · {studentName(student)}</strong><span>{value(student,'numero_di')}</span><div className="record-header-actions"><button type="button" className="secondary" onClick={()=>{setEditing(true);setEditor(true)}}>Completar / editar ficha</button><Link to={`/alumnos/${student.id}`}>Ver ficha y contactos</Link></div></div>}
+                    <div><h3>Empresa patrocinadora (opcional)</h3><p>{company?value(company,'razon_social'):'Sin patrocinador'}</p><div className="record-header-actions"><button type="button" className="secondary" onClick={()=>setChoosingCompany(true)}>Elegir empresa</button>{company && <button type="button" className="secondary" onClick={()=>setCompany(null)}>Quitar patrocinador</button>}</div></div>
+                </fieldset>
+            </div>
+            <div hidden={tab!==1} data-enrollment-tab="1" role="tabpanel" id="enrollment-sections-panel-1" aria-labelledby="enrollment-sections-tab-1" tabIndex={0} className="student-section-panel"><h3>Cargos</h3>
+                {!cycle && <p>Selecciona un Ciclo en Datos de matrícula para consultar los cargos.</p>}
+                {tariffsStatus==='loading' && <p role="status">Cargando cargos del Ciclo…</p>}
+                {tariffsStatus==='error' && <p role="alert">No se pudieron cargar los cargos. Vuelve a seleccionar el Ciclo antes de confirmar.</p>}
+                {cycle && tariffsStatus==='ready' && !charges.length && <p role="alert">El Ciclo no tiene tarifas activas disponibles. Revisa su configuración.</p>}
+                <fieldset disabled={busy || tariffsStatus!=='ready'}><legend>Tarifas del Ciclo</legend>{charges.map(c=><label key={c.id}><input type="checkbox" disabled={c.obligatorio===true} checked={c.obligatorio===true || options.includes(c.id)} onChange={e=>setOptions(e.target.checked?[...options,c.id]:options.filter(id=>id!==c.id))}/>{value(c.tarifa as Record<string,unknown>,'nombre')} — S/{value(c,'importe')} {c.obligatorio?'(Obligatoria)':'(Opcional)'}</label>)}
+                    {director && <><label>Descuento Carrera (S/)<input type="number" min="0" step="0.01" value={discount} onChange={e=>setDiscount(formTextValue(e.currentTarget))}/></label><label>Motivo descuento (sin datos personales)<textarea rows={2} required={Number(discount)>0} maxLength={500} value={reason} onChange={e=>setReason(formTextValue(e.currentTarget))}/></label></>}
+                </fieldset>
+            </div>
+            <div hidden={tab!==2} data-enrollment-tab="2" role="tabpanel" id="enrollment-sections-panel-2" aria-labelledby="enrollment-sections-tab-2" tabIndex={0} className="student-section-panel"><h3>Resumen</h3>
+                <dl className="review-fields"><div><dt>Ciclo</dt><dd>{cycle?value(cycle,'codigo_ciclo'):'Sin seleccionar'}</dd></div><div><dt>Alumno</dt><dd>{student?`${studentName(student)} · ${value(student,'numero_di')}`:'Sin seleccionar'}</dd></div><div><dt>Patrocinador</dt><dd>{company?value(company,'razon_social'):'Sin patrocinador'}</dd></div></dl>
+                <div className="table-scroll"><table aria-label="Resumen de cargos"><thead><tr><th>Concepto</th><th>Importe</th></tr></thead><tbody>{chosenCharges.map(c=><tr key={c.id}><td>{value(c.tarifa as Record<string,unknown>,'nombre')}</td><td>S/{value(c,'importe')}</td></tr>)}</tbody></table></div>
+                <p>Descuento solicitado: S/{discount}. Total de referencia: S/{(chosenCharges.reduce((sum,c)=>sum+Number(c.importe),0)-Number(discount)).toFixed(2)}.</p><p className="help-text">El servidor valida y calcula los cargos definitivos al confirmar. Todavía no se ha registrado una matrícula.</p>
+                <label>Código manual opcional<input value={code} pattern="[0-9]{4}-[A-Za-z0-9]{2,10}-[0-9]{3,}" data-pattern-error="Usa YYYY-SIGLA-CORRELATIVO, sigla alfanumérica de 2 a 10 y correlativo de al menos 3 dígitos." onChange={e=>setCode(formTextValue(e.currentTarget))}/></label>
+            </div>
+            <div className="form-actions"><button type="button" className="secondary" disabled={busy} onClick={()=>navigate('/alumnos')}>Cancelar</button>{tab===2 && <button disabled={busy || tariffsStatus==='loading'}>{busy?'Registrando…':'Confirmar matrícula'}</button>}</div>
+        </InlineForm>
+        {tab===0 && choosingCompany && <section><div className="record-header-actions"><button type="button" className="secondary" onClick={()=>setChoosingCompany(false)}>Cerrar selección de empresa</button></div><Companies choose={r=>{setCompany(r);setChoosingCompany(false)}}/></section>}
+    </section>;
 }
 export function EnrollmentDetail() {
     const { id } = useParams(), { client, state } = useSession(), [row, setRow] = useState<Row>(), [student, setStudent] = useState<Row>(), [cycle, setCycle] = useState<Row>(), [cycles, setCycles] = useState<Row[]>([]), [charges, setCharges] = useState<Row[]>([]), [tariffs, setTariffs] = useState<Row[]>([]), [options, setOptions] = useState<string[]>([]), [target, setTarget] = useState(''), [code, setCode] = useState(''), [discount, setDiscount] = useState(''), [reason, setReason] = useState(''), [message, setMessage] = useState('Cargando…'), [revision, setRevision] = useState(0), [busy, setBusy] = useState(false), [history, setHistory] = useState(false);
