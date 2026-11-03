@@ -38,6 +38,7 @@ beforeEach(() => {
     catalogo_valor: [{ id: 'mode', catalogo_id: 'modes', codigo: 'PRESENCIAL', nombre: 'Presencial', activo: true }, { id: 'other', catalogo_id: 'reasons', codigo: 'OTRO', nombre: 'OTRO', activo: true }],
     departamento: [{ id: 'dep', nombre: 'DEPARTAMENTO', active: true }], provincia: [{ id: 'prov', departamento_id: 'dep', nombre: 'PROVINCIA', active: true }],
     distrito: [{ id: 'dist', provincia_id: 'prov', nombre: 'DISTRITO', active: true }], capitania: [{ id: 'cap', nombre: 'CAPITANÍA', active: true }],
+    tarifa: [{id:'fee',codigo:'TC',nombre:'TARIFA CARRERA',tipo:'CARRERA',monto_por_defecto:'100',activo:true}], ciclo_tarifa:[{ciclo_id:'cycle',tarifa_id:'fee',importe:'100',obligatorio:true,activo:true}],
     carrera_materia: [{ carrera_id: 'career', materia_id: 'subject' }], ciclo_materia: [],
   }
 })
@@ -668,10 +669,22 @@ it('terminal Cycle subjects allow history consultation without mutation controls
 
 it('Cycle exposes enrollment history between Materias and Estado without requiring Cycle edit mode',async()=>{
  session(['COORDINADOR_ACADEMICO']);render(<MemoryRouter><Ciclos/></MemoryRouter>);fireEvent.click(await screen.findByRole('button',{name:'Ver 2026-001-NAV'}));
- expect(screen.getAllByRole('tab').map(t=>t.textContent)).toEqual(['Datos','Materias','Matrículas','Estado']);fireEvent.click(screen.getByRole('tab',{name:'Matrículas'}));
- expect(await screen.findByRole('table',{name:'Alumnos matriculados en el Ciclo'})).toBeVisible();expect(screen.getByRole('button',{name:'+ Matricular alumno'})).toBeEnabled();expect(screen.queryByRole('button',{name:'Guardar Ciclo'})).not.toBeInTheDocument();expect(rpc).not.toHaveBeenCalled();
+ expect(screen.getAllByRole('tab').map(t=>t.textContent)).toEqual(['Datos','Materias','Tarifas','Matrículas','Estado']);fireEvent.click(screen.getByRole('tab',{name:'Matrículas'}));
+ expect(await screen.findByRole('table',{name:'Alumnos matriculados en el Ciclo'})).toBeVisible();await waitFor(()=>expect(screen.getByRole('button',{name:'+ Matricular alumno'})).toBeEnabled());expect(screen.queryByRole('button',{name:'Guardar Ciclo'})).not.toBeInTheDocument();expect(rpc).not.toHaveBeenCalled();
 });
 it('returning from enrollment details opens the requested Cycle directly on Matriculas',async()=>{
  session(['COORDINADOR_ACADEMICO']);render(<MemoryRouter><Ciclos initialCycleId="cycle"/></MemoryRouter>);
  expect(await screen.findByRole('table',{name:'Alumnos matriculados en el Ciclo'})).toBeVisible();expect(screen.getByRole('tab',{name:'Matrículas'})).toHaveAttribute('aria-selected','true');expect(screen.getByRole('button',{name:'Volver a ciclos'})).toBeVisible();expect(rpc).not.toHaveBeenCalled();
+});
+
+it('shows the Cycle tariffs tab and directs missing-price configuration before registration',async()=>{
+ tables.ciclo_tarifa=[];session(['DIRECTOR_ACADEMICO']);render(<MemoryRouter><Ciclos/></MemoryRouter>);fireEvent.click(await screen.findByRole('button',{name:'Ver 2026-001-NAV'}));fireEvent.click(screen.getByRole('tab',{name:'Tarifas'}));
+ await screen.findByRole('table',{name:'Tarifas del Ciclo'});expect(screen.getByRole('alert')).toHaveTextContent('Falta asignar una tarifa CARRERA');fireEvent.click(screen.getByRole('tab',{name:'Matrículas'}));expect(screen.getByRole('button',{name:'+ Matricular alumno'})).toBeDisabled();fireEvent.click(screen.getByRole('button',{name:'Revisar tarifas del Ciclo'}));expect(screen.getByRole('tab',{name:'Tarifas'})).toHaveAttribute('aria-selected','true');expect(rpc).not.toHaveBeenCalled();
+});
+
+it('preserves tariff drafts across tabs, blocks registration until saved and uses the returned Cycle version',async()=>{
+ session(['DIRECTOR_ACADEMICO']);render(<MemoryRouter><Ciclos/></MemoryRouter>);fireEvent.click(await screen.findByRole('button',{name:'Ver 2026-001-NAV'}));fireEvent.click(screen.getByRole('tab',{name:'Tarifas'}));await screen.findByRole('table',{name:'Tarifas del Ciclo'});
+ fireEvent.change(screen.getByRole('spinbutton',{name:'Importe de TARIFA CARRERA'}),{target:{value:'125'}});fireEvent.click(screen.getByRole('tab',{name:'Matrículas'}));expect(screen.getByRole('button',{name:'+ Matricular alumno'})).toBeDisabled();expect(screen.getByRole('alert')).toHaveTextContent('Guarda o cancela los cambios de Tarifas');
+ fireEvent.click(screen.getByRole('tab',{name:'Tarifas'}));expect(screen.getByRole('spinbutton',{name:'Importe de TARIFA CARRERA'})).toHaveValue(125);tables.ciclo_tarifa[0].importe='125';rpc.mockImplementation(async(name:string)=>({data:{...ciclo,updated_at:name==='guardar_ciclo_tarifas'?'cv2':'cv3'},error:null}));fireEvent.click(screen.getByRole('button',{name:'Guardar tarifas del Ciclo'}));await screen.findByText('Tarifas del Ciclo guardadas correctamente.');await screen.findByText('Tarifas listas para matricular.');
+ fireEvent.click(screen.getByRole('tab',{name:'Matrículas'}));await waitFor(()=>expect(screen.getByRole('button',{name:'+ Matricular alumno'})).toBeEnabled());fireEvent.click(screen.getByRole('tab',{name:'Datos'}));fireEvent.click(screen.getByRole('button',{name:'Editar Ciclo'}));fireEvent.change(screen.getByLabelText('Nombre de promoción (opcional)'),{target:{value:'PROMOCION'}});fireEvent.click(screen.getByRole('button',{name:'Guardar Ciclo'}));await waitFor(()=>expect(rpc).toHaveBeenCalledWith('guardar_ciclo',{p:expect.objectContaining({id:'cycle',expected_updated_at:'cv2',nombre_promocion:'PROMOCION'}),adicionales:[]}));
 });

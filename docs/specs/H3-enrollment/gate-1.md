@@ -35,3 +35,6 @@ Migración 20261102020000 aplicada incrementalmente sin reset: huellas y mapeo p
 
 
 [CHG-H3-006 — Buscar y Agregar; edición individual](approved-quick-add-amendment.md), precisión humana del 02/11/2026: el buscador solo lista candidatos con Agregar; registra inmediatamente mediante la RPC existente con cargos obligatorios, sin patrocinador/opcionales/descuento/código manual. Solo éxito DB actualiza grilla; Editar matrícula abre pantalla completa para datos individuales. Error obligatorio impide registro parcial; historia/constraints intactos. Sustituye panel de CHG-H3-005, sin modificar Spec aprobado ni autorizar Gate 2.
+
+
+[CHG-H3-007 — Tarifas dentro de Ciclo](approved-cycle-tariffs-amendment.md), autorización humana 03/11/2026: ficha Datos/Materias/Tarifas/Matrículas/Estado, grilla de conceptos asignados y agregar desde catálogo con monto inicial, importe propio/obligatoriedad/retiro antes de guardar. Solo Director modifica, Coordinador/terminales consultan. Se elimina editor duplicado del menú Tarifas; catálogo permanece allí. Avisos precisos de CARRERA obligatoria y configuración pendiente antes de matricular. Versiones y borradores coordinados entre pestañas; cargos históricos intactos. Sin cambios SQL/Spec aprobado. Gate 2 pendiente.

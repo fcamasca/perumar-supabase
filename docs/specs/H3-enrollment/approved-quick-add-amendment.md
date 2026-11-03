@@ -28,3 +28,6 @@ Registrar nuevo Alumno o completar ficha se abre como formulario completo y llev
 CHG-H3-005 conserva antecedente, con aviso de sustitución del panel. README y guía humana describen Buscar → Agregar → grilla → Editar. Gate 1, implementation-log y technical-results enlazan esta enmienda posterior. Los cuatro documentos H3 aprobados, H2 acceptance y fuentes históricas se mantienen intactos.
 
 Sin SQL, nuevas tablas, RPC/helpers DB, policies/grants, dependencias, pagos, H4+ ni EVOL-001/002. React no es autoridad de elegibilidad, importes, estados o transacciones. Pruebas/evidencia se registran en implementation-log. Pruebas humanas y Gate 2 pendientes.
+
+
+Actualización de ubicación de configuración: [CHG-H3-007](approved-cycle-tariffs-amendment.md) incorpora Tarifas en la ficha del Ciclo y avisa configuración faltante/pendiente antes de abrir Agregar. El alta rápida de esta enmienda y sus cargos obligatorios permanecen.
