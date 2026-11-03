@@ -102,3 +102,6 @@ Abrir Ciclo: Datos/Materias/Tarifas/Matrículas/Estado. Tarifas muestra asignada
 ## Ficha de matrícula y barra de Ciclo (03/11/2026)
 
 Ver matrícula abre cabecera Volver/Editar y pestañas Resumen/Cargos/Historial. Comparar alumno, patrocinador y total con cargos vigentes; historial debe separar retirados y mostrar los datos originales del alumno con etiquetas del momento de matrícula. Editar conserva distribución y permite comandos específicos; cancelar no envía cambios, descuento solo Director, terminales solo consulta salvo anulación autorizada con motivo. Verificar navegación por teclado, temas y móvil. En Ciclo editado, Cancelar/Guardar Ciclo aparece en todas las pestañas; Tarifas y transición mantienen confirmación propia. Cancelar descarta borradores de Tarifas. Grilla de matriculados de una página no muestra paginación; varias páginas usan Página anterior/Página siguiente. Pruebas humanas y Gate 2 pendientes.
+
+
+Descuento en ficha de matrícula: Director abre Editar/Cargos y pulsa Aplicar descuento (o Modificar descuento si ya existe). El formulario permanece oculto hasta esa acción; comprobar importe precargado, motivo, Cancelar sin guardado y Aplicar con actualización de grilla. Un error conserva formulario/datos sin retry. Coordinador no dispone de esa acción.

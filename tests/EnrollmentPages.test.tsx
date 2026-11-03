@@ -740,3 +740,20 @@ it('enrollment tabs separate current charges from history without exposing edit 
  fireEvent.click(screen.getByRole('tab',{name:'Historial'}));const history=screen.getByRole('table',{name:'Cargos retirados'});expect(history).toHaveTextContent('CURSO ANTERIOR');expect(history).toHaveTextContent('CAMBIO CICLO');expect(history).not.toHaveTextContent('CURSO VIGENTE');
  expect(screen.getByText('Datos del alumno al matricular')).toBeVisible();expect(client.rpc).not.toHaveBeenCalled();
 });
+
+it('Director explicitly opens discount, cancels without writing, and applies with optimistic version',async()=>{
+ sessionState.roles=['DIRECTOR_ACADEMICO'];showIndividualEnrollment(true,[{id:'fee',activo:true,tipo:'CARRERA',descuento:10,importe_original:100,importe_final:90}]);
+ await screen.findByRole('button',{name:'Guardar código'});fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));
+ expect(screen.queryByRole('spinbutton',{name:'Nuevo descuento Carrera (S/)'})).not.toBeInTheDocument();
+ fireEvent.click(screen.getByRole('button',{name:'Modificar descuento'}));expect(screen.getByRole('spinbutton')).toHaveValue(10);
+ fireEvent.change(screen.getByRole('spinbutton'),{target:{value:'20'}});fireEvent.click(screen.getByRole('button',{name:'Cancelar descuento'}));expect(client.rpc).not.toHaveBeenCalled();
+ fireEvent.click(screen.getByRole('button',{name:'Modificar descuento'}));expect(screen.getByRole('spinbutton')).toHaveValue(10);
+ fireEvent.change(screen.getByRole('spinbutton'),{target:{value:'20'}});fireEvent.change(screen.getByLabelText('Motivo (sin datos personales)'),{target:{value:'AUTORIZADO'}});
+ client.rpc.mockResolvedValue({data:{id:'m1'},error:null});fireEvent.click(screen.getByRole('button',{name:'Aplicar'}));
+ await waitFor(()=>expect(client.rpc).toHaveBeenCalledExactlyOnceWith('editar_matricula',{p:{id:'m1',expected_updated_at:'mv1',descuento:'20',motivo_descuento:'AUTORIZADO'}}));
+ await waitFor(()=>expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument());
+});
+it('Coordinador cannot open the discount editor',async()=>{
+ showIndividualEnrollment(true);await screen.findByRole('button',{name:'Guardar código'});fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));
+ expect(screen.queryByRole('button',{name:'Aplicar descuento'})).not.toBeInTheDocument();expect(screen.queryByRole('button',{name:'Modificar descuento'})).not.toBeInTheDocument();
+});
