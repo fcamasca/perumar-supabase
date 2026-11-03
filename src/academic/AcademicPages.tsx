@@ -214,6 +214,8 @@ export function Ciclos() {
   const [selected, setSelected] = useState<Ciclo | null>(null), [draft, setDraft] = useState<CicloDraft>(blankCiclo), [relations, setRelations] = useState<Relacion[]>([]), [inherited, setInherited] = useState<string[]>([]), [additional, setAdditional] = useState<string[]>([])
   const [search, setSearch] = useState(''), [estado, setEstado] = useState(''), [message, setMessage] = useState(''), [busy, setBusy] = useState(false), [revision, setRevision] = useState(0)
   const { ask, dialog } = useConfirmation(busy)
+  const [subjectSearch, setSubjectSearch] = useState(''), [subjectId, setSubjectId] = useState(''), [showRetired, setShowRetired] = useState(false)
+  const [relationsStatus, setRelationsStatus] = useState<'loading' | 'ready' | 'error'>('ready')
   const [destino, setDestino] = useState(''), [motivoId, setMotivoId] = useState(''), [detalle, setDetalle] = useState('')
   const canModify = state.roles?.some(role => role === 'DIRECTOR_ACADEMICO' || role === 'COORDINADOR_ACADEMICO') ?? false
   const canEditCycle = (row: Ciclo) => canModify && ['PROGRAMADO', 'EN_CURSO'].includes(row.estado_codigo)
@@ -253,11 +255,11 @@ export function Ciclos() {
   }, [client, draft.carrera_id, revision])
   async function edit(row: Ciclo | null, view = false, section = 0) {
     setReadOnly(view || (!!row && !canEditCycle(row)) || !canModify); setTab(section)
-    setOpen(true)
+    setOpen(true); setSubjectSearch(''); setSubjectId(''); if(section !== 1) setShowRetired(false); setRelationsStatus(row ? 'loading' : 'ready')
     const request = ++editEpoch.current
     setSelected(row); setDraft(row ? { carrera_id: row.carrera_id, fecha_inicio: row.fecha_inicio, fecha_fin: row.fecha_fin, nombre_promocion: row.nombre_promocion ?? '', departamento_id: row.departamento_id, provincia_id: row.provincia_id, distrito_id: row.distrito_id, capitania_id: row.capitania_id } : blankCiclo)
     setAdditional([]); setRelations([]); setMessage(''); setDestino(''); setMotivoId(''); setDetalle('')
-    if (row) { const r = await client.from('ciclo_materia').select('id,materia_id,activo,origen,motivo_inactivacion').eq('ciclo_id', row.id); if (request !== editEpoch.current) return; if (!r.error) setRelations(r.data); else setMessage('No se pudieron consultar materias del Ciclo.') }
+    if (row) { const r = await client.from('ciclo_materia').select('id,materia_id,activo,origen,motivo_inactivacion').eq('ciclo_id', row.id); if (request !== editEpoch.current) return; if (!r.error) { setRelations(r.data); setRelationsStatus('ready') } else { setRelationsStatus('error'); setMessage('No se pudieron consultar materias del Ciclo.') } }
   }
   async function save(event: FormEvent) {
     event.preventDefault()
@@ -269,8 +271,8 @@ export function Ciclos() {
     setBusy(false); if (r.error) { setMessage(academicError(r.error)); return }; ++editEpoch.current; setOpen(false); setMessage(selected ? 'Ciclo actualizado correctamente.' : 'Ciclo creado correctamente.'); setRevision(x => x + 1)
   }
   async function relation(row: Relacion) {
-    if (!selected || readOnly || !editable || dirty) return
-    if (await ask({ title: row.activo ? 'Retirar Materia del Ciclo' : 'Reactivar Materia del Ciclo', confirmLabel: row.activo ? 'Retirar Materia' : 'Reactivar Materia', sensitive: row.activo, description: `${academicLabel(materias.find(m => m.id === row.materia_id)!)}. ${row.activo ? 'La Materia quedará retirada, sin borrar su historial. Los cambios de la Carrera no la reactivarán.' : 'Se reactivará explícitamente esta relación conservando su origen.'}` }) === null) return
+    if (!selected || readOnly || !editable || dirty || relationsStatus !== 'ready') return
+    if (await ask({ title: row.activo ? 'Retirar Materia del Ciclo' : 'Reactivar Materia del Ciclo', confirmLabel: row.activo ? 'Retirar Materia' : 'Reactivar Materia', sensitive: row.activo, description: `${academicLabel(materias.find(m => m.id === row.materia_id)!)}. ${row.activo ? (row.origen === 'HEREDADA' ? 'Continuará perteneciendo a la Carrera, pero dejará de estar activa únicamente en este Ciclo. Se conserva su historial y los cambios de la Carrera no la reactivarán.' : 'Dejará de estar activa únicamente en este Ciclo, sin borrar su historial.') : 'Se reactivará explícitamente esta relación conservando su origen.'}` }) === null) return
     setBusy(true); const r = await client.rpc('cambiar_materia_ciclo', { ciclo_id: selected.id, materia_id: row.materia_id, expected_updated_at: selected.updated_at, activo: !row.activo }); setBusy(false)
     if (r.error) { setMessage(academicError(r.error)); return }; void edit(r.data as Ciclo, false, 1); setMessage(`Materia ${row.activo ? 'retirada' : 'reactivada'} correctamente.`); setRevision(x => x + 1)
   }
@@ -282,7 +284,42 @@ export function Ciclos() {
   }
   const referenceOptions = (options: Ref[], current: string) => options.filter(x => x.active || x.id === current).map(x => <option key={x.id} value={x.id}>{'sigla' in x ? academicLabel(x as Carrera) : x.nombre}{!x.active ? ' (inactivo histórico)' : ''}</option>)
   function cancelEditing() { if (selected) void edit(selected, true, tab); else {++editEpoch.current;setOpen(false)} }
-  const relationsTable = selected && <div className="cycle-subjects"><h3>Materias del Ciclo</h3>{!readOnly && dirty && <p className="help-text">Guarda o cancela los cambios del Ciclo para modificar sus materias.</p>}<div className="table-scroll"><table><caption>Materias actuales e historial de retiros</caption><thead><tr><th scope="col">Nombre</th><th scope="col">Origen</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr></thead><tbody>{relations.length === 0 && <tr><td colSpan={4}>No se encontraron materias para este Ciclo.</td></tr>}{relations.map(r => { const m=materias.find(m=>m.id===r.materia_id);return <tr key={r.id}><td>{m?.nombre ?? 'Referencia no disponible'}</td><td>{r.origen}</td><td>{r.activo ? 'Activa' : r.motivo_inactivacion === 'CAMBIO_CARRERA' ? 'Retirada por cambio de Carrera' : 'Retirada manualmente'}</td><td><div className="student-row-actions">{!readOnly && editable ? <AcademicAction label={r.activo ? 'Retirar' : 'Reactivar explícitamente'} icon={r.activo ? 'off' : 'on'} disabled={busy || dirty} onClick={()=>void relation(r)}/> : 'Solo consulta'}</div></td></tr>})}</tbody></table></div></div>
+  const previewRelations: Relacion[] = selected ? relations : [
+    ...materias.filter(m=>m.active && inherited.includes(m.id)).map(m=>({id:`career-${m.id}`,materia_id:m.id,activo:true,origen:'HEREDADA',motivo_inactivacion:null})),
+    ...additional.filter(id=>!materias.some(m=>m.id===id && m.active && inherited.includes(id))).map(id=>({id:`additional-${id}`,materia_id:id,activo:true,origen:'ADICIONAL',motivo_inactivacion:null})),
+  ]
+  const availableSubjects = materias.filter(m=>m.active && !previewRelations.some(r=>r.materia_id===m.id))
+  const normalizedSubjectSearch = subjectSearch.normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase()
+  const matchingSubjects = normalizedSubjectSearch && !subjectId ? availableSubjects.filter(m=>m.nombre.normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(normalizedSubjectSearch)) : []
+  const canAddSubject = !readOnly && editable && !busy && !dirty && relationsStatus==='ready' && inheritedStatus==='ready'
+  async function addSubject() {
+    if (!canAddSubject || !availableSubjects.some(m=>m.id===subjectId)) return
+    if (!selected) { setAdditional(ids=>[...ids,subjectId]); setSubjectSearch(''); setSubjectId(''); return }
+    setBusy(true); setMessage('')
+    const r=await client.rpc('guardar_ciclo',{p:{id:selected.id,expected_updated_at:selected.updated_at,...draft,nombre_promocion:draft.nombre_promocion || null},adicionales:[subjectId]})
+    setBusy(false)
+    if(r.error) {setMessage(academicError(r.error));return}
+    void edit(r.data as Ciclo,false,1);setMessage('Materia adicional agregada correctamente.');setRevision(x=>x+1)
+  }
+  const cycleSubjects = <>
+    <h3>Materias del Ciclo</h3>
+    <p className="help-text">Las materias de la Carrera se incorporan automáticamente al crear el Ciclo. Puedes agregar materias adicionales o retirar una materia únicamente de este Ciclo.</p>
+    {!selected && <p className="help-text">Esta lista se guardará al crear el Ciclo.</p>}
+    {!readOnly && dirty && <p className="help-text">Guarda o cancela los cambios del Ciclo para modificar sus materias.</p>}
+    {(relationsStatus==='loading' || inheritedStatus==='loading') && <p role="status">Cargando materias del Ciclo…</p>}
+    {(relationsStatus==='error' || inheritedStatus==='error') && <p role="alert">No se pudieron consultar las materias. Vuelve a abrir la ficha antes de modificarlas.</p>}
+    {inheritedStatus==='idle' && <p>Selecciona una Carrera para ver sus Materias.</p>}
+    {!readOnly && editable && <div className="cycle-subject-search">
+      <label>Agregar materia adicional<input type="search" placeholder="Buscar materia adicional…" value={subjectSearch} disabled={!canAddSubject} onChange={e=>{setSubjectSearch(formTextValue(e.currentTarget));setSubjectId('')}} onKeyDown={e=>{if(e.key==='Enter')e.preventDefault();if(e.key==='Escape'){setSubjectSearch('');setSubjectId('')}}}/></label>
+      <button type="button" disabled={!canAddSubject || !subjectId} onClick={()=>void addSubject()}>Agregar</button>
+      {canAddSubject && normalizedSubjectSearch && !subjectId && <div className="cycle-subject-results"><ul aria-label="Resultados de materias adicionales">{matchingSubjects.slice(0,8).map(m=><li key={m.id}><button type="button" onClick={()=>{setSubjectId(m.id);setSubjectSearch(m.nombre)}}>{m.nombre}</button></li>)}</ul><p className="help-text" role="status">{matchingSubjects.length ? matchingSubjects.length>8 ? 'Se muestran 8 resultados. Escribe más para precisar la búsqueda.' : `${matchingSubjects.length} coincidencias` : 'No hay materias activas disponibles que coincidan.'}</p></div>}
+    </div>}
+    {relationsStatus==='ready' && inheritedStatus!=='loading' && inheritedStatus!=='error' && <div className="table-scroll"><table aria-label="Materias del Ciclo"><thead><tr><th scope="col">Materia</th><th scope="col">Origen</th><th scope="col">Estado</th><th scope="col">Acción</th></tr></thead><tbody>
+      {previewRelations.filter(r=>showRetired || r.activo).map(r=>{const m=materias.find(m=>m.id===r.materia_id);return <tr key={r.id}><td>{m?.nombre ?? 'Referencia no disponible'}</td><td>{r.origen==='HEREDADA'?'Carrera':'Adicional'}</td><td><span title={!r.activo ? r.motivo_inactivacion==='CAMBIO_CARRERA'?'Retirada por cambio de Carrera':'Retirada manualmente':undefined}>{r.activo?'Activa':'Retirada'}</span></td><td>{!readOnly && editable ? selected ? <button type="button" className="secondary" disabled={busy || dirty || relationsStatus!=='ready'} onClick={()=>void relation(r)}>{r.activo?'Retirar':'Reactivar'}</button> : r.origen==='ADICIONAL' ? <button type="button" className="secondary" disabled={busy} onClick={()=>setAdditional(ids=>ids.filter(id=>id!==r.materia_id))}>Quitar</button> : 'Al crear el Ciclo' : 'Solo consulta'}</td></tr>})}
+      {!previewRelations.some(r=>showRetired || r.activo) && <tr><td colSpan={4}>{showRetired?'No hay materias registradas.':'No hay materias activas en este Ciclo.'}</td></tr>}
+    </tbody></table></div>}
+    {selected && <label className="show-retired-subjects"><input type="checkbox" checked={showRetired} onChange={e=>setShowRetired(e.currentTarget.checked)}/>Mostrar retiradas</label>}
+  </>
   if(open) return <section className="academic-record cycle-record">{dialog}<AcademicRecordHeader title={selected ? 'Ficha de Ciclo' : 'Nuevo Ciclo'} name={selected?.codigo_ciclo} status={selected && <StatusBadge value={selected.estado_codigo}/>} editing={!readOnly} busy={busy} backLabel="Volver a ciclos" editLabel="Editar Ciclo" onBack={()=>{++editEpoch.current;setOpen(false)}} onEdit={readOnly && selected && canEditCycle(selected) ? ()=>setReadOnly(false) : undefined}/><Notice message={message}/>
     {selected && !editable && <p>{['PROGRAMADO','EN_CURSO'].includes(selected.estado_codigo) ? 'Solo consulta. Tu acceso no permite modificar este Ciclo.' : 'Solo consulta. Este Ciclo ya no admite cambios y no puede reabrirse.'}</p>}
     <AcademicTabs id="cycle-sections" names={selected ? ['Datos','Materias','Estado'] : ['Datos','Materias']} active={tab} disabled={busy} onChange={setTab}/>
@@ -298,11 +335,7 @@ export function Ciclos() {
         <label><span className="field-label">Distrito{!readOnly && ' *'}</span>{readOnly?<input aria-label="Distrito" readOnly value={distritos.find(x=>x.id===draft.distrito_id)?.nombre ?? 'Referencia no disponible'}/>:<select aria-label="Distrito" required value={draft.distrito_id} onChange={e=>setDraft({...draft,distrito_id:formTextValue(e.currentTarget)})}><option value="">Seleccionar</option>{referenceOptions(distritos,draft.distrito_id)}</select>}</label>
         <label><span className="field-label">Capitanía{!readOnly && ' *'}</span>{readOnly?<input aria-label="Capitanía" readOnly value={capitanias.find(x=>x.id===draft.capitania_id)?.nombre ?? 'Referencia no disponible'}/>:<select aria-label="Capitanía" required value={draft.capitania_id} onChange={e=>setDraft({...draft,capitania_id:formTextValue(e.currentTarget)})}><option value="">Seleccionar</option>{referenceOptions(capitanias,draft.capitania_id)}</select>}</label>
       </fieldset></fieldset></div>
-      <div hidden={tab!==1} data-academic-tab="1" role="tabpanel" tabIndex={0} id="cycle-sections-panel-1" aria-labelledby="cycle-sections-tab-1" className="student-section-panel"><h3>Materias</h3><fieldset disabled={busy}>
-        <fieldset><legend>Materias de la Carrera</legend>{inheritedStatus==='idle'&&<p>Selecciona una Carrera para ver sus Materias.</p>}{inheritedStatus==='loading'&&<p role="status">Cargando Materias de la Carrera…</p>}{inheritedStatus==='error'&&<p role="alert">No se pudieron consultar las Materias de la Carrera. Recarga la información.</p>}{inheritedStatus==='ready'&&<div className="table-scroll"><table><caption>Materias activas de la Carrera seleccionada</caption><thead><tr><th scope="col">Nombre</th></tr></thead><tbody>{materias.filter(m=>m.active&&inherited.includes(m.id)).map(m=><tr key={m.id}><td>{m.nombre}</td></tr>)}{!materias.some(m=>m.active&&inherited.includes(m.id))&&<tr><td colSpan={1}>Esta Carrera no tiene Materias activas disponibles.</td></tr>}</tbody></table></div>}</fieldset>
-        {!readOnly && <fieldset><legend>Materias adicionales disponibles</legend>{inheritedStatus==='loading'?<p role="status">Cargando Materias adicionales…</p>:inheritedStatus==='error'?<p>No se pueden determinar las Materias adicionales hasta cargar la Carrera.</p>:<>{materias.filter(m=>m.active&&!inherited.includes(m.id)&&!relations.some(r=>r.materia_id===m.id)).map(m=><label key={m.id}><input type="checkbox" checked={additional.includes(m.id)} onChange={e=>setAdditional(ids=>e.target.checked?[...ids,m.id]:ids.filter(id=>id!==m.id))}/>{academicLabel(m)}</label>)}{!materias.some(m=>m.active&&!inherited.includes(m.id)&&!relations.some(r=>r.materia_id===m.id))&&<p>No hay materias activas adicionales disponibles para agregar a este Ciclo.</p>}</>}</fieldset>}
-        {relationsTable}
-      </fieldset></div>
+      <div hidden={tab!==1} data-academic-tab="1" role="tabpanel" tabIndex={0} id="cycle-sections-panel-1" aria-labelledby="cycle-sections-tab-1" className="student-section-panel cycle-subject-panel">{cycleSubjects}</div>
       {!readOnly && <div className="form-actions"><button className="secondary" disabled={busy} type="button" onClick={cancelEditing}>{selected?'Cancelar':'Cancelar / descartar formulario'}</button><button disabled={busy||inheritedStatus==='loading'||inheritedStatus==='error'}>Guardar Ciclo</button></div>}
     </InlineForm></div>
     {selected && <div hidden={tab!==2} role="tabpanel" tabIndex={0} id="cycle-sections-panel-2" aria-labelledby="cycle-sections-tab-2" className="student-section-panel cycle-state-panel"><header className="cycle-state-heading"><h3>Estado del Ciclo</h3><StatusBadge value={selected.estado_codigo}/></header>{!readOnly && editable && director ? <>{dirty && <p>Guarda o cancela los cambios del Ciclo antes de cambiar su estado.</p>}<InlineForm className="cycle-state-form" onSubmit={event=>void transition(event)}><p>Elige el siguiente estado. Cerrar, declarar desierto o anular son cambios definitivos.</p><fieldset className="academic-fields" disabled={busy||dirty} aria-label="Cambiar estado">

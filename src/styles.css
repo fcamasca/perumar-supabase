@@ -388,3 +388,13 @@ form.academic-record-form { max-width:none; padding:0; margin:0; background:tran
 form.cycle-state-form { max-width:none; margin:0; padding:0; border:0; border-radius:0; box-shadow:none; background:transparent; gap:.75rem; }
 .cycle-state-form > p { margin:0; font-size:.87rem; }
 .cycle-state-form .form-actions { margin:0; padding-top:.75rem; }
+
+.cycle-subject-panel { padding:1rem; }
+.cycle-subject-search { display:flex; flex-wrap:wrap; align-items:end; gap:.75rem; margin:.75rem 0; }
+.cycle-subject-search > label { flex:1; min-width:min(100%,14rem); }
+.cycle-subject-results { flex-basis:100%; border:1px solid var(--border-soft); border-radius:.5rem; padding:.5rem; }
+.cycle-subject-results ul { list-style:none; margin:0; padding:0; max-height:15rem; overflow:auto; }
+.cycle-subject-results li button { width:100%; text-align:left; justify-content:start; background:var(--surface-elevated); color:var(--text-primary); border:0; border-radius:.25rem; }
+.cycle-subject-results li button:hover,.cycle-subject-results li button:focus-visible { background:var(--surface); }
+.cycle-subject-results p { margin:.5rem 0 0; }
+.show-retired-subjects { display:flex; align-items:center; gap:.5rem; margin-top:.75rem; }

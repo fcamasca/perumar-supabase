@@ -222,3 +222,12 @@ Ajuste visual 02/11/2026: Datos del Ciclo ordena Carrera/Nombre de promoción en
 
 
 Ajuste visual 02/11/2026: Estado del Ciclo integra título/estado actual en una cabecera compacta y elimina la tarjeta de formulario anidada y subtítulo repetido. Selector/motivo comparten grilla; detalle inicia con dos líneas ampliables. Márgenes/padding reducidos; conserva advertencia de irreversibilidad, confirmación, autorización Director, validación, bloqueo por borrador pendiente y Cancelar edición accesible. Sin cambios DB.
+
+
+## UX — Materias del Ciclo, 02/11/2026
+
+Por solicitud humana, una sola tabla Materia/Origen/Estado/Acción sustituye los bloques Carrera y disponibles. HEREDADA se presenta Carrera; ADICIONAL, Adicional. Activas por defecto y checkbox Mostrar retiradas para historial, sin borrar relaciones. Retirar/Reactivar son botones de texto y mantienen confirmación; retirar una de Carrera aclara que continúa perteneciendo a la Carrera y se retira únicamente del Ciclo.
+
+Agregar materia adicional busca por nombre sin listar el catálogo completo, muestra hasta ocho coincidencias y permite precisar el término. Excluye inactivas y cualquier relación del Ciclo, incluidas retiradas; estas se reactivan explícitamente desde su fila. Al crear, tabla única de previsualización y adicionales pendientes con Quitar antes del guardado atómico. En un Ciclo existente, Agregar usa guardar_ciclo existente con versión optimista y adicionales seleccionadas; Retirar/Reactivar usa cambiar_materia_ciclo. No hay RPC, tablas ni cambios SQL. Borradores de Datos pendientes bloquean comandos separados; errores/conflictos preservan selección y no reintentan. Carga fallida de relaciones bloquea búsqueda/modificaciones. Permisos/terminalidad/invariantes H2/H3 siguen DB-side.
+
+Validación UX Materias del Ciclo: 205 pruebas en 12 archivos, lint, typecheck, build y git diff --check satisfactorios. Casos nuevos cubren tabla única, filtro de historial, búsqueda acotada/exclusiones, agregar con versión, alta con adicionales pendientes, conflicto sin retries, fallo de carga y terminales sin mutaciones. Recorrido visual humano y Gate 2 pendientes.

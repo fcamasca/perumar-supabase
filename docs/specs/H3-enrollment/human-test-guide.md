@@ -60,3 +60,8 @@ Este recorrido sustituye las indicaciones anteriores de Código técnico y ubica
 - Revisar carreras existentes: experiencia previamente indicada se conserva en el flag; modalidad vacía anterior equivale a No; enseñanza inicial Presencial. Los códigos técnicos existentes no aparecen ni se solicitan.
 - Alumno: crear dos fichas, ver código A-0000001 o correlativos siguientes en grilla/cabecera/resumen, buscar por A-…, editar datos y comprobar que el código se mantiene sin campo editable. Puede haber saltos por pruebas/errores/rollback. Confirmar snapshots históricos intactos y nuevas matrículas con código de alumno en su fotografía.
 - Comparar temas, móvil/escritorio, alineación de segunda fila, foco, teclado y forced-colors del switch y grillas. Estas pruebas humanas y Gate 2 permanecen pendientes.
+
+
+## UX vigente — Materias del Ciclo (02/11/2026)
+
+Sustituye los antiguos bloques de materias heredadas/disponibles por una tabla única. Verificar Carrera/Adicional y Activa/Retirada; por defecto solo activas, Mostrar retiradas disponible también en consulta. Buscar por nombre/acentos sin desplegar cientos de opciones; máximo ocho coincidencias, sin materias inactivas ni relaciones activas/retiradas ya existentes. Seleccionar y Agregar; comprobar refresco de tabla y versión. En nuevo Ciclo, previsualizar heredadas/adicionales y quitar una adicional pendiente antes de guardar. Retirar una heredada con confirmación: debe seguir en la Carrera y quedar retirada en el Ciclo; luego mostrar retiradas y Reactivar explícitamente, conservando origen. Verificar cancelación, error/conflicto sin retries, borrador de Datos que bloquea comandos separados, consulta de Ciclos terminales, teclado, móvil y temas. Gate 2 permanece pendiente.
