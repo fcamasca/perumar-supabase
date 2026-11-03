@@ -66,6 +66,11 @@ try {
         assert.ok(matchingEnrollments.some(row=>row.id===seededEnrollment.id));
         assert.ok(cycleGrid.count>=1);
         assert.equal(seededEnrollment.alumno_snapshot.contactos[0].parentesco.etiqueta,'Conviviente');
+        const quickPupil=await rpc(O,'guardar_alumno',{p:{...payload(),contactos:[initialContact]}});
+        const quick=await rpc(O,'registrar_matricula',{p:{ciclo_id:c3.id,expected_ciclo_updated_at:c3.updated_at,alumno_id:quickPupil.id,expected_alumno_updated_at:quickPupil.updated_at,empresa_patrocinadora_id:null},opcionales:[]});
+        assert.equal(quick.empresa_patrocinadora_id,null);
+        const quickCharges=(await rows('matricula_cargo')).filter(charge=>charge.matricula_id===quick.id&&charge.activo);
+        assert.equal(quickCharges.length,1);assert.equal(Number(quickCharges[0].descuento),0);assert.equal(Number(quickCharges[0].importe_final),650);
         const beforeInitial=(await rows('alumno')).length;
         reject(await O.rpc('guardar_alumno',{p:{...payload(),contactos:[{...initialContact,parentesco_id:cat.SEXO}]}}));
         assert.equal((await rows('alumno')).length,beforeInitial);

@@ -30,46 +30,55 @@ it('keeps one enrolled grid and scopes its filter to pupils of this Cycle',async
  await waitFor(()=>expect(queryLog.filter(q=>q.table==='matricula').at(-1)).toMatchObject({filters:{ciclo_id:'c1'},or:studentSearchFilter('ANA'),opts:{referencedTable:'alumno'},range:[0,29]}))
  expect(within(table).getByRole('link',{name:'Ver matrícula'})).toHaveAttribute('href','/matriculas/m1');expect(client.rpc).not.toHaveBeenCalled()
 })
-it('opens a fixed-Cycle drawer with a compact result list, confirms once and refreshes the grid',async()=>{
- show();const trigger=screen.getByRole('button',{name:'+ Matricular alumno'});fireEvent.click(trigger)
- const drawer=await screen.findByRole('dialog',{name:'Matricular alumno en 2026-001-NAV'});expect(within(drawer).queryByRole('combobox',{name:'Ciclo'})).not.toBeInTheDocument()
- fireEvent.change(within(drawer).getByRole('searchbox',{name:'Buscar Alumno'}),{target:{value:'nuevo'}})
- const results=await within(drawer).findByRole('list',{name:'Coincidencias de alumnos'});expect(within(drawer).queryByRole('table')).not.toBeInTheDocument()
- fireEvent.click(within(results).getByRole('button',{name:'Seleccionar'}));await within(drawer).findByRole('button',{name:'Cambiar alumno'})
- expect(within(drawer).queryByRole('list',{name:'Coincidencias de alumnos'})).not.toBeInTheDocument();expect(within(drawer).getByRole('region',{name:'Cargos'})).toBeVisible()
- expect(client.rpc).not.toHaveBeenCalled()
- records.push({id:'m2',alumno_id:'p2',ciclo_id:'c1',codigo_matricula:'2026-NAV-002',estado_codigo:'ACTIVO',alumno:candidate})
- client.rpc.mockResolvedValue({data:{id:'m2',codigo_matricula:'2026-NAV-002'},error:null})
- fireEvent.click(within(drawer).getByRole('button',{name:'Confirmar matrícula'}))
- await waitFor(()=>expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
- expect(client.rpc).toHaveBeenCalledExactlyOnceWith('registrar_matricula',{p:{ciclo_id:'c1',expected_ciclo_updated_at:'cv1',alumno_id:'p2',expected_alumno_updated_at:'pv1',empresa_patrocinadora_id:null},opcionales:[]})
- await waitFor(()=>expect(screen.getByRole('table',{name:'Alumnos matriculados en el Ciclo'})).toHaveTextContent('2026-NAV-002'));await waitFor(()=>expect(trigger).toHaveFocus())
- fireEvent.click(trigger);const next=await screen.findByRole('dialog');expect(within(next).queryByRole('button',{name:'Confirmar matrícula'})).not.toBeInTheDocument();expect(within(next).getByRole('searchbox',{name:'Buscar Alumno'})).toHaveValue('')
-})
-it('cancel closes the drawer without creating a partial registration',async()=>{
- show();fireEvent.click(screen.getByRole('button',{name:'+ Matricular alumno'}));const drawer=await screen.findByRole('dialog');fireEvent.click(within(drawer).getByRole('button',{name:'Cancelar'}));await waitFor(()=>expect(screen.queryByRole('dialog')).not.toBeInTheDocument());expect(client.rpc).not.toHaveBeenCalled()
-})
-it('retains the pending drawer on a conflict and never retries',async()=>{
- show();fireEvent.click(screen.getByRole('button',{name:'+ Matricular alumno'}));const drawer=await screen.findByRole('dialog');fireEvent.change(within(drawer).getByRole('searchbox',{name:'Buscar Alumno'}),{target:{value:'nuevo'}});fireEvent.click(await within(drawer).findByRole('button',{name:'Seleccionar'}));await within(drawer).findByRole('button',{name:'Cambiar alumno'});
- client.rpc.mockResolvedValue({error:{code:'40001'}});fireEvent.click(within(drawer).getByRole('button',{name:'Confirmar matrícula'}));expect(await within(drawer).findByRole('alert')).toHaveTextContent('La información cambió');expect(drawer).toBeVisible();expect(client.rpc).toHaveBeenCalledTimes(1)
-})
-it('blocks dismissal while the registration transaction has no confirmed response',async()=>{
- show();fireEvent.click(screen.getByRole('button',{name:'+ Matricular alumno'}));const drawer=await screen.findByRole('dialog');fireEvent.change(within(drawer).getByRole('searchbox',{name:'Buscar Alumno'}),{target:{value:'nuevo'}});fireEvent.click(await within(drawer).findByRole('button',{name:'Seleccionar'}));await within(drawer).findByRole('button',{name:'Cambiar alumno'});
- let finish:(r:unknown)=>void=()=>{};client.rpc.mockReturnValue(new Promise(resolve=>{finish=resolve}));fireEvent.click(within(drawer).getByRole('button',{name:'Confirmar matrícula'}));expect(within(drawer).getByRole('button',{name:'Cerrar panel de matrícula'})).toBeDisabled();expect(fireEvent(drawer,new Event('cancel',{cancelable:true}))).toBe(false);expect(drawer).toBeVisible();await act(async()=>finish({error:{code:'40001'}}))
-})
+it('adds directly from search results with only mandatory defaults and refreshes the grid',async()=>{
+ show();const trigger=screen.getByRole('button',{name:'+ Matricular alumno'});fireEvent.click(trigger);
+ const drawer=await screen.findByRole('dialog',{name:'Agregar alumnos a 2026-001-NAV'});
+ fireEvent.change(within(drawer).getByRole('searchbox',{name:'Buscar Alumno'}),{target:{value:'nuevo'}});
+ const add=await within(drawer).findByRole('button',{name:'Agregar'});
+ expect(within(drawer).queryByRole('table')).not.toBeInTheDocument();expect(within(drawer).queryByRole('button',{name:'Confirmar matrícula'})).not.toBeInTheDocument();expect(within(drawer).queryByText('Cargos')).not.toBeInTheDocument();
+ records.push({id:'m2',alumno_id:'p2',ciclo_id:'c1',codigo_matricula:'2026-NAV-002',estado_codigo:'ACTIVO',alumno:candidate});
+ client.rpc.mockResolvedValue({data:{id:'m2',codigo_matricula:'2026-NAV-002'},error:null});fireEvent.click(add);
+ await waitFor(()=>expect(client.rpc).toHaveBeenCalledExactlyOnceWith('registrar_matricula',{p:{ciclo_id:'c1',expected_ciclo_updated_at:'cv1',alumno_id:'p2',expected_alumno_updated_at:'pv1',empresa_patrocinadora_id:null},opcionales:[]}));
+ await waitFor(()=>expect(screen.getByRole('table',{name:'Alumnos matriculados en el Ciclo'})).toHaveTextContent('2026-NAV-002'));
+ expect(drawer).toBeVisible();expect(within(drawer).queryByRole('button',{name:'Agregar'})).not.toBeInTheDocument();
+ fireEvent.click(within(drawer).getByRole('button',{name:'Cerrar panel de matrícula'}));await waitFor(()=>expect(trigger).toHaveFocus());
+ expect(screen.getAllByRole('link',{name:'Editar matrícula'}).at(-1)).toHaveAttribute('href','/matriculas/m2?editar=1');
+});
+it('closing search does not register any pupil',async()=>{
+ show();fireEvent.click(screen.getByRole('button',{name:'+ Matricular alumno'}));const drawer=await screen.findByRole('dialog');fireEvent.click(within(drawer).getByRole('button',{name:'Cerrar panel de matrícula'}));await waitFor(()=>expect(screen.queryByRole('dialog')).not.toBeInTheDocument());expect(client.rpc).not.toHaveBeenCalled();
+});
+it('an add conflict preserves results without retry',async()=>{
+ show();fireEvent.click(screen.getByRole('button',{name:'+ Matricular alumno'}));const drawer=await screen.findByRole('dialog');fireEvent.change(within(drawer).getByRole('searchbox',{name:'Buscar Alumno'}),{target:{value:'nuevo'}});const add=await within(drawer).findByRole('button',{name:'Agregar'});
+ client.rpc.mockResolvedValue({error:{code:'40001'}});fireEvent.click(add);expect(await within(drawer).findByRole('alert')).toHaveTextContent('La información cambió');expect(drawer).toBeVisible();expect(client.rpc).toHaveBeenCalledTimes(1);expect(add).toBeVisible();
+});
+it('blocks closing during an Add transaction',async()=>{
+ show();fireEvent.click(screen.getByRole('button',{name:'+ Matricular alumno'}));const drawer=await screen.findByRole('dialog');fireEvent.change(within(drawer).getByRole('searchbox',{name:'Buscar Alumno'}),{target:{value:'nuevo'}});const add=await within(drawer).findByRole('button',{name:'Agregar'});
+ let finish:(r:unknown)=>void=()=>{};client.rpc.mockReturnValue(new Promise(resolve=>{finish=resolve}));fireEvent.click(add);await waitFor(()=>expect(client.rpc).toHaveBeenCalledTimes(1));expect(within(drawer).getByRole('button',{name:'Cerrar panel de matrícula'})).toBeDisabled();expect(fireEvent(drawer,new Event('cancel',{cancelable:true}))).toBe(false);fireEvent.click(within(drawer).getByRole('link',{name:'Registrar nuevo Alumno'}));expect(drawer).toBeVisible();await act(async()=>finish({error:{code:'40001'}}));
+});
 it.each(['CERRADO','DESIERTO','ANULADO'])('allows only historical consultation for terminal Cycle %s',async estado=>{
  show({cycle:{...cycle,estado_codigo:estado}});await screen.findByRole('table',{name:'Alumnos matriculados en el Ciclo'});expect(screen.queryByRole('button',{name:'+ Matricular alumno'})).not.toBeInTheDocument();expect(client.rpc).not.toHaveBeenCalled()
 })
 it('blocks opening the panel when Cycle data has unsaved changes',()=>{show({blocked:true});expect(screen.getByRole('button',{name:'+ Matricular alumno'})).toBeDisabled();expect(screen.getByText(/Guarda o cancela/)).toBeVisible()})
-it('prevents choosing a pupil whose existing registration was annulled too',async()=>{
- records.push({id:'old',alumno_id:'p2',ciclo_id:'c1',codigo_matricula:'2026-NAV-000',estado_codigo:'ANULADO',alumno:candidate});show();fireEvent.click(screen.getByRole('button',{name:'+ Matricular alumno'}));const drawer=await screen.findByRole('dialog');fireEvent.change(within(drawer).getByRole('searchbox',{name:'Buscar Alumno'}),{target:{value:'nuevo'}});fireEvent.click(await within(drawer).findByRole('button',{name:'Seleccionar'}));expect(await within(drawer).findByText(/ya tiene una matrícula/)).toBeVisible();expect(within(drawer).queryByRole('button',{name:'Confirmar matrícula'})).not.toBeInTheDocument();expect(client.rpc).not.toHaveBeenCalled()
-})
-
-it('opening a full pupil form leaves the drawer and Cancel returns to the same Cycle search',async()=>{
- show();fireEvent.click(screen.getByRole('button',{name:'+ Matricular alumno'}));const drawer=await screen.findByRole('dialog');fireEvent.click(within(drawer).getByRole('button',{name:'Nuevo Alumno'}));
- expect(await screen.findByRole('heading',{name:'Nuevo Alumno'})).toBeVisible();expect(screen.queryByRole('dialog')).not.toBeInTheDocument();expect(screen.queryByRole('table',{name:'Alumnos matriculados en el Ciclo'})).not.toBeInTheDocument();
- fireEvent.click(screen.getByRole('button',{name:'Cancelar'}));expect(await screen.findByRole('dialog',{name:'Matricular alumno en 2026-001-NAV'})).toBeVisible();expect(screen.getByRole('table',{name:'Alumnos matriculados en el Ciclo'})).toBeVisible();expect(client.rpc).not.toHaveBeenCalled();
+it('excludes existing registrations including annulled ones from search candidates',async()=>{
+ records.push({id:'old',alumno_id:'p2',ciclo_id:'c1',codigo_matricula:'2026-NAV-000',estado_codigo:'ANULADO',alumno:candidate});show();fireEvent.click(screen.getByRole('button',{name:'+ Matricular alumno'}));const drawer=await screen.findByRole('dialog');fireEvent.change(within(drawer).getByRole('searchbox',{name:'Buscar Alumno'}),{target:{value:'nuevo'}});
+ await within(drawer).findByText('No hay alumnos disponibles para esta búsqueda.');expect(within(drawer).queryByRole('button',{name:'Agregar'})).not.toBeInTheDocument();expect(client.rpc).not.toHaveBeenCalled();
+});
+it('new pupil registration opens a full route with a return Cycle',async()=>{
+ show();fireEvent.click(screen.getByRole('button',{name:'+ Matricular alumno'}));const drawer=await screen.findByRole('dialog');expect(within(drawer).getByRole('link',{name:'Registrar nuevo Alumno'})).toHaveAttribute('href','/alumnos/nuevo?ciclo=c1');expect(client.rpc).not.toHaveBeenCalled();
 });
 it('hides registration controls without an academic role',async()=>{
  roles.current=['ADMIN_SISTEMA'];show();await screen.findByRole('table',{name:'Alumnos matriculados en el Ciclo'});expect(screen.queryByRole('button',{name:'+ Matricular alumno'})).not.toBeInTheDocument();expect(client.rpc).not.toHaveBeenCalled();
+});
+
+it('failed mandatory validation does not add a row and offers completing the pupil record',async()=>{
+ show();fireEvent.click(screen.getByRole('button',{name:'+ Matricular alumno'}));const drawer=await screen.findByRole('dialog');fireEvent.change(within(drawer).getByRole('searchbox',{name:'Buscar Alumno'}),{target:{value:'nuevo'}});const add=await within(drawer).findByRole('button',{name:'Agregar'});client.rpc.mockResolvedValue({error:{code:'23514'}});fireEvent.click(add);
+ expect(await within(drawer).findByRole('alert')).toHaveTextContent('No se pudo guardar');expect(within(drawer).getByRole('link',{name:/Completar ficha/})).toHaveAttribute('href','/alumnos/p2?editar=1&ciclo=c1');expect(screen.getByRole('table',{name:'Alumnos matriculados en el Ciclo'})).not.toHaveTextContent('2026-NAV-002');expect(client.rpc).toHaveBeenCalledTimes(1);
+});
+it('an uncertain Add response blocks that candidate until the grid is reviewed',async()=>{
+ show();fireEvent.click(screen.getByRole('button',{name:'+ Matricular alumno'}));const drawer=await screen.findByRole('dialog');fireEvent.change(within(drawer).getByRole('searchbox',{name:'Buscar Alumno'}),{target:{value:'nuevo'}});const add=await within(drawer).findByRole('button',{name:'Agregar'});client.rpc.mockRejectedValue(new Error('connection lost'));fireEvent.click(add);
+ expect(await within(drawer).findByRole('alert')).toHaveTextContent('Respuesta no confirmada');expect(within(drawer).getByRole('button',{name:'Agregar'})).toBeDisabled();expect(client.rpc).toHaveBeenCalledTimes(1);
+});
+
+it('SDK network errors are treated as uncertain and never auto-retried',async()=>{
+ show();fireEvent.click(screen.getByRole('button',{name:'+ Matricular alumno'}));const drawer=await screen.findByRole('dialog');fireEvent.change(within(drawer).getByRole('searchbox',{name:'Buscar Alumno'}),{target:{value:'nuevo'}});const add=await within(drawer).findByRole('button',{name:'Agregar'});client.rpc.mockResolvedValue({error:{code:'',message:'Failed to fetch'}});fireEvent.click(add);expect(await within(drawer).findByRole('alert')).toHaveTextContent('Respuesta no confirmada');expect(within(drawer).getByRole('button',{name:'Agregar'})).toBeDisabled();expect(client.rpc).toHaveBeenCalledTimes(1);
 });

@@ -32,3 +32,6 @@ Migración 20261102020000 aplicada incrementalmente sin reset: huellas y mapeo p
 ## UX vigente — CHG-H3-005 (02/11/2026)
 
 [Registro de matrícula dentro de Ciclo](approved-cycle-enrollment-amendment.md), autorizado humanamente después del Gate 1: Datos/Materias/Matrículas/Estado, una grilla de matriculados y panel lateral de búsqueda/lista de candidatos, cargos y confirmación individual. Sustituye navegación de CHG-H3-004, conserva búsqueda y transacción DB. Se retira Matrícula del menú y la ruta antigua redirige a Ciclos; detalle/historial permanecen con regreso contextual. Nuevo/editar Alumno conserva formulario completo fuera del panel. Sin SQL ni cambios en Spec aprobado. Gate 2 pendiente.
+
+
+[CHG-H3-006 — Buscar y Agregar; edición individual](approved-quick-add-amendment.md), precisión humana del 02/11/2026: el buscador solo lista candidatos con Agregar; registra inmediatamente mediante la RPC existente con cargos obligatorios, sin patrocinador/opcionales/descuento/código manual. Solo éxito DB actualiza grilla; Editar matrícula abre pantalla completa para datos individuales. Error obligatorio impide registro parcial; historia/constraints intactos. Sustituye panel de CHG-H3-005, sin modificar Spec aprobado ni autorizar Gate 2.

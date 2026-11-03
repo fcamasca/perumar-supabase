@@ -21,7 +21,7 @@ describe('H3 student flow and safe feedback', () => {
     it('cancels independently without making a write', async () => { const cancel = vi.fn(); render(<StudentEditor done={vi.fn()} cancel={cancel}/>); fireEvent.click(screen.getByRole('button', { name: 'Cancelar' })); expect(cancel).toHaveBeenCalledOnce(); expect(client.rpc).not.toHaveBeenCalled(); });
 });
 import { Routes, Route, MemoryRouter } from 'react-router-dom';
-import { StudentDetail, NewEnrollment } from '../src/enrollment/EnrollmentPages';
+import { StudentDetail, NewEnrollment, EnrollmentDetail } from '../src/enrollment/EnrollmentPages';
 function resultQuery(data: unknown) {
     const q = { select: () => q, or: () => q, eq: () => q, in: () => q, order: () => q, range: () => q, limit: () => q, single: () => q,
         then: (resolve: (r: {
@@ -708,4 +708,24 @@ it('late responses never replace more recent pupil search results',async()=>{
  const pupil=(id:string,name:string)=>({id,apellido_paterno:name,apellido_materno:'PRUEBA',nombres:'SINTETICO',numero_di:'00123456'});
  await act(async()=>pending[1]({data:[pupil('new','RECIENTE')],error:null}));expect(screen.getByRole('table',{name:'Resultados de alumnos'})).toHaveTextContent('RECIENTE PRUEBA, SINTETICO');
  await act(async()=>pending[0]({data:[pupil('old','ANTERIOR')],error:null}));expect(screen.getByRole('table',{name:'Resultados de alumnos'})).not.toHaveTextContent('ANTERIOR');expect(screen.getByRole('table',{name:'Resultados de alumnos'})).toHaveTextContent('RECIENTE');
+});
+
+function showIndividualEnrollment(editing=false){
+ const row={id:'m1',alumno_id:'s1',ciclo_id:'c1',codigo_matricula:'2026-NAV-001',estado_codigo:'ACTIVO',updated_at:'mv1'};
+ client.from.mockImplementation((table:string)=>{
+  let single=false;const q={select:()=>q,eq:()=>q,in:()=>q,order:()=>q,range:()=>q,limit:()=>q,single:()=>{single=true;return q},then:(resolve:(r:unknown)=>unknown)=>{
+   const data=table==='matricula'?[row]:table==='alumno'?[{id:'s1',nombres:'ANA',apellido_paterno:'PRUEBA',numero_di:'00123456'}]:table==='ciclo'?[{id:'c1',codigo_ciclo:'2026-001-NAV',estado_codigo:'PROGRAMADO',updated_at:'cv1'}]:[];
+   return Promise.resolve({data:single?data[0]:data,error:null}).then(resolve)
+  }};return q;
+ });
+ render(<MemoryRouter initialEntries={['/matriculas/m1'+(editing?'?editar=1':'')]}><Routes><Route path="/matriculas/:id" element={<EnrollmentDetail/>}/></Routes></MemoryRouter>);
+}
+it('Ver matricula is read-only until the explicit Edit action opens full controls',async()=>{
+ showIndividualEnrollment();await screen.findByRole('heading',{name:'Matrícula 2026-NAV-001'});expect(screen.queryByRole('button',{name:'Guardar código'})).not.toBeInTheDocument();
+ fireEvent.click(screen.getByRole('button',{name:'Editar matrícula'}));expect(screen.getByRole('button',{name:'Guardar código'})).toBeVisible();expect(screen.getByRole('combobox',{name:'Ciclo destino'})).toBeVisible();
+ fireEvent.click(screen.getByRole('button',{name:'Cancelar edición'}));expect(screen.queryByRole('button',{name:'Guardar código'})).not.toBeInTheDocument();expect(client.rpc).not.toHaveBeenCalled();
+});
+it('the grid Edit route enables the individual command with its optimistic version',async()=>{
+ showIndividualEnrollment(true);await screen.findByRole('button',{name:'Guardar código'});fireEvent.change(screen.getByRole('textbox',{name:'Código visible'}),{target:{value:'2026-NAV-999'}});client.rpc.mockResolvedValue({data:{id:'m1'},error:null});fireEvent.click(screen.getByRole('button',{name:'Guardar código'}));
+ await waitFor(()=>expect(client.rpc).toHaveBeenCalledExactlyOnceWith('editar_matricula',{p:{id:'m1',expected_updated_at:'mv1',codigo_matricula:'2026-NAV-999'}}));expect(screen.getByRole('link',{name:'Volver a matrículas del Ciclo'})).toHaveAttribute('href','/academico/ciclos?ciclo=c1&seccion=matriculas');
 });

@@ -10,7 +10,9 @@ Después de revisar el registro continuo por Ciclo, la persona aprobó mover Mat
 
 Sustituye la ubicación/navegación de registro de CHG-H3-004 y el Stepper histórico de REQ-H3-019/DES-H3-019 aprobado en `551cd00ed2957178400dca8fe9d945cf3f9e8d20`. Conserva su búsqueda por palabras y todas las reglas DB. Los cuatro documentos aprobados H3 y el cierre/Spec H2 se mantienen íntegros; tampoco se reinterpreta el documento fuente Historias_de_Usuario. Las referencias antiguas a Registrar Matrícula se leen con el recorrido vigente documentado aquí. No aprueba Gate 2 ni modifica H4+/EVOL-001/002.
 
-## Recorrido vigente
+> **Panel simplificado por [CHG-H3-006](approved-quick-add-amendment.md).** Sus pasos de selección/cargos/confirmación son antecedentes: el recorrido actual es Buscar → Agregar directamente → editar datos individuales desde la grilla. Contexto de Ciclo, grilla e historia se conservan.
+
+## Recorrido anterior
 
 1. Abrir un Ciclo existente. Pestañas Datos / Materias / Matrículas / Estado. Un Ciclo todavía no guardado mantiene Datos/Materias.
 2. Matrículas muestra **Alumnos matriculados · cantidad**, filtro **Filtrar matriculados…** y botón **+ Matricular alumno**. No exige entrar a Editar Ciclo. Cambios de Datos pendientes bloquean registro hasta guardar/cancelar; terminales permiten consulta solamente.
