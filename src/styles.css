@@ -349,7 +349,7 @@ form.academic-record-form { max-width:none; padding:0; margin:0; background:tran
 @media(max-width:40rem) { .academic-fields { grid-template-columns:minmax(0,1fr); } }
 
 /* Native checkbox interaction with an accessible switch presentation. */
-.academic-fields > label.experience-field { display: grid; align-content: start; justify-content: normal; }
+.academic-fields > label.experience-field { display:grid; align-content:start; justify-content:normal; padding:0; gap:.4rem; font-weight:600; }
 .experience-switch { display: flex; align-items: center; gap: .65rem; min-height: 2.85rem; position: relative; }
 .experience-switch input { position: absolute; width: 2.75rem; height: 1.5rem; margin: 0; opacity: 0; cursor: pointer; }
 .switch-track { width: 2.75rem; height: 1.5rem; border: 1px solid currentColor; border-radius: 1rem; background: var(--surface); pointer-events: none; }
@@ -357,3 +357,11 @@ form.academic-record-form { max-width:none; padding:0; margin:0; background:tran
 .experience-switch input:checked + .switch-track::after { transform: translateX(1.2rem); }
 .experience-switch input:focus-visible + .switch-track { outline: 2px solid currentColor; outline-offset: 3px; }
 .experience-switch input:disabled { cursor: default; }
+
+/* Short academic forms: keep descriptions compact and retain manual resizing. */
+.academic-fields > label > textarea { min-height:4.25rem; height:4.25rem; resize:vertical; }
+.career-record .academic-record-heading { margin-top:.75rem; margin-bottom:.75rem; gap:.75rem; }
+.career-record .student-section-panel { padding:1rem; }
+.career-record .academic-fields { gap:.65rem 1.25rem; }
+.career-record .academic-fields legend { margin-bottom:.5rem; }
+.career-record .academic-record-form > .form-actions { padding:.75rem 1rem; }
