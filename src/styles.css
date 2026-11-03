@@ -461,3 +461,8 @@ form.enrollment-detail-form { max-width:none; margin:1rem 0 0; padding:1rem 0 0;
 .enrollment-charge-totals { margin:.75rem 0 0 auto; max-width:18rem; }
 .enrollment-charge-totals > div { display:flex; justify-content:space-between; gap:1rem; }
 .enrollment-detail form.enrollment-charge-form { margin-top:0; padding-top:0; border-top:0; }
+
+.enrollment-charges-grid :is(th,td):nth-child(n+3),
+.enrollment-detail .enrollment-charges-grid tfoot td,
+.enrollment-saved-charges :is(th,td):nth-child(n+2):nth-child(-n+4),
+.enrollment-charge-totals dd { text-align:right; font-variant-numeric:tabular-nums; }
