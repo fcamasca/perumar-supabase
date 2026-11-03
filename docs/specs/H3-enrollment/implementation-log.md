@@ -213,3 +213,6 @@ Ajuste visual 02/11/2026: se elimina el padding heredado de checkboxes en Con ex
 
 
 Ajuste UX 02/11/2026: altas/ediciones guardadas correctamente de Materia, Carrera, Ciclo, Alumno y Empresa retornan a su grilla, recargando los datos. Errores/conflictos conservan el formulario. Los editores de Alumno/Empresa embebidos en matrícula conservan sus callbacks de selección. Carrera ordena Nombre/Sigla en la primera fila por nueva indicación humana. Sin cambios DB, permisos o reglas funcionales.
+
+
+Ajuste visual 02/11/2026: selector Materias de Carrera con filas compactas, nombre y estado en la misma línea cuando hay espacio, menor padding y altura mínima 2.5rem. Conserva selección por checkbox/fila, resaltado, buscador y wrap en espacios estrechos. Sin cambios funcionales.

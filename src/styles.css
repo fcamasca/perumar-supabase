@@ -365,3 +365,8 @@ form.academic-record-form { max-width:none; padding:0; margin:0; background:tran
 .career-record .academic-fields { gap:.65rem 1.25rem; }
 .career-record .academic-fields legend { margin-bottom:.5rem; }
 .career-record .academic-record-form > .form-actions { padding:.75rem 1rem; }
+
+/* Compact subject selection rows in Carrera; wrap only when space is limited. */
+.career-record .subject-options label { min-height:2.5rem; padding:.35rem .65rem; gap:.65rem; border-inline-start-width:4px; }
+.career-record .subject-options label > span { display:flex; align-items:center; justify-content:space-between; flex:1; flex-wrap:wrap; gap:.2rem .75rem; min-width:0; overflow-wrap:anywhere; }
+.career-record .subject-options small { margin:0; flex-shrink:0; }
