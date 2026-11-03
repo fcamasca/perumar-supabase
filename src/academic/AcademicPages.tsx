@@ -1,3 +1,4 @@
+import { CycleEnrollments } from '../enrollment/CycleEnrollments'
 import { formTextValue } from '../lib/formText'
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { EmptyState, InlineForm, StatusBadge, useConfirmation } from './AcademicUi'
@@ -203,9 +204,10 @@ export function Carreras() {
 
 type CicloDraft = Omit<Ciclo, 'id' | 'codigo_ciclo' | 'estado_codigo' | 'updated_at'>
 const blankCiclo: CicloDraft = { carrera_id: '', fecha_inicio: '', fecha_fin: '', nombre_promocion: '', departamento_id: '', provincia_id: '', distrito_id: '', capitania_id: '' }
-export function Ciclos() {
+export function Ciclos({initialCycleId}:{initialCycleId?:string}={}) {
   const [open, setOpen] = useState(false), [readOnly, setReadOnly] = useState(true), [page, setPage] = useState(0), [tab, setTab] = useState(0)
   useListFocus(open, 'Ciclos')
+  const [enrollmentPanelOpen,setEnrollmentPanelOpen]=useState(false)
   const [loading, setLoading] = useState(true), [loadError, setLoadError] = useState(false)
   const { client, state } = useSession(), director = state.roles?.includes('DIRECTOR_ACADEMICO')
   const editEpoch = useRef(0)
@@ -253,6 +255,12 @@ export function Ciclos() {
     if (draft.carrera_id) void client.from('carrera_materia').select('materia_id').eq('carrera_id', draft.carrera_id).then(r => { if (current) { setInheritedStatus(r.error ? 'error' : 'ready'); if (!r.error) setInherited(r.data.map(x => x.materia_id)) } })
     return () => { current = false }
   }, [client, draft.carrera_id, revision])
+  useEffect(()=>{
+    if(!initialCycleId)return
+    let active=true
+    void client.from('ciclo').select(cicloColumns).eq('id',initialCycleId).single().then(r=>{if(!active)return;if(r.error)setMessage('No se pudo abrir el Ciclo solicitado.');else void edit(r.data as Ciclo,true,2)})
+    return()=>{active=false}
+  },[client,initialCycleId])
   async function edit(row: Ciclo | null, view = false, section = 0) {
     setReadOnly(view || (!!row && !canEditCycle(row)) || !canModify); setTab(section)
     setOpen(true); setSubjectSearch(''); setSubjectId(''); if(section !== 1) setShowRetired(false); setRelationsStatus(row ? 'loading' : 'ready')
@@ -280,7 +288,7 @@ export function Ciclos() {
     event.preventDefault(); if (!selected || !director || !editable || readOnly || dirty) return
     if (await ask({ title: `Cambiar estado a ${destino}`, confirmLabel: destino === 'ANULADO' ? 'Anular Ciclo' : destino === 'DESIERTO' ? 'Declarar desierto' : destino === 'CERRADO' ? 'Cerrar Ciclo' : 'Iniciar Ciclo', sensitive: ['ANULADO', 'DESIERTO'].includes(destino), description: `${selected.codigo_ciclo}. ${['CERRADO', 'DESIERTO', 'ANULADO'].includes(destino) ? 'Este cambio es definitivo: el Ciclo quedará solo para consulta y no podrá reabrirse.' : 'El Ciclo pasará a estar en curso.'} Revisa el motivo indicado antes de continuar.` }) === null) return
     setBusy(true); const r = await client.rpc('cambiar_estado_ciclo', { id: selected.id, expected_updated_at: selected.updated_at, destino, motivo: detalle || null, motivo_desierto_id: destino === 'DESIERTO' ? motivoId : null }); setBusy(false)
-    if (r.error) { setMessage(academicError(r.error)); return }; void edit(r.data as Ciclo, true, 2); setMessage(`Ciclo declarado ${destino}.`); setRevision(x => x + 1)
+    if (r.error) { setMessage(academicError(r.error)); return }; void edit(r.data as Ciclo, true, 3); setMessage(`Ciclo declarado ${destino}.`); setRevision(x => x + 1)
   }
   const referenceOptions = (options: Ref[], current: string) => options.filter(x => x.active || x.id === current).map(x => <option key={x.id} value={x.id}>{'sigla' in x ? academicLabel(x as Carrera) : x.nombre}{!x.active ? ' (inactivo histórico)' : ''}</option>)
   function cancelEditing() { if (selected) void edit(selected, true, tab); else {++editEpoch.current;setOpen(false)} }
@@ -320,10 +328,10 @@ export function Ciclos() {
     </tbody></table></div>}
     {selected && <label className="show-retired-subjects"><input type="checkbox" checked={showRetired} onChange={e=>setShowRetired(e.currentTarget.checked)}/>Mostrar retiradas</label>}
   </>
-  if(open) return <section className="academic-record cycle-record">{dialog}<AcademicRecordHeader title={selected ? 'Ficha de Ciclo' : 'Nuevo Ciclo'} name={selected?.codigo_ciclo} status={selected && <StatusBadge value={selected.estado_codigo}/>} editing={!readOnly} busy={busy} backLabel="Volver a ciclos" editLabel="Editar Ciclo" onBack={()=>{++editEpoch.current;setOpen(false)}} onEdit={readOnly && selected && canEditCycle(selected) ? ()=>setReadOnly(false) : undefined}/><Notice message={message}/>
+  if(open) return <section className="academic-record cycle-record">{dialog}<AcademicRecordHeader title={selected ? 'Ficha de Ciclo' : 'Nuevo Ciclo'} name={selected?.codigo_ciclo} status={selected && <StatusBadge value={selected.estado_codigo}/>} editing={!readOnly} busy={busy||enrollmentPanelOpen} backLabel="Volver a ciclos" editLabel="Editar Ciclo" onBack={()=>{++editEpoch.current;setOpen(false)}} onEdit={readOnly && selected && canEditCycle(selected) ? ()=>setReadOnly(false) : undefined}/><Notice message={message}/>
     {selected && !editable && <p>{['PROGRAMADO','EN_CURSO'].includes(selected.estado_codigo) ? 'Solo consulta. Tu acceso no permite modificar este Ciclo.' : 'Solo consulta. Este Ciclo ya no admite cambios y no puede reabrirse.'}</p>}
-    <AcademicTabs id="cycle-sections" names={selected ? ['Datos','Materias','Estado'] : ['Datos','Materias']} active={tab} disabled={busy} onChange={setTab}/>
-    <div hidden={tab===2}><InlineForm className="academic-record-form" key={`${selected?.id ?? 'new'}-${readOnly}`} aria-describedby={message ? 'academic-message' : undefined} onInvalidField={field=>setTab(Number(field.closest<HTMLElement>('[data-academic-tab]')?.dataset.academicTab ?? 0))} onSubmit={event=>void save(event)}>
+    <AcademicTabs id="cycle-sections" names={selected ? ['Datos','Materias','Matrículas','Estado'] : ['Datos','Materias']} active={tab} disabled={busy||enrollmentPanelOpen} onChange={setTab}/>
+    <div hidden={tab>=2}><InlineForm className="academic-record-form" key={`${selected?.id ?? 'new'}-${readOnly}`} aria-describedby={message ? 'academic-message' : undefined} onInvalidField={field=>setTab(Number(field.closest<HTMLElement>('[data-academic-tab]')?.dataset.academicTab ?? 0))} onSubmit={event=>void save(event)}>
       <div hidden={tab!==0} data-academic-tab="0" role="tabpanel" tabIndex={0} id="cycle-sections-panel-0" aria-labelledby="cycle-sections-tab-0" className="student-section-panel cycle-data-panel"><fieldset className="cycle-data" disabled={busy}><legend>Datos del Ciclo</legend><fieldset className="academic-fields" aria-label="Datos principales">
         <label><span className="field-label">Carrera{!readOnly && ' *'}</span>{readOnly ? <input aria-label="Carrera" readOnly value={academicLabel(carreras.find(c=>c.id===draft.carrera_id))}/> : <select aria-label="Carrera" required value={draft.carrera_id} onChange={e=>setDraft({...draft,carrera_id:formTextValue(e.currentTarget)})}><option value="">Seleccionar</option>{referenceOptions(carreras,draft.carrera_id)}</select>}</label>
         <label>Nombre de promoción (opcional)<input aria-label="Nombre de promoción (opcional)" readOnly={readOnly} maxLength={150} value={draft.nombre_promocion ?? ''} onChange={e=>setDraft({...draft,nombre_promocion:formTextValue(e.currentTarget)})}/></label>
@@ -338,7 +346,8 @@ export function Ciclos() {
       <div hidden={tab!==1} data-academic-tab="1" role="tabpanel" tabIndex={0} id="cycle-sections-panel-1" aria-labelledby="cycle-sections-tab-1" className="student-section-panel cycle-subject-panel">{cycleSubjects}</div>
       {!readOnly && <div className="form-actions"><button className="secondary" disabled={busy} type="button" onClick={cancelEditing}>{selected?'Cancelar':'Cancelar / descartar formulario'}</button><button disabled={busy||inheritedStatus==='loading'||inheritedStatus==='error'}>Guardar Ciclo</button></div>}
     </InlineForm></div>
-    {selected && <div hidden={tab!==2} role="tabpanel" tabIndex={0} id="cycle-sections-panel-2" aria-labelledby="cycle-sections-tab-2" className="student-section-panel cycle-state-panel"><header className="cycle-state-heading"><h3>Estado del Ciclo</h3><StatusBadge value={selected.estado_codigo}/></header>{!readOnly && editable && director ? <>{dirty && <p>Guarda o cancela los cambios del Ciclo antes de cambiar su estado.</p>}<InlineForm className="cycle-state-form" onSubmit={event=>void transition(event)}><p>Elige el siguiente estado. Cerrar, declarar desierto o anular son cambios definitivos.</p><fieldset className="academic-fields" disabled={busy||dirty} aria-label="Cambiar estado">
+    {selected && <div hidden={tab!==2} role="tabpanel" tabIndex={0} id="cycle-sections-panel-2" aria-labelledby="cycle-sections-tab-2" className="student-section-panel">{tab===2&&<CycleEnrollments cycle={selected} blocked={dirty||busy} onPanelChange={setEnrollmentPanelOpen}/>}</div>}
+    {selected && <div hidden={tab!==3} role="tabpanel" tabIndex={0} id="cycle-sections-panel-3" aria-labelledby="cycle-sections-tab-3" className="student-section-panel cycle-state-panel"><header className="cycle-state-heading"><h3>Estado del Ciclo</h3><StatusBadge value={selected.estado_codigo}/></header>{!readOnly && editable && director ? <>{dirty && <p>Guarda o cancela los cambios del Ciclo antes de cambiar su estado.</p>}<InlineForm className="cycle-state-form" onSubmit={event=>void transition(event)}><p>Elige el siguiente estado. Cerrar, declarar desierto o anular son cambios definitivos.</p><fieldset className="academic-fields" disabled={busy||dirty} aria-label="Cambiar estado">
       <label><span className="field-label">Nuevo estado *</span><select aria-label="Nuevo estado" required value={destino} onChange={e=>setDestino(formTextValue(e.currentTarget))}><option value="">Seleccionar</option>{(selected.estado_codigo==='PROGRAMADO'?['EN_CURSO','DESIERTO','ANULADO']:['CERRADO','DESIERTO']).map(x=><option key={x} value={x}>{x.replaceAll('_',' ')}</option>)}</select></label>
       {destino==='DESIERTO'&&<label><span className="field-label">Motivo de Ciclo Desierto *</span><select aria-label="Motivo de Ciclo Desierto" required value={motivoId} onChange={e=>setMotivoId(formTextValue(e.currentTarget))}><option value="">Seleccionar</option>{motivos.filter(x=>x.activo).map(x=><option key={x.id} value={x.id}>{x.nombre}</option>)}</select></label>}
       {(destino==='ANULADO'||destino==='DESIERTO')&&<label>Detalle / motivo{destino==='ANULADO'||motivos.find(x=>x.id===motivoId)?.codigo==='OTRO'?' (obligatorio)':' (opcional)'}<textarea rows={2} required={destino==='ANULADO'||motivos.find(x=>x.id===motivoId)?.codigo==='OTRO'} value={detalle} onChange={e=>setDetalle(formTextValue(e.currentTarget))}/></label>}

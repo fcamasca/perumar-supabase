@@ -61,6 +61,10 @@ try {
         assert.equal(checked(await D.from('alumno_contacto_emergencia').select('id').eq('alumno_id',initial.id),'initial contacts').length,2);
         const seededEnrollment=await register(c3,initial);
         assert.equal(seededEnrollment.alumno_snapshot.catalogos.COLOR_CABELLO.etiqueta,'Castaño');
+        const cycleGrid=await O.from('matricula').select('id,alumno!inner(id,codigo_alumno,apellido_paterno,apellido_materno,nombres,numero_di)',{count:'exact'}).eq('ciclo_id',c3.id).or(studentSearchFilter(`ensayo ${initial.numero_di}`),{referencedTable:'alumno'});
+        const matchingEnrollments=checked(cycleGrid,'cycle enrollment grid');
+        assert.ok(matchingEnrollments.some(row=>row.id===seededEnrollment.id));
+        assert.ok(cycleGrid.count>=1);
         assert.equal(seededEnrollment.alumno_snapshot.contactos[0].parentesco.etiqueta,'Conviviente');
         const beforeInitial=(await rows('alumno')).length;
         reject(await O.rpc('guardar_alumno',{p:{...payload(),contactos:[{...initialContact,parentesco_id:cat.SEXO}]}}));

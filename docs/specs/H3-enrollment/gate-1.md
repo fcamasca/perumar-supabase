@@ -27,3 +27,8 @@ Migración 20261102020000 aplicada incrementalmente sin reset: huellas y mapeo p
 
 
 [CHG-H3-004 — Matrícula con pestañas y búsqueda de Alumno](approved-enrollment-tabs-amendment.md), autorizada humanamente el 02/11/2026: Datos de matrícula/Cargos/Resumen sustituyen el Stepper; búsqueda reactiva por ambos apellidos, nombres y documento, conservando código de Alumno. Misma transacción DB y reglas funcionales; sin SQL nuevo. Es posterior al Gate 1 original y no modifica los cuatro documentos aprobados. Gate 2 pendiente.
+
+
+## UX vigente — CHG-H3-005 (02/11/2026)
+
+[Registro de matrícula dentro de Ciclo](approved-cycle-enrollment-amendment.md), autorizado humanamente después del Gate 1: Datos/Materias/Matrículas/Estado, una grilla de matriculados y panel lateral de búsqueda/lista de candidatos, cargos y confirmación individual. Sustituye navegación de CHG-H3-004, conserva búsqueda y transacción DB. Se retira Matrícula del menú y la ruta antigua redirige a Ciclos; detalle/historial permanecen con regreso contextual. Nuevo/editar Alumno conserva formulario completo fuera del panel. Sin SQL ni cambios en Spec aprobado. Gate 2 pendiente.

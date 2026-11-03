@@ -1,3 +1,4 @@
+import {MemoryRouter} from 'react-router-dom'
 import { act, fireEvent, render, screen, waitFor, cleanup } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { AcademicOnly, Materias, Ciclos, Carreras, Auditoria, academicError, suggestSigla } from '../src/academic/AcademicPages'
@@ -663,4 +664,14 @@ it('terminal Cycle subjects allow history consultation without mutation controls
  await screen.findByRole('table',{name:'Materias del Ciclo'});fireEvent.click(screen.getByRole('checkbox',{name:'Mostrar retiradas'}));
  expect(screen.getByRole('table',{name:'Materias del Ciclo'})).toHaveTextContent('NAVEGACIÓNCarreraRetirada');
  expect(screen.queryByRole('button',{name:'Reactivar'})).not.toBeInTheDocument();expect(screen.queryByRole('button',{name:'Agregar'})).not.toBeInTheDocument();expect(rpc).not.toHaveBeenCalled();
+});
+
+it('Cycle exposes enrollment history between Materias and Estado without requiring Cycle edit mode',async()=>{
+ session(['COORDINADOR_ACADEMICO']);render(<MemoryRouter><Ciclos/></MemoryRouter>);fireEvent.click(await screen.findByRole('button',{name:'Ver 2026-001-NAV'}));
+ expect(screen.getAllByRole('tab').map(t=>t.textContent)).toEqual(['Datos','Materias','Matrículas','Estado']);fireEvent.click(screen.getByRole('tab',{name:'Matrículas'}));
+ expect(await screen.findByRole('table',{name:'Alumnos matriculados en el Ciclo'})).toBeVisible();expect(screen.getByRole('button',{name:'+ Matricular alumno'})).toBeEnabled();expect(screen.queryByRole('button',{name:'Guardar Ciclo'})).not.toBeInTheDocument();expect(rpc).not.toHaveBeenCalled();
+});
+it('returning from enrollment details opens the requested Cycle directly on Matriculas',async()=>{
+ session(['COORDINADOR_ACADEMICO']);render(<MemoryRouter><Ciclos initialCycleId="cycle"/></MemoryRouter>);
+ expect(await screen.findByRole('table',{name:'Alumnos matriculados en el Ciclo'})).toBeVisible();expect(screen.getByRole('tab',{name:'Matrículas'})).toHaveAttribute('aria-selected','true');expect(screen.getByRole('button',{name:'Volver a ciclos'})).toBeVisible();expect(rpc).not.toHaveBeenCalled();
 });

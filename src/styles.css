@@ -412,3 +412,15 @@ form.enrollment-record-form { max-width:none; padding:0; margin:0; border:0; box
 .enrollment-student-search { display:grid; gap:.5rem; }
 .enrollment-selected-student { display:grid; gap:.5rem; padding:.75rem; border:1px solid var(--border-soft); border-radius:.5rem; }
 .enrollment-record-form textarea { min-height:4.25rem; height:4.25rem; resize:vertical; }
+
+.enrollment-drawer { position:fixed; inset:0 0 0 auto; margin:0; width:min(100%,43rem); max-width:100vw; height:100dvh; max-height:100dvh; padding:1.25rem; border:0; border-inline-start:1px solid var(--border); color:var(--text-primary); background:var(--surface-elevated); overflow-y:auto; }
+.enrollment-drawer::backdrop { background:var(--scrim); }
+.enrollment-drawer-heading { display:flex; align-items:start; justify-content:space-between; gap:1rem; margin-bottom:1rem; }
+.enrollment-drawer-heading h2 { font-size:1.15rem; margin:0; }
+.enrollment-drawer .student-section-panel { max-width:none; padding:.75rem 0; border:0; border-radius:0; }
+.enrollment-drawer .enrollment-record-form > .form-actions { padding:.75rem 0; }
+.enrollment-pupil-matches { list-style:none; margin:0; padding:0; max-height:22rem; overflow:auto; }
+.enrollment-pupil-matches li { display:flex; align-items:center; justify-content:space-between; gap:.75rem; padding:.65rem 0; border-bottom:1px solid var(--border-soft); }
+.enrollment-pupil-matches small { display:block; }
+.cycle-enrollments table td { padding:.55rem .85rem; vertical-align:middle; }
+.back-link { display:inline-block; margin-bottom:1rem; }

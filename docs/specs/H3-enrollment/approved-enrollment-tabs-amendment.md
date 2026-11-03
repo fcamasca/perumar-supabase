@@ -10,6 +10,8 @@ La persona propuso sustituir Siguiente/Anterior de Matrícula por navegación co
 
 Sustituye exclusivamente el Stepper de Registrar Matrícula descrito en REQ-H3-019/DES-H3-019 del Spec aprobado en `551cd00ed2957178400dca8fe9d945cf3f9e8d20`. No modifica retrospectivamente los cuatro documentos aprobados ni atribuye esta decisión al Gate 1 original. Nuevo Alumno conserva su Stepper y el retorno al mismo flujo de matrícula al guardar/cancelar.
 
+> **Ubicación/navegación sustituidas por [CHG-H3-005](approved-cycle-enrollment-amendment.md).** Este archivo conserva el antecedente autorizado. Búsqueda y reglas transaccionales siguen vigentes; el producto registra desde Matrículas del Ciclo con grilla única y panel lateral.
+
 ## Navegación y presentación
 
 Tres pestañas reutilizan AcademicTabs con clic y flechas/Home/End: Datos de matrícula (Ciclo, Alumno, patrocinador opcional), Cargos y Resumen. Sin Anterior/Siguiente. Cabecera compacta mantiene Ciclo/Alumno visibles; cambiar de pestaña conserva datos y no ejecuta comandos.

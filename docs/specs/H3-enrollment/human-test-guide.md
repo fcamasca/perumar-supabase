@@ -67,6 +67,18 @@ Este recorrido sustituye las indicaciones anteriores de Código técnico y ubica
 Sustituye los antiguos bloques de materias heredadas/disponibles por una tabla única. Verificar Carrera/Adicional y Activa/Retirada; por defecto solo activas, Mostrar retiradas disponible también en consulta. Buscar por nombre/acentos sin desplegar cientos de opciones; máximo ocho coincidencias, sin materias inactivas ni relaciones activas/retiradas ya existentes. Seleccionar y Agregar; comprobar refresco de tabla y versión. En nuevo Ciclo, previsualizar heredadas/adicionales y quitar una adicional pendiente antes de guardar. Retirar una heredada con confirmación: debe seguir en la Carrera y quedar retirada en el Ciclo; luego mostrar retiradas y Reactivar explícitamente, conservando origen. Verificar cancelación, error/conflicto sin retries, borrador de Datos que bloquea comandos separados, consulta de Ciclos terminales, teclado, móvil y temas. Gate 2 permanece pendiente.
 
 
-## Recorrido vigente — Matrícula con pestañas, CHG-H3-004
+## Recorrido anterior — CHG-H3-004, sustituido por CHG-H3-005
 
 Datos de matrícula/Cargos/Resumen reemplazan los cinco pasos anteriores. Navegar con clic y flechas/Home/End conservando selecciones sin escrituras. Buscar alumno por apellido paterno/materno, nombres, documento o combinación de palabras; comprobar coincidencias parciales al escribir (mínimo 2 caracteres/pausa 300ms/máximo 20), sin distinguir mayúsculas/minúsculas, y seleccionar. Abrir ficha completa o crear Alumno y cancelar/guardar, conservando Ciclo. Elegir/quitar patrocinador opcional; cargar y revisar cargos, opcionales y descuento solo Director. Cambiar Ciclo: cargos actualizados, opcionales/descuento/motivo reiniciados y aviso visible. Confirmar desde Resumen: obligatorios inválidos deben revelar pestaña y enfocar campo; una única matrícula/cargos DB atómicos. Conflicto/respuesta incierta conserva borrador sin retry. Tras éxito, verificar Matricular otro alumno en este Ciclo y Ver matrícula. Revisión visual, móvil, temas, teclado/SO y Gate 2 pendientes.
+
+
+## Recorrido vigente — Ciclo → Matrículas, CHG-H3-005
+
+- Abrir Ciclo: Datos/Materias/Matrículas/Estado. Matrícula ya no aparece en menú; la URL antigua lleva a Ciclos. Comprobar regreso desde detalle y desde el historial del Alumno.
+- En Matrículas, ver únicamente la grilla de matriculados con su cantidad, documento/código/estado y Ver matrícula. Filtrar matriculados por apellidos/nombres/documento; conservar página/filtro al cerrar panel y actualizar tras éxito.
+- Matricular alumno abre panel con Ciclo fijo. Buscar candidato: lista compacta con Seleccionar, sin segunda grilla. Elegir y revisar cargos/empresa/descuento autorizado. Confirmar una vez; cerrar y comprobar código/registro. Volver a abrir para otro alumno: sin patrocinador/opcionales/descuento/código manual del anterior.
+- Cancelar/cerrar/Escape antes de confirmar: sin matrícula parcial y foco de regreso. Durante RPC pendiente, cierre bloqueado. Conflicto/respuesta incierta conserva el borrador y exige revisión sin retry automático.
+- Alumno con matrícula previa, incluso anulada, no debe registrarse de nuevo. Dos operadores simultáneos: DB conserva una ganadora o conflicto explícito, sin duplicados.
+- Nuevo Alumno y completar ficha deben abrir formulario completo fuera del panel, conservar Ciclo y regresar al borrador al guardar/cancelar. Contactos mantienen su flujo existente.
+- Ciclo terminal: consultar historia, sin Matricular. Director/Coordinador habilitados; Admin Sistema sin operación académica. Borrador de Datos del Ciclo bloquea el registro hasta guardar/cancelar.
+- Revisar móvil/escritorio, scroll del panel, foco/trampa nativa, teclado, cuatro temas y forced-colors. Las pruebas humanas y Gate 2 permanecen pendientes.

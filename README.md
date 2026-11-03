@@ -149,3 +149,10 @@ Ensayo humano: `npm run dev` en una terminal y `npm run fixtures:human` en otra;
 Los cuatro modos visuales usan preferencia local del navegador, Sistema predeterminado y prioridad de forced-colors del SO; no se guardan en Auth/DB. Las medidas automáticas de contraste no constituyen conformidad WCAG completa ni prueba humana.
 
 Fuentes de referencia y hashes: [sources.json](supabase/reference/sources.json). Snapshot oficial INEI 2022: 25 departamentos, 196 provincias y 1891 distritos (no se afirma vigencia exhaustiva a 2026); DICAPI snapshot 22/10/2026: 19 Capitanías. Atribución INEI/Plataforma Nacional de Datos Abiertos, licencia de datos ODbL indicada en el dataset. Referencias públicas transformadas, no datos de usuarios. Reset no requiere red para obtener catálogos; carga inicial versionada sin todo HU20.
+
+
+## Navegación candidata H3 (Gate 2 pendiente)
+
+El registro se opera desde **Ciclos → abrir Ciclo → Matrículas**. La grilla contiene alumnos matriculados; su filtro no busca candidatos nuevos. **Matricular alumno** abre un panel lateral con búsqueda por apellidos, nombres o documento, cargos y confirmación individual. Al guardar vuelve a la misma grilla, listo para el siguiente alumno. Nuevo/editar Alumno mantiene formulario completo y retorna al mismo Ciclo.
+
+Matrícula se retira del menú principal. `/matriculas/nueva` redirige a Ciclos; `/matriculas/:id` conserva detalle y acciones permitidas, con regreso a la pestaña del Ciclo. Alumno conserva su historial de Matrículas. Véanse [CHG-H3-005](docs/specs/H3-enrollment/approved-cycle-enrollment-amendment.md) y [guía humana H3](docs/specs/H3-enrollment/human-test-guide.md). El Spec aprobado se conserva; este cambio no aprueba Gate 2 ni sustituye la aceptación histórica H2.
