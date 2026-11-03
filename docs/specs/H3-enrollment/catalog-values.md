@@ -34,3 +34,8 @@ Migración aditiva `20261028200000_h3_occupation_catalog.sql`: `alumno.ocupacion
 
 
 La incorporación de OCUPACION constituye la [enmienda funcional posterior a Gate 1 CHG-H3-001](approved-occupation-amendment.md). Las declaraciones anteriores sobre conservación del alcance corresponden a la carga original de valores; no atribuyen OCUPACION al SHA aprobado ni sustituyen esta enmienda.
+
+
+## Modalidad de enseñanza — CHG-H3-003 (02/11/2026)
+
+Autorización humana posterior: catálogo existente MODALIDAD_CARRERA con PRESENCIAL/Presencial, SEMIPRESENCIAL/Semipresencial y A_DISTANCIA/A distancia. Default Presencial; experiencia se separa en booleano default No. Los antiguos CON_EXPERIENCIA/SIN_EXPERIENCIA se conservan inactivos en bases que ya los tenían; no se reutilizan sus IDs. Carga limpia usa los tres valores vigentes; 11 catálogos y 67 valores activos incluyendo H2 y Ocupación, frente a 69 físicos en bases migradas que conservan esos dos valores históricos. Véase [CHG-H3-003](approved-career-student-code-amendment.md).

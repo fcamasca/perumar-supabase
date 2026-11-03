@@ -49,3 +49,14 @@ Ajuste posterior del 02/11/2026: Materias/Carreras usan un único cuadro por có
 
 
 Carrera — ajuste autorizado 02/11/2026: comprobar Modalidad/Sigla debajo de Código/Nombre y Descripción al final, al consultar y editar. Crear Carrera con Materias válidas sin seleccionar Modalidad; asignarla y quitarla después; consulta debe mostrar No indicado cuando esté vacía. Sigla y mínimo una Materia activa siguen siendo obligatorios. Véase CHG-H3-002; no reemitir la aprobación histórica del Spec ni marcar Gate 2 por estas pruebas técnicas.
+
+
+## Recorrido vigente — CHG-H3-003 (02/11/2026)
+
+Este recorrido sustituye las indicaciones anteriores de Código técnico y ubicación/modalidades de Carrera.
+
+- Materia: crear y editar por Nombre/Descripción sin código; buscar por Nombre. Comprobar nombres en materias de Carrera/Ciclo y auditoría.
+- Carrera: Sigla en primera posición junto a Nombre; segunda fila Modalidad/Con experiencia. Al crear: Presencial y No. Elegir Presencial, Semipresencial o A distancia; cambiar switch con clic y Espacio. Verificar Sí/No guardado y consulta con switch deshabilitado. Modalidad sigue opcional si se limpia explícitamente; revisar que Sigla y mínimo una Materia activa sigan obligatorios.
+- Revisar carreras existentes: experiencia previamente indicada se conserva en el flag; modalidad vacía anterior equivale a No; enseñanza inicial Presencial. Los códigos técnicos existentes no aparecen ni se solicitan.
+- Alumno: crear dos fichas, ver código A-0000001 o correlativos siguientes en grilla/cabecera/resumen, buscar por A-…, editar datos y comprobar que el código se mantiene sin campo editable. Puede haber saltos por pruebas/errores/rollback. Confirmar snapshots históricos intactos y nuevas matrículas con código de alumno en su fotografía.
+- Comparar temas, móvil/escritorio, alineación de segunda fila, foco, teclado y forced-colors del switch y grillas. Estas pruebas humanas y Gate 2 permanecen pendientes.

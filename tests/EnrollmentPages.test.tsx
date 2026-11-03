@@ -128,7 +128,7 @@ it('identifies student search and keeps icon-only creation accessible with a dis
   render(<MemoryRouter><Students/></MemoryRouter>)
   expect(screen.getByRole('search',{name:'Búsqueda de alumnos'})).toBeInTheDocument()
   const search=screen.getByRole('searchbox',{name:'Buscar alumnos'})
-  expect(search).toHaveAttribute('placeholder','Documento o apellido paterno')
+  expect(search).toHaveAttribute('placeholder','Código de alumno, documento o apellido paterno')
   const create=screen.getByRole('link',{name:'Nuevo Alumno'})
   expect(create).toHaveAttribute('href','/alumnos/nuevo')
   expect(create.textContent).toBe('')
@@ -292,7 +292,7 @@ it('shows the registered form read-only in section tabs and edits the current se
 });
 
 it('lists pupils in compact rows with view/edit actions and newest-first pagination/search', async () => {
-    const rows = Array.from({ length:30 }, (_,i) => ({ id:`s${i}`, apellido_paterno:`APELLIDO${i}`, apellido_materno:'PRUEBA', nombres:'ALUMNO', numero_di:`000000${String(i).padStart(2,'0')}`, created_at:'2026-10-28T16:00:00Z' }));
+    const rows = Array.from({ length:30 }, (_,i) => ({ id:`s${i}`, codigo_alumno:`A-${String(i+1).padStart(7,'0')}`, apellido_paterno:`APELLIDO${i}`, apellido_materno:'PRUEBA', nombres:'ALUMNO', numero_di:`000000${String(i).padStart(2,'0')}`, created_at:'2026-10-28T16:00:00Z' }));
     const order = vi.fn(), range = vi.fn(), filter = vi.fn();
     const q = { select:()=>q, order:(...args:unknown[])=>{order(...args);return q}, range:(...args:unknown[])=>{range(...args);return q}, ilike:(...args:unknown[])=>{filter(...args);return q}, then:(resolve:(r:{data:unknown[];error:null})=>unknown)=>Promise.resolve({data:rows,error:null}).then(resolve) };
     client.from.mockReturnValue(q);
@@ -303,12 +303,15 @@ it('lists pupils in compact rows with view/edit actions and newest-first paginat
     expect(order).toHaveBeenCalledWith('id',{ascending:false});
     expect(screen.getByRole('link',{name:'Ver alumno: APELLIDO0 PRUEBA, ALUMNO'})).toHaveAttribute('href','/alumnos/s0');
     expect(screen.getByRole('link',{name:'Editar alumno: APELLIDO0 PRUEBA, ALUMNO'})).toHaveAttribute('href','/alumnos/s0?editar=1');
-    expect(within(table).getAllByRole('cell')[1]).toHaveTextContent('00000000');
+    expect(within(table).getAllByRole('cell')[0]).toHaveTextContent('A-0000001');
+    expect(within(table).getAllByRole('cell')[2]).toHaveTextContent('00000000');
     fireEvent.click(screen.getByRole('button',{name:'Siguiente página'}));
     await waitFor(()=>expect(range).toHaveBeenCalledWith(30,59));
     fireEvent.change(screen.getByRole('searchbox'),{target:{value:'robles'}});
     await waitFor(()=>expect(filter).toHaveBeenCalledWith('apellido_paterno','%ROBLES%'));
     expect(range).toHaveBeenLastCalledWith(0,29);
+    fireEvent.change(screen.getByRole('searchbox'),{target:{value:'a-0000001'}});
+    await waitFor(()=>expect(filter).toHaveBeenCalledWith('codigo_alumno','%A-0000001%'));
     expect(client.rpc).not.toHaveBeenCalled();
 });
 it('does not offer creation or edit when the existing academic editing roles are absent', async () => {

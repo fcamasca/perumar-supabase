@@ -31,9 +31,9 @@ beforeEach(() => {
   rpc.mockReset(); queryCalls.length=0
   tables = {
     materia: [{ id: 'subject', codigo: 'M1', nombre: 'NAVEGACIÓN', descripcion: '', active: true, updated_at: version }],
-    carrera: [{ id: 'career', codigo: 'C1', nombre: 'CARRERA', descripcion: '', active: true, sigla: 'NAV', modalidad_id: 'mode', updated_at: version }],
+    carrera: [{ id: 'career', codigo: 'C1', nombre: 'CARRERA', descripcion: '', active: true, sigla: 'NAV', modalidad_id: 'mode', con_experiencia: false, updated_at: version }],
     ciclo: [{ ...ciclo }], catalogo: [{ id: 'reasons', codigo: 'MOTIVO_CICLO_DESIERTO' }, { id: 'modes', codigo: 'MODALIDAD_CARRERA' }],
-    catalogo_valor: [{ id: 'mode', catalogo_id: 'modes', codigo: 'CON_EXPERIENCIA', nombre: 'CON EXPERIENCIA', activo: true }, { id: 'other', catalogo_id: 'reasons', codigo: 'OTRO', nombre: 'OTRO', activo: true }],
+    catalogo_valor: [{ id: 'mode', catalogo_id: 'modes', codigo: 'PRESENCIAL', nombre: 'Presencial', activo: true }, { id: 'other', catalogo_id: 'reasons', codigo: 'OTRO', nombre: 'OTRO', activo: true }],
     departamento: [{ id: 'dep', nombre: 'DEPARTAMENTO', active: true }], provincia: [{ id: 'prov', departamento_id: 'dep', nombre: 'PROVINCIA', active: true }],
     distrito: [{ id: 'dist', provincia_id: 'prov', nombre: 'DISTRITO', active: true }], capitania: [{ id: 'cap', nombre: 'CAPITANÍA', active: true }],
     carrera_materia: [{ carrera_id: 'career', materia_id: 'subject' }], ciclo_materia: [],
@@ -58,12 +58,12 @@ it('stale save retains input, reports conflict, and never silently retries', asy
   session(['DIRECTOR_ACADEMICO'])
   rpc.mockResolvedValue({ error: { code: '40001', message: 'internal detail must not show' }, data: null })
   render(<Materias />)
-  fireEvent.click(await screen.findByRole('button', { name: 'Editar M1' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Editar NAVEGACIÓN' }))
   fireEvent.change(screen.getByLabelText('Nombre de Materia'), { target: { value: 'EDITADO' } })
   fireEvent.submit(screen.getByRole('button', { name: 'Guardar Materia' }).closest('form')!)
   expect(await screen.findByRole('alert')).toHaveTextContent('El registro fue modificado por otro usuario')
   expect(screen.getByLabelText('Nombre de Materia')).toHaveValue('EDITADO')
-  expect(rpc).toHaveBeenCalledExactlyOnceWith('guardar_materia', { p: { id: 'subject', expected_updated_at: version, codigo: 'M1', nombre: 'EDITADO', descripcion: null } })
+  expect(rpc).toHaveBeenCalledExactlyOnceWith('guardar_materia', { p: { id: 'subject', expected_updated_at: version, nombre: 'EDITADO', descripcion: null } })
   expect(screen.queryByText('internal detail must not show')).not.toBeInTheDocument()
 })
 it('discarding an unsaved cycle never calls a write RPC', async () => {
@@ -101,7 +101,7 @@ it('pending save prevents accidental discard or changes to in-flight input', asy
   let finish: (value: unknown) => void = () => undefined
   rpc.mockReturnValue(new Promise(resolve => { finish = resolve }))
   render(<Materias />)
-  fireEvent.click(await screen.findByRole('button', { name: 'Editar M1' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Editar NAVEGACIÓN' }))
   fireEvent.submit(screen.getByRole('button', { name: 'Guardar Materia' }).closest('form')!)
   expect(screen.getByLabelText('Nombre de Materia')).toBeDisabled()
   expect(screen.getByRole('button', { name: 'Cancelar' })).toBeDisabled()
@@ -113,8 +113,8 @@ it('pending save prevents accidental discard or changes to in-flight input', asy
 
 it('last active subject is rejected before confirmation or asking for a reason', async () => {
   session(['DIRECTOR_ACADEMICO']); render(<Materias />)
-  fireEvent.click(await screen.findByRole('button', { name: 'Inactivar M1' }))
-  expect(await screen.findByRole('alert')).toHaveTextContent('C1 — CARRERA')
+  fireEvent.click(await screen.findByRole('button', { name: 'Inactivar NAVEGACIÓN' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent('NAV — CARRERA')
   expect(screen.getByRole('alert')).toHaveTextContent('Asocia primero otra Materia activa')
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   expect(rpc).not.toHaveBeenCalled()
@@ -122,9 +122,9 @@ it('last active subject is rejected before confirmation or asking for a reason',
 it('inactivation asks for reason in the app and cancellation never writes', async () => {
   tables.carrera_materia = []
   session(['DIRECTOR_ACADEMICO']); render(<Materias />)
-  const opener = await screen.findByRole('button', { name: 'Inactivar M1' }); opener.focus(); fireEvent.click(opener)
+  const opener = await screen.findByRole('button', { name: 'Inactivar NAVEGACIÓN' }); opener.focus(); fireEvent.click(opener)
   expect(await screen.findByRole('dialog')).toHaveAccessibleName('Inactivar Materia')
-  expect(screen.getByRole('dialog')).toHaveTextContent('M1 — NAVEGACIÓN')
+  expect(screen.getByRole('dialog')).toHaveTextContent('NAVEGACIÓN')
   fireEvent.click(screen.getByRole('button', { name: 'Inactivar' }))
   expect(screen.getByRole('alert')).toHaveTextContent('Indica el motivo')
   expect(screen.getByLabelText('Motivo obligatorio')).toHaveFocus()
@@ -135,7 +135,7 @@ it('inactivation asks for reason in the app and cancellation never writes', asyn
 it('confirmed inactivation passes the entered reason and original version', async () => {
   tables.carrera_materia = []; rpc.mockResolvedValue({ error: null })
   session(['DIRECTOR_ACADEMICO']); render(<Materias />)
-  fireEvent.click(await screen.findByRole('button', { name: 'Inactivar M1' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Inactivar NAVEGACIÓN' }))
   await screen.findByRole('dialog')
   fireEvent.change(screen.getByLabelText('Motivo obligatorio'), { target: { value: '  ENSAYO  ' } })
   fireEvent.click(screen.getByRole('button', { name: 'Inactivar' }))
@@ -144,7 +144,7 @@ it('confirmed inactivation passes the entered reason and original version', asyn
 it('reactivation requires confirmation but no invented mandatory reason', async () => {
   tables.materia[0].active = false; rpc.mockResolvedValue({ error: null })
   session(['DIRECTOR_ACADEMICO']); render(<Materias />)
-  fireEvent.click(await screen.findByRole('button', { name: 'Reactivar M1' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Reactivar NAVEGACIÓN' }))
   expect(screen.getByRole('dialog')).toHaveAccessibleName('Reactivar Materia')
   expect(screen.queryByLabelText('Motivo obligatorio')).not.toBeInTheDocument()
   expect(rpc).not.toHaveBeenCalled()
@@ -158,15 +158,15 @@ it('required and whitespace fields use inline feedback without native validation
   const form = screen.getByRole('button', { name: 'Guardar Materia' }).closest('form')!
   expect(form).toHaveAttribute('novalidate')
   fireEvent.submit(form)
-  expect(screen.getByRole('alert')).toHaveTextContent('Ingresa el código de la Materia')
-  expect(screen.getByLabelText('Código de Materia')).toHaveAttribute('aria-invalid', 'true')
-  expect(screen.getByLabelText('Código de Materia')).toHaveFocus()
+  expect(screen.getByRole('alert')).toHaveTextContent('Ingresa el nombre de la Materia')
+  expect(screen.getByLabelText('Nombre de Materia')).toHaveAttribute('aria-invalid', 'true')
+  expect(screen.getByLabelText('Nombre de Materia')).toHaveFocus()
   expect(rpc).not.toHaveBeenCalled()
 })
 it('limits and long field count are visible and inputs keep native maximums', () => {
   session(['DIRECTOR_ACADEMICO']); render(<Materias />)
   fireEvent.click(screen.getByRole('button', { name: 'Crear Materia' }))
-  expect(screen.getByLabelText('Código de Materia')).toHaveAttribute('maxlength', '30')
+  expect(screen.queryByLabelText('Código de Materia')).not.toBeInTheDocument()
   expect(screen.getByLabelText('Nombre de Materia')).toHaveAttribute('maxlength', '150')
   fireEvent.change(screen.getByLabelText('Descripción de Materia'), { target: { value: 'abc' } })
   expect(screen.getByText('3 / 500')).toBeVisible()
@@ -174,7 +174,7 @@ it('limits and long field count are visible and inputs keep native maximums', ()
 })
 it('suggests a simple editable sigla only for a new untouched career', async () => {
   session(['DIRECTOR_ACADEMICO']); render(<Carreras />)
-  await screen.findByRole('button', { name: 'Editar C1' })
+  await screen.findByRole('button', { name: 'Editar CARRERA' })
   fireEvent.click(screen.getByRole('button', { name: 'Crear Carrera' }))
   fireEvent.change(screen.getByLabelText('Nombre de Carrera'), { target: { value: 'Formación Marítima Básica' } })
   expect(screen.getByLabelText('Sigla')).toHaveValue('FMB')
@@ -182,7 +182,7 @@ it('suggests a simple editable sigla only for a new untouched career', async () 
   fireEvent.change(screen.getByLabelText('Nombre de Carrera'), { target: { value: 'Otro Nombre' } })
   expect(screen.getByLabelText('Sigla')).toHaveValue('MAR')
   fireEvent.click(screen.getByRole('button',{name:'Cancelar'}))
-  fireEvent.click(screen.getByRole('button', { name: 'Editar C1' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Editar CARRERA' }))
   fireEvent.change(screen.getByLabelText('Nombre de Carrera'), { target: { value: 'Cambio Nombre' } })
   expect(screen.getByLabelText('Sigla')).toHaveValue('NAV')
   expect(suggestSigla('Navegación')).toBe('NVG')
@@ -190,9 +190,9 @@ it('suggests a simple editable sigla only for a new untouched career', async () 
 })
 it('career sigla invalid format is explained inline before any confirmation', async () => {
   session(['DIRECTOR_ACADEMICO']); render(<Carreras />)
-  fireEvent.click(await screen.findByRole('button', { name: 'Editar C1' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Editar CARRERA' }))
   fireEvent.click(screen.getByRole('tab',{name:'Materias'}))
-  await screen.findByLabelText(/M1 — NAVEGACIÓN/)
+  await screen.findByLabelText(/NAVEGACIÓN/)
   fireEvent.change(screen.getByLabelText('Sigla'), { target: { value: '!' } })
   fireEvent.submit(screen.getByRole('button', { name: 'Guardar Carrera y Materias' }).closest('form')!)
   expect(screen.getByRole('alert')).toHaveTextContent('2 y 10 caracteres alfanuméricos')
@@ -201,15 +201,15 @@ it('career sigla invalid format is explained inline before any confirmation', as
 it('association additions warn about modifiable cycles before saving and may be cancelled', async () => {
   tables.materia.push({ id: 'second', codigo: 'M2', nombre: 'SEGUNDA', descripcion: '', active: true, updated_at: version })
   session(['DIRECTOR_ACADEMICO']); render(<Carreras />)
-  fireEvent.click(await screen.findByRole('button', { name: 'Editar C1' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Editar CARRERA' }))
   fireEvent.click(screen.getByRole('tab',{name:'Materias'}))
-  await waitFor(() => expect(screen.getByLabelText(/M1 — NAVEGACIÓN/)).toBeChecked())
-  fireEvent.click(screen.getByLabelText(/M2 — SEGUNDA/))
+  await waitFor(() => expect(screen.getByLabelText(/NAVEGACIÓN/)).toBeChecked())
+  fireEvent.click(screen.getByLabelText(/SEGUNDA/))
   fireEvent.submit(screen.getByRole('button', { name: 'Guardar Carrera y Materias' }).closest('form')!)
   expect(await screen.findByRole('dialog')).toHaveTextContent('1 Ciclos modificables')
   expect(screen.getByRole('dialog')).toHaveTextContent('no se reactivarán ni se reclasificarán')
   fireEvent.click(screen.getByRole('button', { name: 'Cancelar operación' }))
-  expect(rpc).not.toHaveBeenCalled(); expect(screen.getByLabelText(/M2 — SEGUNDA/)).toBeChecked()
+  expect(rpc).not.toHaveBeenCalled(); expect(screen.getByLabelText(/SEGUNDA/)).toBeChecked()
 })
 it('cycle subject references show identity, origin, retirement and own confirmation', async () => {
   tables.ciclo_materia = [{ id: 'relation', ciclo_id: 'cycle', materia_id: 'subject', activo: true, origen: 'HEREDADA', motivo_inactivacion: null }]
@@ -217,7 +217,7 @@ it('cycle subject references show identity, origin, retirement and own confirmat
   fireEvent.click(await screen.findByRole('button', { name: 'Editar 2026-001-NAV' }))
   fireEvent.click(screen.getByRole('tab',{name:'Materias'}))
   const retire = await screen.findByRole('button', { name: 'Retirar' })
-  expect(retire.closest('tr')).toHaveTextContent('M1NAVEGACIÓNHEREDADAActiva')
+  expect(retire.closest('tr')).toHaveTextContent('NAVEGACIÓNHEREDADAActiva')
   fireEvent.click(retire)
   expect(screen.getByRole('dialog')).toHaveTextContent('sin borrar su historial')
   expect(screen.queryByLabelText('Motivo obligatorio')).not.toBeInTheDocument()
@@ -235,9 +235,9 @@ it('specific safe duplicate/minimum errors never expose internal SQL details', (
 
 it('sigla changes explain terminal history in a cancellable own dialog', async () => {
   session(['DIRECTOR_ACADEMICO']); render(<Carreras />)
-  fireEvent.click(await screen.findByRole('button', { name: 'Editar C1' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Editar CARRERA' }))
   fireEvent.click(screen.getByRole('tab',{name:'Materias'}))
-  await waitFor(() => expect(screen.getByLabelText(/M1 — NAVEGACIÓN/)).toBeChecked())
+  await waitFor(() => expect(screen.getByLabelText(/NAVEGACIÓN/)).toBeChecked())
   fireEvent.change(screen.getByLabelText('Sigla'), { target: { value: 'NEW' } })
   fireEvent.submit(screen.getByRole('button', { name: 'Guardar Carrera y Materias' }).closest('form')!)
   expect(await screen.findByRole('dialog')).toHaveTextContent('terminales conservarán su código histórico')
@@ -276,7 +276,7 @@ it('changing cycle career explains preservation rules before sending a command',
   fireEvent.change(screen.getByLabelText('Carrera'), { target: { value: 'second-career' } })
   await waitFor(()=>expect(screen.getByRole('button',{name:'Guardar Ciclo'})).toBeEnabled())
   fireEvent.submit(screen.getByRole('button', { name: 'Guardar Ciclo' }).closest('form')!)
-  expect(await screen.findByRole('dialog')).toHaveTextContent('C2 — SEGUNDA CARRERA')
+  expect(await screen.findByRole('dialog')).toHaveTextContent('SC — SEGUNDA CARRERA')
   expect(screen.getByRole('dialog')).toHaveTextContent('materias heredadas de la Carrera actual se retirarán')
   expect(screen.getByRole('dialog')).toHaveTextContent('adicionales se conservarán')
   fireEvent.keyDown(document, { key: 'Escape' }); expect(rpc).not.toHaveBeenCalled()
@@ -291,9 +291,9 @@ it('list, creation and editing are distinct; cancel returns to neutral list with
   fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
   expect(screen.queryByRole('button', { name: 'Guardar Materia' })).not.toBeInTheDocument()
   expect(screen.getByRole('button',{name:'Crear Materia'})).toHaveFocus()
-  fireEvent.click(await screen.findByRole('button', { name: 'Editar M1' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Editar NAVEGACIÓN' }))
   expect(screen.getByRole('heading', { name: 'Ficha de Materia' })).toHaveFocus()
-  expect(screen.queryByRole('button', { name: 'Editar M1' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Editar NAVEGACIÓN' })).not.toBeInTheDocument()
   expect(rpc).not.toHaveBeenCalled()
 })
 it('empty subject list offers creation only to authorized maintenance role', async () => {
@@ -308,14 +308,14 @@ it('empty subject list offers creation only to authorized maintenance role', asy
 it('local subject search preserves selected career subjects when hidden by the filter', async () => {
   tables.materia.push({ id: 'second', codigo: 'M2', nombre: 'SEGUNDA', active: true, updated_at: version })
   session(['DIRECTOR_ACADEMICO']); render(<Carreras />)
-  fireEvent.click(await screen.findByRole('button', { name: 'Editar C1' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Editar CARRERA' }))
   fireEvent.click(screen.getByRole('tab',{name:'Materias'}))
-  await waitFor(() => expect(screen.getByLabelText(/M1 — NAVEGACIÓN/)).toBeChecked())
+  await waitFor(() => expect(screen.getByLabelText(/NAVEGACIÓN/)).toBeChecked())
   fireEvent.change(screen.getByLabelText('Localizar Materia'), { target: { value: 'M2' } })
-  expect(screen.queryByLabelText(/M1 — NAVEGACIÓN/)).not.toBeInTheDocument()
+  expect(screen.queryByLabelText(/NAVEGACIÓN/)).not.toBeInTheDocument()
   expect(screen.getByText('1 seleccionadas')).toBeVisible()
   fireEvent.change(screen.getByLabelText('Localizar Materia'), { target: { value: '' } })
-  expect(screen.getByLabelText(/M1 — NAVEGACIÓN/)).toBeChecked()
+  expect(screen.getByLabelText(/NAVEGACIÓN/)).toBeChecked()
   expect(rpc).not.toHaveBeenCalled()
 })
 it('audit changes are human-readable with full technical evidence as secondary detail', async () => {
@@ -337,7 +337,7 @@ it('confirmed operation returns focus when its opener is enabled again after the
   let finish: (value: unknown) => void = () => undefined
   rpc.mockReturnValue(new Promise(resolve => { finish = resolve }))
   session(['DIRECTOR_ACADEMICO']); render(<Materias />)
-  const opener = await screen.findByRole('button', { name: 'Reactivar M1' }); opener.focus(); fireEvent.click(opener)
+  const opener = await screen.findByRole('button', { name: 'Reactivar NAVEGACIÓN' }); opener.focus(); fireEvent.click(opener)
   fireEvent.click(screen.getByRole('button', { name: 'Reactivar' }))
   await waitFor(() => expect(opener).toBeDisabled())
   await act(async () => finish({ error: null }))
@@ -378,7 +378,7 @@ it('Career subjects are structured and absence of additional options is explicit
   fireEvent.click(await screen.findByRole('button', { name: 'Editar 2026-001-NAV' }))
   fireEvent.click(screen.getByRole('tab',{name:'Materias'}))
   const source = await screen.findByRole('table', { name: 'Materias activas de la Carrera seleccionada' })
-  expect(within(source).getByRole('cell', { name: 'M1' })).toBeVisible()
+  expect(within(source).queryByRole('cell', { name: 'M1' })).not.toBeInTheDocument()
   expect(within(source).getByRole('cell', { name: 'NAVEGACIÓN' })).toBeVisible()
   expect(screen.getByText('No hay materias activas adicionales disponibles para agregar a este Ciclo.')).toBeVisible()
   expect(screen.getByRole('table', { name: 'Materias actuales e historial de retiros' })).toBeVisible()
@@ -397,18 +397,18 @@ it('additional subjects keep code and name, excluding inherited, related and ina
   fireEvent.click(screen.getByRole('tab',{name:'Materias'}))
   await screen.findByRole('table', { name: 'Materias activas de la Carrera seleccionada' })
   const options = screen.getByRole('group', { name: 'Materias adicionales disponibles' })
-  expect(within(options).getByRole('checkbox', { name: 'M2 — SEGURIDAD' })).toBeVisible()
+  expect(within(options).getByRole('checkbox', { name: 'SEGURIDAD' })).toBeVisible()
   expect(within(options).getAllByRole('checkbox')).toHaveLength(1)
   expect(screen.getByRole('table', { name: 'Materias actuales e historial de retiros' })).toHaveTextContent('Retirada manualmente')
   expect(screen.queryByText(/No hay materias activas adicionales disponibles/)).not.toBeInTheDocument()
 })
 it('makes Modalidad optional, places it and Sigla before Description, and keeps Sigla required', async () => {
   session(['DIRECTOR_ACADEMICO']); render(<Carreras />)
-  fireEvent.click(await screen.findByRole('button', { name: 'Editar C1' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Editar CARRERA' }))
   await waitFor(()=>expect(screen.getByRole('button',{name:'Guardar Carrera y Materias'})).toBeEnabled())
   const field=screen.getByLabelText('Modalidad'),sigla=screen.getByLabelText('Sigla'),description=screen.getByLabelText('Descripción de Carrera')
   expect(field).not.toBeRequired(); expect(sigla).toBeRequired()
-  expect(field.compareDocumentPosition(sigla)&Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  expect(sigla.compareDocumentPosition(field)&Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   expect(sigla.compareDocumentPosition(description)&Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   fireEvent.change(field,{target:{value:''}});fireEvent.change(sigla,{target:{value:''}})
   fireEvent.click(screen.getByRole('button',{name:'Guardar Carrera y Materias'}))
@@ -424,13 +424,13 @@ it('Materia required messages stay beside each field and focus the first missing
   session(['DIRECTOR_ACADEMICO']); render(<Materias />)
   fireEvent.click(screen.getByRole('button', { name: 'Crear Materia' }))
   fireEvent.submit(screen.getByRole('button', { name: 'Guardar Materia' }).closest('form')!)
-  for (const label of ['Código de Materia', 'Nombre de Materia']) {
+  for (const label of ['Nombre de Materia']) {
     const field = screen.getByLabelText(label)
     const error = document.getElementById(field.getAttribute('aria-describedby')!)!
-    expect(error).toHaveTextContent(label.startsWith('Código') ? 'Ingresa el código de la Materia.' : 'Ingresa el nombre de la Materia.')
+    expect(error).toHaveTextContent(label.startsWith('Código') ? 'Ingresa el nombre de la Materia.' : 'Ingresa el nombre de la Materia.')
     expect(field.closest('label')).toContainElement(error)
   }
-  expect(screen.getByLabelText('Código de Materia')).toHaveFocus()
+  expect(screen.getByLabelText('Nombre de Materia')).toHaveFocus()
   expect(rpc).not.toHaveBeenCalled()
 })
 it('missing Cycle location uses the common inline validation and preserves other input', async () => {
@@ -458,21 +458,21 @@ it('sigla suggestion respects the maximum and never contains accents or punctuat
 })
 
 it.each([
-  {Component:Materias,table:'materia',label:'Materias',code:'M',back:'Volver a materias',search:'Buscar Materia por código o nombre'},
-  {Component:Carreras,table:'carrera',label:'Carreras',code:'C',back:'Volver a carreras',search:'Buscar Carrera por código o nombre'},
+  {Component:Materias,table:'materia',label:'Materias',code:'M',back:'Volver a materias',search:'Buscar Materia por nombre'},
+  {Component:Carreras,table:'carrera',label:'Carreras',code:'C',back:'Volver a carreras',search:'Buscar Carrera por sigla o nombre'},
   {Component:Ciclos,table:'ciclo',label:'Ciclos',code:'CY',back:'Volver a ciclos',search:'Buscar Ciclo por código o Carrera'},
 ])('$label shares newest-first paging, row actions and list/record navigation without resetting filters',async({Component,table,label,code,back,search})=>{
   const base=tables[table][0];tables[table]=Array.from({length:65},(_,i)=>({...base,id:`row-${i}`,codigo:`${code}${i}`,codigo_ciclo:`${code}${i}`,nombre:`NOMBRE ${i}`}));
   session(['DIRECTOR_ACADEMICO']);render(<Component/>);
-  await screen.findByRole('button',{name:`Ver ${code}0`});
+  await screen.findByRole('button',{name:`Ver ${table==='ciclo'?code+'0':'NOMBRE 0'}`});
   expect(screen.getByRole('search',{name:`Búsqueda de ${label.toLowerCase()}`})).toBeVisible();
   expect(screen.queryByRole('button',{name:'Recargar información'})).not.toBeInTheDocument();
   let request=queryCalls.filter(c=>c.table===table&&c.bounds).at(-1)!;
   expect(request.bounds).toEqual([0,29]);expect(request.orders).toEqual([['created_at',{ascending:false}],['id',{ascending:false}]]);
   fireEvent.click(screen.getByRole('button',{name:'Siguiente página'}));
-  await screen.findByRole('button',{name:`Ver ${code}30`});
+  await screen.findByRole('button',{name:`Ver ${table==='ciclo'?code+'30':'NOMBRE 30'}`});
   expect(queryCalls.filter(c=>c.table===table&&c.bounds).at(-1)!.bounds).toEqual([30,59]);
-  fireEvent.click(screen.getByRole('button',{name:`Ver ${code}30`}));
+  fireEvent.click(screen.getByRole('button',{name:`Ver ${table==='ciclo'?code+'30':'NOMBRE 30'}`}));
   expect(screen.queryByRole('search')).not.toBeInTheDocument();
   expect(screen.queryByRole('table',{name:label})).not.toBeInTheDocument();
   expect(screen.queryByRole('button',{name:'Recargar información'})).not.toBeInTheDocument();
@@ -482,12 +482,13 @@ it.each([
   await waitFor(()=>expect(queryCalls.filter(c=>c.table===table&&c.bounds).at(-1)!.bounds).toEqual([0,29]));
   request=queryCalls.filter(c=>c.table===table&&c.bounds).at(-1)!;
   if(table==='ciclo') expect(request.or).toBe('codigo_ciclo.ilike."%ENSAYO%"');
-  else expect(request.or).toBe('codigo.ilike."%ENSAYO%",nombre.ilike."%ENSAYO%"');
+  else if(table==='carrera') expect(request.or).toBe('sigla.ilike."%ENSAYO%",nombre.ilike."%ENSAYO%"');
+  else expect(request.likes).toEqual([['nombre','%ENSAYO%']]);
   expect(rpc).not.toHaveBeenCalled();
 });
 it('Coordinador can view all Materia fields without seeing maintenance actions',async()=>{
   session(['COORDINADOR_ACADEMICO']);tables.materia[0].descripcion='DESCRIPCION COMPLETA';render(<Materias/>);
-  fireEvent.click(await screen.findByRole('button',{name:'Ver M1'}));
+  fireEvent.click(await screen.findByRole('button',{name:'Ver NAVEGACIÓN'}));
   expect(screen.getByRole('textbox',{name:'Descripción de Materia'})).toHaveValue('DESCRIPCION COMPLETA');
   expect(screen.getByRole('textbox',{name:'Nombre de Materia'})).toHaveAttribute('readonly');
   expect(screen.queryByRole('button',{name:'Editar Materia'})).not.toBeInTheDocument();
@@ -495,8 +496,8 @@ it('Coordinador can view all Materia fields without seeing maintenance actions',
   expect(screen.getByRole('button',{name:'Volver a materias'})).toBeVisible();expect(rpc).not.toHaveBeenCalled();
 });
 it('Coordinador views Career identity, modality and associated subjects through the same tabs',async()=>{
-  session(['COORDINADOR_ACADEMICO']);render(<Carreras/>);fireEvent.click(await screen.findByRole('button',{name:'Ver C1'}));
-  expect(screen.getByRole('textbox',{name:'Modalidad'})).toHaveValue('CON EXPERIENCIA');
+  session(['COORDINADOR_ACADEMICO']);render(<Carreras/>);fireEvent.click(await screen.findByRole('button',{name:'Ver CARRERA'}));
+  expect(screen.getByRole('textbox',{name:'Modalidad'})).toHaveValue('Presencial');
   expect(screen.getByRole('textbox',{name:'Nombre de Carrera'})).toHaveAttribute('readonly');
   fireEvent.click(screen.getByRole('tab',{name:'Materias'}));
   const table=await screen.findByRole('table',{name:'Materias de Carrera'});
@@ -505,19 +506,19 @@ it('Coordinador views Career identity, modality and associated subjects through 
 });
 it('Career tab switches preserve edits/selection and reveal invalid fields from another section',async()=>{
   tables.materia.push({id:'second',codigo:'M2',nombre:'SEGUNDA',active:true,updated_at:version});session(['DIRECTOR_ACADEMICO']);render(<Carreras/>);
-  fireEvent.click(await screen.findByRole('button',{name:'Editar C1'}));
+  fireEvent.click(await screen.findByRole('button',{name:'Editar CARRERA'}));
   const name=screen.getByRole('textbox',{name:'Nombre de Carrera'});fireEvent.change(name,{target:{value:'NOMBRE EDITADO'}});
   fireEvent.click(screen.getByRole('tab',{name:'Materias'}));
-  await waitFor(()=>expect(screen.getByLabelText(/M1 — NAVEGACIÓN/)).toBeChecked());
-  fireEvent.click(screen.getByLabelText(/M2 — SEGUNDA/));
+  await waitFor(()=>expect(screen.getByLabelText(/NAVEGACIÓN/)).toBeChecked());
+  fireEvent.click(screen.getByLabelText(/SEGUNDA/));
   fireEvent.keyDown(screen.getByRole('tab',{name:'Materias'}),{key:'Home'});
   expect(screen.getByRole('tab',{name:'Datos generales'})).toHaveFocus();expect(screen.getByRole('textbox',{name:'Nombre de Carrera'})).toBe(name);expect(name).toHaveValue('NOMBRE EDITADO');
-  fireEvent.change(screen.getByLabelText('Código de Carrera'),{target:{value:''}});
+  fireEvent.change(screen.getByLabelText('Sigla'),{target:{value:''}});
   fireEvent.click(screen.getByRole('tab',{name:'Materias'}));
   fireEvent.click(screen.getByRole('button',{name:'Guardar Carrera y Materias'}));
-  await waitFor(()=>expect(screen.getByRole('textbox',{name:'Código de Carrera'})).toHaveFocus());
+  await waitFor(()=>expect(screen.getByRole('textbox',{name:'Sigla'})).toHaveFocus());
   expect(screen.getByRole('tab',{name:'Datos generales'})).toHaveAttribute('aria-selected','true');
-  fireEvent.click(screen.getByRole('tab',{name:'Materias'}));expect(screen.getByLabelText(/M2 — SEGUNDA/)).toBeChecked();expect(rpc).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('tab',{name:'Materias'}));expect(screen.getByLabelText(/SEGUNDA/)).toBeChecked();expect(rpc).not.toHaveBeenCalled();
 });
 it('Cycle consultation formats dates and exposes editing/state actions according to role',async()=>{
   session(['COORDINADOR_ACADEMICO']);render(<Ciclos/>);fireEvent.click(await screen.findByRole('button',{name:'Ver 2026-001-NAV'}));
@@ -539,40 +540,40 @@ it('Cycle tab changes preserve the draft and prevent separate mutations from dis
   expect(screen.getByRole('textbox',{name:'Nombre de promoción (opcional)'})).toHaveValue('');expect(screen.getByRole('textbox',{name:'Carrera'})).toHaveAttribute('readonly');expect(rpc).not.toHaveBeenCalled();
 });
 it('saving Materia returns to its read-only record with the new version and Cancel restores saved values',async()=>{
-  session(['DIRECTOR_ACADEMICO']);render(<Materias/>);fireEvent.click(await screen.findByRole('button',{name:'Editar M1'}));
+  session(['DIRECTOR_ACADEMICO']);render(<Materias/>);fireEvent.click(await screen.findByRole('button',{name:'Editar NAVEGACIÓN'}));
   fireEvent.change(screen.getByLabelText('Nombre de Materia'),{target:{value:'ACTUALIZADA'}});
   rpc.mockResolvedValue({data:{...tables.materia[0],nombre:'ACTUALIZADA',updated_at:'version-2'},error:null});
   fireEvent.click(screen.getByRole('button',{name:'Guardar Materia'}));
   await screen.findByRole('button',{name:'Editar Materia'});expect(screen.getByRole('textbox',{name:'Nombre de Materia'})).toHaveValue('ACTUALIZADA');expect(screen.getByRole('textbox',{name:'Nombre de Materia'})).toHaveAttribute('readonly');
   fireEvent.click(screen.getByRole('button',{name:'Editar Materia'}));fireEvent.change(screen.getByLabelText('Nombre de Materia'),{target:{value:'DESCARTAR'}});
   fireEvent.click(screen.getByRole('button',{name:'Cancelar'}));expect(screen.getByLabelText('Nombre de Materia')).toHaveValue('ACTUALIZADA');
-  expect(rpc).toHaveBeenCalledExactlyOnceWith('guardar_materia',{p:{id:'subject',expected_updated_at:version,codigo:'M1',nombre:'ACTUALIZADA',descripcion:null}});
+  expect(rpc).toHaveBeenCalledExactlyOnceWith('guardar_materia',{p:{id:'subject',expected_updated_at:version,nombre:'ACTUALIZADA',descripcion:null}});
 });
 
 it.each([
-  {Component:Materias,table:'materia',label:'Buscar Materia por código o nombre'},
-  {Component:Carreras,table:'carrera',label:'Buscar Carrera por código o nombre'},
+  {Component:Materias,table:'materia',label:'Buscar Materia por nombre'},
+  {Component:Carreras,table:'carrera',label:'Buscar Carrera por sigla o nombre'},
 ])('uses one code-or-name search box for $table and retains the status filter',async({Component,table,label})=>{
   session(['DIRECTOR_ACADEMICO']);render(<Component/>);
-  await screen.findByRole('button',{name:table==='materia'?'Ver M1':'Ver C1'});
+  await screen.findByRole('button',{name:table==='materia'?'Ver NAVEGACIÓN':'Ver CARRERA'});
   expect(screen.getAllByRole('searchbox')).toHaveLength(1);
   const search=screen.getByRole('searchbox',{name:label});
-  expect(search).toHaveAttribute('placeholder','Código o nombre');
+  expect(search).toHaveAttribute('placeholder',table==='materia'?'Nombre':'Sigla o nombre');
   fireEvent.change(search,{target:{value:'m1'}});
-  await waitFor(()=>expect(queryCalls.filter(c=>c.table===table&&c.bounds).at(-1)?.or).toBe('codigo.ilike."%M1%",nombre.ilike."%M1%"'));
+  await waitFor(()=>{const q=queryCalls.filter(c=>c.table===table&&c.bounds).at(-1)!; if(table==='materia') expect(q.likes).toEqual([['nombre','%M1%']]); else expect(q.or).toBe('sigla.ilike."%M1%",nombre.ilike."%M1%"')});
   fireEvent.change(search,{target:{value:'navegación'}});
-  await waitFor(()=>expect(queryCalls.filter(c=>c.table===table&&c.bounds).at(-1)?.or).toBe('codigo.ilike."%NAVEGACIÓN%",nombre.ilike."%NAVEGACIÓN%"'));
+  await waitFor(()=>{const q=queryCalls.filter(c=>c.table===table&&c.bounds).at(-1)!; if(table==='materia') expect(q.likes).toEqual([['nombre','%NAVEGACIÓN%']]); else expect(q.or).toBe('sigla.ilike."%NAVEGACIÓN%",nombre.ilike."%NAVEGACIÓN%"')});
   fireEvent.change(screen.getByRole('combobox',{name:table==='materia'?'Estado de Materia':'Estado de Carrera'}),{target:{value:'inactive'}});
   await waitFor(()=>expect(queryCalls.filter(c=>c.table===table&&c.bounds).at(-1)?.filters).toContainEqual(['active',table==='materia'?false:[false]]));
-  await waitFor(()=>expect(queryCalls.filter(c=>c.table===table&&c.bounds).at(-1)?.or).toBe('codigo.ilike."%NAVEGACIÓN%",nombre.ilike."%NAVEGACIÓN%"'));
+  await waitFor(()=>{const q=queryCalls.filter(c=>c.table===table&&c.bounds).at(-1)!; if(table==='materia') expect(q.likes).toEqual([['nombre','%NAVEGACIÓN%']]); else expect(q.or).toBe('sigla.ilike."%NAVEGACIÓN%",nombre.ilike."%NAVEGACIÓN%"')});
   fireEvent.change(search,{target:{value:''}});
   await waitFor(()=>expect(queryCalls.filter(c=>c.table===table&&c.bounds).at(-1)?.or).toBeUndefined());
   expect(rpc).not.toHaveBeenCalled();
 });
 it('quotes punctuation in code-or-name search rather than allowing it to become OR filter syntax',async()=>{
-  session(['DIRECTOR_ACADEMICO']);render(<Materias/>);await screen.findByRole('button',{name:'Ver M1'});
+  session(['DIRECTOR_ACADEMICO']);render(<Materias/>);await screen.findByRole('button',{name:'Ver NAVEGACIÓN'});
   fireEvent.change(screen.getByRole('searchbox'),{target:{value:'MAR, "NORTE" (A)'}});
-  await waitFor(()=>expect(queryCalls.filter(c=>c.table==='materia'&&c.bounds).at(-1)?.or).toBe('codigo.ilike."%MAR, \\"NORTE\\" (A)%",nombre.ilike."%MAR, \\"NORTE\\" (A)%"'));
+  await waitFor(()=>expect(queryCalls.filter(c=>c.table==='materia'&&c.bounds).at(-1)?.likes).toEqual([['nombre','%MAR, "NORTE" (A)%']]));
   expect(rpc).not.toHaveBeenCalled();
 });
 it('searches Cycle code OR matching career names without querying promotion or career code',async()=>{
@@ -588,4 +589,19 @@ it('searches Cycle code OR matching career names without querying promotion or c
   await waitFor(()=>expect(queryCalls.filter(c=>c.table==='ciclo'&&c.bounds).at(-1)?.or).toBe('codigo_ciclo.ilike."%ALTERNATIVA%"'));
   expect(queryCalls.filter(c=>c.table==='ciclo'&&c.bounds).at(-1)?.or).not.toContain('nombre_promocion');
   expect(rpc).not.toHaveBeenCalled();
+});
+
+it('new Career defaults to Presencial and No experience, with Sigla first and a keyboard-operable switch',async()=>{
+  session(['DIRECTOR_ACADEMICO']);render(<Carreras/>);await screen.findByRole('button',{name:'Ver CARRERA'});
+  fireEvent.click(screen.getByRole('button',{name:'Crear Carrera'}));
+  const flag=screen.getByRole('switch',{name:'Con experiencia'});
+  expect(flag).not.toBeChecked();expect(screen.getByLabelText('Modalidad')).toHaveValue('mode');
+  expect(screen.queryByLabelText('Código de Carrera')).not.toBeInTheDocument();
+  expect(screen.getByLabelText('Sigla').compareDocumentPosition(screen.getByLabelText('Nombre de Carrera'))&Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  fireEvent.click(flag);expect(flag).toBeChecked();
+  fireEvent.change(screen.getByLabelText('Nombre de Carrera'),{target:{value:'NUEVA CARRERA'}});
+  fireEvent.click(screen.getByRole('tab',{name:'Materias'}));fireEvent.click(await screen.findByLabelText(/NAVEGACIÓN/));
+  rpc.mockResolvedValue({error:{code:'40001'}});fireEvent.click(screen.getByRole('button',{name:'Guardar Carrera y Materias'}));
+  await waitFor(()=>expect(rpc).toHaveBeenCalledWith('guardar_carrera',{p:expect.objectContaining({con_experiencia:true,modalidad_id:'mode'}),materias:['subject']}));
+  expect(rpc.mock.calls[0][1].p).not.toHaveProperty('codigo');
 });

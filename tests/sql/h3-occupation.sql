@@ -11,7 +11,7 @@ begin
  select v.id into strict occupation from public.catalogo_valor v join public.catalogo c on c.id=v.catalogo_id where c.codigo='OCUPACION' and v.codigo='MECANICO';
  select v.id into strict other from public.catalogo_valor v join public.catalogo c on c.id=v.catalogo_id where c.codigo='OCUPACION' and v.codigo='OTROS';
  wrong:=a.sexo_id;
- select jsonb_object_agg(key,case when value='null'::jsonb then value else to_jsonb(value#>>'{}') end) into p from jsonb_each(to_jsonb(a)-'created_at'-'updated_at');
+ select jsonb_object_agg(key,case when value='null'::jsonb then value else to_jsonb(value#>>'{}') end) into p from jsonb_each(to_jsonb(a)-'created_at'-'updated_at'-'codigo_alumno');
  p:=p||jsonb_build_object('expected_updated_at',a.updated_at::text,'ocupacion_id',occupation::text,'ocupacion','FORGED');
  result:=public.guardar_alumno(p);
  if result.ocupacion<>'MECÁNICO' then raise exception 'Catalog label not canonicalized'; end if;

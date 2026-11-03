@@ -198,3 +198,12 @@ Por solicitud humana se suben Modalidad/Sigla debajo de Código/Nombre y se deja
 Migración aditiva `20261102010000_h2_optional_career_modality.sql` aplicada localmente sin reset; Carreras, Ciclos, snapshots, asociaciones y auditoría existentes conservados. Inventario exacto de seguridad validado. Regresión SQL de RPC reales con datos sintéticos/rollback satisface opcionalidad y valida catálogo/activos, legado, mínimo de Materias, Sigla, permisos y versiones, sin cambios persistentes. 198 tests unitarios, lint/typecheck/build/diff --check correctos; integración de entorno limpio actualizada sin ejecutarla sobre datos humanos. Gate 2 y revisión visual pendientes.
 
 Comprobación adicional posterior a la migración: `npm run test:local` PASÓ; Data API pública sin rutas protegidas e inventario exacto de grants/RLS/helpers/RPC.
+
+
+## Actualización 02/11/2026 — CHG-H3-003
+
+[Experiencia, modalidad y códigos de operación](approved-career-student-code-amendment.md), por solicitud y aclaración humanas posteriores al Gate 1. Carrera separa experiencia Sí/No (default No) de enseñanza (default Presencial); conserva CON/SIN antiguos como valores inactivos y convierte su significado al flag. Sigla/Nombre arriba, Modalidad/Experiencia en segunda fila. Materia/Carrera conservan codigo técnico nullable fuera de UI y comandos. Alumno incorpora código DB automático e inmutable A-0000001 con secuencia global, sin garantía gapless. Los snapshots históricos no se reescriben.
+
+Migración 20261102020000 aplicada incrementalmente sin reset: huellas y mapeo previo/posterior verificados. Tres regresiones SQL reales con rollback y ocho transacciones concurrentes con códigos únicos pasaron, sin retries ni cambios a registros existentes. Inventario: 22 tablas públicas / 17 RPC / 16 helpers / 25 policies SELECT, más una secuencia privada sin acceso directo de producto. Los documentos aprobados H2/H3 se preservan. Gate 2 permanece pendiente.
+
+Validación CHG-H3-003: lint, typecheck, 199 tests en 12 archivos, build, test:local, test:build-safety y git diff --check PASARON. Bundle 609.70 kB con advertencia conocida >500 kB. Los harness completos test:academic/test:enrollment fueron adaptados al contrato actual e incluyen la nueva regresión DB; su ejecución con reset se reserva a CI aislada, sin reset de datos humanos locales. CI del nuevo commit: pendiente de publicación/verificación. Pruebas humanas y Gate 2 pendientes.

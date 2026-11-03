@@ -17,3 +17,10 @@ Se autoriza construcción y validación progresiva TASK-H3-002…020. EVOL-001/0
 
 
 [CHG-H3-002 — Modalidad de Carrera opcional](approved-career-modality-amendment.md), solicitud humana del 02/11/2026: modifica la obligatoriedad de una propiedad H2 usada por la construcción H3. Es posterior a la base aprobada, sin reescribir el Spec histórico ni aprobar Gate 2.
+
+
+## Actualización 02/11/2026 — CHG-H3-003
+
+[Experiencia, modalidad y códigos de operación](approved-career-student-code-amendment.md), por solicitud y aclaración humanas posteriores al Gate 1. Carrera separa experiencia Sí/No (default No) de enseñanza (default Presencial); conserva CON/SIN antiguos como valores inactivos y convierte su significado al flag. Sigla/Nombre arriba, Modalidad/Experiencia en segunda fila. Materia/Carrera conservan codigo técnico nullable fuera de UI y comandos. Alumno incorpora código DB automático e inmutable A-0000001 con secuencia global, sin garantía gapless. Los snapshots históricos no se reescriben.
+
+Migración 20261102020000 aplicada incrementalmente sin reset: huellas y mapeo previo/posterior verificados. Tres regresiones SQL reales con rollback y ocho transacciones concurrentes con códigos únicos pasaron, sin retries ni cambios a registros existentes. Inventario: 22 tablas públicas / 17 RPC / 16 helpers / 25 policies SELECT, más una secuencia privada sin acceso directo de producto. Los documentos aprobados H2/H3 se preservan. Gate 2 permanece pendiente.

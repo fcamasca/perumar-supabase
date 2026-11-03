@@ -39,8 +39,8 @@ try {
     const payload = () => ({ apellido_paterno: 'Ensayo', apellido_materno: 'Sintético', nombres: 'Alumno', tipo_di_id: dni, numero_di: String(++seq).padStart(8, '0'), fecha_nacimiento: '2000-10-22', sexo_id: vals.find(v=>v.codigo==='F' && v.catalogo_id===definitions.find(c=>c.codigo==='SEXO').id).id, celular: '+51 999 111 222', domicilio: 'SINTETICO', ...Object.fromEntries(Object.entries(geo).map(([k, v]) => ['nacimiento_' + k, v])), ...Object.fromEntries(Object.entries(geo).map(([k, v]) => ['domicilio_' + k, v])), grado_instruccion_id: cat.GRADO_INSTRUCCION, color_ojos_id: cat.COLOR_OJOS, color_cabello_id: cat.COLOR_CABELLO });
     const student = async () => rpc(O, 'guardar_alumno', { p: payload() });
     const contact = async (a) => rpc(O, 'guardar_contacto_emergencia', { p: { alumno_id: a.id, expected_alumno_updated_at: a.updated_at, apellido: 'Contacto', nombre: 'Sintético', parentesco_id: cat.PARENTESCO, celular: '999111222' } });
-    const mat = await rpc(D, 'guardar_materia', { p: { codigo: tag, nombre: 'MATERIA ' + tag } });
-    const career = async (suffix) => rpc(D, 'guardar_carrera', { p: { codigo: tag + suffix, nombre: 'CARRERA ' + tag + suffix, sigla: tag + suffix, modalidad_id: vals.find(v => v.codigo === 'CON_EXPERIENCIA').id }, materias: [mat.id] });
+    const mat = await rpc(D, 'guardar_materia', { p: { nombre: 'MATERIA ' + tag } });
+    const career = async (suffix) => rpc(D, 'guardar_carrera', { p: { nombre: 'CARRERA ' + tag + suffix, sigla: tag + suffix, modalidad_id: vals.find(v => v.codigo === 'PRESENCIAL').id }, materias: [mat.id] });
     const career1 = await career('A'), career2 = await career('B');
     const cycle = async (career, date) => rpc(D, 'guardar_ciclo', { p: { ...geo, carrera_id: career.id, capitania_id: (await rows('capitania'))[0].id, fecha_inicio: date, fecha_fin: date } });
     let c1 = await cycle(career1, '2045-01-01'), c2 = await cycle(career1, '2045-02-01'), c3 = await cycle(career2, '2045-03-01');
@@ -65,6 +65,8 @@ try {
         reject(await O.rpc('guardar_alumno',{p:{...payload(),contactos:[{...initialContact,parentesco_id:cat.SEXO}]}}));
         assert.equal((await rows('alumno')).length,beforeInitial);
         a = await student();
+        assert.match(a.codigo_alumno,/^A-[0-9]{7,}$/);
+        reject(await O.rpc('guardar_alumno',{p:{...payload(),codigo_alumno:'A-9999999'}}));
         const occupation = approvedValue('OCUPACION','MECANICO'), other = approvedValue('OCUPACION','OTROS');
         const employed = await rpc(O,'guardar_alumno',{p:{...payload(),ocupacion_id:occupation,ocupacion:'FORGED'}});
         assert.equal(employed.ocupacion,'MECÁNICO');
@@ -262,7 +264,8 @@ try {
         try {
             legacy = await byId('alumno', legacy.id);
             assert.equal(legacy.apellido_materno, null);
-            const { id, created_at, updated_at, ...data } = legacy;
+            const { id, created_at, updated_at, codigo_alumno, ...data } = legacy;
+            void codigo_alumno;
             void created_at;
             const p = Object.fromEntries(Object.entries({ ...data, id, expected_updated_at: updated_at }).map(([k, v]) => [k, v === null ? null : String(v)]));
             reject(await O.rpc('guardar_alumno', { p }));

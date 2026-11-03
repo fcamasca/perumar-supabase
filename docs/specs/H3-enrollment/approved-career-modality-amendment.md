@@ -28,3 +28,6 @@ Aplicación local incremental, sin reset. Huellas de Carreras, Ciclos y snapshot
 Revisión visual humana y Gate 2 de H3 pendientes. Esta enmienda no constituye aceptación, merge a main ni autorización de H4/EVOL-001/002.
 
 Comprobación adicional posterior a la migración: `npm run test:local` PASÓ; Data API pública sin rutas protegidas e inventario exacto de grants/RLS/helpers/RPC.
+
+
+Actualización posterior: [CHG-H3-003](approved-career-student-code-amendment.md) sustituye distribución, valores de modalidad y default de alta aquí descritos; conserva opcionalidad explícita. Este texto mantiene el registro histórico de CHG-H3-002.

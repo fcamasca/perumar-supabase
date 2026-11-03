@@ -39,6 +39,7 @@ export function securityInventory() {
     'policies', (select json_agg(json_build_object('table',tablename,'name',policyname,'command',cmd,'roles',roles,'using',qual,'check',with_check) order by policyname) from pg_policies where schemaname='public'),
     'helpers', (select json_agg(json_build_object('name',p.proname,'owner',pg_get_userbyid(p.proowner),'definer',p.prosecdef,'volatility',p.provolatile,'config',p.proconfig,'args',pg_get_function_identity_arguments(p.oid),'definition',pg_get_functiondef(p.oid),'authenticated',has_function_privilege('authenticated',p.oid,'EXECUTE'),'anon',has_function_privilege('anon',p.oid,'EXECUTE')) order by p.proname) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='private'),
     'grants', (select json_agg(json_build_object('table',t.table_name,'role',r.name,'select',has_table_privilege(r.name,'public.'||t.table_name,'SELECT'),'insert',has_table_privilege(r.name,'public.'||t.table_name,'INSERT'),'update',has_table_privilege(r.name,'public.'||t.table_name,'UPDATE'),'delete',has_table_privilege(r.name,'public.'||t.table_name,'DELETE'),'truncate',has_table_privilege(r.name,'public.'||t.table_name,'TRUNCATE')) order by t.table_name,r.name) from information_schema.tables t cross join (values ('authenticated'),('anon')) r(name) where t.table_schema='public'),
+    'sequences', (select json_agg(json_build_object('name',c.relname,'authenticated',has_sequence_privilege('authenticated',c.oid,'USAGE,SELECT,UPDATE'),'anon',has_sequence_privilege('anon',c.oid,'USAGE,SELECT,UPDATE')) order by c.relname) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='private' and c.relkind='S'),
     'publicFunctions', (select count(*) from information_schema.routines where routine_schema='public'),
     'privateCreate', has_schema_privilege('authenticated','private','CREATE'),
     'publicCreate', has_schema_privilege('authenticated','public','CREATE'),
@@ -54,7 +55,8 @@ export function assertSecurityInventory(info) {
   if (JSON.stringify(info.tables?.map(t => t.name)) !== JSON.stringify(tables)
     || info.tables.some(t => !t.rls || t.forced) || info.publicFunctions !== 17
     || info.privateCreate || info.publicCreate || info.publicExecute !== 0 || info.authenticatedBypass || info.buckets !== 0
-    || JSON.stringify(info.migrations) !== JSON.stringify(['20261022041000', '20261022150000', '20261022160000', '20261023010000', '20261023020000', '20261023030000', '20261028190000', '20261028200000', '20261102010000'])) throw new Error('Inventario H3 inesperado.')
+    || JSON.stringify(info.migrations) !== JSON.stringify(['20261022041000', '20261022150000', '20261022160000', '20261023010000', '20261023020000', '20261023030000', '20261028190000', '20261028200000', '20261102010000', '20261102020000'])) throw new Error('Inventario H3 inesperado.')
+  if (JSON.stringify(info.sequences) !== JSON.stringify([{name:'alumno_codigo_seq',authenticated:false,anon:false}])) throw new Error('Secuencia Alumno expuesta o inesperada.')
   const expected = ['app_roles_active_read', 'app_roles_admin_read', 'app_user_roles_admin_read', 'app_user_roles_self_read', 'app_users_admin_read', 'app_users_self_read', ...Array(18).fill('academic_read'), 'audit_read'].sort()
   if (JSON.stringify(info.policies?.map(p => p.name)) !== JSON.stringify(expected)
     || info.policies.some(p => p.command !== 'SELECT' || JSON.stringify(p.roles) !== '["authenticated"]' || p.check !== null)) throw new Error('Policies H2 inesperadas.')
