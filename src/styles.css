@@ -398,3 +398,8 @@ form.cycle-state-form { max-width:none; margin:0; padding:0; border:0; border-ra
 .cycle-subject-results li button:hover,.cycle-subject-results li button:focus-visible { background:var(--surface); }
 .cycle-subject-results p { margin:.5rem 0 0; }
 .show-retired-subjects { display:flex; align-items:center; gap:.5rem; margin-top:.75rem; }
+
+/* Comfortable compact rows, scoped to the Cycle subject table. */
+.cycle-subject-panel th { padding:.65rem .85rem; }
+.cycle-subject-panel td { padding:.55rem .85rem; vertical-align:middle; }
+.cycle-subject-panel td button { min-height:2.1rem; padding:.35rem .65rem; margin:0; }
