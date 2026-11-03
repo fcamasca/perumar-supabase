@@ -105,3 +105,6 @@ Ver matrícula abre cabecera Volver/Editar y pestañas Resumen/Cargos/Historial.
 
 
 Descuento en ficha de matrícula: Director abre Editar/Cargos y pulsa Aplicar descuento (o Modificar descuento si ya existe). El formulario permanece oculto hasta esa acción; comprobar importe precargado, motivo, Cancelar sin guardado y Aplicar con actualización de grilla. Un error conserva formulario/datos sin retry. Coordinador no dispone de esa acción.
+
+
+Agregar alumnos: resultados muestran Alumno con formato APELLIDO PATERNO APELLIDO MATERNO, NOMBRES y DI. Probar rechazo por contacto ausente/inactivo y por tarifa Carrera obligatoria ausente: cada caso debe indicar la causa, conservar resultados y no crear matrícula parcial.

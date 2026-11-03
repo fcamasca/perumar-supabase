@@ -1,7 +1,18 @@
 export function enrollmentError(error: {
     code?: string;
+    message?: string;
 } | null) {
-    if (error?.code === '40001' || error?.code === '40P01')
+    const validationMessages: Record<string,string> = {
+        'Complete la ficha del Alumno': 'Completa los datos obligatorios de la ficha del alumno antes de matricularlo.',
+        'Se requiere contacto de emergencia activo y válido': 'El alumno necesita al menos un contacto de emergencia activo y válido para matricularse. Completa sus datos en la ficha del alumno.',
+        'El Ciclo requiere exactamente una tarifa Carrera activa obligatoria': 'El Ciclo debe tener exactamente una tarifa de tipo Carrera activa y obligatoria. Revisa la pestaña Tarifas del Ciclo.',
+        'Ciclo no elegible': 'El Ciclo ya no permite matrículas. Solo puedes matricular en un Ciclo Programado o En curso.',
+        'Selección opcional no válida': 'Algún concepto opcional ya no está disponible para este Ciclo. Revisa sus tarifas.',
+        'Referencia geográfica no válida o inactiva': 'La ficha del alumno tiene una ubicación no válida o inactiva. Revisa su lugar de nacimiento y domicilio.',
+    };
+    if (error?.code === '23514' && error.message && Object.hasOwn(validationMessages,error.message))
+        return validationMessages[error.message];
+    if (error?.code === '40001'  || error?.code === '40P01')
         return 'La información cambió. Recarga y revisa antes de volver a guardar.';
     if (error?.code === '23505')
         return 'El documento, RUC, código o par Alumno y Ciclo ya está registrado.';

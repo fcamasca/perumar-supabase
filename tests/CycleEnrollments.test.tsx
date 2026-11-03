@@ -35,7 +35,7 @@ it('adds directly from search results with only mandatory defaults and refreshes
  const drawer=await screen.findByRole('dialog',{name:'Agregar alumnos a 2026-001-NAV'});
  fireEvent.change(within(drawer).getByRole('searchbox',{name:'Buscar Alumno'}),{target:{value:'nuevo'}});
  const add=await within(drawer).findByRole('button',{name:'Agregar'});
- expect(within(drawer).queryByRole('table')).not.toBeInTheDocument();expect(within(drawer).queryByRole('button',{name:'Confirmar matrícula'})).not.toBeInTheDocument();expect(within(drawer).queryByText('Cargos')).not.toBeInTheDocument();
+ const results=within(drawer).getByRole('table',{name:'Resultados para agregar'});expect(within(results).getAllByRole('columnheader').map(h=>h.textContent)).toEqual(['Alumno','DI','Acciones']);expect(results).toHaveTextContent('NUEVO ALUMNO, ANA');expect(results).toHaveTextContent('ANA');expect(results).toHaveTextContent('00123456');expect(within(drawer).queryByRole('button',{name:'Confirmar matrícula'})).not.toBeInTheDocument();expect(within(drawer).queryByText('Cargos')).not.toBeInTheDocument();
  records.push({id:'m2',alumno_id:'p2',ciclo_id:'c1',codigo_matricula:'2026-NAV-002',estado_codigo:'ACTIVO',alumno:candidate});
  client.rpc.mockResolvedValue({data:{id:'m2',codigo_matricula:'2026-NAV-002'},error:null});fireEvent.click(add);
  await waitFor(()=>expect(client.rpc).toHaveBeenCalledExactlyOnceWith('registrar_matricula',{p:{ciclo_id:'c1',expected_ciclo_updated_at:'cv1',alumno_id:'p2',expected_alumno_updated_at:'pv1',empresa_patrocinadora_id:null},opcionales:[]}));
@@ -71,8 +71,8 @@ it('hides registration controls without an academic role',async()=>{
 });
 
 it('failed mandatory validation does not add a row and offers completing the pupil record',async()=>{
- show();fireEvent.click(screen.getByRole('button',{name:'+ Matricular alumno'}));const drawer=await screen.findByRole('dialog');fireEvent.change(within(drawer).getByRole('searchbox',{name:'Buscar Alumno'}),{target:{value:'nuevo'}});const add=await within(drawer).findByRole('button',{name:'Agregar'});client.rpc.mockResolvedValue({error:{code:'23514'}});fireEvent.click(add);
- expect(await within(drawer).findByRole('alert')).toHaveTextContent('No se pudo guardar');expect(within(drawer).getByRole('link',{name:/Completar ficha/})).toHaveAttribute('href','/alumnos/p2?editar=1&ciclo=c1');expect(screen.getByRole('table',{name:'Alumnos matriculados en el Ciclo'})).not.toHaveTextContent('2026-NAV-002');expect(client.rpc).toHaveBeenCalledTimes(1);
+ show();fireEvent.click(screen.getByRole('button',{name:'+ Matricular alumno'}));const drawer=await screen.findByRole('dialog');fireEvent.change(within(drawer).getByRole('searchbox',{name:'Buscar Alumno'}),{target:{value:'nuevo'}});const add=await within(drawer).findByRole('button',{name:'Agregar'});client.rpc.mockResolvedValue({error:{code:'23514',message:'Se requiere contacto de emergencia activo y válido'}});fireEvent.click(add);
+ expect(await within(drawer).findByRole('alert')).toHaveTextContent('El alumno necesita al menos un contacto de emergencia activo y válido');expect(within(drawer).getByRole('link',{name:/Completar ficha/})).toHaveAttribute('href','/alumnos/p2?editar=1&ciclo=c1');expect(screen.getByRole('table',{name:'Alumnos matriculados en el Ciclo'})).not.toHaveTextContent('2026-NAV-002');expect(client.rpc).toHaveBeenCalledTimes(1);
 });
 it('an uncertain Add response blocks that candidate until the grid is reviewed',async()=>{
  show();fireEvent.click(screen.getByRole('button',{name:'+ Matricular alumno'}));const drawer=await screen.findByRole('dialog');fireEvent.change(within(drawer).getByRole('searchbox',{name:'Buscar Alumno'}),{target:{value:'nuevo'}});const add=await within(drawer).findByRole('button',{name:'Agregar'});client.rpc.mockRejectedValue(new Error('connection lost'));fireEvent.click(add);

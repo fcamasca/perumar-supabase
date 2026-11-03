@@ -281,3 +281,8 @@ Validación de ambos ajustes UX: lint, typecheck, 256 pruebas en 15 archivos, bu
 Ajuste UX 03/11/2026: el formulario de descuento en edición individual de matrícula se abre explícitamente desde Cargos, solo para Director. La acción indica Aplicar descuento o Modificar descuento según el cargo CARRERA vigente y precarga el importe actual; exige nuevo motivo cuando corresponde. Cancelar descuento descarta el borrador sin RPC; Aplicar usa editar_matricula con versión y cierra únicamente tras éxito. Grilla conserva descuento/total visibles. Sin cambios DB ni reglas de autorización/montos.
 
 Validación del ajuste de descuento: lint, typecheck, 258 pruebas en 15 archivos, build y git diff --check correctos. Pruebas específicas: apertura/cancelación sin escritura, importe vigente, guardado con versión y acción ausente para Coordinador. Revisión humana y Gate 2 pendientes.
+
+
+Ajuste UX 03/11/2026: búsqueda para agregar matrículas presenta tabla Alumno (APELLIDOS, NOMBRES), DI y acción Agregar. Se traducen validaciones DB conocidas de ficha incompleta, contacto activo/válido, tarifa Carrera obligatoria, Ciclo elegible, opcionales y geografía en mensajes concretos; errores desconocidos conservan mensaje seguro sin exponer SQL. No se cambia la autoridad DB ni se reintenta automáticamente. Sin migraciones ni modificación del Spec aprobado.
+
+Validación: lint, typecheck, 263 pruebas en 16 archivos, build y git diff --check correctos. Una primera ejecución tuvo un timeout de una prueba previa de carga de Tarifas; la repetición completa pasó. Tabla del buscador sin ancho mínimo global, DI compacto y acción Agregar con ancho propio/texto sin salto. Revisión visual humana y Gate 2 pendientes.

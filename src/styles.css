@@ -419,9 +419,16 @@ form.enrollment-record-form { max-width:none; padding:0; margin:0; border:0; box
 .enrollment-drawer-heading h2 { font-size:1.15rem; margin:0; }
 .enrollment-drawer .student-section-panel { max-width:none; padding:.75rem 0; border:0; border-radius:0; }
 .enrollment-drawer .enrollment-record-form > .form-actions { padding:.75rem 0; }
-.enrollment-pupil-matches { list-style:none; margin:0; padding:0; max-height:22rem; overflow:auto; }
-.enrollment-pupil-matches li { display:flex; align-items:center; justify-content:space-between; gap:.75rem; padding:.65rem 0; border-bottom:1px solid var(--border-soft); }
-.enrollment-pupil-matches small { display:block; }
+.enrollment-search-results { max-height:22rem; overflow:auto; margin:.75rem 0; }
+.enrollment-search-results table { min-width:0; table-layout:fixed; }
+.enrollment-search-results td:first-child { min-width:0; max-width:none; }
+.enrollment-search-results th:nth-child(2), .enrollment-search-results td:nth-child(2) { width:6.5rem; font-variant-numeric:tabular-nums; }
+.enrollment-search-results th:last-child, .enrollment-search-results td:last-child { width:6.25rem; min-width:0; }
+.enrollment-search-results td button { padding:.5rem .6rem; white-space:nowrap; overflow-wrap:normal; word-break:normal; }
+.enrollment-search-results th, .enrollment-search-results td { padding:.6rem .65rem; vertical-align:middle; }
+.enrollment-search-results th:last-child, .enrollment-search-results td:last-child { text-align:right; }
+.enrollment-search-results td:nth-child(2) { white-space:nowrap; }
+
 .cycle-enrollments table td { padding:.55rem .85rem; vertical-align:middle; }
 .back-link { display:inline-block; margin-bottom:1rem; }
 
