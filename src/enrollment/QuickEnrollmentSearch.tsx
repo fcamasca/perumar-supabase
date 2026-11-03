@@ -7,7 +7,7 @@ import {EnrollmentDrawer} from './EnrollmentDrawer'
 import {enrollmentError} from '../lib/enrollmentError'
 
 type Cycle={id:string;codigo_ciclo:string;estado_codigo:string;updated_at:string}
-type Pupil={id:string;codigo_alumno:string;apellido_paterno:string;apellido_materno:string;nombres:string;numero_di:string}
+type Pupil={id:string;codigo_alumno:string;apellido_paterno:string;apellido_materno:string;nombres:string;numero_di:string;tipo_di:{nombre:string;codigo:string}|null}
 export function QuickEnrollmentSearch({cycle,close,added}:{cycle:Cycle;close:()=>void;added:(code:string)=>void}) {
  const {client}=useSession()
  const [search,setSearch]=useState(''),[found,setFound]=useState<Pupil[]>([]),[status,setStatus]=useState<'idle'|'loading'|'ready'|'error'>('idle'),[busy,setBusy]=useState(''),[message,setMessage]=useState(''),[failed,setFailed]=useState<Pupil>(),[uncertain,setUncertain]=useState('')
@@ -18,10 +18,10 @@ export function QuickEnrollmentSearch({cycle,close,added}:{cycle:Cycle;close:()=
   setStatus('loading')
   const timer=setTimeout(()=>{void (async()=>{
    try{
-    const r=await client.from('alumno').select('id,codigo_alumno,apellido_paterno,apellido_materno,nombres,numero_di').or(studentSearchFilter(search)).order('apellido_paterno').order('nombres').limit(20)
+    const r=await client.from('alumno').select('id,codigo_alumno,apellido_paterno,apellido_materno,nombres,numero_di,tipo_di:catalogo_valor!alumno_tipo_di_id_fkey(nombre,codigo)').or(studentSearchFilter(search)).order('apellido_paterno').order('nombres').limit(20)
     if(!active)return
     if(r.error)throw new Error()
-    const pupils=r.data as Pupil[]
+    const pupils=r.data as unknown as Pupil[]
     const existing=pupils.length?await client.from('matricula').select('alumno_id').eq('ciclo_id',cycle.id).in('alumno_id',pupils.map(p=>p.id)):{data:[],error:null}
     if(!active)return
     if(existing.error)throw new Error()
@@ -53,7 +53,7 @@ export function QuickEnrollmentSearch({cycle,close,added}:{cycle:Cycle;close:()=
   {message&&<p role={message.startsWith('Matrícula ')?'status':'alert'}>{message}</p>}
   {failed&&<p><Link to={`/alumnos/${failed.id}?editar=1&ciclo=${returnCycle}`} onClick={close}>Completar ficha de {failed.apellido_paterno} {failed.nombres}</Link></p>}
   {status==='idle'&&<p className="help-text">Escribe al menos 2 caracteres.</p>}{status==='loading'&&<p role="status">Buscando alumnos…</p>}{status==='error'&&<p role="alert">No se pudo buscar alumnos. Modifica la búsqueda para consultar de nuevo.</p>}
-  {status==='ready'&&<div className="table-scroll enrollment-search-results"><table aria-label="Resultados para agregar"><thead><tr><th scope="col">Alumno</th><th scope="col">DI</th><th scope="col">Acciones</th></tr></thead><tbody>{found.map(p=><tr key={p.id}><td><strong>{p.apellido_paterno} {p.apellido_materno}, {p.nombres}</strong></td><td>{p.numero_di}</td><td><button type="button" disabled={!!busy||uncertain===p.id} onClick={()=>void add(p)}>{busy===p.id?'Agregando…':'Agregar'}</button></td></tr>)}{!found.length&&<tr><td colSpan={3}>No hay alumnos disponibles para esta búsqueda.</td></tr>}</tbody></table></div>}
+  {status==='ready'&&<div className="table-scroll enrollment-search-results"><table aria-label="Resultados para agregar"><thead><tr><th scope="col">Alumno</th><th scope="col">Tipo DI</th><th scope="col">DI</th><th scope="col">Acciones</th></tr></thead><tbody>{found.map(p=><tr key={p.id}><td><strong>{p.apellido_paterno} {p.apellido_materno}, {p.nombres}</strong></td><td>{p.tipo_di?.nombre??'No disponible'}</td><td>{p.numero_di}</td><td><button type="button" disabled={!!busy||uncertain===p.id} onClick={()=>void add(p)}>{busy===p.id?'Agregando…':'Agregar'}</button></td></tr>)}{!found.length&&<tr><td colSpan={4}>No hay alumnos disponibles para esta búsqueda.</td></tr>}</tbody></table></div>}
   <Link className="back-link" to={`/alumnos/nuevo?ciclo=${returnCycle}`} aria-disabled={!!busy} tabIndex={busy?-1:undefined} onClick={event=>{if(busy)event.preventDefault();else close()}}>Registrar nuevo Alumno</Link>
  </EnrollmentDrawer>
 }

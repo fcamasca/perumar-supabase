@@ -6,7 +6,7 @@ import {studentSearchFilter} from '../src/lib/studentSearch'
 const {client,roles}=vi.hoisted(()=>({client:{from:vi.fn(),rpc:vi.fn()},roles:{current:['COORDINADOR_ACADEMICO']}}))
 vi.mock('../src/security/SessionProvider',()=>({useSession:()=>({client,state:{roles:roles.current}})}))
 const cycle={id:'c1',codigo_ciclo:'2026-001-NAV',estado_codigo:'PROGRAMADO',updated_at:'cv1'}
-const candidate={id:'p2',codigo_alumno:'A-0000002',apellido_paterno:'NUEVO',apellido_materno:'ALUMNO',nombres:'ANA',numero_di:'00123456',updated_at:'pv1'}
+const candidate={id:'p2',codigo_alumno:'A-0000002',apellido_paterno:'NUEVO',apellido_materno:'ALUMNO',nombres:'ANA',numero_di:'00123456',tipo_di:{nombre:'DNI',codigo:'DNI'},updated_at:'pv1'}
 let records:Record<string,unknown>[]
 const queryLog: {table:string;filters:Record<string,unknown>;or?:string;opts?:unknown;range?:number[]}[]=[]
 beforeEach(()=>{
@@ -35,7 +35,7 @@ it('adds directly from search results with only mandatory defaults and refreshes
  const drawer=await screen.findByRole('dialog',{name:'Agregar alumnos a 2026-001-NAV'});
  fireEvent.change(within(drawer).getByRole('searchbox',{name:'Buscar Alumno'}),{target:{value:'nuevo'}});
  const add=await within(drawer).findByRole('button',{name:'Agregar'});
- const results=within(drawer).getByRole('table',{name:'Resultados para agregar'});expect(within(results).getAllByRole('columnheader').map(h=>h.textContent)).toEqual(['Alumno','DI','Acciones']);expect(results).toHaveTextContent('NUEVO ALUMNO, ANA');expect(results).toHaveTextContent('ANA');expect(results).toHaveTextContent('00123456');expect(within(drawer).queryByRole('button',{name:'Confirmar matrícula'})).not.toBeInTheDocument();expect(within(drawer).queryByText('Cargos')).not.toBeInTheDocument();
+ const results=within(drawer).getByRole('table',{name:'Resultados para agregar'});expect(within(results).getAllByRole('columnheader').map(h=>h.textContent)).toEqual(['Alumno','Tipo DI','DI','Acciones']);expect(results).toHaveTextContent('NUEVO ALUMNO, ANA');expect(results).toHaveTextContent('ANA');expect(results).toHaveTextContent('00123456');expect(results).toHaveTextContent('DNI');expect(within(drawer).queryByRole('button',{name:'Confirmar matrícula'})).not.toBeInTheDocument();expect(within(drawer).queryByText('Cargos')).not.toBeInTheDocument();
  records.push({id:'m2',alumno_id:'p2',ciclo_id:'c1',codigo_matricula:'2026-NAV-002',estado_codigo:'ACTIVO',alumno:candidate});
  client.rpc.mockResolvedValue({data:{id:'m2',codigo_matricula:'2026-NAV-002'},error:null});fireEvent.click(add);
  await waitFor(()=>expect(client.rpc).toHaveBeenCalledExactlyOnceWith('registrar_matricula',{p:{ciclo_id:'c1',expected_ciclo_updated_at:'cv1',alumno_id:'p2',expected_alumno_updated_at:'pv1',empresa_patrocinadora_id:null},opcionales:[]}));

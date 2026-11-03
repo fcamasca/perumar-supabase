@@ -286,3 +286,5 @@ Validación del ajuste de descuento: lint, typecheck, 258 pruebas en 15 archivos
 Ajuste UX 03/11/2026: búsqueda para agregar matrículas presenta tabla Alumno (APELLIDOS, NOMBRES), DI y acción Agregar. Se traducen validaciones DB conocidas de ficha incompleta, contacto activo/válido, tarifa Carrera obligatoria, Ciclo elegible, opcionales y geografía en mensajes concretos; errores desconocidos conservan mensaje seguro sin exponer SQL. No se cambia la autoridad DB ni se reintenta automáticamente. Sin migraciones ni modificación del Spec aprobado.
 
 Validación: lint, typecheck, 263 pruebas en 16 archivos, build y git diff --check correctos. Una primera ejecución tuvo un timeout de una prueba previa de carga de Tarifas; la repetición completa pasó. Tabla del buscador sin ancho mínimo global, DI compacto y acción Agregar con ancho propio/texto sin salto. Revisión visual humana y Gate 2 pendientes.
+
+Precisión humana: resultados incluyen Tipo DI obtenido de catalogo_valor mediante la FK existente y número con ancho de unos 20 caracteres en escritorio; panel ampliado, adaptación móvil y botón Agregar sin partir texto. Sin cambios DB.
