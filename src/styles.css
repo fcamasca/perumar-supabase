@@ -451,3 +451,13 @@ form.enrollment-detail-form { max-width:none; margin:1rem 0 0; padding:1rem 0 0;
 .enrollment-sponsor > button { margin-right:.65rem; }
 .enrollment-detail-actions { margin:0; padding:.75rem 1rem; background:var(--surface-elevated); }
 .enrollment-detail details > summary { cursor:pointer; margin-bottom:.75rem; }
+
+.enrollment-charges-grid table { min-width:0; }
+.enrollment-charges-grid th, .enrollment-detail .enrollment-charges-grid td { padding:.5rem .65rem; vertical-align:middle; }
+.enrollment-charges-grid td:first-child { min-width:0; width:4rem; }
+.enrollment-charges-grid input[type=checkbox] { margin:0; }
+.enrollment-charges-grid tfoot th { text-align:right; }
+.enrollment-charges-grid tfoot td { white-space:nowrap; }
+.enrollment-charge-totals { margin:.75rem 0 0 auto; max-width:18rem; }
+.enrollment-charge-totals > div { display:flex; justify-content:space-between; gap:1rem; }
+.enrollment-detail form.enrollment-charge-form { margin-top:0; padding-top:0; border-top:0; }

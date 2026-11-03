@@ -710,11 +710,11 @@ it('late responses never replace more recent pupil search results',async()=>{
  await act(async()=>pending[0]({data:[pupil('old','ANTERIOR')],error:null}));expect(screen.getByRole('table',{name:'Resultados de alumnos'})).not.toHaveTextContent('ANTERIOR');expect(screen.getByRole('table',{name:'Resultados de alumnos'})).toHaveTextContent('RECIENTE');
 });
 
-function showIndividualEnrollment(editing=false, charges:Record<string,unknown>[]=[]){
+function showIndividualEnrollment(editing=false, charges:Record<string,unknown>[]=[], tariffs:Record<string,unknown>[]=[]){
  const row={id:'m1',alumno_id:'s1',ciclo_id:'c1',codigo_matricula:'2026-NAV-001',estado_codigo:'ACTIVO',updated_at:'mv1'};
  client.from.mockImplementation((table:string)=>{
   let single=false;const q={select:()=>q,eq:()=>q,in:()=>q,order:()=>q,range:()=>q,limit:()=>q,single:()=>{single=true;return q},then:(resolve:(r:unknown)=>unknown)=>{
-   const data=table==='matricula'?[row]:table==='alumno'?[{id:'s1',nombres:'ANA',apellido_paterno:'PRUEBA',numero_di:'00123456'}]:table==='ciclo'?[{id:'c1',codigo_ciclo:'2026-001-NAV',estado_codigo:'PROGRAMADO',updated_at:'cv1'}]:table==='matricula_cargo'?charges:[];
+   const data=table==='matricula'?[row]:table==='alumno'?[{id:'s1',nombres:'ANA',apellido_paterno:'PRUEBA',numero_di:'00123456'}]:table==='ciclo'?[{id:'c1',codigo_ciclo:'2026-001-NAV',estado_codigo:'PROGRAMADO',updated_at:'cv1'}]:table==='matricula_cargo'?charges:table==='ciclo_tarifa'?tariffs:[];
    return Promise.resolve({data:single?data[0]:data,error:null}).then(resolve)
   }};return q;
  });
@@ -722,7 +722,7 @@ function showIndividualEnrollment(editing=false, charges:Record<string,unknown>[
 }
 it('Ver matricula is read-only until the explicit Edit action opens full controls',async()=>{
  showIndividualEnrollment();await screen.findByRole('heading',{name:'2026-NAV-001'});expect(screen.queryByRole('button',{name:'Guardar código'})).not.toBeInTheDocument();
- fireEvent.click(screen.getByRole('button',{name:'Editar matrícula'}));expect(screen.getByRole('button',{name:'Guardar código'})).toBeVisible();fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));expect(screen.getByRole('combobox',{name:'Ciclo destino'})).toBeVisible();
+ fireEvent.click(screen.getByRole('button',{name:'Editar matrícula'}));expect(screen.getByRole('button',{name:'Guardar código'})).toBeVisible();fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));expect(screen.queryByRole('combobox',{name:'Ciclo destino'})).not.toBeInTheDocument();fireEvent.click(screen.getByRole('button',{name:'Cambiar Ciclo'}));expect(screen.getByRole('combobox',{name:'Ciclo destino'})).toBeVisible();
  fireEvent.click(screen.getByRole('button',{name:'Cancelar edición'}));expect(screen.queryByRole('button',{name:'Guardar código'})).not.toBeInTheDocument();expect(client.rpc).not.toHaveBeenCalled();
 });
 it('the grid Edit route enables the individual command with its optimistic version',async()=>{
@@ -769,4 +769,14 @@ it('allows adding contacts while editing a clean pupil and refreshes the parent 
  expect(client.rpc).toHaveBeenCalledWith('guardar_contacto_emergencia',{p:expect.objectContaining({alumno_id:'s',expected_alumno_updated_at:'student-v1'})});
  fireEvent.click(screen.getByRole('tab',{name:'Identificación'}));fireEvent.change(screen.getByRole('textbox',{name:/^Nombres/}),{target:{value:'ANA NUEVA'}});
  fireEvent.click(screen.getByRole('button',{name:'Guardar cambios'}));await waitFor(()=>expect(client.rpc).toHaveBeenCalledWith('guardar_alumno',{p:expect.objectContaining({expected_updated_at:'student-v2',nombres:'ANA NUEVA'})}));
+});
+
+it('uses one compact charge grid, selected defaults and updates totals when optional charge is unchecked',async()=>{
+ showIndividualEnrollment(true,[{id:'existing',ciclo_tarifa_id:'fee',nombre:'CURSO',tipo:'CARRERA',activo:true,importe_original:100,descuento:10,importe_final:90}],[{id:'fee',importe:150,obligatorio:true,tarifa:{nombre:'CURSO',tipo:'CARRERA',activo:true}},{id:'extra',importe:22,obligatorio:false,tarifa:{nombre:'CERTIFICADO',tipo:'OTRO',activo:true}}]);
+ await screen.findByRole('button',{name:'Guardar código'});fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));
+ const optional=await screen.findByRole('checkbox',{name:'Incluir CERTIFICADO'});await waitFor(()=>expect(optional).toBeEnabled());
+ const grid=screen.getByRole('table',{name:'Tarifas de la matrícula'});expect(screen.getAllByRole('table')).toHaveLength(1);
+ expect(optional).toBeChecked();expect(screen.getByRole('checkbox',{name:'Incluir CURSO'})).toBeDisabled();expect(grid.querySelector('tfoot')).toHaveTextContent('S/122.00DescuentoS/10.00TotalS/112.00');
+ fireEvent.click(optional);expect(grid.querySelector('tfoot')).toHaveTextContent('S/100.00DescuentoS/10.00TotalS/90.00');expect(client.rpc).not.toHaveBeenCalled();
+ client.rpc.mockResolvedValue({data:{id:'m1'},error:null});fireEvent.click(screen.getByRole('button',{name:'Guardar cargos'}));await waitFor(()=>expect(client.rpc).toHaveBeenCalledExactlyOnceWith('editar_matricula',{p:{id:'m1',expected_updated_at:'mv1',ciclo_id:'c1',expected_ciclo_updated_at:'cv1'},opcionales:[]}));
 });

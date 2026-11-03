@@ -31,3 +31,10 @@ Sin SQL, nuevas tablas, RPC/helpers DB, policies/grants, dependencias, pagos, H4
 
 
 Actualización de ubicación de configuración: [CHG-H3-007](approved-cycle-tariffs-amendment.md) incorpora Tarifas en la ficha del Ciclo y avisa configuración faltante/pendiente antes de abrir Agregar. El alta rápida de esta enmienda y sus cargos obligatorios permanecen.
+
+
+## Precisión humana — Cargos individuales (03/11/2026)
+
+Por solicitud humana, Editar matrícula/Cargos presenta una sola grilla de tarifas del Ciclo, con selección inicial de todos los conceptos como propuesta antes de guardar. Obligatorios permanecen seleccionados y bloqueados; opcionales se pueden desmarcar. Pie con subtotal, descuento y total de referencia actualizado. No modifica el alta rápida (solo obligatorios), ni registra cambios al marcar/desmarcar. Tras guardar, se refleja la selección persistida. Importes de cargos vigentes se conservan; nuevos conceptos toman el importe configurado en el Ciclo. Cargos vigentes cuya tarifa ya no está disponible se muestran conservados, sin retiro automático.
+
+El selector de traslado se oculta bajo Cambiar Ciclo; mantiene comando y validación de versión existentes, historia y reinicio de descuentos. Descuentos solo Director, mediante acción existente y después de guardar cambios de cargos pendientes. La DB confirma importes/transacciones; sin nuevas tablas/RPC ni cambios a los cuatro documentos aprobados. Gate 2 pendiente.

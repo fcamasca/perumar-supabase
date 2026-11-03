@@ -293,3 +293,8 @@ Precisión humana: resultados incluyen Tipo DI obtenido de catalogo_valor median
 Corrección UX 03/11/2026: Contactos ya no se bloquea únicamente por abrir Editar alumno (incluido retorno desde matrícula). Permite alta/edición/retiro cuando la ficha no tiene cambios pendientes. Si hay borrador real, explica que debe guardarse/cancelarse antes de la operación independiente. Tras guardar/retirar contacto recarga ficha y versión del alumno antes de seguir editando, evitando conflicto por la propia actualización del contacto. RPC y conflictos DB permanecen intactos; sin cambios SQL.
 
 Validación: lint, typecheck, 53 pruebas de EnrollmentPages (incluido alta de contacto en modo edición y guardado posterior con versión actualizada), build y diff --check correctos. Revisión humana y Gate 2 pendientes.
+
+
+UX Cargos 03/11/2026: precisión humana registrada en CHG-H3-006. Tabla única compacta con tarifas seleccionables y totales; vista previa respeta importes/descuentos históricos vigentes y suma solo seleccionadas, sin escribir hasta Guardar cargos. Traslado se abre mediante Cambiar Ciclo, con selector y reinicio de descuento existente. Descuento se bloquea ante cambios pendientes de cargos. Sin SQL/migraciones ni modificaciones de Spec aprobado.
+
+Validación Cargos: lint, typecheck, 265 pruebas en 16 archivos, build y git diff --check correctos. Incluye grilla única, selección/obligatorias, totales al desmarcar, importe histórico conservado, payload/versiones de guardado y traslado explícito. Sin reset ni migraciones. Revisión visual humana y Gate 2 pendientes.

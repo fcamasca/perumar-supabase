@@ -110,3 +110,6 @@ Descuento en ficha de matrícula: Director abre Editar/Cargos y pulsa Aplicar de
 Agregar alumnos: resultados muestran Alumno con formato APELLIDO PATERNO APELLIDO MATERNO, NOMBRES y DI. Probar rechazo por contacto ausente/inactivo y por tarifa Carrera obligatoria ausente: cada caso debe indicar la causa, conservar resultados y no crear matrícula parcial.
 
 Contactos desde Completar ficha de matrícula: abrir Contactos y Agregar sin tener que salir del modo edición si no hay cambios pendientes. Guardar contacto debe actualizar grilla; después editar/guardar alumno sin conflicto por la versión del propio contacto. Si se cambió un dato del alumno sin guardar, Contactos informa el bloqueo y conserva borrador. Conflictos externos siguen explícitos.
+
+
+Cargos individuales: Editar/Cargos muestra una sola grilla con todas las tarifas inicialmente seleccionadas como propuesta. Desmarcar opcionales actualiza subtotal/descuento/total; obligatorias no se desmarcan. Verificar que nada se escribe antes de Guardar cargos y que tras guardar se muestra la selección persistida. Conservar importes históricos aunque la tarifa del Ciclo cambie. Cambiar Ciclo abre explícitamente selector, reinicia descuento al confirmar y conserva código/historia. Director guarda cargos pendientes antes de aplicar descuento. Probar teclado, móvil y temas.
