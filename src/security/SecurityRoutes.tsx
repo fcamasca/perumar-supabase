@@ -48,7 +48,7 @@ function ProtectedArea() {
     <button onClick={() => void logout()}>Cerrar sesión</button>
   </section>
   return <>
-    <div className="navigation-shell"><nav aria-label="Académico" className="main-nav">{state.roles?.some(r => r === 'DIRECTOR_ACADEMICO' || r === 'COORDINADOR_ACADEMICO') && <><NavLink to="/academico/materias">Materias</NavLink><NavLink to="/academico/carreras">Carreras</NavLink><NavLink to="/academico/ciclos">Ciclos</NavLink><NavLink to="/alumnos">Alumnos</NavLink><NavLink to="/tarifas">Tarifas</NavLink><NavLink to="/empresas">Empresas</NavLink></>}<NavLink to="/academico/auditoria">Auditoría</NavLink></nav>
+    <div className="navigation-shell"><nav aria-label="Académico" className="main-nav">{state.roles?.some(r => r === 'DIRECTOR_ACADEMICO' || r === 'COORDINADOR_ACADEMICO') && <><NavLink to="/academico/materias">Asignaturas</NavLink><NavLink to="/academico/carreras">Cursos</NavLink><NavLink to="/academico/ciclos">Ciclos</NavLink><NavLink to="/alumnos">Alumnos</NavLink><NavLink to="/tarifas">Tarifas</NavLink><NavLink to="/empresas">Empresas</NavLink></>}<NavLink to="/academico/auditoria">Auditoría</NavLink></nav>
     <nav aria-label="Seguridad" className="account-nav"><NavLink end to="/seguridad">Mi acceso</NavLink>{state.roles?.includes('ADMIN_SISTEMA') && <NavLink to="/seguridad/usuarios">Directorio de seguridad</NavLink>}<button className="secondary" onClick={() => void logout()}>Cerrar sesión</button></nav></div>
     <Outlet />
   </>

@@ -15,5 +15,5 @@ it('does not expose unknown SQL errors or internal details',()=>{
 
 it('translates the database Career discount constraint without showing SQL',()=>{
  const text=enrollmentError({code:'23514',message:'new row for relation "matricula_cargo" violates check constraint "matricula_cargo_check"'});
- expect(text).toContain('El descuento no puede superar el importe original del cargo de Carrera');expect(text).not.toContain('constraint');
+ expect(text).toContain('El descuento no puede superar el importe original del cargo del Curso');expect(text).not.toContain('constraint');
 });

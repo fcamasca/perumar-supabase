@@ -60,7 +60,7 @@ it('top navigation identifies the current section and keeps security links role-
   show({ phase: 'authorized', userId: 'director', roles: ['DIRECTOR_ACADEMICO'] })
   expect(screen.getByRole('navigation', { name: 'Académico' })).toBeVisible()
   expect(screen.getByRole('link', { name: 'Mi acceso' })).toHaveAttribute('aria-current', 'page')
-  expect(screen.getByRole('link', { name: 'Materias' })).not.toHaveAttribute('aria-current')
+  expect(screen.getByRole('link', { name: 'Asignaturas' })).not.toHaveAttribute('aria-current')
   expect(screen.queryByRole('link',{name:'Matrícula'})).not.toBeInTheDocument()
   expect(screen.queryByRole('link', { name: 'Directorio de seguridad' })).not.toBeInTheDocument()
   expect(screen.queryByText(/PostgreSQL|RLS/)).not.toBeInTheDocument()

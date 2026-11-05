@@ -162,3 +162,6 @@ Matrícula se retira del menú principal. `/matriculas/nueva` redirige a Ciclos;
 
 
 **Información DICAPI de Carrera (CHG-H3-008):** pestañas Datos generales | Materias | Información DICAPI. Código oficial separado de sigla/código legado, resolución/fecha de malla, autorización del centro, URL de resolución de malla con enlace de consulta y observaciones opcionales. Búsqueda también por código DICAPI. Carga inicial controlada de MAM-009/MAM-010 y sus materias, sin modificar Ciclos anteriores. [Enmienda y fuentes oficiales](docs/specs/H3-enrollment/approved-career-dicapi-amendment.md).
+
+
+**Terminología visible vigente (CHG-H3-009):** menú y pantallas usan **Cursos** (antes Carreras), **Asignaturas** (antes Materias) y **Ciclos**. Cambia presentación y mensajes, manteniendo rutas, modelo, RPC y datos. [Precisión terminológica autorizada](docs/specs/H3-enrollment/approved-ui-terminology-amendment.md).

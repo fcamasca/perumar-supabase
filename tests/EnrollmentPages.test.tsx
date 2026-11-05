@@ -669,9 +669,9 @@ it('changing enrollment Cycle resets optional charges and Director discount with
  sessionState.roles=['DIRECTOR_ACADEMICO'];enrollmentFixture();render(<MemoryRouter><NewEnrollment/></MemoryRouter>);
  await screen.findByRole('option',{name:/2026-001-NAV/});fireEvent.change(screen.getByRole('combobox',{name:'Ciclo'}),{target:{value:'c1'}});
  fireEvent.change(screen.getByRole('searchbox',{name:'Buscar Alumno'}),{target:{value:'00123456'}});fireEvent.click(await screen.findByRole('button',{name:'Seleccionar Alumno'}));await screen.findByText('A-0000001 · MUÑOZ PEREZ, ANA MARIA');
- fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));fireEvent.click(await screen.findByRole('checkbox',{name:/SEGURO/}));fireEvent.change(screen.getByRole('spinbutton',{name:'Descuento Carrera (S/)'}),{target:{value:'10'}});fireEvent.change(screen.getByLabelText(/^Motivo descuento/),{target:{value:'AUTORIZADO'}});
+ fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));fireEvent.click(await screen.findByRole('checkbox',{name:/SEGURO/}));fireEvent.change(screen.getByRole('spinbutton',{name:'Descuento del Curso (S/)'}),{target:{value:'10'}});fireEvent.change(screen.getByLabelText(/^Motivo descuento/),{target:{value:'AUTORIZADO'}});
  fireEvent.click(screen.getByRole('tab',{name:'Datos de matrícula'}));fireEvent.change(screen.getByRole('combobox',{name:'Ciclo'}),{target:{value:'c2'}});
- fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));await waitFor(()=>expect(screen.getByRole('checkbox',{name:/SEGURO/})).not.toBeChecked());expect(screen.getByRole('spinbutton',{name:'Descuento Carrera (S/)'})).toHaveValue(0);expect(screen.getByLabelText(/^Motivo descuento/)).toHaveValue('');
+ fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));await waitFor(()=>expect(screen.getByRole('checkbox',{name:/SEGURO/})).not.toBeChecked());expect(screen.getByRole('spinbutton',{name:'Descuento del Curso (S/)'})).toHaveValue(0);expect(screen.getByLabelText(/^Motivo descuento/)).toHaveValue('');
  fireEvent.click(screen.getByRole('tab',{name:'Resumen'}));expect(within(screen.getByRole('tabpanel',{name:'Resumen'})).getByText(/MUÑOZ PEREZ, ANA MARIA · 00123456/)).toBeVisible();expect(client.rpc).not.toHaveBeenCalled();
 });
 it('enrollment search is debounced, includes both surnames/name/document and ignores obsolete results',async()=>{
@@ -694,7 +694,7 @@ it('confirming an incomplete enrollment reveals Datos and focuses the missing Cy
 });
 it('missing discount reason reveals Cargos instead of registering from Resumen',async()=>{
  sessionState.roles=['DIRECTOR_ACADEMICO'];enrollmentFixture();render(<MemoryRouter><NewEnrollment/></MemoryRouter>);await screen.findByRole('option',{name:/2026-001-NAV/});fireEvent.change(screen.getByRole('combobox',{name:'Ciclo'}),{target:{value:'c1'}});
- fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));const discount=screen.getByRole('spinbutton',{name:'Descuento Carrera (S/)'});await waitFor(()=>expect(discount).toBeEnabled());fireEvent.change(discount,{target:{value:'10'}});
+ fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));const discount=screen.getByRole('spinbutton',{name:'Descuento del Curso (S/)'});await waitFor(()=>expect(discount).toBeEnabled());fireEvent.change(discount,{target:{value:'10'}});
  fireEvent.click(screen.getByRole('tab',{name:'Resumen'}));fireEvent.click(screen.getByRole('button',{name:'Confirmar matrícula'}));await waitFor(()=>expect(screen.getByLabelText(/^Motivo descuento/)).toHaveFocus());expect(screen.getByRole('tab',{name:'Cargos'})).toHaveAttribute('aria-selected','true');expect(client.rpc).not.toHaveBeenCalled();
 });
 it('late responses never replace more recent pupil search results',async()=>{
@@ -744,7 +744,7 @@ it('enrollment tabs separate current charges from history without exposing edit 
 it('Director explicitly opens discount, cancels without writing, and applies with optimistic version',async()=>{
  sessionState.roles=['DIRECTOR_ACADEMICO'];showIndividualEnrollment(true,[{id:'fee',activo:true,tipo:'CARRERA',descuento:10,importe_original:100,importe_final:90}]);
  await screen.findByRole('button',{name:'Guardar código'});fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));
- expect(screen.queryByRole('spinbutton',{name:'Nuevo descuento Carrera (S/)'})).not.toBeInTheDocument();
+ expect(screen.queryByRole('spinbutton',{name:'Nuevo descuento del Curso (S/)'})).not.toBeInTheDocument();
  fireEvent.click(screen.getByRole('button',{name:'Modificar descuento'}));expect(screen.getByRole('dialog',{name:'Descuento de matrícula'})).toBeVisible();expect(screen.getByRole('spinbutton')).toHaveValue(10);
  fireEvent.change(screen.getByRole('spinbutton'),{target:{value:'20'}});fireEvent.click(screen.getByRole('button',{name:'Cancelar descuento'}));expect(client.rpc).not.toHaveBeenCalled();
  fireEvent.click(screen.getByRole('button',{name:'Modificar descuento'}));expect(screen.getByRole('dialog',{name:'Descuento de matrícula'})).toBeVisible();expect(screen.getByRole('spinbutton')).toHaveValue(10);
@@ -792,6 +792,6 @@ it('discount modal preserves input on conflict and blocks cancellation while sub
 it('explains the Career discount limit and prevents an excessive discount before submitting',async()=>{
  sessionState.roles=['DIRECTOR_ACADEMICO'];showIndividualEnrollment(true,[{id:'fee',activo:true,tipo:'CARRERA',importe_original:130,descuento:0,importe_final:130},{id:'other',activo:true,tipo:'OTRO',importe_original:22,descuento:0,importe_final:22}]);await screen.findByRole('button',{name:'Guardar código'});fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));fireEvent.click(screen.getByRole('button',{name:'Aplicar descuento'}));const dialog=screen.getByRole('dialog',{name:'Descuento de matrícula'});
  const input=within(dialog).getByRole('spinbutton');expect(input).toHaveAttribute('max','130');fireEvent.change(input,{target:{value:'1200'}});fireEvent.change(within(dialog).getByLabelText('Motivo (sin datos personales)'),{target:{value:'AUTORIZADO'}});fireEvent.click(within(dialog).getByRole('button',{name:'Aplicar'}));
- expect(within(dialog).getByRole('alert')).toHaveTextContent('El descuento no puede superar S/130.00 (importe original del cargo de Carrera).');expect(client.rpc).not.toHaveBeenCalled();expect(input).toHaveFocus();
+ expect(within(dialog).getByRole('alert')).toHaveTextContent('El descuento no puede superar S/130.00 (importe original del cargo del Curso).');expect(client.rpc).not.toHaveBeenCalled();expect(input).toHaveFocus();
  fireEvent.change(input,{target:{value:'130'}});client.rpc.mockResolvedValue({data:{id:'m1'},error:null});fireEvent.click(within(dialog).getByRole('button',{name:'Aplicar'}));await waitFor(()=>expect(client.rpc).toHaveBeenCalledExactlyOnceWith('editar_matricula',{p:{id:'m1',expected_updated_at:'mv1',descuento:'130',motivo_descuento:'AUTORIZADO'}}));
 });

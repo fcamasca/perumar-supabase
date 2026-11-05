@@ -127,3 +127,8 @@ Validación descuento: con Carrera S/130 y otros cargos S/22, el máximo permiti
 Carreras: buscar MAM-009/MAM-010, comprobar nombres y 10/7 materias con el Anexo A de RD 1052-2024. Ver pestaña Información DICAPI readonly; Director edita, Coordinador consulta. Campos opcionales, Cancelar descarta borrador y Guardar vuelve a grilla. Probar código inválido, fecha/longitudes, conflicto entre operadores, limpieza explícita y auditoría con etiquetas legibles. Resolución de malla y autorización son distintas; observaciones explican modificaciones sin ejecutar cambios. Revisar teclado/móvil/temas. La carga no modifica materias de Ciclos existentes ni historia. Gate 2 pendiente.
 
 URL de resolución de malla: MAM-009/MAM-010 tienen el PDF oficial con Anexo A; Abrir resolución de malla abre otra pestaña. Editar conserva mayúsculas/minúsculas del enlace. HTTPS obligatorio si se informa; vacío permitido; javascript/otros esquemas se rechazan y no se convierten en enlace. Guardar/Cancelar/consulta y auditoría mantienen el flujo de Carrera.
+
+
+## Terminología visible vigente — CHG-H3-009 (04/11/2026)
+
+En todos los recorridos anteriores, leer Curso/Cursos donde se describa Carrera/Carreras, y Asignatura/Asignaturas donde se describa Materia/Materias. Menú Cursos/Asignaturas/Ciclos; formularios Nuevo Curso y Nueva Asignatura; pestañas Asignaturas del Curso y Asignaturas del Ciclo. Verificar búsquedas, confirmaciones, errores, campos DICAPI, auditoría legible y descuentos del Curso. Tarifa tipo Curso conserva internamente CARRERA. Rutas antiguas /academico/carreras y /academico/materias siguen funcionando. No debe cambiar ningún dato al navegar; guardado, conflictos, roles e historia conservan comportamiento. Probar teclado/temas/móvil. Gate 2 pendiente.

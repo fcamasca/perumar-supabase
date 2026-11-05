@@ -66,12 +66,12 @@ export function InlineForm({ children, onSubmit, onInvalidField, ...props }: { c
     const failures: typeof errors = []
     const fields = Array.from(event.currentTarget.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('input,select,textarea'))
     const requiredMessages: Record<string, string> = {
-      Modalidad: 'Selecciona una modalidad.', Carrera: 'Selecciona una Carrera.',
+      Modalidad: 'Selecciona una modalidad.', Curso: 'Selecciona un Curso.',
       Departamento: 'Selecciona un departamento.', Provincia: 'Selecciona una provincia.', Distrito: 'Selecciona un distrito.', Capitanía: 'Selecciona una capitanía.',
       'Nuevo estado': 'Selecciona el nuevo estado.', 'Motivo de Ciclo Desierto': 'Selecciona un motivo para declarar desierto el Ciclo.',
       'Fecha de inicio': 'Indica la fecha de inicio.', 'Fecha de fin': 'Indica la fecha de fin.',
-      'Código de Materia': 'Ingresa el código de la Materia.', 'Nombre de Materia': 'Ingresa el nombre de la Materia.',
-      'Código de Carrera': 'Ingresa el código de la Carrera.', 'Nombre de Carrera': 'Ingresa el nombre de la Carrera.',
+      'Código de Asignatura': 'Ingresa el código de la Asignatura.', 'Nombre de Asignatura': 'Ingresa el nombre de la Asignatura.',
+      'Código de Curso': 'Ingresa el código del Curso.', 'Nombre de Curso': 'Ingresa el nombre del Curso.',
       Sigla: 'Ingresa una sigla de 2 a 10 caracteres.', 'Detalle / motivo': 'Indica el detalle o motivo obligatorio.',
     }
     fields.forEach((field, i) => {
@@ -123,5 +123,5 @@ export function EditorHeading({ children }: { children: ReactNode }) {
   return <h3 ref={heading} tabIndex={-1} className="editor-heading">{children}</h3>
 }
 export function EmptyState({ filtered, entity, onCreate }: { filtered: boolean; entity: string; onCreate?: () => void }) {
-  return <div className="empty-state"><p>{filtered ? `No hay ${entity} que coincidan con los filtros.` : `No hay ${entity} registradas.`}</p>{onCreate && !filtered && <button type="button" onClick={onCreate}>Crear primera {entity === 'Carreras' ? 'Carrera' : 'Materia'}</button>}{filtered && <p>Prueba con otro código, nombre o estado.</p>}</div>
+  return <div className="empty-state"><p>{filtered ? `No hay ${entity} que coincidan con los filtros.` : `No hay ${entity} ${entity === 'Cursos' ? 'registrados' : 'registradas'}.`}</p>{onCreate && !filtered && <button type="button" onClick={onCreate}>{entity === 'Cursos' ? 'Crear primer Curso' : 'Crear primera Asignatura'}</button>}{filtered && <p>Prueba con otro código, nombre o estado.</p>}</div>
 }

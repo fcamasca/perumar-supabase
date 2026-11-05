@@ -39,7 +39,7 @@ it('failed configuration load cannot save an empty replacement',async()=>{
  failed=true;show();expect(await screen.findByRole('alert')).toHaveTextContent('No se pudieron cargar');expect(screen.queryByRole('table')).not.toBeInTheDocument();expect(screen.queryByRole('button',{name:'Guardar tarifas del Ciclo'})).not.toBeInTheDocument();expect(ready).toHaveBeenLastCalledWith(null);expect(client.rpc).not.toHaveBeenCalled()
 })
 it('missing or optional Career pricing is explained before matriculation',async()=>{
- assigned=[];const rendered=show();await screen.findByRole('table',{name:'Tarifas del Ciclo'});expect(screen.getByRole('alert')).toHaveTextContent('Falta asignar una tarifa CARRERA');rendered.unmount();assigned=[{tarifa_id:'career',importe:'600',obligatorio:false,activo:true}];show();await screen.findByRole('table',{name:'Tarifas del Ciclo'});expect(screen.getByRole('alert')).toHaveTextContent('debe ser obligatoria')
+ assigned=[];const rendered=show();await screen.findByRole('table',{name:'Tarifas del Ciclo'});expect(screen.getByRole('alert')).toHaveTextContent('Falta asignar una tarifa de Curso');rendered.unmount();assigned=[{tarifa_id:'career',importe:'600',obligatorio:false,activo:true}];show();await screen.findByRole('table',{name:'Tarifas del Ciclo'});expect(screen.getByRole('alert')).toHaveTextContent('debe ser obligatoria')
 })
 
 it('keeps eligibility unknown until both catalog and assignments finish loading',async()=>{

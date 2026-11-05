@@ -337,3 +337,9 @@ Validación: lint, typecheck, 274 pruebas en 16 archivos, build y git diff --che
 Precisión humana CHG-H3-008 (04/11/2026): se agrega URL de resolución de malla opcional con enlace Abrir resolución de malla. Migración 20261104030000 aplicada incrementalmente y completados los dos enlaces oficiales; sin reset. Ruta con mayúsculas preservada, HTTPS validado en frontend/DB, enlaces con noopener/noreferrer, vacío/omisión compatibles. SQL real/rollback verifica URL preservada, rechazo de esquemas peligrosos y exceso de longitud, limpieza y permisos existentes. Carga de enlaces repetida sin cambios. Inventario sin nuevos objetos salvo una columna, 13 migraciones.
 
 Validación URL: lint, typecheck, 74 pruebas AcademicPages, build y diff --check satisfactorios; SQL real de URL/rollback, enlace inicial idempotente y seguridad exacta verificados. Revisión humana y Gate 2 pendientes.
+
+
+CHG-H3-009 (04/11/2026): Curso/Asignatura en vocabulario visible de frontend, incluidas referencias de Ciclos, tarifas/descuento y auditoría legible. Solo presentación; comparación AST de consultas from/rpc/select/eq/in/order/range/or/ilike y rutas path/to confirma contratos sin cambios. Datos de fixtures, códigos CARRERA y mensajes DB reconocidos se mantienen. Sin migraciones ni operaciones DB en este ajuste; documentación vigente enlaza la precisión, fuentes aprobadas congeladas intactas.
+
+Validación CHG-H3-009: lint y typecheck correctos; 275/275 pruebas unitarias/UI correctas. Verificación AST: llamadas Supabase y rutas sin cambios. Sin modificaciones en migraciones ni en los cuatro documentos aprobados.
+Build correcto; persiste aviso conocido de bundle superior a 500 kB. git diff --check correcto.
