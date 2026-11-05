@@ -98,7 +98,7 @@ try {
     rejected(await O.rpc('guardar_ciclo', { p: { ...base, carrera_id: carrera.id, nombre_promocion: 'X'.repeat(151) } }), 'promotion limit')
     rejected(await O.rpc('guardar_ciclo', { p: { ...base, carrera_id: carrera.id, provincia_id: randomUUID() } }), 'hierarchy/FK bypass')
     await rpc(O, 'guardar_ciclo', { p: { ...base, carrera_id: carrera.id, capitania_id: capitanias[1].id } })
-    assert.equal((await rows(A, 'app_users')).length, 7)
+    assert.equal((await rows(A, 'app_users')).length, Number(inspectDatabase('select count(*) from public.app_users;')))
     assert.equal((await rows(D, 'app_users')).length, 1)
     assert.equal((await rows(O, 'app_users')).length, 1)
   })

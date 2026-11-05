@@ -132,3 +132,7 @@ URL de resolución de malla: MAM-009/MAM-010 tienen el PDF oficial con Anexo A; 
 ## Terminología visible vigente — CHG-H3-009 (04/11/2026)
 
 En todos los recorridos anteriores, leer Curso/Cursos donde se describa Carrera/Carreras, y Asignatura/Asignaturas donde se describa Materia/Materias. Menú Cursos/Asignaturas/Ciclos; formularios Nuevo Curso y Nueva Asignatura; pestañas Asignaturas del Curso y Asignaturas del Ciclo. Verificar búsquedas, confirmaciones, errores, campos DICAPI, auditoría legible y descuentos del Curso. Tarifa tipo Curso conserva internamente CARRERA. Rutas antiguas /academico/carreras y /academico/materias siguen funcionando. No debe cambiar ningún dato al navegar; guardado, conflictos, roles e historia conservan comportamiento. Probar teclado/temas/móvil. Gate 2 pendiente.
+
+### Carga inicial autorizada (CHG-H3-010)
+
+Verificar los seis Cursos MAM-009/010/037/038/039/048 y sus pestañas Asignaturas: 10/7/9/5/5/8, respectivamente. Información DICAPI debe mostrar autorización 072-26 para todos; malla 855-2021 y enlace El Peruano para MAM-048, 1052-2024 y enlace DICAPI para los otros cinco. Comprobar que los Ciclos previos conservan sus asignaturas.

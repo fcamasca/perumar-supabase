@@ -20,7 +20,7 @@ schema_paths = []
 
 [db.seed]
 enabled = true
-sql_paths = ["./seed.sql", "./migrations/20261104020000_initial_dicapi_fishing_courses.sql", "./reference/dicapi-course-links.sql"]
+sql_paths = ["./seed.sql", "./migrations/20261104020000_initial_dicapi_fishing_courses.sql", "./reference/dicapi-course-links.sql", "./migrations/20261104040000_initial_authorized_dicapi_courses.sql"]
 
 [realtime]
 enabled = false

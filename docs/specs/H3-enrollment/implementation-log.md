@@ -343,3 +343,7 @@ CHG-H3-009 (04/11/2026): Curso/Asignatura en vocabulario visible de frontend, in
 
 Validación CHG-H3-009: lint y typecheck correctos; 275/275 pruebas unitarias/UI correctas. Verificación AST: llamadas Supabase y rutas sin cambios. Sin modificaciones en migraciones ni en los cuatro documentos aprobados.
 Build correcto; persiste aviso conocido de bundle superior a 500 kB. git diff --check correcto.
+
+CHG-H3-010 (04/11/2026): se amplía la carga inicial a los seis Cursos autorizados por RD 072-26. Nueva migración 20261104040000 añade MAM-037/038/039/048 con 9/5/5/8 asignaturas. Mallas 1052-2024 y 855-2021 por curso, con URL oficial; transcripción en dicapi-authorized-curricula.json. Total base vacía: 31 asignaturas/44 asociaciones. Sin objetos nuevos; 14 migraciones. Aplicación local incremental, sin reset.
+
+Validación CHG-H3-010: lint, typecheck y git diff --check correctos. Migración probada primero con rollback (conteos 10/7/9/5/5/8), aplicada localmente sin reset; 11 grupos académicos DB/API correctos, metadata DICAPI/permisos/rollback, carga repetida sin duplicados ni cambios de datos, preservación de personalizaciones/asignaturas inactivas/ciclos/auditoría y 8 transacciones concurrentes de código Alumno correctas. Conteo de usuarios de prueba ajustado al total real para permitir regresión en base local con usuarios humanos. No se ejecutó reset de base vacía local; bootstrap completo queda cubierto por CI. No hay cambios en frontend ni arquitectura. Pruebas humanas y Gate 2 pendientes.
