@@ -1,0 +1,41 @@
+{
+  "source": "https://www.dicapi.mil.pe/storage/regulatory-framework/Zm1HLYB41736522114.pdf",
+  "resolution": "1052-2024 MGP/DICAPI",
+  "resolution_date": "2024-12-27",
+  "authorization": "072-26 MGP/DICAPI",
+  "annex_pages": [
+    7,
+    8
+  ],
+  "courses": [
+    {
+      "code": "MAM-009",
+      "name": "MARINERO DE PESCA CALIFICADO",
+      "subjects": [
+        "ARTES DE PESCA Y TALLER",
+        "BIOLOGÍA PESQUERA GENERAL",
+        "MANIOBRA DE BUQUE PESQUERO",
+        "NAVEGACIÓN BÁSICA",
+        "PREVENCIÓN DE LA CONTAMINACIÓN",
+        "REGLAMENTACIONES MARÍTIMAS",
+        "RELACIONES HUMANAS A BORDO",
+        "SEGURIDAD A BORDO Y MARÍTIMA",
+        "SISTEMA DE PESCA EN CUBIERTA",
+        "TERMINOLOGÍA NÁUTICA Y PESQUERA"
+      ]
+    },
+    {
+      "code": "MAM-010",
+      "name": "MARINERO DE PESCA ARTESANAL",
+      "subjects": [
+        "NOCIONES DE BIOLOGÍA MARINA Y ARTES DE PESCA",
+        "PRINCIPIOS DE NAVEGACIÓN",
+        "REGLAMENTACIONES",
+        "SEGURIDAD A BORDO",
+        "TERMINOLOGÍA NÁUTICA BÁSICA",
+        "MANIOBRA CON EMBARCACIONES MENORES",
+        "PREVENCIÓN DE LA CONTAMINACIÓN"
+      ]
+    }
+  ]
+}

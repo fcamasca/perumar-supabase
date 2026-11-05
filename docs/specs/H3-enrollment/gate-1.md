@@ -38,3 +38,6 @@ Migración 20261102020000 aplicada incrementalmente sin reset: huellas y mapeo p
 
 
 [CHG-H3-007 — Tarifas dentro de Ciclo](approved-cycle-tariffs-amendment.md), autorización humana 03/11/2026: ficha Datos/Materias/Tarifas/Matrículas/Estado, grilla de conceptos asignados y agregar desde catálogo con monto inicial, importe propio/obligatoriedad/retiro antes de guardar. Solo Director modifica, Coordinador/terminales consultan. Se elimina editor duplicado del menú Tarifas; catálogo permanece allí. Avisos precisos de CARRERA obligatoria y configuración pendiente antes de matricular. Versiones y borradores coordinados entre pestañas; cargos históricos intactos. Sin cambios SQL/Spec aprobado. Gate 2 pendiente.
+
+
+[CHG-H3-008 — Información DICAPI y carga inicial de pesca](approved-career-dicapi-amendment.md), autorizada 04/11/2026: cinco campos opcionales solo en Carrera, RPC existente, pestaña Información DICAPI/búsqueda por código y carga idempotente MAM-009/MAM-010 con 10/7 asociaciones. Sin reescribir Ciclos/matrículas/snapshots, sin horas. Spec aprobado conservado y Gate 2 pendiente.

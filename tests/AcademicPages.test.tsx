@@ -469,7 +469,7 @@ it('sigla suggestion respects the maximum and never contains accents or punctuat
 
 it.each([
   {Component:Materias,table:'materia',label:'Materias',code:'M',back:'Volver a materias',search:'Buscar Materia por nombre'},
-  {Component:Carreras,table:'carrera',label:'Carreras',code:'C',back:'Volver a carreras',search:'Buscar Carrera por sigla o nombre'},
+  {Component:Carreras,table:'carrera',label:'Carreras',code:'C',back:'Volver a carreras',search:'Buscar Carrera por sigla, nombre o código DICAPI'},
   {Component:Ciclos,table:'ciclo',label:'Ciclos',code:'CY',back:'Volver a ciclos',search:'Buscar Ciclo por código o Carrera'},
 ])('$label shares newest-first paging, row actions and list/record navigation without resetting filters',async({Component,table,label,code,back,search})=>{
   const base=tables[table][0];tables[table]=Array.from({length:65},(_,i)=>({...base,id:`row-${i}`,codigo:`${code}${i}`,codigo_ciclo:`${code}${i}`,nombre:`NOMBRE ${i}`}));
@@ -492,7 +492,7 @@ it.each([
   await waitFor(()=>expect(queryCalls.filter(c=>c.table===table&&c.bounds).at(-1)!.bounds).toEqual([0,29]));
   request=queryCalls.filter(c=>c.table===table&&c.bounds).at(-1)!;
   if(table==='ciclo') expect(request.or).toBe('codigo_ciclo.ilike."%ENSAYO%"');
-  else if(table==='carrera') expect(request.or).toBe('sigla.ilike."%ENSAYO%",nombre.ilike."%ENSAYO%"');
+  else if(table==='carrera') expect(request.or).toBe('sigla.ilike."%ENSAYO%",nombre.ilike."%ENSAYO%",codigo_curso_dicapi.ilike."%ENSAYO%"');
   else expect(request.likes).toEqual([['nombre','%ENSAYO%']]);
   expect(rpc).not.toHaveBeenCalled();
 });
@@ -563,20 +563,20 @@ it('saving Materia returns to its grid and refreshes the saved data',async()=>{
 
 it.each([
   {Component:Materias,table:'materia',label:'Buscar Materia por nombre'},
-  {Component:Carreras,table:'carrera',label:'Buscar Carrera por sigla o nombre'},
+  {Component:Carreras,table:'carrera',label:'Buscar Carrera por sigla, nombre o código DICAPI'},
 ])('uses one code-or-name search box for $table and retains the status filter',async({Component,table,label})=>{
   session(['DIRECTOR_ACADEMICO']);render(<Component/>);
   await screen.findByRole('button',{name:table==='materia'?'Ver NAVEGACIÓN':'Ver CARRERA'});
   expect(screen.getAllByRole('searchbox')).toHaveLength(1);
   const search=screen.getByRole('searchbox',{name:label});
-  expect(search).toHaveAttribute('placeholder',table==='materia'?'Nombre':'Sigla o nombre');
+  expect(search).toHaveAttribute('placeholder',table==='materia'?'Nombre':'Sigla, nombre o código DICAPI');
   fireEvent.change(search,{target:{value:'m1'}});
-  await waitFor(()=>{const q=queryCalls.filter(c=>c.table===table&&c.bounds).at(-1)!; if(table==='materia') expect(q.likes).toEqual([['nombre','%M1%']]); else expect(q.or).toBe('sigla.ilike."%M1%",nombre.ilike."%M1%"')});
+  await waitFor(()=>{const q=queryCalls.filter(c=>c.table===table&&c.bounds).at(-1)!; if(table==='materia') expect(q.likes).toEqual([['nombre','%M1%']]); else expect(q.or).toBe('sigla.ilike."%M1%",nombre.ilike."%M1%",codigo_curso_dicapi.ilike."%M1%"')});
   fireEvent.change(search,{target:{value:'navegación'}});
-  await waitFor(()=>{const q=queryCalls.filter(c=>c.table===table&&c.bounds).at(-1)!; if(table==='materia') expect(q.likes).toEqual([['nombre','%NAVEGACIÓN%']]); else expect(q.or).toBe('sigla.ilike."%NAVEGACIÓN%",nombre.ilike."%NAVEGACIÓN%"')});
+  await waitFor(()=>{const q=queryCalls.filter(c=>c.table===table&&c.bounds).at(-1)!; if(table==='materia') expect(q.likes).toEqual([['nombre','%NAVEGACIÓN%']]); else expect(q.or).toBe('sigla.ilike."%NAVEGACIÓN%",nombre.ilike."%NAVEGACIÓN%",codigo_curso_dicapi.ilike."%NAVEGACIÓN%"')});
   fireEvent.change(screen.getByRole('combobox',{name:table==='materia'?'Estado de Materia':'Estado de Carrera'}),{target:{value:'inactive'}});
   await waitFor(()=>expect(queryCalls.filter(c=>c.table===table&&c.bounds).at(-1)?.filters).toContainEqual(['active',table==='materia'?false:[false]]));
-  await waitFor(()=>{const q=queryCalls.filter(c=>c.table===table&&c.bounds).at(-1)!; if(table==='materia') expect(q.likes).toEqual([['nombre','%NAVEGACIÓN%']]); else expect(q.or).toBe('sigla.ilike."%NAVEGACIÓN%",nombre.ilike."%NAVEGACIÓN%"')});
+  await waitFor(()=>{const q=queryCalls.filter(c=>c.table===table&&c.bounds).at(-1)!; if(table==='materia') expect(q.likes).toEqual([['nombre','%NAVEGACIÓN%']]); else expect(q.or).toBe('sigla.ilike."%NAVEGACIÓN%",nombre.ilike."%NAVEGACIÓN%",codigo_curso_dicapi.ilike."%NAVEGACIÓN%"')});
   fireEvent.change(search,{target:{value:''}});
   await waitFor(()=>expect(queryCalls.filter(c=>c.table===table&&c.bounds).at(-1)?.or).toBeUndefined());
   expect(rpc).not.toHaveBeenCalled();
@@ -693,4 +693,16 @@ it('Cycle editing keeps one shared Cancel/Save bar on every tab and submits the 
  session(['DIRECTOR_ACADEMICO']);render(<MemoryRouter><Ciclos/></MemoryRouter>);fireEvent.click(await screen.findByRole('button',{name:'Editar 2026-001-NAV'}));await waitFor(()=>expect(screen.getByRole('button',{name:'Guardar Ciclo'})).toBeEnabled());
  for(const name of ['Datos','Materias','Tarifas','Matrículas','Estado']){fireEvent.click(screen.getByRole('tab',{name}));expect(screen.getByRole('button',{name:'Cancelar'})).toBeVisible();expect(screen.getByRole('button',{name:'Guardar Ciclo'})).toBeVisible();expect(screen.getAllByRole('button',{name:'Cancelar'})).toHaveLength(1)}
  fireEvent.click(screen.getByRole('tab',{name:'Datos'}));fireEvent.change(screen.getByLabelText('Nombre de promoción (opcional)'),{target:{value:'PROMOCION'}});fireEvent.click(screen.getByRole('tab',{name:'Matrículas'}));rpc.mockResolvedValue({data:{...ciclo,updated_at:'v2'},error:null});fireEvent.click(screen.getByRole('button',{name:'Guardar Ciclo'}));await waitFor(()=>expect(rpc).toHaveBeenCalledWith('guardar_ciclo',{p:expect.objectContaining({id:'cycle',nombre_promocion:'PROMOCION'}),adicionales:[]}));
+});
+
+it('edits optional DICAPI data in its own tab, preserves it across tabs and sends the Career version',async()=>{
+ session(['DIRECTOR_ACADEMICO']);render(<Carreras/>);fireEvent.click(await screen.findByRole('button',{name:'Editar CARRERA'}));await waitFor(()=>expect(screen.getByRole('button',{name:'Guardar Carrera y Materias'})).toBeEnabled());
+ fireEvent.click(screen.getByRole('tab',{name:'Información DICAPI'}));
+ fireEvent.change(screen.getByRole('textbox',{name:'Código de curso DICAPI'}),{target:{value:'mam-009'}});fireEvent.change(screen.getByRole('textbox',{name:'Resolución de malla curricular'}),{target:{value:'1052-2024 MGP/DICAPI'}});fireEvent.change(screen.getByLabelText('Fecha de resolución de malla'),{target:{value:'2024-12-27'}});fireEvent.change(screen.getByRole('textbox',{name:'Resolución de autorización del centro'}),{target:{value:'072-26 MGP/DICAPI'}});fireEvent.change(screen.getByRole('textbox',{name:'Observaciones normativas'}),{target:{value:'RD XYZ incorpora materia'}});
+ fireEvent.click(screen.getByRole('tab',{name:'Materias'}));fireEvent.click(screen.getByRole('tab',{name:'Información DICAPI'}));expect(screen.getByRole('textbox',{name:'Código de curso DICAPI'})).toHaveValue('MAM-009');
+ rpc.mockResolvedValue({data:{...tables.carrera[0]},error:null});fireEvent.click(screen.getByRole('button',{name:'Guardar Carrera y Materias'}));await waitFor(()=>expect(rpc).toHaveBeenCalledWith('guardar_carrera',{p:expect.objectContaining({id:'career',expected_updated_at:version,codigo_curso_dicapi:'MAM-009',fecha_resolucion_malla:'2024-12-27',resolucion_malla_curricular:'1052-2024 MGP/DICAPI',resolucion_autorizacion_centro:'072-26 MGP/DICAPI',observaciones_normativas:'RD XYZ INCORPORA MATERIA'}),materias:['subject']}));
+});
+it('shows DICAPI data read-only and reveals its tab for invalid course code',async()=>{
+ tables.carrera[0].codigo_curso_dicapi='MAM-009';session(['COORDINADOR_ACADEMICO']);const view=render(<Carreras/>);fireEvent.click(await screen.findByRole('button',{name:'Ver CARRERA'}));fireEvent.click(screen.getByRole('tab',{name:'Información DICAPI'}));expect(screen.getByRole('textbox',{name:'Código de curso DICAPI'})).toHaveAttribute('readonly');expect(screen.queryByRole('button',{name:'Guardar Carrera y Materias'})).not.toBeInTheDocument();view.unmount();
+ session(['DIRECTOR_ACADEMICO']);render(<Carreras/>);fireEvent.click(await screen.findByRole('button',{name:'Editar CARRERA'}));await waitFor(()=>expect(screen.getByRole('button',{name:'Guardar Carrera y Materias'})).toBeEnabled());fireEvent.click(screen.getByRole('tab',{name:'Información DICAPI'}));fireEvent.change(screen.getByRole('textbox',{name:'Código de curso DICAPI'}),{target:{value:'MAM 009'}});fireEvent.click(screen.getByRole('tab',{name:'Datos generales'}));fireEvent.click(screen.getByRole('button',{name:'Guardar Carrera y Materias'}));await waitFor(()=>expect(screen.getByRole('textbox',{name:'Código de curso DICAPI'})).toHaveFocus());expect(screen.getByRole('tab',{name:'Información DICAPI'})).toHaveAttribute('aria-selected','true');expect(rpc).not.toHaveBeenCalled();
 });

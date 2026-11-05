@@ -120,3 +120,8 @@ Ubicación vigente del traslado: desde Ciclo/Matrículas, acción Cambiar Ciclo 
 Descuento: acción al extremo derecho de la fila Guardar cargos. Abre modal centrado; verificar importe/motivo, Cancelar/Escape sin escritura y foco de regreso. Durante guardado no cerrar; error/conflicto se muestra dentro y conserva datos. Solo éxito cierra y actualiza cargos.
 
 Validación descuento: con Carrera S/130 y otros cargos S/22, el máximo permitido es S/130. Ingresar S/1200 debe señalar ese límite en el modal, focalizar importe y conservar motivo, sin enviar RPC. Corregir a S/130 permite aplicar sujeto a validación DB. Un rechazo DB del límite debe explicarlo sin mensaje genérico ni SQL.
+
+
+## Información DICAPI — CHG-H3-008 (04/11/2026)
+
+Carreras: buscar MAM-009/MAM-010, comprobar nombres y 10/7 materias con el Anexo A de RD 1052-2024. Ver pestaña Información DICAPI readonly; Director edita, Coordinador consulta. Campos opcionales, Cancelar descarta borrador y Guardar vuelve a grilla. Probar código inválido, fecha/longitudes, conflicto entre operadores, limpieza explícita y auditoría con etiquetas legibles. Resolución de malla y autorización son distintas; observaciones explican modificaciones sin ejecutar cambios. Revisar teclado/móvil/temas. La carga no modifica materias de Ciclos existentes ni historia. Gate 2 pendiente.
