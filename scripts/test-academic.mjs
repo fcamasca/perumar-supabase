@@ -17,6 +17,10 @@ async function scenario(id, work) {
 const rejected = (result, label) => assert.ok(result.error, label)
 
 try {
+  // This API suite commits business fixtures; only the disposable CI database is supported.
+  if (process.env.CI !== 'true' || process.env.GITHUB_ACTIONS !== 'true') {
+    throw new Error('test:academic solo se ejecuta en GitHub Actions con base desechable; no usar sobre la base de pruebas humanas.')
+  }
   fixture = await createFixtures()
   const clients = {}
   for (const [actor, entry] of Object.entries(fixture.entries)) {
@@ -257,7 +261,7 @@ try {
   await verifyCareerStudentAmendment()
 
 } catch (error) {
-  console.error(`FAILED ${current}: ${error instanceof assert.AssertionError ? error.message : 'contenido interno omitido'}`)
+  console.error(`FAILED ${current}: ${current === 'preparation' && !fixture && (process.env.CI !== 'true' || process.env.GITHUB_ACTIONS !== 'true') ? error.message : error instanceof assert.AssertionError ? error.message : 'contenido interno omitido'}`)
   process.exitCode = 1
 } finally {
   if (fixture) { try { await fixture.cleanup() } catch { console.error('Cleanup incompleto'); process.exitCode = 1 } }
