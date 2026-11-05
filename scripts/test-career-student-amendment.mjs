@@ -22,6 +22,7 @@ export async function verifyCareerStudentAmendment() {
   const approved=JSON.parse(readFileSync('supabase/reference/dicapi-fishing-curricula.json','utf8'));
   const seeded=JSON.parse(inspectDatabase("select coalesce(json_agg(json_build_object('code',c.codigo_curso_dicapi,'subject',m.nombre)),'[]'::json) from public.carrera c join public.carrera_materia cm on cm.carrera_id=c.id join public.materia m on m.id=cm.materia_id where c.codigo_curso_dicapi in ('MAM-009','MAM-010');"));
   for(const course of approved.courses)for(const subject of course.subjects)assert.ok(seeded.some(x=>x.code===course.code&&x.subject===subject),'Missing approved DICAPI subject');
+  assert.equal(inspectDatabase("select count(*) from public.carrera where codigo_curso_dicapi in ('MAM-009','MAM-010') and resolucion_malla_curricular='1052-2024 MGP/DICAPI' and url_resolucion_malla='https://www.dicapi.mil.pe/storage/regulatory-framework/Zm1HLYB41736522114.pdf';"),'2','Missing official curriculum URL');
   const before=inspectDatabase(fingerprint)
   assertSecurityInventory(securityInventory())
   for (const file of ['career-dicapi','career-student-amendment','h2-optional-career-modality','h3-occupation']) {
@@ -30,7 +31,7 @@ export async function verifyCareerStudentAmendment() {
     assert.equal(inspectDatabase(fingerprint),before,'Rollback changed existing records')
     console.log(`${file}: PASSED (real DB, rollback, invariants)`)
   }
-  await transaction('begin;'+readFileSync('supabase/migrations/20261104020000_initial_dicapi_fishing_courses.sql','utf8')+'rollback;')
+  await transaction('begin;'+readFileSync('supabase/migrations/20261104020000_initial_dicapi_fishing_courses.sql','utf8')+readFileSync('supabase/reference/dicapi-course-links.sql','utf8')+'rollback;')
   assert.equal(inspectDatabase(fingerprint),before,'Repeated DICAPI load changed records')
   console.log('dicapi-initial-data: PASSED (official subjects present, repeat load rollback)')
   const sql=readFileSync('tests/sql/student-code-concurrency.sql','utf8')

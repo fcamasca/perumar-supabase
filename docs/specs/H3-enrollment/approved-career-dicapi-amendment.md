@@ -26,3 +26,8 @@ Los campos solo se almacenan en Carrera. La carga no invoca sync_missing: no alt
 ## Validación
 
 Pruebas UI y SQL con rollback: metadatos opcionales, formatos/longitudes/fecha, conservación por clientes anteriores, limpieza explícita, permisos, auditoría y conflicto. Carga real repetida sin cambios y huellas de historia intactas. Inventario sin nuevas tablas/RPC/helpers/policies; dos migraciones nuevas. Revisión visual/humana y Gate 2 pendientes.
+
+
+## URL de fuente — precisión humana 04/11/2026
+
+Se incorpora sexto campo opcional url_resolucion_malla (hasta 2048 caracteres, HTTPS sin espacios). La URL conserva mayúsculas/minúsculas de su ruta. Información DICAPI permite editarla y abrirla en otra pestaña mediante enlace HTTPS con noopener/noreferrer. Se extiende guardar_carrera existente; omisión conserva y NULL limpia. Migración 20261104030000 agrega campo y completa el PDF oficial para los dos cursos solo si la resolución coincide con 1052-2024 y el enlace está vacío; la semilla repite la misma carga idempotente después de Carreras. Sin URL de autorización adicional ni nuevas tablas/RPC.

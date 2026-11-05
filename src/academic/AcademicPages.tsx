@@ -8,14 +8,14 @@ import { useSession } from '../security/SessionProvider'
 
 type Ref = { id: string; nombre: string; active: boolean }
 type Materia = Ref & { descripcion: string | null; updated_at: string }
-type CarreraDicapi = { codigo_curso_dicapi: string; resolucion_malla_curricular: string; fecha_resolucion_malla: string; resolucion_autorizacion_centro: string; observaciones_normativas: string }
-const blankDicapi: CarreraDicapi = { codigo_curso_dicapi:'',resolucion_malla_curricular:'',fecha_resolucion_malla:'',resolucion_autorizacion_centro:'',observaciones_normativas:'' }
+type CarreraDicapi = { url_resolucion_malla: string; codigo_curso_dicapi: string; resolucion_malla_curricular: string; fecha_resolucion_malla: string; resolucion_autorizacion_centro: string; observaciones_normativas: string }
+const blankDicapi: CarreraDicapi = { url_resolucion_malla:'',codigo_curso_dicapi:'',resolucion_malla_curricular:'',fecha_resolucion_malla:'',resolucion_autorizacion_centro:'',observaciones_normativas:'' }
 type Carrera = Materia & Partial<CarreraDicapi> & { sigla: string; modalidad_id: string | null; con_experiencia: boolean }
 type Valor = { id: string; catalogo_id: string; codigo: string; nombre: string; activo: boolean }
 type Ciclo = { id: string; carrera_id: string; codigo_ciclo: string; fecha_inicio: string; fecha_fin: string; nombre_promocion: string | null; departamento_id: string; provincia_id: string; distrito_id: string; capitania_id: string; estado_codigo: string; updated_at: string }
 type Relacion = { id: string; materia_id: string; activo: boolean; origen: string; motivo_inactivacion: string | null }
 const materiaColumns = 'id,nombre,descripcion,active,updated_at'
-const carreraColumns = `${materiaColumns},sigla,modalidad_id,con_experiencia,codigo_curso_dicapi,resolucion_malla_curricular,fecha_resolucion_malla,resolucion_autorizacion_centro,observaciones_normativas`
+const carreraColumns = `${materiaColumns},sigla,modalidad_id,con_experiencia,codigo_curso_dicapi,resolucion_malla_curricular,fecha_resolucion_malla,resolucion_autorizacion_centro,observaciones_normativas,url_resolucion_malla`
 const cicloColumns = 'id,carrera_id,codigo_ciclo,fecha_inicio,fecha_fin,nombre_promocion,departamento_id,provincia_id,distrito_id,capitania_id,estado_codigo,updated_at'
 
 export function academicError(error: { code?: string; message?: string } | null, entity: 'Materia' | 'Carrera' | 'Ciclo' = 'Ciclo'): string {
@@ -28,7 +28,7 @@ export function academicError(error: { code?: string; message?: string } | null,
     if (/Cada Carrera requiere al menos|Seleccione al menos una Materia activa/.test(error.message ?? '')) return 'La Carrera debe conservar al menos una Materia activa. Asocia primero otra Materia activa.'
     if (error.message === 'El Ciclo requiere una Materia activa') return 'El Ciclo debe tener al menos una Materia activa.'
     if (error.message === 'Valor de catálogo no válido o inactivo') return 'Selecciona un valor vigente del catálogo correspondiente.'
-    if (/^carrera_(codigo_curso_dicapi|resolucion_malla_curricular|fecha_resolucion_malla|resolucion_autorizacion_centro|observaciones_normativas)_check$/.test((error.message??'').match(/check constraint "([^"]+)"/)?.[1]??'')) return 'Revisa el formato y la longitud de los datos DICAPI de la Carrera.'
+    if (/^carrera_(codigo_curso_dicapi|resolucion_malla_curricular|fecha_resolucion_malla|resolucion_autorizacion_centro|observaciones_normativas|url_resolucion_malla)_check$/.test((error.message??'').match(/check constraint "([^"]+)"/)?.[1]??'')) return 'Revisa el formato y la longitud de los datos DICAPI de la Carrera.'
     if (error.message === 'Detalle obligatorio para OTRO') return 'Indica el detalle del motivo OTRO.'
   }
   if (error?.code === '23P01') return 'Las fechas se superponen con otro Ciclo de la misma Carrera y Capitanía.'
@@ -205,6 +205,7 @@ export function Carreras() {
         <label>Resolución de malla curricular<input maxLength={150} aria-label="Resolución de malla curricular" readOnly={readOnly} value={dicapi.resolucion_malla_curricular} onChange={e=>{const text=formTextValue(e.currentTarget);setDicapi(d=>({...d,resolucion_malla_curricular:text}))}}/></label>
         <label>Fecha de resolución de malla<input type="date" min="1900-01-01" max="9999-12-31" aria-label="Fecha de resolución de malla" readOnly={readOnly} value={dicapi.fecha_resolucion_malla} onChange={e=>{const text=e.currentTarget.value;setDicapi(d=>({...d,fecha_resolucion_malla:text}))}}/></label>
         <label>Resolución de autorización del centro<input maxLength={150} aria-label="Resolución de autorización del centro" readOnly={readOnly} value={dicapi.resolucion_autorizacion_centro} onChange={e=>{const text=formTextValue(e.currentTarget);setDicapi(d=>({...d,resolucion_autorizacion_centro:text}))}}/></label>
+        <label>URL de resolución de malla<input type="url" pattern="https://.*" data-pattern-error="Usa un enlace HTTPS completo." maxLength={2048} aria-label="URL de resolución de malla" readOnly={readOnly} value={dicapi.url_resolucion_malla} onChange={e=>{const text=e.currentTarget.value;setDicapi(d=>({...d,url_resolucion_malla:text}))}}/>{/^https:\/\//.test(dicapi.url_resolucion_malla)&&<a href={dicapi.url_resolucion_malla} target="_blank" rel="noopener noreferrer">Abrir resolución de malla</a>}</label>
         <label>Observaciones normativas<textarea rows={3} maxLength={2000} aria-label="Observaciones normativas" readOnly={readOnly} value={dicapi.observaciones_normativas} onChange={e=>{const text=formTextValue(e.currentTarget);setDicapi(d=>({...d,observaciones_normativas:text}))}}/></label>
       </fieldset><p className="help-text">La resolución de la malla curricular y la autorización del centro son documentos distintos. Estos datos no modifican las materias de Ciclos existentes.</p></div>
       {!readOnly && <div className="form-actions"><button className="secondary" disabled={busy} type="button" onClick={cancelEditing}>Cancelar</button><button disabled={busy || subjectsStatus !== 'ready'}>Guardar Carrera y Materias</button></div>}
@@ -378,7 +379,7 @@ export function Ciclos({initialCycleId}:{initialCycleId?:string}={}) {
 }
 
 type Audit = { id: string; entidad: string; registro_id: string; accion: string; actor: string; fecha: string; motivo: string | null; old_values: unknown; new_values: unknown }
-const fieldNames: Record<string, string> = { codigo: 'Código', nombre: 'Nombre', descripcion: 'Descripción', active: 'Activo', activo: 'Activo', sigla: 'Sigla', fecha_inicio: 'Inicio', fecha_fin: 'Fin', estado_codigo: 'Estado', nombre_promocion: 'Promoción', carrera_id: 'Carrera', materia_id: 'Materia', modalidad_id: 'Modalidad', con_experiencia: 'Con experiencia', codigo_curso_dicapi: 'Código de curso DICAPI', resolucion_malla_curricular: 'Resolución de malla curricular', fecha_resolucion_malla: 'Fecha de resolución de malla', resolucion_autorizacion_centro: 'Resolución de autorización del centro', observaciones_normativas: 'Observaciones normativas', capitania_id: 'Capitanía', departamento_id: 'Departamento', provincia_id: 'Provincia', distrito_id: 'Distrito', origen: 'Origen', motivo_inactivacion: 'Motivo de retiro', updated_at: 'Actualización', created_at: 'Creación', id: 'Identificador' }
+const fieldNames: Record<string, string> = { codigo: 'Código', nombre: 'Nombre', descripcion: 'Descripción', active: 'Activo', activo: 'Activo', sigla: 'Sigla', fecha_inicio: 'Inicio', fecha_fin: 'Fin', estado_codigo: 'Estado', nombre_promocion: 'Promoción', carrera_id: 'Carrera', materia_id: 'Materia', modalidad_id: 'Modalidad', con_experiencia: 'Con experiencia', codigo_curso_dicapi: 'Código de curso DICAPI', resolucion_malla_curricular: 'Resolución de malla curricular', fecha_resolucion_malla: 'Fecha de resolución de malla', resolucion_autorizacion_centro: 'Resolución de autorización del centro', observaciones_normativas: 'Observaciones normativas', url_resolucion_malla: 'URL de resolución de malla', capitania_id: 'Capitanía', departamento_id: 'Departamento', provincia_id: 'Provincia', distrito_id: 'Distrito', origen: 'Origen', motivo_inactivacion: 'Motivo de retiro', updated_at: 'Actualización', created_at: 'Creación', id: 'Identificador' }
 const entityNames: Record<string, string> = { materia: 'Materia', carrera: 'Carrera', ciclo: 'Ciclo', carrera_materia: 'Materias de Carrera', ciclo_materia: 'Materias del Ciclo' }
 const actionNames: Record<string, string> = { CREATE: 'Creación', UPDATE: 'Actualización', INACTIVATE: 'Inactivación', REACTIVATE: 'Reactivación', ASOCIACION_RETIRADA: 'Asociación retirada', EN_CURSO: 'Inicio de Ciclo', CERRADO: 'Cierre de Ciclo', DESIERTO: 'Ciclo desierto', ANULADO: 'Anulación de Ciclo' }
 function auditValue(value: unknown): string {
