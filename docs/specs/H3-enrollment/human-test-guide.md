@@ -140,3 +140,7 @@ Verificar los seis Cursos MAM-009/010/037/038/039/048 y sus pestañas Asignatura
 ## Regla vigente de asignaturas con matrículas activas — CHG-H3-011 (09/11/2026)
 
 Sustituye el bloqueo absoluto anterior: solo Director puede agregar/retirar/reactivar en Ciclo PROGRAMADO/EN_CURSO con matrículas activas, tras advertencia y confirmación explícita. Probar Cancelar sin escritura, confirmar con impacto informado, Coordinador bloqueado, misma relación al reactivar, historia/código/cargos intactos, terminales bloqueados y conflicto desde dos sesiones sin retry. Cambiar Curso sigue prohibido con activas. No ejecutar test:academic en base humana; revisión humana/Gate 2 pendientes.
+
+## Resultado declarado — 09/11/2026
+
+El usuario reporta OK en los nueve bloques de revisión humana presentados. Ver [resultados y límites de evidencia](human-test-results.md). Esta entrada posterior sustituye el pendiente general del recorrido, sin afirmar detalles no informados de entorno/contraste real o enmienda CHG-H3-011. Revisión arquitectónica y Gate 2 permanecen pendientes.

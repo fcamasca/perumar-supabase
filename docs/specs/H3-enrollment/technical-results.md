@@ -87,3 +87,7 @@ Validación CHG-H3-007: 253 pruebas en 15 archivos, lint, typecheck, build y git
 El bloqueo absoluto de asignaturas con matrículas activas se sustituye por confirmación explícita solo Director. Coordinador sigue bloqueado. Véase [regla autorizada](approved-director-cycle-subjects-amendment.md). Cambiar Curso con activas, historia/códigos/cargos, terminalidad y versiones se conservan. Sigue un único cambiar_materia_ciclo, con quinto argumento booleano opcional; 17 RPC/16 helpers/22 tablas públicas/25 policies; 15 migraciones. Validación SQL con rollback y ensayo humano/Gate 2 pendientes de consolidar sobre candidato.
 
 Validación final CHG-H3-011: migración aplicada incrementalmente en Supabase local, sin reset ni datos de negocio modificados por la migración. Suite completa 283/283 pruebas en 17 archivos; lint/typecheck/build/git diff --check correctos. SQL director-cycle-subjects y regresión de enmiendas/catálogos/códigos correctos con rollback; inventario exacto verificado, 8 transacciones concurrentes de código Alumno correctas. Advertencia conocida de bundle >500 kB. Revisión humana de la nueva confirmación y Gate 2 pendientes.
+
+## Revisión humana declarada — 09/11/2026
+
+Nueve bloques del recorrido reportados OK por el usuario; ver [registro humano](human-test-results.md). Candidato de referencia 6f6ab0d; SHA efectivamente ensayado no reconfirmado. Pendiente precisión del entorno/forced-colors real y casos específicos CHG-H3-011. No equivale a TEST-H3-044 ni aprobación de Gate 2.
