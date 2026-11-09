@@ -136,3 +136,7 @@ En todos los recorridos anteriores, leer Curso/Cursos donde se describa Carrera/
 ### Carga inicial autorizada (CHG-H3-010)
 
 Verificar los seis Cursos MAM-009/010/037/038/039/048 y sus pestañas Asignaturas: 10/7/9/5/5/8, respectivamente. Información DICAPI debe mostrar autorización 072-26 para todos; malla 855-2021 y enlace El Peruano para MAM-048, 1052-2024 y enlace DICAPI para los otros cinco. Comprobar que los Ciclos previos conservan sus asignaturas.
+
+## Regla vigente de asignaturas con matrículas activas — CHG-H3-011 (09/11/2026)
+
+Sustituye el bloqueo absoluto anterior: solo Director puede agregar/retirar/reactivar en Ciclo PROGRAMADO/EN_CURSO con matrículas activas, tras advertencia y confirmación explícita. Probar Cancelar sin escritura, confirmar con impacto informado, Coordinador bloqueado, misma relación al reactivar, historia/código/cargos intactos, terminales bloqueados y conflicto desde dos sesiones sin retry. Cambiar Curso sigue prohibido con activas. No ejecutar test:academic en base humana; revisión humana/Gate 2 pendientes.

@@ -167,3 +167,5 @@ Matrícula se retira del menú principal. `/matriculas/nueva` redirige a Ciclos;
 **Terminología visible vigente (CHG-H3-009):** menú y pantallas usan **Cursos** (antes Carreras), **Asignaturas** (antes Materias) y **Ciclos**. Cambia presentación y mensajes, manteniendo rutas, modelo, RPC y datos. [Precisión terminológica autorizada](docs/specs/H3-enrollment/approved-ui-terminology-amendment.md).
 
 Carga inicial vigente: seis Cursos autorizados de PERÚ MAR, 31 Asignaturas distintas y 44 asociaciones; ver [CHG-H3-010](docs/specs/H3-enrollment/approved-authorized-courses-initial-load.md).
+
+Regla vigente: solo Director puede confirmar cambios de asignaturas del Ciclo con matrículas activas; ver [CHG-H3-011](docs/specs/H3-enrollment/approved-director-cycle-subjects-amendment.md). Historial, cargos y códigos se conservan.

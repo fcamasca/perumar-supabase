@@ -406,7 +406,7 @@ it('searches active subjects without listing the catalog and excludes active/ret
   rpc.mockResolvedValue({data:{...ciclo,updated_at:'version-2'},error:null});
   tables.ciclo_materia.push({id:'new',ciclo_id:'cycle',materia_id:'extra',activo:true,origen:'ADICIONAL',motivo_inactivacion:null});
   fireEvent.click(screen.getByRole('button',{name:'Agregar'}));
-  await waitFor(()=>expect(rpc).toHaveBeenCalledWith('guardar_ciclo',{p:expect.objectContaining({id:'cycle',expected_updated_at:version}),adicionales:['extra']}));
+  await waitFor(()=>expect(rpc).toHaveBeenCalledWith('cambiar_materia_ciclo',{ciclo_id:'cycle',materia_id:'extra',expected_updated_at:version,activo:true}));
   await waitFor(()=>expect(screen.getByRole('table',{name:'Asignaturas del Ciclo'})).toHaveTextContent('SEGURIDADAdicionalActiva'));
   fireEvent.click(screen.getByRole('checkbox',{name:'Mostrar retiradas'}));
   expect(screen.getByRole('table',{name:'Asignaturas del Ciclo'})).toHaveTextContent('RETIRADAAdicionalRetirada');
@@ -712,4 +712,44 @@ it('opens the DICAPI source URL safely and rejects non-HTTPS input',async()=>{
  tables.carrera[0].url_resolucion_malla='https://www.dicapi.mil.pe/OriginalABC.pdf';session(['DIRECTOR_ACADEMICO']);render(<Carreras/>);fireEvent.click(await screen.findByRole('button',{name:'Editar CARRERA'}));await waitFor(()=>expect(screen.getByRole('button',{name:'Guardar Curso y Asignaturas'})).toBeEnabled());fireEvent.click(screen.getByRole('tab',{name:'Información DICAPI'}));
  const link=screen.getByRole('link',{name:'Abrir resolución de malla'});expect(link).toHaveAttribute('href','https://www.dicapi.mil.pe/OriginalABC.pdf');expect(link).toHaveAttribute('rel','noopener noreferrer');expect(link).toHaveAttribute('target','_blank');
  fireEvent.change(screen.getByRole('textbox',{name:'URL de resolución de malla'}),{target:{value:'javascript:alert(1)'}});expect(screen.queryByRole('link',{name:'Abrir resolución de malla'})).not.toBeInTheDocument();fireEvent.click(screen.getByRole('button',{name:'Guardar Curso y Asignaturas'}));expect(screen.getByRole('alert')).toHaveTextContent('Usa un enlace HTTPS completo');expect(rpc).not.toHaveBeenCalled();
+});
+
+
+it('explains active enrollment blocking subject retirement without changing the row or retrying', async () => {
+  tables.ciclo_materia = [{ id: 'relation', ciclo_id: 'cycle', materia_id: 'subject', activo: true, origen: 'HEREDADA', motivo_inactivacion: null }]
+  session(['DIRECTOR_ACADEMICO']); render(<Ciclos />)
+  fireEvent.click(await screen.findByRole('button', { name: 'Editar 2026-001-NAV' }))
+  fireEvent.click(screen.getByRole('tab', { name: 'Asignaturas' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Retirar' }))
+  rpc.mockResolvedValueOnce({ data: null, error: { code: '23514', message: 'Materias de Ciclo con matrícula activa no editables' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Retirar Asignatura' }))
+  expect(await screen.findByText('Este Ciclo tiene matrículas activas. Solo el Director puede confirmar cambios en sus asignaturas. No se realizó ningún cambio.')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Retirar' }).closest('tr')).toHaveTextContent('NAVEGACIÓNCursoActiva')
+  expect(rpc).toHaveBeenCalledTimes(1)
+  expect(rpc).toHaveBeenCalledWith('cambiar_materia_ciclo', expect.objectContaining({ activo: false }))
+})
+
+
+it('Director sees active enrollment impact, can cancel, then explicitly confirm retirement',async()=>{
+ tables.matricula=[{id:'enrollment',ciclo_id:'cycle',estado_codigo:'ACTIVO'}];
+ tables.ciclo_materia=[{id:'relation',ciclo_id:'cycle',materia_id:'subject',activo:true,origen:'HEREDADA',motivo_inactivacion:null}];
+ session(['DIRECTOR_ACADEMICO']);render(<Ciclos/>);fireEvent.click(await screen.findByRole('button',{name:'Editar 2026-001-NAV'}));fireEvent.click(screen.getByRole('tab',{name:'Asignaturas'}));
+ fireEvent.click(await screen.findByRole('button',{name:'Retirar'}));expect(screen.getByRole('dialog')).toHaveTextContent('Este Ciclo tiene matrículas activas');expect(screen.getByRole('dialog')).toHaveTextContent('datos históricos de las matrículas se conservarán');
+ fireEvent.click(screen.getByRole('button',{name:'Cancelar operación'}));expect(rpc).not.toHaveBeenCalled();
+ fireEvent.click(screen.getByRole('button',{name:'Retirar'}));rpc.mockResolvedValueOnce({error:{code:'40001'}});fireEvent.click(screen.getByRole('button',{name:'Retirar Asignatura'}));
+ expect(await screen.findByRole('alert')).toHaveTextContent('modificado por otro usuario');expect(rpc).toHaveBeenCalledTimes(1);expect(rpc).toHaveBeenCalledWith('cambiar_materia_ciclo',{ciclo_id:'cycle',materia_id:'subject',expected_updated_at:version,activo:false,confirmar_matriculas_activas:true});
+});
+it('Coordinator cannot change current subjects with active enrollments',async()=>{
+ tables.matricula=[{id:'enrollment',ciclo_id:'cycle',estado_codigo:'ACTIVO'}];tables.ciclo_materia=[{id:'relation',ciclo_id:'cycle',materia_id:'subject',activo:true,origen:'HEREDADA',motivo_inactivacion:null}];
+ session(['COORDINADOR_ACADEMICO']);render(<Ciclos/>);fireEvent.click(await screen.findByRole('button',{name:'Editar 2026-001-NAV'}));fireEvent.click(screen.getByRole('tab',{name:'Asignaturas'}));
+ await screen.findByText('Este Ciclo tiene matrículas activas. Solo el Director puede modificar sus asignaturas.');expect(screen.getByRole('button',{name:'Retirar'})).toBeDisabled();expect(screen.getByRole('button',{name:'Agregar'})).toBeDisabled();expect(rpc).not.toHaveBeenCalled();
+});
+it('a newly enrolled pupil requires an explicit Director confirmation before a second request',async()=>{
+ tables.ciclo_materia=[{id:'relation',ciclo_id:'cycle',materia_id:'subject',activo:true,origen:'HEREDADA',motivo_inactivacion:null}];session(['DIRECTOR_ACADEMICO']);render(<Ciclos/>);fireEvent.click(await screen.findByRole('button',{name:'Editar 2026-001-NAV'}));fireEvent.click(screen.getByRole('tab',{name:'Asignaturas'}));
+ fireEvent.click(await screen.findByRole('button',{name:'Retirar'}));rpc.mockResolvedValueOnce({error:{code:'23514',message:'Confirmación requerida para asignaturas con matrículas activas'}});fireEvent.click(screen.getByRole('button',{name:'Retirar Asignatura'}));
+ expect(await screen.findByRole('dialog')).toHaveTextContent('matrículas activas');expect(rpc).toHaveBeenCalledTimes(1);fireEvent.click(screen.getByRole('button',{name:'Cancelar operación'}));expect(rpc).toHaveBeenCalledTimes(1);
+});
+it('Director confirms adding a subject without submitting unrelated Cycle fields',async()=>{
+ tables.matricula=[{id:'enrollment',ciclo_id:'cycle',estado_codigo:'ACTIVO'}];tables.materia.push({id:'extra',nombre:'SEGURIDAD',active:true,updated_at:version});
+ session(['DIRECTOR_ACADEMICO']);render(<Ciclos/>);fireEvent.click(await screen.findByRole('button',{name:'Editar 2026-001-NAV'}));fireEvent.click(screen.getByRole('tab',{name:'Asignaturas'}));const search=screen.getByRole('searchbox',{name:'Agregar asignatura adicional'});await waitFor(()=>expect(search).toBeEnabled());fireEvent.change(search,{target:{value:'segur'}});fireEvent.click(screen.getByRole('button',{name:'SEGURIDAD'}));fireEvent.click(screen.getByRole('button',{name:'Agregar'}));expect(screen.getByRole('dialog')).toHaveTextContent('matrículas activas');expect(rpc).not.toHaveBeenCalled();rpc.mockResolvedValueOnce({data:{...ciclo,updated_at:'new-version'},error:null});fireEvent.click(screen.getByRole('button',{name:'Agregar Asignatura'}));await screen.findByText('Asignaturas del Ciclo actualizadas correctamente.');expect(rpc).toHaveBeenCalledWith('cambiar_materia_ciclo',{ciclo_id:'cycle',materia_id:'extra',expected_updated_at:version,activo:true,confirmar_matriculas_activas:true});
 });

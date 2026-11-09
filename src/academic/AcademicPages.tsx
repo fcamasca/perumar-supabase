@@ -25,6 +25,7 @@ export function academicError(error: { code?: string; message?: string } | null,
     return field ? `El ${field} de ${entity} ya está utilizado, incluso en registros inactivos.` : entity === 'Asignatura' ? 'El nombre de Asignatura ya está utilizado, incluso en registros inactivos.' : entity === 'Curso' ? 'El nombre o sigla de Curso ya está utilizado, incluso en registros inactivos.' : 'La relación o el código ya está registrado.'
   }
   if (error?.code === '23514') {
+    if (error.message === 'Materias de Ciclo con matrícula activa no editables') return 'Este Ciclo tiene matrículas activas. Solo el Director puede confirmar cambios en sus asignaturas. No se realizó ningún cambio.'
     if (/Cada Carrera requiere al menos|Seleccione al menos una Materia activa/.test(error.message ?? '')) return 'El Curso debe conservar al menos una Asignatura activa. Asocia primero otra Asignatura activa.'
     if (error.message === 'El Ciclo requiere una Materia activa') return 'El Ciclo debe tener al menos una Asignatura activa.'
     if (error.message === 'Valor de catálogo no válido o inactivo') return 'Selecciona un valor vigente del catálogo correspondiente.'
@@ -233,6 +234,8 @@ export function Ciclos({initialCycleId}:{initialCycleId?:string}={}) {
   const [search, setSearch] = useState(''), [estado, setEstado] = useState(''), [message, setMessage] = useState(''), [busy, setBusy] = useState(false), [revision, setRevision] = useState(0)
   const { ask, dialog } = useConfirmation(busy)
   const [subjectSearch, setSubjectSearch] = useState(''), [subjectId, setSubjectId] = useState(''), [showRetired, setShowRetired] = useState(false)
+  const [hasActiveEnrollments, setHasActiveEnrollments] = useState<boolean | null>(null)
+  const activeSubjectWarning = 'Este Ciclo tiene matrículas activas. El cambio afectará la lista vigente de asignaturas para los alumnos matriculados. Los códigos, cargos y datos históricos de las matrículas se conservarán. ¿Deseas continuar?'
   const [relationsStatus, setRelationsStatus] = useState<'loading' | 'ready' | 'error'>('ready')
   const [destino, setDestino] = useState(''), [motivoId, setMotivoId] = useState(''), [detalle, setDetalle] = useState('')
   const canModify = state.roles?.some(role => role === 'DIRECTOR_ACADEMICO' || role === 'COORDINADOR_ACADEMICO') ?? false
@@ -279,11 +282,11 @@ export function Ciclos({initialCycleId}:{initialCycleId?:string}={}) {
   },[client,initialCycleId])
   async function edit(row: Ciclo | null, view = false, section = 0) {
     setReadOnly(view || (!!row && !canEditCycle(row)) || !canModify); setTab(section)
-    setOpen(true); setSubjectSearch(''); setSubjectId(''); if(section !== 1) setShowRetired(false); setRelationsStatus(row ? 'loading' : 'ready')
+    setOpen(true); setSubjectSearch(''); setSubjectId(''); if(section !== 1) setShowRetired(false); setRelationsStatus(row ? 'loading' : 'ready'); setHasActiveEnrollments(row ? null : false)
     const request = ++editEpoch.current
     setSelected(row); setDraft(row ? { carrera_id: row.carrera_id, fecha_inicio: row.fecha_inicio, fecha_fin: row.fecha_fin, nombre_promocion: row.nombre_promocion ?? '', departamento_id: row.departamento_id, provincia_id: row.provincia_id, distrito_id: row.distrito_id, capitania_id: row.capitania_id } : blankCiclo)
     setAdditional([]); setRelations([]); setMessage(''); setDestino(''); setMotivoId(''); setDetalle('')
-    if (row) { const r = await client.from('ciclo_materia').select('id,materia_id,activo,origen,motivo_inactivacion').eq('ciclo_id', row.id); if (request !== editEpoch.current) return; if (!r.error) { setRelations(r.data); setRelationsStatus('ready') } else { setRelationsStatus('error'); setMessage('No se pudieron consultar asignaturas del Ciclo.') } }
+    if (row) { const [r,enrolled] = await Promise.all([client.from('ciclo_materia').select('id,materia_id,activo,origen,motivo_inactivacion').eq('ciclo_id', row.id),client.from('matricula').select('id').eq('ciclo_id',row.id).eq('estado_codigo','ACTIVO').limit(1)]); if (request !== editEpoch.current) return; if (!r.error && !enrolled.error) { setRelations(r.data); setHasActiveEnrollments(enrolled.data.length>0); setRelationsStatus('ready') } else { setRelationsStatus('error'); setMessage('No se pudieron consultar asignaturas y matrículas del Ciclo.') } }
   }
   async function save(event: FormEvent) {
     event.preventDefault()
@@ -294,11 +297,23 @@ export function Ciclos({initialCycleId}:{initialCycleId?:string}={}) {
     const r = await client.rpc('guardar_ciclo', { p: { ...(selected ? { id: selected.id, expected_updated_at: selected.updated_at } : {}), ...draft, nombre_promocion: draft.nombre_promocion || null }, adicionales: additional })
     setBusy(false); if (r.error) { setMessage(academicError(r.error)); return }; ++editEpoch.current; setOpen(false); setMessage(selected ? 'Ciclo actualizado correctamente.' : 'Ciclo creado correctamente.'); setRevision(x => x + 1)
   }
+  async function changeSubject(subject: string, active: boolean, confirmed = false) {
+    if (!selected) return
+    setBusy(true); setMessage('')
+    const r = await client.rpc('cambiar_materia_ciclo', { ciclo_id: selected.id, materia_id: subject, expected_updated_at: selected.updated_at, activo: active, ...(confirmed ? {confirmar_matriculas_activas:true} : {}) })
+    setBusy(false)
+    if (r.error?.code==='23514' && r.error.message==='Confirmación requerida para asignaturas con matrículas activas' && director && !confirmed) {
+      setHasActiveEnrollments(true)
+      if(await ask({title:'Modificar asignaturas con matrículas activas',description:activeSubjectWarning,confirmLabel:'Continuar',sensitive:true})!==null) await changeSubject(subject,active,true)
+      return
+    }
+    if (r.error) { setMessage(academicError(r.error)); return }
+    void edit(r.data as Ciclo,false,1); setMessage('Asignaturas del Ciclo actualizadas correctamente.'); setRevision(x=>x+1)
+  }
   async function relation(row: Relacion) {
-    if (!selected || readOnly || !editable || dirty || tariffsDirty || relationsStatus !== 'ready') return
-    if (await ask({ title: row.activo ? 'Retirar Asignatura del Ciclo' : 'Reactivar Asignatura del Ciclo', confirmLabel: row.activo ? 'Retirar Asignatura' : 'Reactivar Asignatura', sensitive: row.activo, description: `${academicLabel(materias.find(m => m.id === row.materia_id)!)}. ${row.activo ? (row.origen === 'HEREDADA' ? 'Continuará perteneciendo a el Curso, pero dejará de estar activa únicamente en este Ciclo. Se conserva su historial y los cambios del Curso no la reactivarán.' : 'Dejará de estar activa únicamente en este Ciclo, sin borrar su historial.') : 'Se reactivará explícitamente esta relación conservando su origen.'}` }) === null) return
-    setBusy(true); const r = await client.rpc('cambiar_materia_ciclo', { ciclo_id: selected.id, materia_id: row.materia_id, expected_updated_at: selected.updated_at, activo: !row.activo }); setBusy(false)
-    if (r.error) { setMessage(academicError(r.error)); return }; void edit(r.data as Ciclo, false, 1); setMessage(`Asignatura ${row.activo ? 'retirada' : 'reactivada'} correctamente.`); setRevision(x => x + 1)
+    if (!selected || readOnly || !editable || dirty || tariffsDirty || relationsStatus !== 'ready' || (hasActiveEnrollments && !director)) return
+    if (await ask({ title: row.activo ? 'Retirar Asignatura del Ciclo' : 'Reactivar Asignatura del Ciclo', confirmLabel: row.activo ? 'Retirar Asignatura' : 'Reactivar Asignatura', sensitive: row.activo || !!hasActiveEnrollments, description: `${academicLabel(materias.find(m => m.id === row.materia_id)!)}. ${hasActiveEnrollments ? activeSubjectWarning : row.activo ? (row.origen === 'HEREDADA' ? 'Continuará perteneciendo a el Curso, pero dejará de estar activa únicamente en este Ciclo. Se conserva su historial y los cambios del Curso no la reactivarán.' : 'Dejará de estar activa únicamente en este Ciclo, sin borrar su historial.') : 'Se reactivará explícitamente esta relación conservando su origen.'}` }) === null) return
+    await changeSubject(row.materia_id,!row.activo,hasActiveEnrollments===true)
   }
   async function transition(event: FormEvent) {
     event.preventDefault(); if (!selected || !director || !editable || readOnly || dirty || tariffsDirty) return
@@ -315,19 +330,18 @@ export function Ciclos({initialCycleId}:{initialCycleId?:string}={}) {
   const availableSubjects = materias.filter(m=>m.active && !previewRelations.some(r=>r.materia_id===m.id))
   const normalizedSubjectSearch = subjectSearch.normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase()
   const matchingSubjects = normalizedSubjectSearch && !subjectId ? availableSubjects.filter(m=>m.nombre.normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(normalizedSubjectSearch)) : []
-  const canAddSubject = !readOnly && editable && !busy && !dirty && !tariffsDirty && relationsStatus==='ready' && inheritedStatus==='ready'
+  const canAddSubject = !readOnly && editable && !busy && !dirty && !tariffsDirty && relationsStatus==='ready' && inheritedStatus==='ready' && (!selected || hasActiveEnrollments!==null) && (!hasActiveEnrollments || director)
   async function addSubject() {
     if (!canAddSubject || !availableSubjects.some(m=>m.id===subjectId)) return
     if (!selected) { setAdditional(ids=>[...ids,subjectId]); setSubjectSearch(''); setSubjectId(''); return }
-    setBusy(true); setMessage('')
-    const r=await client.rpc('guardar_ciclo',{p:{id:selected.id,expected_updated_at:selected.updated_at,...draft,nombre_promocion:draft.nombre_promocion || null},adicionales:[subjectId]})
-    setBusy(false)
-    if(r.error) {setMessage(academicError(r.error));return}
-    void edit(r.data as Ciclo,false,1);setMessage('Asignatura adicional agregada correctamente.');setRevision(x=>x+1)
+    if(hasActiveEnrollments && await ask({title:'Agregar asignatura con matrículas activas',description:activeSubjectWarning,confirmLabel:'Agregar Asignatura',sensitive:true})===null) return
+    await changeSubject(subjectId,true,hasActiveEnrollments===true)
   }
+
   const cycleSubjects = <>
     <h3>Asignaturas del Ciclo</h3>
     <p className="help-text">Las asignaturas del Curso se incorporan automáticamente al crear el Ciclo. Puedes agregar asignaturas adicionales o retirar una asignatura únicamente de este Ciclo.</p>
+    {hasActiveEnrollments && <p role="note" className="help-text">{director ? 'Este Ciclo tiene matrículas activas. Cambiar sus asignaturas requiere tu confirmación.' : 'Este Ciclo tiene matrículas activas. Solo el Director puede modificar sus asignaturas.'}</p>}
     {!selected && <p className="help-text">Esta lista se guardará al crear el Ciclo.</p>}
     {!readOnly && dirty && <p className="help-text">Guarda o cancela los cambios del Ciclo para modificar sus asignaturas.</p>}
     {(relationsStatus==='loading' || inheritedStatus==='loading') && <p role="status">Cargando asignaturas del Ciclo…</p>}
@@ -339,7 +353,7 @@ export function Ciclos({initialCycleId}:{initialCycleId?:string}={}) {
       {canAddSubject && normalizedSubjectSearch && !subjectId && <div className="cycle-subject-results"><ul aria-label="Resultados de asignaturas adicionales">{matchingSubjects.slice(0,8).map(m=><li key={m.id}><button type="button" onClick={()=>{setSubjectId(m.id);setSubjectSearch(m.nombre)}}>{m.nombre}</button></li>)}</ul><p className="help-text" role="status">{matchingSubjects.length ? matchingSubjects.length>8 ? 'Se muestran 8 resultados. Escribe más para precisar la búsqueda.' : `${matchingSubjects.length} coincidencias` : 'No hay asignaturas activas disponibles que coincidan.'}</p></div>}
     </div>}
     {relationsStatus==='ready' && inheritedStatus!=='loading' && inheritedStatus!=='error' && <div className="table-scroll"><table aria-label="Asignaturas del Ciclo"><thead><tr><th scope="col">Asignatura</th><th scope="col">Origen</th><th scope="col">Estado</th><th scope="col">Acción</th></tr></thead><tbody>
-      {previewRelations.filter(r=>showRetired || r.activo).map(r=>{const m=materias.find(m=>m.id===r.materia_id);return <tr key={r.id}><td>{m?.nombre ?? 'Referencia no disponible'}</td><td>{r.origen==='HEREDADA'?'Curso':'Adicional'}</td><td><span title={!r.activo ? r.motivo_inactivacion==='CAMBIO_CARRERA'?'Retirada por cambio de Curso':'Retirada manualmente':undefined}>{r.activo?'Activa':'Retirada'}</span></td><td>{!readOnly && editable ? selected ? <button type="button" className="secondary" disabled={busy || dirty || tariffsDirty || relationsStatus!=='ready'} onClick={()=>void relation(r)}>{r.activo?'Retirar':'Reactivar'}</button> : r.origen==='ADICIONAL' ? <button type="button" className="secondary" disabled={busy} onClick={()=>setAdditional(ids=>ids.filter(id=>id!==r.materia_id))}>Quitar</button> : 'Al crear el Ciclo' : 'Solo consulta'}</td></tr>})}
+      {previewRelations.filter(r=>showRetired || r.activo).map(r=>{const m=materias.find(m=>m.id===r.materia_id);return <tr key={r.id}><td>{m?.nombre ?? 'Referencia no disponible'}</td><td>{r.origen==='HEREDADA'?'Curso':'Adicional'}</td><td><span title={!r.activo ? r.motivo_inactivacion==='CAMBIO_CARRERA'?'Retirada por cambio de Curso':'Retirada manualmente':undefined}>{r.activo?'Activa':'Retirada'}</span></td><td>{!readOnly && editable ? selected ? <button type="button" className="secondary" disabled={busy || dirty || tariffsDirty || relationsStatus!=='ready' || (!!hasActiveEnrollments && !director)} onClick={()=>void relation(r)}>{r.activo?'Retirar':'Reactivar'}</button> : r.origen==='ADICIONAL' ? <button type="button" className="secondary" disabled={busy} onClick={()=>setAdditional(ids=>ids.filter(id=>id!==r.materia_id))}>Quitar</button> : 'Al crear el Ciclo' : 'Solo consulta'}</td></tr>})}
       {!previewRelations.some(r=>showRetired || r.activo) && <tr><td colSpan={4}>{showRetired?'No hay asignaturas registradas.':'No hay asignaturas activas en este Ciclo.'}</td></tr>}
     </tbody></table></div>}
     {selected && <label className="show-retired-subjects"><input type="checkbox" checked={showRetired} onChange={e=>setShowRetired(e.currentTarget.checked)}/>Mostrar retiradas</label>}

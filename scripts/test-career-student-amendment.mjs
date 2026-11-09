@@ -25,7 +25,7 @@ export async function verifyCareerStudentAmendment() {
   for(const course of approved.courses)for(const subject of course.subjects)assert.ok(seeded.some(x=>x.code===course.code&&x.subject===subject&&x.resolution===course.resolution&&x.date===course.resolution_date&&x.source===course.source&&x.authorization===approved.authorization),'Missing approved DICAPI subject or source');
   const before=inspectDatabase(fingerprint)
   assertSecurityInventory(securityInventory())
-  for (const file of ['career-dicapi','career-student-amendment','h2-optional-career-modality','h3-occupation']) {
+  for (const file of ['director-cycle-subjects','career-dicapi','career-student-amendment','h2-optional-career-modality','h3-occupation']) {
     const sql=readFileSync(`tests/sql/${file}.sql`,'utf8')
     await transaction(sql)
     assert.equal(inspectDatabase(fingerprint),before,'Rollback changed existing records')

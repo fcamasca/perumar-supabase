@@ -81,3 +81,9 @@ Validación CHG-H3-007: 253 pruebas en 15 archivos, lint, typecheck, build y git
 
 
 [CHG-H3-008 — Información DICAPI y carga inicial de pesca](approved-career-dicapi-amendment.md), autorizada 04/11/2026: cinco campos opcionales solo en Carrera, RPC existente, pestaña Información DICAPI/búsqueda por código y carga idempotente MAM-009/MAM-010 con 10/7 asociaciones. Sin reescribir Ciclos/matrículas/snapshots, sin horas. Spec aprobado conservado y Gate 2 pendiente.
+
+## Enmienda CHG-H3-011 — 09/11/2026
+
+El bloqueo absoluto de asignaturas con matrículas activas se sustituye por confirmación explícita solo Director. Coordinador sigue bloqueado. Véase [regla autorizada](approved-director-cycle-subjects-amendment.md). Cambiar Curso con activas, historia/códigos/cargos, terminalidad y versiones se conservan. Sigue un único cambiar_materia_ciclo, con quinto argumento booleano opcional; 17 RPC/16 helpers/22 tablas públicas/25 policies; 15 migraciones. Validación SQL con rollback y ensayo humano/Gate 2 pendientes de consolidar sobre candidato.
+
+Validación final CHG-H3-011: migración aplicada incrementalmente en Supabase local, sin reset ni datos de negocio modificados por la migración. Suite completa 283/283 pruebas en 17 archivos; lint/typecheck/build/git diff --check correctos. SQL director-cycle-subjects y regresión de enmiendas/catálogos/códigos correctos con rollback; inventario exacto verificado, 8 transacciones concurrentes de código Alumno correctas. Advertencia conocida de bundle >500 kB. Revisión humana de la nueva confirmación y Gate 2 pendientes.
