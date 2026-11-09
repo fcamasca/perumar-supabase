@@ -29,9 +29,13 @@ El usuario aprobó humanamente Gate 1 sobre el Spec exacto `5c4f57de6618fb0568c6
 
 H2 — Base académica: **CLOSED / ACEPTADO / INTEGRADO**. El usuario aprobó explícitamente Gate 2 sobre `796a47aa4c1ce21c6cf8c81e9c631a22202bb709`: TEST-H2-018 y TEST-H2-020 PASSED humanos; TEST-H2-019 completado con Sistema/Claro/Oscuro/Alto contraste revisados, persistencia, teclado/foco y OBS-UX-01 a 04 PASSED. **forced-colors real del sistema operativo no fue verificado manualmente en H2; el usuario aceptó este riesgo en Gate 2.** La [aceptación](specs/H2-academic/acceptance.md) registra la decisión, CI del candidato completamente verde y cierre exclusivamente documental con integración trazable. H3 tiene Spec elaborado; véase el estado vigente siguiente.
 
-### Estado vigente de H3 — candidato técnico del 23/10/2026
+### Estado vigente de H3 — cierre del 09/11/2026
 
-H3 — Alumno y Matrícula: **CONSTRUCCIÓN COMPLETADA TÉCNICAMENTE / PENDIENTE DE PRUEBAS HUMANAS Y GATE 2**. Gate 1 aprobado humanamente sobre `551cd00ed2957178400dca8fe9d945cf3f9e8d20`; [registro](specs/H3-enrollment/gate-1.md). Cuatro documentos aprobados intactos; OQ-H3-001…008 resueltas. Valores iniciales de siete catálogos autorizados el 23/10/2026, solo DNI/CE en H3. [Evidencia técnica](specs/H3-enrollment/technical-results.md), [registro de construcción](specs/H3-enrollment/implementation-log.md) y [guía humana](specs/H3-enrollment/human-test-guide.md). CI del candidato se informa por SHA al publicar, sin sustituir decisión humana. Sin acceptance ni merge; EVOL-001/002 y H4+ excluidos.
+H3 — Alumno y Matrícula: **CLOSED / ACEPTADO / INTEGRADO** al incorporarse este cierre a `main` mediante PR/merge commit trazable; en la rama de cierre la integración permanece autorizada y condicionada a CI SUCCESS. Gate 2 aprobado humanamente sobre `42dcd1507a28121e9d8d588c2dff22cb263cd19d`, con Gate 1 en `551cd00ed2957178400dca8fe9d945cf3f9e8d20` y enmiendas posteriores aceptadas. La [aceptación](specs/H3-enrollment/acceptance.md) registra CI exacta run 42682734012 COMPLETED / SUCCESS, evidencia técnica 283/283 y nueve bloques humanos reportados OK en Chrome / Windows 11 Pro.
+
+**forced-colors / contraste alto real de Windows: NO VERIFICADO; riesgo residual aceptado explícitamente en Gate 2.** Los subcasos humanos de CHG-H3-011 no se inventan como ejecuciones individuales; existe cobertura técnica y Gate 2 acepta el paquete. TEST-H3-044 tampoco se declara ejecutado separadamente: el usuario acepta arquitectura/mantenibilidad documentadas como suficientes para el cierre. Los cuatro documentos aprobados de Gate 1 permanecen intactos.
+
+**H4 NO INICIADO**. Requiere instrucción humana posterior; no se prepara Spec ni construcción automáticamente. EVOL-001/002 y funcionalidades H4+ no se incorporan en este cierre.
 
 ### Seguimiento histórico de H0 — estado anterior al cierre
 
@@ -699,7 +703,7 @@ El PLAN vigente debe reflejar el estado real del proyecto.
 | H0 Bootstrap | ACEPTADO — Gate 2 aprobado 21/10/2026 |
 | H1 Seguridad base | ACEPTADO / INTEGRADO — Gate 2 aprobado 22/10/2026 |
 | H2 Base académica | CLOSED / ACEPTADO / INTEGRADO — Gate 2 aprobado 22/10/2026; riesgo forced-colors aceptado |
-| H3 Alumno y Matrícula | NO INICIADO |
+| H3 Alumno y Matrícula | CLOSED / ACEPTADO / INTEGRADO en main con el merge de este cierre — Gate 2 aprobado 09/11/2026; [aceptación](specs/H3-enrollment/acceptance.md), residual forced-colors aceptado |
 | H4 Pagos | NO INICIADO |
 | H5 Ficha PDF | NO INICIADO |
 | Gate A01 | BLOQUEADO |
@@ -712,6 +716,6 @@ El PLAN vigente debe reflejar el estado real del proyecto.
 
 # 14. Próximo paso
 
-H2 está cerrado tras Gate 2 humano. H3 — Alumno y Matrícula permanece **NO INICIADO**.
+H3 está CLOSED / ACEPTADO humanamente; su integración en main se hace efectiva con el PR/merge commit de este cierre, condicionado a CI SUCCESS. Véase [acceptance.md](specs/H3-enrollment/acceptance.md).
 
-La siguiente actividad requiere una instrucción humana posterior para preparar exclusivamente el Spec de H3 (requirements.md, design.md, tasks.md y test-plan.md) y detenerse para revisión y aprobación humana. No generar ese Spec ni iniciar construcción de H3 como parte del cierre de H2.
+**H4 — Pagos: NO INICIADO.** La siguiente actividad requiere una instrucción humana posterior para preparar su Spec y someterlo a Gate 1. No generar Spec ni iniciar construcción de H4 como parte del cierre de H3.
