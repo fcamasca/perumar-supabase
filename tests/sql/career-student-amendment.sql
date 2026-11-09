@@ -1,0 +1,43 @@
+begin;
+set local lock_timeout='3s';
+do $$ declare actor uuid; m public.materia; c public.carrera; a public.alumno; b public.alumno; p jsonb; token text:=upper(substr(replace(gen_random_uuid()::text,'-',''),1,8)); mode uuid; begin
+ select ur.user_id into strict actor from public.app_user_roles ur join public.app_users u on u.id=ur.user_id join public.app_roles r on r.code=ur.role_code where ur.role_code='DIRECTOR_ACADEMICO' and u.active and r.active limit 1;
+ perform set_config('request.jwt.claim.sub',actor::text,true);
+ m:=public.guardar_materia(jsonb_build_object('nombre','SYNTHETIC CODE '||token));
+ if m.codigo is not null then raise exception 'New Materia has legacy code'; end if;
+ update public.materia set codigo='LEGACY'||token where id=m.id returning * into m;
+ m:=public.guardar_materia(jsonb_build_object('id',m.id,'expected_updated_at',m.updated_at::text,'nombre',m.nombre,'descripcion','EDIT'));
+ if m.codigo<>'LEGACY'||token then raise exception 'Lost legacy Materia code'; end if;
+ begin perform public.guardar_materia(jsonb_build_object('nombre','FORGED','codigo','CODE')); raise exception 'Product legacy code allowed'; exception when invalid_parameter_value then null; end;
+ p:=jsonb_build_object('nombre','SYNTHETIC CAREER '||token,'sigla','S'||token);
+ c:=public.guardar_carrera(p,array[m.id]);
+ select v.id into strict mode from public.catalogo_valor v join public.catalogo cat on cat.id=v.catalogo_id where cat.codigo='MODALIDAD_CARRERA' and v.codigo='PRESENCIAL';
+ if c.codigo is not null or c.con_experiencia or c.modalidad_id is distinct from mode then raise exception 'Wrong Career defaults'; end if;
+ update public.carrera set codigo='LEGACY'||token where id=c.id returning * into c;
+ p:=p||jsonb_build_object('id',c.id,'expected_updated_at',c.updated_at::text,'con_experiencia',true,'modalidad_id',mode);
+ c:=public.guardar_carrera(p,array[m.id]);
+ if not c.con_experiencia or c.codigo<>'LEGACY'||token then raise exception 'Flag or legacy Career lost'; end if;
+ begin perform public.guardar_carrera(p,array[m.id]); raise exception 'Stale Career accepted'; exception when serialization_failure then null; end;
+ p:=p||jsonb_build_object('expected_updated_at',c.updated_at::text);
+ begin perform public.guardar_carrera(p||jsonb_build_object('con_experiencia','S'),array[m.id]); raise exception 'String flag accepted'; exception when invalid_parameter_value then null; end;
+ begin perform public.guardar_carrera(p||jsonb_build_object('con_experiencia',null),array[m.id]); raise exception 'Null flag accepted'; exception when invalid_parameter_value then null; end;
+ begin perform public.guardar_carrera(p||jsonb_build_object('codigo','FORGED'),array[m.id]); raise exception 'Product Career legacy code accepted'; exception when invalid_parameter_value then null; end;
+ select jsonb_build_object('apellido_paterno','PRUEBA','apellido_materno','SINTETICA','nombres','OCUPACION','tipo_di_id',(select v.id from public.catalogo_valor v join public.catalogo catp on catp.id=v.catalogo_id where catp.codigo='TIPO_DI' and v.codigo='DNI'),'numero_di','98765432','fecha_nacimiento','2000-01-01','sexo_id',(select v.id from public.catalogo_valor v join public.catalogo catp on catp.id=v.catalogo_id where catp.codigo='SEXO' and v.codigo='F'),'celular','999111222','domicilio','SINTETICO','nacimiento_departamento_id',pr.departamento_id,'nacimiento_provincia_id',pr.id,'nacimiento_distrito_id',d.id,'domicilio_departamento_id',pr.departamento_id,'domicilio_provincia_id',pr.id,'domicilio_distrito_id',d.id,'contactos',jsonb_build_array(jsonb_build_object('apellido','CONTACTO','nombre','SINTETICO','celular','999111222','parentesco_id',(select v.id from public.catalogo_valor v join public.catalogo catp on catp.id=v.catalogo_id where catp.codigo='PARENTESCO' and v.codigo='PADRE')))) into strict p from public.distrito d join public.provincia pr on pr.id=d.provincia_id where d.active and pr.active limit 1;
+
+ -- Unique synthetic CE avoids collisions with real test documents.
+ p:=p||jsonb_build_object('numero_di',replace(gen_random_uuid()::text,'-',''),'tipo_di_id',(select v.id from public.catalogo_valor v join public.catalogo cat on cat.id=v.catalogo_id where cat.codigo='TIPO_DI' and v.codigo='CARNET_EXTRANJERIA'));
+ p:=p||jsonb_build_object('numero_di',left(p->>'numero_di',30));
+ a:=public.guardar_alumno(p);
+ if a.codigo_alumno !~ '^A-[0-9]{7,}$' then raise exception 'Invalid automatic code'; end if;
+ b:=public.guardar_alumno(p||jsonb_build_object('numero_di',left(replace(gen_random_uuid()::text,'-',''),30)));
+ if b.codigo_alumno=a.codigo_alumno then raise exception 'Repeated code'; end if;
+ begin perform public.guardar_alumno(p||jsonb_build_object('codigo_alumno','A-9999999')); raise exception 'Writable code in RPC'; exception when invalid_parameter_value then null; end;
+ begin update public.alumno set codigo_alumno='A-9999999' where id=a.id; raise exception 'Mutable code'; exception when check_violation then null; end;
+ p:=p-'contactos'||jsonb_build_object('id',a.id,'expected_updated_at',a.updated_at::text,'nombres','EDITADO');
+ b:=public.guardar_alumno(p);
+ if b.codigo_alumno<>a.codigo_alumno then raise exception 'Code regenerated on edit'; end if;
+ if private.enrollment_snapshot(a.id)#>>'{alumno,codigo_alumno}'<>a.codigo_alumno then raise exception 'New snapshot omits code'; end if;
+ if has_sequence_privilege('authenticated','private.alumno_codigo_seq','USAGE,SELECT,UPDATE') or has_sequence_privilege('anon','private.alumno_codigo_seq','USAGE,SELECT,UPDATE') then raise exception 'Sequence exposed'; end if;
+ set constraints all immediate;
+end $$;
+rollback;

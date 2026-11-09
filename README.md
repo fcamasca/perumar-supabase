@@ -138,9 +138,9 @@ Los scripts operativos son exclusivamente locales. El guard acepta loopback estr
 
 H2 está integrado en main. Para reproducir exactamente el candidato aceptado, usar `796a47aa4c1ce21c6cf8c81e9c631a22202bb709`; feature/h2-academic conserva además el cierre documental. No ejecutar dos clones del mismo project_id a la vez. El main anterior al merge H2 no contiene H2. Seguir los mismos requisitos y guard locales de esta guía.
 
-Orden técnico: `npm ci`, `npm run supabase:start`, `npm run supabase:reset`, `npm run supabase:env` (solo si .env.local no existe), `npm run test:local`, `npm run test:security`, `npm run test:academic`, `npm run build`, `npm run test:build-safety`. `test:expiry` cambia temporalmente solo jwt_expiry local, restaura archivo exacto y reinicia stack; no ejecutarlo con fixtures humanos abiertos. No ejecutar suites técnicas concurrentemente sobre la misma base.
+Orden técnico: `npm ci`, `npm run supabase:start`, `npm run supabase:reset`, `npm run supabase:env` (solo si .env.local no existe), `npm run test:local`, `npm run test:security`, `npm run build`, `npm run test:build-safety`. `test:expiry` cambia temporalmente solo jwt_expiry local, restaura archivo exacto y reinicia stack; no ejecutarlo con fixtures humanos abiertos. No ejecutar suites técnicas concurrentemente sobre la misma base.
 
-`test:academic` usa peticiones ordinarias por actor para permisos/invariantes; SQL administrativo solo para inspección, preparación controlada de contador y fallo temporal de auditoría con restauración en finally. Fixtures de negocio se retiran reconstruyendo la base local con `supabase:reset` después de la suite, no mediante un DELETE de producto de Ciclos permanentes. Identidades efímeras se eliminan por UUID en finally; no cuentas reales.
+`test:academic` queda restringido a GitHub Actions (`CI=true` y `GITHUB_ACTIONS=true`), sobre la base desechable del workflow. Rechaza ejecuciones locales antes de crear identidades o datos. Usa peticiones ordinarias por actor para permisos/invariantes y deja fixtures de negocio que desaparecen al destruir la base aislada de CI. No ejecutarlo sobre la base de pruebas humanas ni establecer esas variables para eludir el bloqueo. La verificación local acotada de enmiendas puede ejecutarse con `node scripts/test-career-student-amendment.mjs`: cambios transaccionales con rollback, sin reset; la secuencia de Alumno puede consumir números sin requisito gapless.
 
 Rutas: `/academico/materias`, `/academico/carreras`, `/academico/ciclos`, `/academico/auditoria`. Director mantiene Materias/Carreras y transiciona Ciclos; Coordinador tiene lectura referencial y opera PROGRAMADO/EN_CURSO; Admin Sistema solo auditoría y directorio de seguridad de lectura, sin CRUD académico. Los roles se asignan explícitamente: no equivalencias ADMIN/OPERADOR. No gestión HU17/HU18.
 
@@ -149,3 +149,23 @@ Ensayo humano: `npm run dev` en una terminal y `npm run fixtures:human` en otra;
 Los cuatro modos visuales usan preferencia local del navegador, Sistema predeterminado y prioridad de forced-colors del SO; no se guardan en Auth/DB. Las medidas automáticas de contraste no constituyen conformidad WCAG completa ni prueba humana.
 
 Fuentes de referencia y hashes: [sources.json](supabase/reference/sources.json). Snapshot oficial INEI 2022: 25 departamentos, 196 provincias y 1891 distritos (no se afirma vigencia exhaustiva a 2026); DICAPI snapshot 22/10/2026: 19 Capitanías. Atribución INEI/Plataforma Nacional de Datos Abiertos, licencia de datos ODbL indicada en el dataset. Referencias públicas transformadas, no datos de usuarios. Reset no requiere red para obtener catálogos; carga inicial versionada sin todo HU20.
+
+
+## Navegación candidata H3 (Gate 2 pendiente)
+
+El registro se opera desde **Ciclos → abrir Ciclo → Matrículas**. La grilla contiene alumnos matriculados; su filtro no busca candidatos nuevos. **Matricular alumno** abre únicamente búsqueda por apellidos, nombres o documento y resultados con **Agregar**. Agregar registra con cargos obligatorios y actualiza la grilla, manteniendo búsqueda lista para el siguiente. Los demás datos se gestionan desde **Editar matrícula** en cada fila, en pantalla completa. Si faltan requisitos obligatorios no se crea matrícula parcial. Nuevo/editar Alumno mantiene formulario completo y retorno al mismo Ciclo.
+
+Matrícula se retira del menú principal. `/matriculas/nueva` redirige a Ciclos; `/matriculas/:id` conserva detalle y acciones permitidas, con regreso a la pestaña del Ciclo. Alumno conserva su historial de Matrículas. Véanse [CHG-H3-006](docs/specs/H3-enrollment/approved-quick-add-amendment.md), [CHG-H3-005](docs/specs/H3-enrollment/approved-cycle-enrollment-amendment.md) y [guía humana H3](docs/specs/H3-enrollment/human-test-guide.md). El Spec aprobado se conserva; este cambio no aprueba Gate 2 ni sustituye la aceptación histórica H2.
+
+
+**Configuración de tarifas del Ciclo (CHG-H3-007):** en la ficha, **Datos | Materias | Tarifas | Matrículas | Estado**. Director agrega conceptos del catálogo y define importe propio/obligatoriedad; Coordinador consulta. Guardar no recalcula cargos históricos. El menú Tarifas mantiene solo catálogo general; ya no hay un segundo editor por Ciclo allí. Configuración CARRERA faltante o pendiente se señala antes de matricular. Ver [enmienda vigente](docs/specs/H3-enrollment/approved-cycle-tariffs-amendment.md).
+
+
+**Información DICAPI de Carrera (CHG-H3-008):** pestañas Datos generales | Materias | Información DICAPI. Código oficial separado de sigla/código legado, resolución/fecha de malla, autorización del centro, URL de resolución de malla con enlace de consulta y observaciones opcionales. Búsqueda también por código DICAPI. Carga inicial controlada de MAM-009/MAM-010 y sus materias, sin modificar Ciclos anteriores. [Enmienda y fuentes oficiales](docs/specs/H3-enrollment/approved-career-dicapi-amendment.md).
+
+
+**Terminología visible vigente (CHG-H3-009):** menú y pantallas usan **Cursos** (antes Carreras), **Asignaturas** (antes Materias) y **Ciclos**. Cambia presentación y mensajes, manteniendo rutas, modelo, RPC y datos. [Precisión terminológica autorizada](docs/specs/H3-enrollment/approved-ui-terminology-amendment.md).
+
+Carga inicial vigente: seis Cursos autorizados de PERÚ MAR, 31 Asignaturas distintas y 44 asociaciones; ver [CHG-H3-010](docs/specs/H3-enrollment/approved-authorized-courses-initial-load.md).
+
+Regla vigente: solo Director puede confirmar cambios de asignaturas del Ciclo con matrículas activas; ver [CHG-H3-011](docs/specs/H3-enrollment/approved-director-cycle-subjects-amendment.md). Historial, cargos y códigos se conservan.

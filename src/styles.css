@@ -183,3 +183,288 @@ footer > .technical-details { opacity:1; }
   nav a[aria-current=page] { border:2px solid Highlight; text-decoration:underline; }
   [aria-invalid=true],button.sensitive { border-style:dashed; }
 }
+
+/* H3 consumes the existing semantic palette. */
+.enrollment-steps { display:flex; flex-wrap:wrap; gap:.65rem 1.25rem; list-style:none; margin:1.25rem 0; padding:0; }
+.enrollment-steps [aria-current="step"] { font-weight:700; text-decoration:underline; }
+.snapshot-detail { white-space:pre-wrap; overflow-wrap:anywhere; max-width:100%; }
+[role="tablist"] { display:flex; flex-wrap:wrap; gap:.5rem; margin-block:1rem; }
+[role="tab"][aria-selected="true"] { outline:2px solid currentColor; outline-offset:2px; }
+
+/* H3 field widths follow the content, preserving DOM/tab order. */
+.form-grid { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:1rem 1.25rem; align-items:start; }
+.form-grid > label[data-field] { grid-column:span 4; min-width:0; width:100%; max-width:none; margin:0; }
+.form-grid > label[data-field] > :is(input,select,textarea) { width:100%; max-width:100%; }
+.form-grid > label:is([data-field="tipo_di_id"],[data-field="numero_di"],[data-field="celular"],[data-field="telefono_fijo"],[data-field="parentesco_id"],[data-field="grupo_sanguineo_id"],[data-field="grado_instruccion_id"],[data-field="color_ojos_id"],[data-field="color_cabello_id"],[data-field="estatura_cm"],[data-field="peso_kg"],[data-field="ruc"]) { grid-column:span 3; }
+.form-grid > label:is([data-field="fecha_nacimiento"],[data-field="sexo_id"],[data-field="estado_civil_id"],[data-field="nacimiento_departamento_id"],[data-field="nacimiento_provincia_id"],[data-field="nacimiento_distrito_id"]) { grid-column:span 3; }
+.form-grid > label:is([data-field="email"],[data-field="apellido"],[data-field="nombre"],[data-field="direccion"],[data-field="persona_contacto"],[data-field="ocupacion"],[data-field="senas_particulares"]) { grid-column:span 6; }
+.form-grid > label[data-field="domicilio"] { grid-column:span 8; }
+.form-grid > label[data-field="razon_social"] { grid-column:span 9; }
+.form-grid > label[data-field="descripcion"] { grid-column:1 / -1; }
+@media (max-width:60rem) {
+  .form-grid > label[data-field] { grid-column:span 6; }
+  .form-grid > label:is([data-field="nombres"],[data-field="domicilio"],[data-field="direccion"],[data-field="razon_social"],[data-field="descripcion"],[data-field="senas_particulares"]) { grid-column:1 / -1; }
+}
+@media (max-width:40rem) {
+  .form-grid { grid-template-columns:minmax(0,1fr); }
+  .form-grid > label[data-field] { grid-column:1 / -1; }
+}
+
+.icon-label { display:inline-flex; align-items:center; gap:.5rem; vertical-align:middle; }
+.icon-label > svg { width:1.2rem; height:1.2rem; flex:none; }
+
+/* Student search and creation share one responsive toolbar. */
+.students-toolbar { flex-wrap:nowrap; }
+.students-toolbar > .student-search { flex:1 1 0%; min-width:0; max-width:none; }
+.search-input { position:relative; display:block; min-width:0; }
+.search-input > svg { position:absolute; inset-inline-start:.85rem; top:50%; transform:translateY(-50%); width:1.15rem; height:1.15rem; color:var(--text-secondary); pointer-events:none; }
+.search-input > input { padding-inline-start:2.65rem; }
+.toolbar-action { position:relative; display:inline-flex; flex:none; }
+.icon-action { display:inline-flex; align-items:center; justify-content:center; width:2.85rem; min-height:2.85rem; border:1px solid var(--primary); border-radius:.6rem; background:var(--primary); color:var(--primary-contrast); text-decoration:none; }
+.icon-action:hover { background:var(--primary-hover); border-color:var(--primary-hover); }
+.icon-action > svg { width:1.2rem; height:1.2rem; }
+.toolbar-tooltip { position:absolute; inset-inline-end:0; top:calc(100% + .35rem); z-index:10; white-space:nowrap; padding:.45rem .65rem; border:1px solid var(--border-strong); border-radius:.4rem; background:var(--surface-elevated); color:var(--text-primary); box-shadow:var(--shadow); font-size:.8rem; visibility:hidden; opacity:0; transition:opacity .12s,visibility 0s .12s; }
+.toolbar-action:is(:hover,:focus-within) > .toolbar-tooltip:not([hidden]) { visibility:visible; opacity:1; transition-delay:0s; }
+@media (forced-colors:active) {
+  .icon-action,.icon-action:hover,.toolbar-tooltip { border-color:ButtonText; background:Canvas; color:CanvasText; }
+}
+
+.search-input input::-webkit-search-decoration { -webkit-appearance:none; }
+
+.student-review { display:grid; gap:1.1rem; }
+.student-review > p { margin:0; }
+.review-identity { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.5rem 1.5rem; padding:1rem 1.15rem; border:1px solid var(--border-soft); border-radius:.65rem; background:var(--brand-soft); overflow-wrap:anywhere; }
+.review-identity strong { font-size:1.05rem; }
+.review-section { margin:0; padding:1.15rem; border:1px solid var(--border-soft); border-radius:.75rem; background:var(--surface); }
+.review-section-heading { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem; margin-bottom:1rem; }
+.review-section-heading h3 { margin:0; font-size:1rem; }
+.review-section-heading button { min-height:2.5rem; padding:.45rem .8rem; }
+.review-fields { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1rem 1.5rem; margin:0; }
+.review-fields > div { min-width:0; }
+.review-fields dt { color:var(--text-secondary); font-size:.8rem; margin-bottom:.2rem; }
+.review-fields dd { margin:0; font-weight:600; white-space:pre-wrap; overflow-wrap:anywhere; }
+.review-fields dd.review-empty { font-weight:400; color:var(--text-secondary); }
+.review-wide { grid-column:1 / -1; }
+.review-age { margin:.9rem 0 0; color:var(--text-secondary); font-size:.85rem; }
+.review-contact + .review-contact { border-top:1px solid var(--border-soft); margin-top:1rem; padding-top:1rem; }
+.review-contact-notice { margin:1rem 0 0; padding:.8rem 1rem; border-inline-start:3px solid var(--warning); background:var(--surface-elevated); }
+.review-section > .help-text { margin:1rem 0 0; }
+@media(max-width:60rem) { .review-fields { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:40rem) { .review-fields { grid-template-columns:minmax(0,1fr); } .review-section { padding:1rem; } }
+
+.form-grid > label[data-field="senas_particulares"] { grid-column: 1 / -1; }
+.form-grid textarea { width: 100%; box-sizing: border-box; resize: vertical; min-height: 5.5rem; }
+.occupation-field > label { display: block; }
+
+.form-grid > .occupation-field { grid-column: span 6; min-width: 0; }
+.occupation-field > label { width: 100%; max-width: none; margin: 0; }
+.occupation-field > label:last-child:not(:first-child) { margin-top: .75rem; }
+@media (max-width:40rem) { .form-grid > .occupation-field { grid-column: 1 / -1; } }
+
+.student-detail-header { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:1rem; margin-bottom:1.5rem; }
+.student-detail-header h3 { margin:0 0 .35rem; }
+.student-detail-header p { margin:0 0 .35rem; color:var(--text-secondary); }
+.student-section-tabs[role="tablist"] { gap:.25rem; margin:0; border-bottom:1px solid var(--border); }
+.student-section-tabs [role="tab"] { background:transparent; color:var(--text-secondary); border:1px solid transparent; border-bottom:3px solid transparent; border-radius:.5rem .5rem 0 0; padding:.8rem 1rem; }
+.student-section-tabs [role="tab"]:hover { background:var(--surface); color:var(--text-primary); }
+.student-section-tabs [role="tab"][aria-selected="true"] { background:var(--surface-elevated); color:var(--text-primary); border-color:var(--border); border-bottom-color:var(--primary); outline:none; font-weight:700; }
+.student-section-tabs [role="tab"]:focus-visible { outline:2px solid var(--focus); outline-offset:-4px; }
+.student-section-panel { padding:1.5rem; background:var(--surface-elevated); border:1px solid var(--border-soft); border-top:0; border-radius:0 0 .85rem .85rem; max-width:65rem; }
+.student-section-panel > h3 { margin:0 0 1.25rem; }
+.student-section-panel input[readonly], .student-section-panel textarea[readonly] { background:var(--surface); cursor:text; }
+.student-section-panel input[readonly]::placeholder, .student-section-panel textarea[readonly]::placeholder { color:var(--text-secondary); opacity:1; }
+@media(max-width:40rem) { .student-section-panel { padding:1rem; } .student-section-tabs [role="tab"] { padding:.65rem .75rem; } }
+
+.students-grid { margin-top:1rem; border:1px solid var(--border-soft); border-radius:.75rem; background:var(--surface-elevated); }
+.students-grid table { width:100%; min-width:0; margin:0; border-collapse:separate; border-spacing:0; }
+.students-grid th { color:var(--text-secondary); font-size:.8rem; font-weight:600; text-align:left; padding:.75rem 1rem; border-bottom:1px solid var(--border-soft); }
+.students-grid td { padding:.7rem 1rem; border-bottom:1px solid var(--border-soft); vertical-align:middle; }
+.students-grid tbody tr:last-child td { border-bottom:0; }
+.students-grid tbody tr:hover, .students-grid tbody tr:focus-within { background:var(--surface); }
+.student-row-name { font-weight:600; text-decoration:none; display:block; padding:.35rem 0; overflow-wrap:anywhere; }
+.student-row-name:hover { text-decoration:underline; }
+.student-row-document { font-variant-numeric:tabular-nums; white-space:nowrap; }
+.student-row-date { color:var(--text-secondary); font-size:.85rem; white-space:nowrap; }
+.students-grid th.student-actions-heading { text-align:right; }
+.student-row-actions { display:flex; justify-content:flex-end; gap:.4rem; }
+.student-row-action.icon-action { width:2.4rem; min-height:2.4rem; background:transparent; border-color:transparent; color:var(--text-primary); }
+.student-row-action.icon-action:hover { background:var(--brand-soft); border-color:var(--border-strong); }
+.student-row-actions .toolbar-tooltip { top:auto; bottom:calc(100% + .3rem); }
+.student-list-pagination, .pagination-actions { display:flex; align-items:center; flex-wrap:wrap; gap:.65rem; }
+.student-list-pagination { justify-content:space-between; margin-top:1rem; color:var(--text-secondary); font-size:.85rem; }
+@media(max-width:44rem) { .students-grid .student-row-date, .students-grid .student-row-date { display:none; } .students-grid th,.students-grid td { padding:.65rem .5rem; } .student-row-actions { gap:.1rem; } }
+
+form.student-record-form { display:block; max-width:none; margin:0; padding:0; border:0; border-radius:0; background:transparent; box-shadow:none; }
+.student-record-form > [hidden] { display:none; }
+.student-record-form .student-section-panel { max-width:none; }
+.student-record-form .student-section-panel input:not([readonly]), .student-record-form .student-section-panel textarea:not([readonly]) { background:var(--field-background); }
+.student-edit-mode { padding:.4rem .75rem; border:1px solid var(--border-strong); border-radius:.5rem; font-weight:600; color:var(--text-primary); }
+.student-record-actions { padding:1rem 1.5rem; margin:0; background:var(--surface-elevated); }
+.student-contacts-heading { display:flex; flex-wrap:wrap; gap:1rem; justify-content:space-between; align-items:center; margin-bottom:1rem; }
+.student-contacts-heading h3 { margin:0; }
+.contacts-grid { overflow:visible; }
+.contacts-grid table { min-width:48rem; }
+.contacts-grid .contact-address { min-width:10rem; max-width:20rem; white-space:pre-wrap; overflow-wrap:anywhere; }
+.contacts-grid th:last-child { text-align:right; }
+@media(max-width:70rem) { .contacts-grid { overflow-x:auto; padding-bottom:2.5rem; } .contacts-grid .student-row-actions .toolbar-tooltip { bottom:auto; top:calc(100% + .2rem); } }
+
+/* The contact editor shares the fixed modal layer; the inner form is not another card. */
+.contact-dialog { width:min(100%,52rem); }
+.contact-dialog > form { max-width:none; margin:0; padding:0; border:0; border-radius:0; box-shadow:none; background:transparent; }
+.contact-dialog .form-grid > label[data-field] { grid-column:span 6; }
+.contact-dialog .form-grid > label[data-field="direccion"] { grid-column:1 / -1; }
+@media(max-width:40rem) { .contact-dialog .form-grid > label[data-field] { grid-column:1 / -1; } }
+
+.companies-grid { overflow-x:auto; padding-bottom:2rem; }
+.companies-grid table { min-width:65rem; }
+button.company-row-name { border:0; background:transparent; color:var(--primary); text-align:left; min-height:0; padding:.35rem 0; border-radius:0; }
+button.company-row-name:hover { background:transparent; text-decoration:underline; }
+.companies-grid .student-row-actions .toolbar-tooltip { bottom:auto; top:calc(100% + .25rem); }
+.company-selection-actions { display:flex; gap:.65rem; margin-bottom:1rem; }
+
+button.icon-action { padding:0; }
+
+.record-header-actions { display:flex; flex-wrap:wrap; gap:.65rem; align-items:center; }
+.company-record > .student-detail-header { margin-top:1.25rem; }
+
+/* Academic maintenance follows the same list/record surfaces as pupils and companies. */
+.academic-toolbar { flex-wrap:wrap; }
+.academic-toolbar .student-search { flex:1 1 15rem; max-width:none; min-width:0; }
+.academic-toolbar > label:has(select) { flex:0 1 12rem; }
+.academic-toolbar > .record-header-actions { margin-left:auto; }
+.academic-grid { overflow:visible; }
+.academic-grid th:last-child { text-align:right; }
+.academic-record-heading { margin-top:1.25rem; }
+.academic-record-heading .status-badge { margin-right:.75rem; }
+.academic-record-heading small { display:block; margin-top:.5rem; }
+.academic-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem 1.25rem; }
+.academic-fields > label { width:100%; max-width:none; min-width:0; margin:0; }
+.academic-fields > label:has(textarea) { grid-column:1 / -1; }
+.academic-fields > label > input,.academic-fields > label > select,.academic-fields > label > textarea { width:100%; }
+.academic-record input[readonly], .academic-record textarea[readonly] { background:var(--surface); }
+form.academic-record-form { max-width:none; padding:0; margin:0; background:transparent; border:0; box-shadow:none; gap:0; }
+.academic-record [hidden] { display:none; }
+.academic-record-form > .form-actions { padding:1rem 1.5rem; margin:0; background:var(--surface-elevated); }
+@media(max-width:60rem) { .academic-grid { overflow-x:auto; padding-bottom:2.5rem; } .academic-grid .toolbar-tooltip { bottom:auto;top:calc(100% + .2rem); } }
+@media(max-width:40rem) { .academic-fields { grid-template-columns:minmax(0,1fr); } }
+
+/* Native checkbox interaction with an accessible switch presentation. */
+.academic-fields > label.experience-field { display:grid; align-content:start; justify-content:normal; padding:0; gap:.4rem; font-weight:600; }
+.experience-switch { display: flex; align-items: center; gap: .65rem; min-height: 2.85rem; position: relative; }
+.experience-switch input { position: absolute; width: 2.75rem; height: 1.5rem; margin: 0; opacity: 0; cursor: pointer; }
+.switch-track { width: 2.75rem; height: 1.5rem; border: 1px solid currentColor; border-radius: 1rem; background: var(--surface); pointer-events: none; }
+.switch-track::after { content: ''; display: block; width: 1rem; height: 1rem; margin: .18rem; border-radius: 50%; background: currentColor; transition: transform .15s; }
+.experience-switch input:checked + .switch-track::after { transform: translateX(1.2rem); }
+.experience-switch input:focus-visible + .switch-track { outline: 2px solid currentColor; outline-offset: 3px; }
+.experience-switch input:disabled { cursor: default; }
+
+/* Short academic forms: keep descriptions compact and retain manual resizing. */
+.academic-fields > label > textarea { min-height:4.25rem; height:4.25rem; resize:vertical; }
+.career-record .academic-record-heading { margin-top:.75rem; margin-bottom:.75rem; gap:.75rem; }
+.career-record .student-section-panel { padding:1rem; }
+.career-record .academic-fields { gap:.65rem 1.25rem; }
+.career-record .academic-fields legend { margin-bottom:.5rem; }
+.career-record .academic-record-form > .form-actions { padding:.75rem 1rem; }
+
+/* Compact subject selection rows in Carrera; wrap only when space is limited. */
+.career-record .subject-options label { min-height:2.5rem; padding:.35rem .65rem; gap:.65rem; border-inline-start-width:4px; }
+.career-record .subject-options label > span { display:flex; align-items:center; justify-content:space-between; flex:1; flex-wrap:wrap; gap:.2rem .75rem; min-width:0; overflow-wrap:anywhere; }
+.career-record .subject-options small { margin:0; flex-shrink:0; }
+
+/* Cycle data: two compact rows for identity/dates, followed by location. */
+.cycle-record .academic-record-heading { margin-top:.75rem; margin-bottom:.75rem; }
+.cycle-record .cycle-data-panel { padding:1rem; }
+.cycle-record .cycle-data { gap:.75rem; }
+.cycle-record .cycle-data > legend { margin-bottom:.5rem; }
+.cycle-record .cycle-data > .academic-fields { padding:0; border:0; gap:.65rem 1.25rem; }
+.cycle-record .cycle-data > .academic-fields + .academic-fields { padding-top:.5rem; }
+.cycle-record .academic-fields > label { width:100%; max-width:none; }
+.cycle-record .academic-record-form > .form-actions { padding:.75rem 1rem; }
+
+/* State changes share the existing panel instead of nesting another large card. */
+.cycle-record .cycle-state-panel { padding:1rem; }
+.cycle-state-heading { display:flex; flex-wrap:wrap; align-items:center; gap:.75rem; margin-bottom:.75rem; }
+.cycle-state-heading h3 { margin:0; }
+form.cycle-state-form { max-width:none; margin:0; padding:0; border:0; border-radius:0; box-shadow:none; background:transparent; gap:.75rem; }
+.cycle-state-form > p { margin:0; font-size:.87rem; }
+.cycle-state-form .form-actions { margin:0; padding-top:.75rem; }
+
+.cycle-subject-panel { padding:1rem; }
+.cycle-subject-search { display:flex; flex-wrap:wrap; align-items:end; gap:.75rem; margin:.75rem 0; }
+.cycle-subject-search > label { flex:1; min-width:min(100%,14rem); }
+.cycle-subject-results { flex-basis:100%; border:1px solid var(--border-soft); border-radius:.5rem; padding:.5rem; }
+.cycle-subject-results ul { list-style:none; margin:0; padding:0; max-height:15rem; overflow:auto; }
+.cycle-subject-results li button { width:100%; text-align:left; justify-content:start; background:var(--surface-elevated); color:var(--text-primary); border:0; border-radius:.25rem; }
+.cycle-subject-results li button:hover,.cycle-subject-results li button:focus-visible { background:var(--surface); }
+.cycle-subject-results p { margin:.5rem 0 0; }
+.show-retired-subjects { display:flex; align-items:center; gap:.5rem; margin-top:.75rem; }
+
+/* Comfortable compact rows, scoped to the Cycle subject table. */
+.cycle-subject-panel th { padding:.65rem .85rem; }
+.cycle-subject-panel td { padding:.55rem .85rem; vertical-align:middle; }
+.cycle-subject-panel td button { min-height:2.1rem; padding:.35rem .65rem; margin:0; }
+
+.enrollment-context { display:flex; flex-wrap:wrap; gap:.5rem 1.5rem; margin:1rem 0; font-size:.9rem; }
+form.enrollment-record-form { max-width:none; padding:0; margin:0; border:0; box-shadow:none; background:transparent; gap:0; }
+.enrollment-record [hidden] { display:none; }
+.enrollment-record .student-section-panel { padding:1rem; }
+.enrollment-record-form > .form-actions { padding:.75rem 1rem; margin:0; background:var(--surface-elevated); }
+.enrollment-student-search { display:grid; gap:.5rem; }
+.enrollment-selected-student { display:grid; gap:.5rem; padding:.75rem; border:1px solid var(--border-soft); border-radius:.5rem; }
+.enrollment-record-form textarea { min-height:4.25rem; height:4.25rem; resize:vertical; }
+
+.enrollment-drawer { position:fixed; inset:0 0 0 auto; margin:0; width:min(100%,50rem); max-width:100vw; height:100dvh; max-height:100dvh; padding:1.25rem; border:0; border-inline-start:1px solid var(--border); color:var(--text-primary); background:var(--surface-elevated); overflow-y:auto; }
+.enrollment-drawer::backdrop { background:var(--scrim); }
+.enrollment-drawer-heading { display:flex; align-items:start; justify-content:space-between; gap:1rem; margin-bottom:1rem; }
+.enrollment-drawer-heading h2 { font-size:1.15rem; margin:0; }
+.enrollment-drawer .student-section-panel { max-width:none; padding:.75rem 0; border:0; border-radius:0; }
+.enrollment-drawer .enrollment-record-form > .form-actions { padding:.75rem 0; }
+.enrollment-search-results { max-height:22rem; overflow:auto; margin:.75rem 0; }
+.enrollment-search-results table { min-width:0; table-layout:fixed; }
+.enrollment-search-results td:first-child { min-width:0; max-width:none; }
+.enrollment-search-results th:nth-child(2), .enrollment-search-results td:nth-child(2) { width:7rem; }
+.enrollment-search-results th:nth-child(3), .enrollment-search-results td:nth-child(3) { width:calc(20ch + 1.3rem); font-variant-numeric:tabular-nums; }
+.enrollment-search-results th:last-child, .enrollment-search-results td:last-child { width:6.25rem; min-width:0; }
+.enrollment-search-results td button { padding:.5rem .6rem; white-space:nowrap; overflow-wrap:normal; word-break:normal; }
+.enrollment-search-results th, .enrollment-search-results td { padding:.6rem .65rem; vertical-align:middle; }
+.enrollment-search-results th:last-child, .enrollment-search-results td:last-child { text-align:right; }
+.enrollment-search-results td:nth-child(3) { white-space:nowrap; }
+@media(max-width:36rem) { .enrollment-search-results th:nth-child(2), .enrollment-search-results td:nth-child(2) { width:5rem; } .enrollment-search-results th:nth-child(3), .enrollment-search-results td:nth-child(3) { width:8rem; white-space:normal; } .enrollment-search-results th, .enrollment-search-results td { padding:.5rem .3rem; } }
+
+.cycle-enrollments table td { padding:.55rem .85rem; vertical-align:middle; }
+.back-link { display:inline-block; margin-bottom:1rem; }
+
+.tariff-record > form { margin-top:1rem; padding:1rem; max-width:none; }
+.cycle-tariffs-form { max-width:none; padding:1rem; }
+.cycle-tariffs-form td { vertical-align:middle; padding:.55rem .85rem; }
+.cycle-tariffs-form input[type=number] { min-width:7rem; max-width:10rem; }
+
+.cycle-record-actions { margin:0; padding:.75rem 1rem; background:var(--surface-elevated); }
+.cycle-record-actions small { align-self:center; }
+
+.enrollment-detail .academic-record-heading { margin:.75rem 0; }
+.enrollment-detail .student-section-panel { padding:1rem; }
+form.enrollment-detail-form { max-width:none; margin:1rem 0 0; padding:1rem 0 0; border:0; border-top:1px solid var(--border-soft); border-radius:0; box-shadow:none; background:transparent; gap:.75rem; }
+.enrollment-detail td { padding:.55rem .85rem; vertical-align:middle; }
+.enrollment-detail-form textarea { min-height:4.25rem; height:4.25rem; resize:vertical; }
+.enrollment-sponsor { margin-top:1rem; }
+.enrollment-sponsor > button { margin-right:.65rem; }
+.enrollment-detail-actions { margin:0; padding:.75rem 1rem; background:var(--surface-elevated); }
+.enrollment-detail details > summary { cursor:pointer; margin-bottom:.75rem; }
+
+.enrollment-charges-grid table { min-width:0; }
+.enrollment-charges-grid th, .enrollment-detail .enrollment-charges-grid td { padding:.5rem .65rem; vertical-align:middle; }
+.enrollment-charges-grid td:first-child { min-width:0; width:4rem; }
+.enrollment-charges-grid input[type=checkbox] { margin:0; }
+.enrollment-charges-grid tfoot th { text-align:right; }
+.enrollment-charges-grid tfoot td { white-space:nowrap; }
+.enrollment-charge-totals { margin:.75rem 0 0 auto; max-width:18rem; }
+.enrollment-charge-totals > div { display:flex; justify-content:space-between; gap:1rem; }
+.enrollment-detail form.enrollment-charge-form { margin-top:0; padding-top:0; border-top:0; }
+
+.enrollment-charges-grid :is(th,td):nth-child(n+3),
+.enrollment-detail .enrollment-charges-grid tfoot td,
+.enrollment-saved-charges :is(th,td):nth-child(n+2):nth-child(-n+4),
+.enrollment-charge-totals dd { text-align:right; font-variant-numeric:tabular-nums; }
+
+.enrollment-charge-actions { justify-content:space-between; }

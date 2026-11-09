@@ -1,8 +1,9 @@
 -- H2 reference load 2026-10-22; sources, versions, hashes: reference/sources.json.
 -- INEI official 2022 snapshot; not asserted current to 2026.
 insert into public.catalogo(codigo,nombre) values ('MODALIDAD_CARRERA','MODALIDAD DE CARRERA'),('MOTIVO_CICLO_DESIERTO','MOTIVO DE CICLO DESIERTO');
-insert into public.catalogo_valor(catalogo_id,codigo,nombre,orden) select id,'CON_EXPERIENCIA','CON EXPERIENCIA',1 from public.catalogo where codigo='MODALIDAD_CARRERA';
-insert into public.catalogo_valor(catalogo_id,codigo,nombre,orden) select id,'SIN_EXPERIENCIA','SIN EXPERIENCIA',2 from public.catalogo where codigo='MODALIDAD_CARRERA';
+insert into public.catalogo_valor(catalogo_id,codigo,nombre,orden) select id,'PRESENCIAL','Presencial',1 from public.catalogo where codigo='MODALIDAD_CARRERA';
+insert into public.catalogo_valor(catalogo_id,codigo,nombre,orden) select id,'SEMIPRESENCIAL','Semipresencial',2 from public.catalogo where codigo='MODALIDAD_CARRERA';
+insert into public.catalogo_valor(catalogo_id,codigo,nombre,orden) select id,'A_DISTANCIA','A distancia',3 from public.catalogo where codigo='MODALIDAD_CARRERA';
 insert into public.catalogo_valor(catalogo_id,codigo,nombre,orden) select id,'FALTA_ALUMNOS','FALTA DE ALUMNOS',1 from public.catalogo where codigo='MOTIVO_CICLO_DESIERTO';
 insert into public.catalogo_valor(catalogo_id,codigo,nombre,orden) select id,'FALTA_INSTRUCTOR','FALTA DE INSTRUCTOR',2 from public.catalogo where codigo='MOTIVO_CICLO_DESIERTO';
 insert into public.catalogo_valor(catalogo_id,codigo,nombre,orden) select id,'CANCELACION_INSTITUCIONAL','CANCELACIÓN INSTITUCIONAL',3 from public.catalogo where codigo='MOTIVO_CICLO_DESIERTO';

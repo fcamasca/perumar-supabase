@@ -1,3 +1,4 @@
+import { formTextValue } from '../lib/formText'
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 
@@ -50,14 +51,14 @@ export function ConfirmDialog({ title, description, reason, confirmLabel = 'Conf
   }, [onFinish])
   return createPortal(<div className="dialog-backdrop"><div ref={panel} role="dialog" aria-modal="true" aria-labelledby={`${id}-title`} aria-describedby={`${id}-description`} className="confirm-dialog">
     <h2 id={`${id}-title`}>{title}</h2><p id={`${id}-description`}>{description}</p>
-    {reason && <label>Motivo obligatorio<textarea value={value} aria-invalid={!!error} aria-describedby={error ? `${id}-error` : undefined} onChange={e => setValue(e.target.value)} /></label>}
+    {reason && <label>Motivo obligatorio<textarea value={value} aria-invalid={!!error} aria-describedby={error ? `${id}-error` : undefined} onChange={e => setValue(formTextValue(e.currentTarget))} /></label>}
     {error && <p id={`${id}-error`} role="alert">{error}</p>}
     <div className="dialog-actions"><button type="button" ref={cancel} className="secondary" onClick={() => onFinish(null)}>Cancelar operación</button><button type="button" onClick={() => { if (reason && !value.trim()) { setError('Indica el motivo antes de confirmar.'); return }; onFinish(reason ? value.trim() : '') }} className={sensitive ? "sensitive" : undefined}>{confirmLabel}</button></div>
   </div></div>, document.body)
 }
 
 // Native constraints remain useful, but feedback is inline and owned by the app.
-export function InlineForm({ children, onSubmit, ...props }: { children: ReactNode; onSubmit: (event: FormEvent<HTMLFormElement>) => void; 'aria-describedby'?: string }) {
+export function InlineForm({ children, onSubmit, onInvalidField, ...props }: { children: ReactNode; onSubmit: (event: FormEvent<HTMLFormElement>) => void; onInvalidField?: (field: HTMLElement) => void; className?: string; id?: string; 'aria-describedby'?: string }) {
   const [errors, setErrors] = useState<{ id: string; label: string; text: string }[]>([])
   const id = useId(), ref = useRef<HTMLFormElement>(null), focusAfterSubmit = useRef(false)
   function validate(event: FormEvent<HTMLFormElement>) {
@@ -65,24 +66,25 @@ export function InlineForm({ children, onSubmit, ...props }: { children: ReactNo
     const failures: typeof errors = []
     const fields = Array.from(event.currentTarget.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('input,select,textarea'))
     const requiredMessages: Record<string, string> = {
-      Modalidad: 'Selecciona una modalidad.', Carrera: 'Selecciona una Carrera.',
+      Modalidad: 'Selecciona una modalidad.', Curso: 'Selecciona un Curso.',
       Departamento: 'Selecciona un departamento.', Provincia: 'Selecciona una provincia.', Distrito: 'Selecciona un distrito.', Capitanía: 'Selecciona una capitanía.',
       'Nuevo estado': 'Selecciona el nuevo estado.', 'Motivo de Ciclo Desierto': 'Selecciona un motivo para declarar desierto el Ciclo.',
       'Fecha de inicio': 'Indica la fecha de inicio.', 'Fecha de fin': 'Indica la fecha de fin.',
-      'Código de Materia': 'Ingresa el código de la Materia.', 'Nombre de Materia': 'Ingresa el nombre de la Materia.',
-      'Código de Carrera': 'Ingresa el código de la Carrera.', 'Nombre de Carrera': 'Ingresa el nombre de la Carrera.',
+      'Código de Asignatura': 'Ingresa el código de la Asignatura.', 'Nombre de Asignatura': 'Ingresa el nombre de la Asignatura.',
+      'Código de Curso': 'Ingresa el código del Curso.', 'Nombre de Curso': 'Ingresa el nombre del Curso.',
       Sigla: 'Ingresa una sigla de 2 a 10 caracteres.', 'Detalle / motivo': 'Indica el detalle o motivo obligatorio.',
     }
     fields.forEach((field, i) => {
       if (!field.id) field.id = `${id}-field-${i}`
       if (field.willValidate && (!field.validity.valid || (field.required && !field.value.trim()))) {
         const label = field.getAttribute('aria-label') || field.labels?.[0]?.querySelector('.field-label')?.textContent?.replace('*', '').trim() || field.labels?.[0]?.firstChild?.textContent?.trim() || 'Campo'
-        const text = field.required && !field.value.trim() ? requiredMessages[label] ?? `Completa el campo ${label.toLocaleLowerCase()}.` : field.validity.patternMismatch ? 'Usa entre 2 y 10 caracteres alfanuméricos.' : field.validity.tooLong ? 'Supera el máximo de caracteres permitido.' : field.validity.rangeUnderflow ? 'La fecha de fin no puede ser anterior al inicio.' : 'Revisa el formato del valor.'
+        const text = field.required && !field.value.trim() ? requiredMessages[label] ?? `Completa el campo ${label.toLocaleLowerCase()}.` : field.validity.patternMismatch ? field.getAttribute('data-pattern-error') ?? 'Usa entre 2 y 10 caracteres alfanuméricos.' : field.validity.tooLong ? 'Supera el máximo de caracteres permitido.' : field.validity.rangeOverflow ? field.getAttribute('data-max-error') ?? 'El valor supera el máximo permitido.' : field.validity.rangeUnderflow ? field.getAttribute('data-min-error') ?? 'La fecha de fin no puede ser anterior al inicio.' : 'Revisa el formato del valor.'
         failures.push({ id: field.id, label, text })
       }
     })
     focusAfterSubmit.current = failures.length > 0
     setErrors(failures)
+    if (failures.length) { const first = document.getElementById(failures[0].id); if (first) onInvalidField?.(first) }
     if (!failures.length) onSubmit(event)
   }
   useEffect(() => {
@@ -102,10 +104,10 @@ export function InlineForm({ children, onSubmit, ...props }: { children: ReactNo
       first?.scrollIntoView?.({ block: 'center', behavior: 'auto' })
     }
   }, [errors])
-  return <form {...props} ref={ref} noValidate onSubmit={validate} onChange={event => {
-    const field = event.target
+  function clearResolvedError(field: EventTarget) {
     if ((field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement) && field.validity.valid && (!field.required || field.value.trim())) setErrors(previous => previous.some(e => e.id === field.id) ? previous.filter(e => e.id !== field.id) : previous)
-  }}>{errors.length > 0 && <div role="alert" className="validation-errors"><p>Revisa los campos indicados:</p><ul>{errors.map(e => <li key={e.id}><a href={`#${e.id}`} onClick={event => { event.preventDefault(); const field = document.getElementById(e.id); field?.focus({ preventScroll: true }); field?.scrollIntoView?.({ block: 'center', behavior: 'auto' }) }}>{e.label}: {e.text}</a></li>)}</ul></div>}{children}{errors.map(e => {
+  }
+  return <form {...props} ref={ref} noValidate onSubmit={validate} onChange={event => clearResolvedError(event.target)} onPaste={event => clearResolvedError(event.target)}>{errors.length > 0 && <div role="alert" className="validation-errors"><p>Revisa los campos indicados:</p><ul>{errors.map(e => <li key={e.id}><a href={`#${e.id}`} onClick={event => { event.preventDefault(); const field = document.getElementById(e.id); if (field) onInvalidField?.(field); focusAfterSubmit.current = true; setErrors(previous => [e, ...previous.filter(item => item.id !== e.id)]) }}>{e.label}: {e.text}</a></li>)}</ul></div>}{children}{errors.map(e => {
     const field = document.getElementById(e.id)
     const target = field?.closest('label')
     return target && ref.current?.contains(target) ? createPortal(<span className="field-error" id={`${e.id}-error`}>Error: {e.text}</span>, target, e.id) : null
@@ -121,5 +123,5 @@ export function EditorHeading({ children }: { children: ReactNode }) {
   return <h3 ref={heading} tabIndex={-1} className="editor-heading">{children}</h3>
 }
 export function EmptyState({ filtered, entity, onCreate }: { filtered: boolean; entity: string; onCreate?: () => void }) {
-  return <div className="empty-state"><p>{filtered ? `No hay ${entity} que coincidan con los filtros.` : `No hay ${entity} registradas.`}</p>{onCreate && !filtered && <button type="button" onClick={onCreate}>Crear primera {entity === 'Carreras' ? 'Carrera' : 'Materia'}</button>}{filtered && <p>Prueba con otro código, nombre o estado.</p>}</div>
+  return <div className="empty-state"><p>{filtered ? `No hay ${entity} que coincidan con los filtros.` : `No hay ${entity} ${entity === 'Cursos' ? 'registrados' : 'registradas'}.`}</p>{onCreate && !filtered && <button type="button" onClick={onCreate}>{entity === 'Cursos' ? 'Crear primer Curso' : 'Crear primera Asignatura'}</button>}{filtered && <p>Prueba con otro código, nombre o estado.</p>}</div>
 }

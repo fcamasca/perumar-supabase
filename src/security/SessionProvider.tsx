@@ -23,22 +23,28 @@ export function SessionProvider({ children, client = getSupabase() }: { children
   const [state, setState] = useState<AccessState>({ phase: 'loading' })
   const epoch = useRef(0)
   const signedOut = useRef(false)
+  const authorizedUser = useRef<string | null>(null)
 
   const refresh = useCallback(async () => {
     const request = ++epoch.current
     if (signedOut.current) { setState({ phase: 'anonymous' }); return }
-    setState({ phase: 'loading' })
+    // Keep mounted forms while revalidating the same confirmed identity.
+    if (!authorizedUser.current) setState({ phase: 'loading' })
     const current = () => request === epoch.current
     try {
       const session = await client.auth.getSession()
       if (!current()) return
       if (session.error) throw new Error('session')
-      if (!session.data.session) { setState({ phase: 'anonymous' }); return }
+      if (!session.data.session) { authorizedUser.current = null; setState({ phase: 'anonymous' }); return }
       // getSession/storage is not an authority for the user's identity.
       const identity = await client.auth.getUser()
       if (!current()) return
       if (identity.error || !identity.data.user) throw new Error('identity')
       const userId = identity.data.user.id
+      if (authorizedUser.current && authorizedUser.current !== userId) {
+        authorizedUser.current = null
+        setState({ phase: 'loading' })
+      }
       const [profile, assignments, catalog] = await Promise.all([
         client.from('app_users').select('id,active').eq('id', userId),
         client.from('app_user_roles').select('role_code').eq('user_id', userId),
@@ -49,21 +55,27 @@ export function SessionProvider({ children, client = getSupabase() }: { children
       const roles = (assignments.data ?? []).map(row => String(row.role_code))
         .filter(code => (catalog.data ?? []).some(row => row.code === code && row.active))
       if (!profile.data?.some(row => row.id === userId && row.active) || !roles.length) {
+        authorizedUser.current = null
         setState({ phase: 'blocked', userId }); return
       }
+      authorizedUser.current = userId
       setState({ phase: 'authorized', userId, roles })
     } catch {
-      if (current()) setState({ phase: 'error', message: 'No se pudo confirmar la sesión y el acceso. Vuelve a iniciar sesión.' })
+      if (current()) {
+        authorizedUser.current = null
+        setState({ phase: 'error', message: 'No se pudo confirmar la sesión y el acceso. Vuelve a iniciar sesión.' })
+      }
     }
   }, [client])
 
   useEffect(() => {
     const timers = new Set<ReturnType<typeof setTimeout>>()
-    const { data } = client.auth.onAuthStateChange(event => {
+    const { data } = client.auth.onAuthStateChange((event, session) => {
       ++epoch.current
-      if (event === 'SIGNED_OUT') signedOut.current = true
+      if (event === 'SIGNED_OUT') { signedOut.current = true; authorizedUser.current = null }
+      if (authorizedUser.current && session?.user.id !== authorizedUser.current) authorizedUser.current = null
       if (signedOut.current) { setState({ phase: 'anonymous' }); return }
-      setState({ phase: event === 'SIGNED_OUT' ? 'anonymous' : 'loading' })
+      if (!authorizedUser.current) setState({ phase: 'loading' })
       if (event !== 'SIGNED_OUT') {
         // No Auth calls inside the SDK callback; avoid reentrant refresh/deadlock.
         const timer = setTimeout(() => { timers.delete(timer); void refresh() }, 0)
@@ -79,6 +91,7 @@ export function SessionProvider({ children, client = getSupabase() }: { children
   }, [client, refresh])
 
   const signIn = useCallback(async (email: string, password: string) => {
+    authorizedUser.current = null
     signedOut.current = false
     ++epoch.current
     setState({ phase: 'loading' })
@@ -97,6 +110,7 @@ export function SessionProvider({ children, client = getSupabase() }: { children
   }, [client, refresh])
 
   const logout = useCallback(async () => {
+    authorizedUser.current = null
     signedOut.current = true
     ++epoch.current
     setState({ phase: 'anonymous' })

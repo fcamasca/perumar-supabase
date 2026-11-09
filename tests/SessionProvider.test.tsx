@@ -1,11 +1,11 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { StrictMode } from 'react'
+import { StrictMode, useState } from 'react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { describe, expect, it, vi } from 'vitest'
 import { SessionProvider, useSession } from '../src/security/SessionProvider'
 
 function fixture() {
-  let notify: (event: string) => void = () => undefined
+  let notify: (event: string, session?: { user: { id: string } } | null) => void = () => undefined
   const unsubscribe = vi.fn()
   const rows: Record<string, unknown[]> = {
     app_users: [{ id: 'operator-id', active: true }],
@@ -22,7 +22,7 @@ function fixture() {
     const value = { data: rows[table], error: null }
     return table === 'app_roles' ? Promise.resolve(value) : { eq: () => Promise.resolve(value) }
   } }))
-  return { client: { auth, from } as unknown as SupabaseClient, auth, from, rows, unsubscribe, notify: (event: string) => notify(event) }
+  return { client: { auth, from } as unknown as SupabaseClient, auth, from, rows, unsubscribe, notify: (event: string, id = 'operator-id') => notify(event, { user: { id } }) }
 }
 
 function Probe() {
@@ -87,7 +87,7 @@ describe('sesión y aislamiento de estado', () => {
     await waitFor(() => expect(f.auth.getUser).toHaveBeenCalledTimes(1))
     f.auth.getUser.mockResolvedValue({ data: { user: { id: 'second-id' } }, error: null })
     f.rows.app_users = [{ id: 'second-id', active: true }]
-    act(() => f.notify('SIGNED_IN'))
+    act(() => f.notify('SIGNED_IN', 'second-id'))
     await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('authorized second-id'))
     await act(async () => { finishOld({ data: { user: { id: 'operator-id' } }, error: null }) })
     expect(screen.getByRole('status')).toHaveTextContent('authorized second-id')
@@ -118,3 +118,46 @@ describe('sesión y aislamiento de estado', () => {
     expect(f.unsubscribe).toHaveBeenCalledTimes(2)
   })
 })
+
+function DraftForm() {
+  const [text, setText] = useState('');
+  return <input aria-label="Borrador" value={text} onChange={e => setText(e.target.value)}/>;
+}
+function ProtectedDraft() { return useSession().state.phase === 'authorized' ? <DraftForm/> : null }
+
+it.each(['SIGNED_IN', 'TOKEN_REFRESHED'])('preserva el formulario al revalidar la misma identidad: %s', async event => {
+  const f = fixture();
+  render(<SessionProvider client={f.client}><Probe/><ProtectedDraft/></SessionProvider>);
+  const input = await screen.findByLabelText('Borrador');
+  fireEvent.change(input, { target: { value: 'DATOS SIN GUARDAR' } });
+  let finish!: (value: unknown) => void;
+  f.auth.getUser.mockImplementationOnce(() => new Promise(resolve => { finish = resolve }));
+  const before = f.auth.getUser.mock.calls.length;
+  act(() => f.notify(event));
+  await waitFor(() => expect(f.auth.getUser).toHaveBeenCalledTimes(before + 1));
+  expect(screen.getByLabelText('Borrador')).toBe(input);
+  expect(input).toHaveValue('DATOS SIN GUARDAR');
+  await act(async () => finish({ data: { user: { id: 'operator-id' } }, error: null }));
+  expect(screen.getByLabelText('Borrador')).toBe(input);
+  expect(input).toHaveValue('DATOS SIN GUARDAR');
+});
+
+it('retira el borrador inmediatamente si cambia el usuario o cierra sesión', async () => {
+  const f = fixture();
+  render(<SessionProvider client={f.client}><Probe/><ProtectedDraft/></SessionProvider>);
+  await screen.findByLabelText('Borrador');
+  act(() => f.notify('SIGNED_IN','second-id'));
+  expect(screen.queryByLabelText('Borrador')).not.toBeInTheDocument();
+  fireEvent.click(screen.getByText('Salir'));
+  await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('anonymous'));
+});
+
+it('sigue retirando formularios si se revoca el acceso al revalidar', async () => {
+  const f = fixture();
+  render(<SessionProvider client={f.client}><Probe/><ProtectedDraft/></SessionProvider>);
+  await screen.findByLabelText('Borrador');
+  f.rows.app_users = [{ id: 'operator-id', active: false }];
+  act(() => f.notify('TOKEN_REFRESHED'));
+  await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('blocked'));
+  expect(screen.queryByLabelText('Borrador')).not.toBeInTheDocument();
+});

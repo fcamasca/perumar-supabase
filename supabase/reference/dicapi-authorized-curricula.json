@@ -1,0 +1,126 @@
+{
+  "authorization": "072-26 MGP/DICAPI",
+  "courses": [
+    {
+      "code": "MAM-009",
+      "name": "MARINERO DE PESCA CALIFICADO",
+      "subjects": [
+        "ARTES DE PESCA Y TALLER",
+        "BIOLOGÍA PESQUERA GENERAL",
+        "MANIOBRA DE BUQUE PESQUERO",
+        "NAVEGACIÓN BÁSICA",
+        "PREVENCIÓN DE LA CONTAMINACIÓN",
+        "REGLAMENTACIONES MARÍTIMAS",
+        "RELACIONES HUMANAS A BORDO",
+        "SEGURIDAD A BORDO Y MARÍTIMA",
+        "SISTEMA DE PESCA EN CUBIERTA",
+        "TERMINOLOGÍA NÁUTICA Y PESQUERA"
+      ],
+      "source": "https://www.dicapi.mil.pe/storage/regulatory-framework/Zm1HLYB41736522114.pdf",
+      "resolution": "1052-2024 MGP/DICAPI",
+      "resolution_date": "2024-12-27",
+      "annex_pages": [
+        7
+      ]
+    },
+    {
+      "code": "MAM-010",
+      "name": "MARINERO DE PESCA ARTESANAL",
+      "subjects": [
+        "NOCIONES DE BIOLOGÍA MARINA Y ARTES DE PESCA",
+        "PRINCIPIOS DE NAVEGACIÓN",
+        "REGLAMENTACIONES",
+        "SEGURIDAD A BORDO",
+        "TERMINOLOGÍA NÁUTICA BÁSICA",
+        "MANIOBRA CON EMBARCACIONES MENORES",
+        "PREVENCIÓN DE LA CONTAMINACIÓN"
+      ],
+      "source": "https://www.dicapi.mil.pe/storage/regulatory-framework/Zm1HLYB41736522114.pdf",
+      "resolution": "1052-2024 MGP/DICAPI",
+      "resolution_date": "2024-12-27",
+      "annex_pages": [
+        8
+      ]
+    },
+    {
+      "code": "MAM-037",
+      "name": "PATRÓN DE BAHÍA",
+      "subjects": [
+        "REGLAMENTO DE DECRETO LEGISLATIVO N° 1147 E INFRACCIONES",
+        "SEGURIDAD A BORDO",
+        "PRIMEROS AUXILIOS A BORDO",
+        "NAVEGACIÓN BÁSICA",
+        "PREVENCIÓN DE LA CONTAMINACIÓN",
+        "TERMINOLOGÍA MARÍTIMA",
+        "PRINCIPIOS BÁSICOS DE MOTORES",
+        "MAQUINARIAS Y HERRAMIENTAS",
+        "PRÁCTICA A BORDO"
+      ],
+      "source": "https://www.dicapi.mil.pe/storage/regulatory-framework/Zm1HLYB41736522114.pdf",
+      "resolution": "1052-2024 MGP/DICAPI",
+      "resolution_date": "2024-12-27",
+      "annex_pages": [
+        18
+      ]
+    },
+    {
+      "code": "MAM-038",
+      "name": "MARINERO DE BAHÍA",
+      "subjects": [
+        "REGLAMENTO DE DECRETO LEGISLATIVO N° 1147 E INFRACCIONES",
+        "SEGURIDAD A BORDO",
+        "PRIMEROS AUXILIOS A BORDO",
+        "MANIOBRAS DE NAVES Y CABULLERÍA",
+        "PRÁCTICA A BORDO"
+      ],
+      "source": "https://www.dicapi.mil.pe/storage/regulatory-framework/Zm1HLYB41736522114.pdf",
+      "resolution": "1052-2024 MGP/DICAPI",
+      "resolution_date": "2024-12-27",
+      "annex_pages": [
+        18
+      ]
+    },
+    {
+      "code": "MAM-039",
+      "name": "MARINERO DE ARTEFACTO NAVAL",
+      "subjects": [
+        "REGLAMENTO DE DECRETO LEGISLATIVO N° 1147 E INFRACCIONES",
+        "SEGURIDAD A BORDO",
+        "PRIMEROS AUXILIOS A BORDO",
+        "MANIOBRAS DE NAVES Y CABULLERÍA",
+        "PRÁCTICA A BORDO"
+      ],
+      "source": "https://www.dicapi.mil.pe/storage/regulatory-framework/Zm1HLYB41736522114.pdf",
+      "resolution": "1052-2024 MGP/DICAPI",
+      "resolution_date": "2024-12-27",
+      "annex_pages": [
+        19
+      ]
+    },
+    {
+      "code": "MAM-048",
+      "name": "PATRÓN DE YATE / VELERO",
+      "subjects": [
+        "NAVEGACIÓN PLANA",
+        "MANIOBRAS",
+        "COMUNICACIONES MARÍTIMAS",
+        "SEGURIDAD MARÍTIMA",
+        "REGLAMENTO DEL DECRETO LEGISLATIVO N° 1147",
+        "METEOROLOGÍA",
+        "CONVENIO INTERNACIONAL PARA LA SEGURIDAD DE LA VIDA HUMANA EN EL MAR, 1974",
+        "SEGURIDAD Y SALUD A BORDO"
+      ],
+      "source": "https://busquedas.elperuano.pe/dispositivo/NL/2023424-1",
+      "resolution": "855-2021 MGP/DICAPI",
+      "resolution_date": "2021-12-15",
+      "annex_pages": null
+    }
+  ],
+  "authorization_source": "https://www.dicapi.mil.pe/storage/regulatory-framework/00b0694b-1b80-4847-9a77-8e33e8920b54.pdf",
+  "transcription_notes": [
+    "Se cargan las unidades principales como asignaturas; los subtemas de Seguridad y Práctica a Bordo no se crean como asignaturas adicionales. Mayúsculas y tildes normalizadas.",
+    "MAM-039 conserva el nombre de autorización Marinero de Artefacto Naval; la malla lo titula Marinero de Artefacto Naval o Plataforma Marítima.",
+    "RD 855-2021: el cuadro general identifica Patrón como MAM 048; el encabezado de su desarrollo repite MAM 047. Se usa MAM-048 conforme al cuadro general y RD 072-26.",
+    "No se cargan horas ni requisitos adicionales."
+  ]
+}

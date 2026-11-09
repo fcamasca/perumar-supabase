@@ -25,6 +25,7 @@
     "fixtures:human": "node scripts/h2-fixtures.mjs human",
     "test:security": "node scripts/test-security.mjs",
     "test:expiry": "node scripts/test-expiry.mjs",
+    "test:enrollment": "node scripts/test-enrollment.mjs",
     "test:academic": "node scripts/test-academic.mjs"
   },
   "dependencies": {

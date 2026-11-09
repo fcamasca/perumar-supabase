@@ -1,9 +1,12 @@
+import { Students, NewStudent, StudentDetail, EnrollmentDetail, Tariffs, Companies } from '../enrollment/EnrollmentPages'
 import { useEffect, useState, type FormEvent } from 'react'
-import { Link, NavLink, Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
+import { Link, NavLink, Navigate, Outlet, Route, Routes, useLocation, useSearchParams } from 'react-router-dom'
 import { useSession } from './SessionProvider'
 import { BrandMark } from '../BrandMark'
 import { InlineForm, StatusBadge } from '../academic/AcademicUi'
 import { AcademicOnly, Materias, Carreras, Ciclos, Auditoria } from '../academic/AcademicPages'
+
+function CycleRoute(){const [params]=useSearchParams();return <Ciclos initialCycleId={params.get('ciclo')??undefined}/>}
 
 function Login() {
   const { state, signIn, logout } = useSession()
@@ -45,7 +48,7 @@ function ProtectedArea() {
     <button onClick={() => void logout()}>Cerrar sesión</button>
   </section>
   return <>
-    <div className="navigation-shell"><nav aria-label="Académico" className="main-nav">{state.roles?.some(r => r === 'DIRECTOR_ACADEMICO' || r === 'COORDINADOR_ACADEMICO') && <><NavLink to="/academico/materias">Materias</NavLink><NavLink to="/academico/carreras">Carreras</NavLink><NavLink to="/academico/ciclos">Ciclos</NavLink></>}<NavLink to="/academico/auditoria">Auditoría</NavLink></nav>
+    <div className="navigation-shell"><nav aria-label="Académico" className="main-nav">{state.roles?.some(r => r === 'DIRECTOR_ACADEMICO' || r === 'COORDINADOR_ACADEMICO') && <><NavLink to="/academico/materias">Asignaturas</NavLink><NavLink to="/academico/carreras">Cursos</NavLink><NavLink to="/academico/ciclos">Ciclos</NavLink><NavLink to="/alumnos">Alumnos</NavLink><NavLink to="/tarifas">Tarifas</NavLink><NavLink to="/empresas">Empresas</NavLink></>}<NavLink to="/academico/auditoria">Auditoría</NavLink></nav>
     <nav aria-label="Seguridad" className="account-nav"><NavLink end to="/seguridad">Mi acceso</NavLink>{state.roles?.includes('ADMIN_SISTEMA') && <NavLink to="/seguridad/usuarios">Directorio de seguridad</NavLink>}<button className="secondary" onClick={() => void logout()}>Cerrar sesión</button></nav></div>
     <Outlet />
   </>
@@ -94,9 +97,16 @@ export function SecurityRoutes() {
     <Route path="/" element={<Navigate to="/seguridad" replace />} />
     <Route path="/login" element={<Login />} />
     <Route element={<ProtectedArea />}>
+      <Route path="/alumnos" element={<AcademicOnly><Students /></AcademicOnly>} />
+      <Route path="/alumnos/nuevo" element={<AcademicOnly><NewStudent /></AcademicOnly>} />
+      <Route path="/alumnos/:id" element={<AcademicOnly><StudentDetail /></AcademicOnly>} />
+      <Route path="/matriculas/nueva" element={<AcademicOnly><Navigate to="/academico/ciclos" replace /></AcademicOnly>} />
+      <Route path="/matriculas/:id" element={<AcademicOnly><EnrollmentDetail /></AcademicOnly>} />
+      <Route path="/tarifas" element={<AcademicOnly><Tariffs /></AcademicOnly>} />
+      <Route path="/empresas" element={<AcademicOnly><Companies /></AcademicOnly>} />
       <Route path="/academico/materias" element={<AcademicOnly><Materias /></AcademicOnly>} />
       <Route path="/academico/carreras" element={<AcademicOnly><Carreras /></AcademicOnly>} />
-      <Route path="/academico/ciclos" element={<AcademicOnly><Ciclos /></AcademicOnly>} />
+      <Route path="/academico/ciclos" element={<AcademicOnly><CycleRoute /></AcademicOnly>} />
       <Route path="/academico/auditoria" element={<Auditoria />} />
       <Route path="/seguridad" element={<OwnAccess />} />
       <Route path="/seguridad/usuarios" element={<Directory />} />
