@@ -16,13 +16,13 @@ Se corresponde con los nueve bloques del recorrido entregado en esta conversaci�
 | 6 | Descuento: solo Director, modal/motivo/cancelar y máximo del cargo de Curso | OK humano |
 | 7 | Cambio de Ciclo y anulación: código/historia, descuento reiniciado, motivo y terminales | OK humano |
 | 8 | Dos sesiones: conflictos explícitos de edición/matrícula, sin duplicados ni pérdida del borrador | OK humano |
-| 9 | Interfaz y accesibilidad: teclado/foco/modales/móvil/temas/contraste | OK humano agregado; entorno y contraste real sin detalle |
+| 9 | Interfaz y accesibilidad: teclado/foco/modales/móvil/temas/contraste | OK humano agregado en Chrome / Windows 11 Pro; contraste alto real NO VERIFICADO, residual aceptado |
 
 ## Evidencia y límites
 
 La evidencia es la declaración humana agregada. No se inventan pasos, capturas, navegador, versión de Windows ni dispositivos. El alcance de los bloques se transcribe del listado presentado; no convierte cada subcaso de test-plan.md en una ejecución individual documentada.
 
-TEST-H3-040: recorrido funcional reportado OK mediante bloques 1–8. TEST-H3-041/042: bloque 9 reportado OK; pendiente completar navegador/SO y confirmar contraste alto real de Windows. No se sustituye esa comprobación por emulación ni se marca forced-colors real como PASSED sin la precisión correspondiente.
+TEST-H3-040: recorrido funcional reportado OK mediante bloques 1–8. TEST-H3-041/042: bloque 9 reportado OK en Chrome sobre Windows 11 Pro (versiones exactas de Chrome y compilación Windows no informadas). El usuario aclara: «chrome - Windows 11 Pro - no, pero lo apruebo». Contraste alto real/forced-colors del SO: NO VERIFICADO; el revisor acepta explícitamente este riesgo residual. No se marca ese subcaso como PASSED ni se infiere una prueba mediante emulación. Esta aprobación se refiere al residual de contraste de la pregunta respondida, no a Gate 2.
 
 La declaración es posterior a CHG-H3-011, pero no especifica de forma separada los casos Director confirma/cancela y Coordinador bloqueado con matrículas activas. La prueba técnica existe; la evidencia humana específica queda por precisar para cerrar esa enmienda.
 

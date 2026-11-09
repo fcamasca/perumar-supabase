@@ -91,3 +91,5 @@ Validación final CHG-H3-011: migración aplicada incrementalmente en Supabase l
 ## Revisión humana declarada — 09/11/2026
 
 Nueve bloques del recorrido reportados OK por el usuario; ver [registro humano](human-test-results.md). Candidato de referencia 6f6ab0d; SHA efectivamente ensayado no reconfirmado. Pendiente precisión del entorno/forced-colors real y casos específicos CHG-H3-011. No equivale a TEST-H3-044 ni aprobación de Gate 2.
+
+Precisión humana del 09/11/2026: entorno Chrome / Windows 11 Pro. Contraste alto real de Windows NO VERIFICADO; el usuario acepta expresamente el riesgo residual («no, pero lo apruebo»). Se cierra la precisión pendiente de entorno/decisión sobre contraste, sin declarar PASSED ese subcaso ni aprobar Gate 2. Versiones exactas de Chrome/compilación Windows no informadas. Véase human-test-results.md.

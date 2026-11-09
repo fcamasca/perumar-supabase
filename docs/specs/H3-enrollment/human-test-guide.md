@@ -144,3 +144,5 @@ Sustituye el bloqueo absoluto anterior: solo Director puede agregar/retirar/reac
 ## Resultado declarado — 09/11/2026
 
 El usuario reporta OK en los nueve bloques de revisión humana presentados. Ver [resultados y límites de evidencia](human-test-results.md). Esta entrada posterior sustituye el pendiente general del recorrido, sin afirmar detalles no informados de entorno/contraste real o enmienda CHG-H3-011. Revisión arquitectónica y Gate 2 permanecen pendientes.
+
+Precisión humana del 09/11/2026: entorno Chrome / Windows 11 Pro. Contraste alto real de Windows NO VERIFICADO; el usuario acepta expresamente el riesgo residual («no, pero lo apruebo»). Se cierra la precisión pendiente de entorno/decisión sobre contraste, sin declarar PASSED ese subcaso ni aprobar Gate 2. Versiones exactas de Chrome/compilación Windows no informadas. Véase human-test-results.md.
