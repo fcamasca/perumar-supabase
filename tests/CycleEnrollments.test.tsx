@@ -32,7 +32,7 @@ it('keeps one enrolled grid and scopes its filter to pupils of this Cycle',async
  await waitFor(()=>expect(queryLog.filter(q=>q.table==='matricula').at(-1)).toMatchObject({filters:{ciclo_id:'c1'},or:studentSearchFilter('ANA'),opts:{referencedTable:'alumno'},range:[0,29]}))
  expect(within(table).getByRole('link',{name:'Ver matrícula'})).toHaveAttribute('href','/matriculas/m1');expect(client.rpc).not.toHaveBeenCalled()
 })
-it('adds directly from search results with only mandatory defaults and refreshes the grid',async()=>{
+it('adds directly from search results with database charge defaults and refreshes the grid',async()=>{
  show();const trigger=screen.getByRole('button',{name:'+ Matricular alumno'});fireEvent.click(trigger);
  const drawer=await screen.findByRole('dialog',{name:'Agregar alumnos a 2026-001-NAV'});
  fireEvent.change(within(drawer).getByRole('searchbox',{name:'Buscar Alumno'}),{target:{value:'nuevo'}});
@@ -58,7 +58,7 @@ it('blocks closing during an Add transaction',async()=>{
  let finish:(r:unknown)=>void=()=>{};client.rpc.mockReturnValue(new Promise(resolve=>{finish=resolve}));fireEvent.click(add);await waitFor(()=>expect(client.rpc).toHaveBeenCalledTimes(1));expect(within(drawer).getByRole('button',{name:'Cerrar panel de matrícula'})).toBeDisabled();expect(fireEvent(drawer,new Event('cancel',{cancelable:true}))).toBe(false);fireEvent.click(within(drawer).getByRole('link',{name:'Registrar nuevo Alumno'}));expect(drawer).toBeVisible();await act(async()=>finish({error:{code:'40001'}}));
 });
 it.each(['CERRADO','DESIERTO','ANULADO'])('allows only historical consultation for terminal Cycle %s',async estado=>{
- show({cycle:{...cycle,estado_codigo:estado}});await screen.findByRole('table',{name:'Alumnos matriculados en el Ciclo'});expect(screen.queryByRole('button',{name:'+ Matricular alumno'})).not.toBeInTheDocument();expect(client.rpc).not.toHaveBeenCalled()
+ show({cycle:{...cycle,estado_codigo:estado}});await screen.findByRole('table',{name:'Alumnos matriculados en el Ciclo'});expect(screen.queryByRole('button',{name:'+ Matricular alumno'})).not.toBeInTheDocument();expect(screen.queryByRole('link',{name:'Editar matrícula'})).not.toBeInTheDocument();expect(screen.queryByRole('button',{name:/Más acciones de matrícula/})).not.toBeInTheDocument();expect(client.rpc).not.toHaveBeenCalled()
 })
 it('blocks opening the panel when Cycle data has unsaved changes',()=>{show({blocked:true});expect(screen.getByRole('button',{name:'+ Matricular alumno'})).toBeDisabled();expect(screen.getByText(/Guarda o cancela/)).toBeVisible()})
 it('excludes existing registrations including annulled ones from search candidates',async()=>{
@@ -69,7 +69,7 @@ it('new pupil registration opens a full route with a return Cycle',async()=>{
  show();fireEvent.click(screen.getByRole('button',{name:'+ Matricular alumno'}));const drawer=await screen.findByRole('dialog');expect(within(drawer).getByRole('link',{name:'Registrar nuevo Alumno'})).toHaveAttribute('href','/alumnos/nuevo?ciclo=c1');expect(client.rpc).not.toHaveBeenCalled();
 });
 it('hides registration controls without an academic role',async()=>{
- roles.current=['ADMIN_SISTEMA'];show();await screen.findByRole('table',{name:'Alumnos matriculados en el Ciclo'});expect(screen.queryByRole('button',{name:'+ Matricular alumno'})).not.toBeInTheDocument();expect(client.rpc).not.toHaveBeenCalled();
+ roles.current=['ADMIN_SISTEMA'];show();await screen.findByRole('table',{name:'Alumnos matriculados en el Ciclo'});expect(screen.queryByRole('button',{name:'+ Matricular alumno'})).not.toBeInTheDocument();expect(screen.queryByRole('link',{name:'Editar matrícula'})).not.toBeInTheDocument();expect(screen.queryByRole('button',{name:/Más acciones de matrícula/})).not.toBeInTheDocument();expect(client.rpc).not.toHaveBeenCalled();
 });
 
 it('failed mandatory validation does not add a row and offers completing the pupil record',async()=>{
@@ -91,7 +91,7 @@ it('hides pagination when the enrolled grid has only one page',async()=>{
 
 it('moves an active enrollment from its grid action using explicit destination and optimistic versions',async()=>{
  availableCycles.push({...cycle,id:'c2',codigo_ciclo:'2026-002-NAV',updated_at:'cv2'});show();await screen.findByRole('link',{name:'Ver matrícula'});
- fireEvent.click(screen.getByRole('button',{name:'Cambiar Ciclo'}));const dialog=await screen.findByRole('dialog',{name:'Cambiar Ciclo de matrícula'});
+ fireEvent.click(screen.getByRole('button',{name:/Más acciones de matrícula/}));fireEvent.click(screen.getByRole('menuitem',{name:'Cambiar Ciclo…'}));const dialog=await screen.findByRole('dialog',{name:'Cambiar Ciclo de matrícula'});
  await within(dialog).findByRole('option',{name:'2026-002-NAV'});expect(within(dialog).queryByRole('option',{name:'2026-001-NAV'})).not.toBeInTheDocument();
  expect(within(dialog).getByText(/El código de matrícula se conserva/)).toBeVisible();expect(client.rpc).not.toHaveBeenCalled();
  fireEvent.change(within(dialog).getByRole('combobox',{name:'Ciclo destino'}),{target:{value:'c2'}});
@@ -101,10 +101,22 @@ it('moves an active enrollment from its grid action using explicit destination a
  await waitFor(()=>expect(screen.queryByRole('dialog')).not.toBeInTheDocument());await waitFor(()=>expect(screen.getByRole('heading',{name:'Alumnos matriculados · 0'})).toBeVisible());
 });
 it('retains cycle transfer selection on conflict and never retries',async()=>{
- availableCycles.push({...cycle,id:'c2',codigo_ciclo:'2026-002-NAV',updated_at:'cv2'});show();await screen.findByRole('link',{name:'Ver matrícula'});fireEvent.click(screen.getByRole('button',{name:'Cambiar Ciclo'}));const dialog=await screen.findByRole('dialog');await within(dialog).findByRole('option',{name:'2026-002-NAV'});
+ availableCycles.push({...cycle,id:'c2',codigo_ciclo:'2026-002-NAV',updated_at:'cv2'});show();await screen.findByRole('link',{name:'Ver matrícula'});fireEvent.click(screen.getByRole('button',{name:/Más acciones de matrícula/}));fireEvent.click(screen.getByRole('menuitem',{name:'Cambiar Ciclo…'}));const dialog=await screen.findByRole('dialog');await within(dialog).findByRole('option',{name:'2026-002-NAV'});
  fireEvent.change(within(dialog).getByRole('combobox',{name:'Ciclo destino'}),{target:{value:'c2'}});client.rpc.mockResolvedValue({error:{code:'40001'}});fireEvent.click(within(dialog).getByRole('button',{name:'Confirmar cambio de Ciclo'}));
  expect(await within(dialog).findByRole('alert')).toHaveTextContent('La información cambió');expect(within(dialog).getByRole('combobox')).toHaveValue('c2');expect(client.rpc).toHaveBeenCalledTimes(1);
 });
 it('hides transfer for annulled enrollments and disables it when the Cycle has a pending draft',async()=>{
- records[0].estado_codigo='ANULADO';const view=show();await screen.findByRole('link',{name:'Ver matrícula'});expect(screen.queryByRole('button',{name:'Cambiar Ciclo'})).not.toBeInTheDocument();view.unmount();records[0].estado_codigo='ACTIVO';show({blocked:true});expect(await screen.findByRole('button',{name:'Cambiar Ciclo'})).toBeDisabled();
+ records[0].estado_codigo='ANULADO';const view=show();await screen.findByRole('link',{name:'Ver matrícula'});expect(screen.queryByRole('button',{name:/Más acciones de matrícula/})).not.toBeInTheDocument();view.unmount();records[0].estado_codigo='ACTIVO';show({blocked:true});expect(await screen.findByRole('button',{name:/Más acciones de matrícula/})).toBeDisabled();
+});
+
+
+it('keeps transfer in the more-actions menu and supports keyboard, dismissal and focus return',async()=>{
+ show();await screen.findByRole('link',{name:'Ver matrícula'});
+ const more=screen.getByRole('button',{name:'Más acciones de matrícula 2026-NAV-001'});
+ expect(screen.queryByRole('menuitem',{name:'Cambiar Ciclo…'})).not.toBeInTheDocument();expect(screen.getByRole('link',{name:'Editar matrícula'})).toHaveTextContent('Editar');
+ more.focus();fireEvent.keyDown(more,{key:'ArrowDown'});const action=screen.getByRole('menuitem',{name:'Cambiar Ciclo…'});await waitFor(()=>expect(action).toHaveFocus());expect(more).toHaveAttribute('aria-expanded','true');
+ fireEvent.keyDown(action,{key:'Escape'});expect(screen.queryByRole('menu')).not.toBeInTheDocument();expect(more).toHaveFocus();expect(more).toHaveAttribute('aria-expanded','false');
+ fireEvent.click(more);fireEvent.pointerDown(document.body);expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+ fireEvent.click(more);fireEvent.keyDown(screen.getByRole('menuitem'),{key:'Tab'});expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+ fireEvent.click(more);fireEvent.click(screen.getByRole('menuitem'));const dialog=await screen.findByRole('dialog');expect(client.rpc).not.toHaveBeenCalled();fireEvent.click(within(dialog).getByRole('button',{name:'Cerrar panel de matrícula'}));await waitFor(()=>expect(more).toHaveFocus());
 });

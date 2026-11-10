@@ -468,3 +468,12 @@ form.enrollment-detail-form { max-width:none; margin:1rem 0 0; padding:1rem 0 0;
 .enrollment-charge-totals dd { text-align:right; font-variant-numeric:tabular-nums; }
 
 .enrollment-charge-actions { justify-content:space-between; }
+
+/* Enrollment row actions: ordinary navigation first, exceptional transfer in a menu. */
+.cycle-enrollment-actions { display:flex; align-items:center; flex-wrap:wrap; gap:.4rem; }
+.cycle-enrollment-actions > a,.cycle-enrollment-actions > button { display:inline-flex; align-items:center; justify-content:center; min-height:2rem; padding:.35rem .6rem; border:1px solid var(--border); border-radius:.4rem; background:var(--surface-elevated); color:var(--text-primary); font-size:.8rem; font-weight:600; line-height:1.35; text-decoration:none; white-space:nowrap; }
+.cycle-enrollment-actions > a:hover { background:var(--surface); border-color:var(--border-strong); }
+.cycle-enrollment-actions > .enrollment-more-trigger { width:2rem; padding:.35rem; }
+.enrollment-actions-menu { position:fixed; z-index:100; width:180px; max-width:calc(100vw - 16px); padding:.25rem; border:1px solid var(--border); border-radius:.45rem; background:var(--surface-elevated); color:var(--text-primary); box-shadow:0 4px 16px rgb(0 0 0 / .16); }
+.enrollment-actions-menu > button { width:100%; min-height:2.25rem; justify-content:flex-start; padding:.45rem .6rem; border-color:transparent; border-radius:.25rem; background:var(--surface-elevated); color:var(--text-primary); font-size:.85rem; }
+.enrollment-actions-menu > button:hover { background:var(--surface); border-color:var(--border-strong); }

@@ -52,3 +52,8 @@ Configurar un Ciclo con un cargo obligatorio y otro opcional. Agregar alumno: am
 ### Seleccionar todos en Cargos (pendiente humano)
 
 En Editar matrícula → Cargos, usar el check del encabezado para marcar/desmarcar todos los opcionales; el obligatorio permanece seleccionado. Comprobar estado mixto y totales al cambiar un opcional, y persistencia después de Guardar cargos y reabrir la ficha. El control no guarda automáticamente ni permite retirar cargos con pagos vigentes.
+
+
+### Acciones de matrícula en el Ciclo (pendiente humano)
+
+Comprobar botones compactos Ver matrícula / Editar y menú ⋮ Más acciones con Cambiar Ciclo…; anuladas solo muestran Ver matrícula. Probar teclado, Escape, clic fuera y retorno de foco al cerrar el diálogo. Revisar posicionamiento del menú en última fila, ventana estrecha y temas visuales; no se presume verificación humana de estos casos.

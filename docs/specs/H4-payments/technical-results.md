@@ -52,7 +52,7 @@ Entorno local: Windows, Node 24.22.1 del runtime disponible. CI utiliza la versi
 | Comprobación | Evidencia |
 |---|---|
 | lint / typecheck / git diff --check | PASSED durante construcción |
-| Suite completa | 367/367 PASSED en 21 archivos tras agregar selección de todos los opcionales; 365/365 corresponden al arreglo de reapertura; 364/364 corresponden al filtro de anuladas y CHG-H4-002; 362/362 corresponden a compactacion visual; 359/359 corresponden al acceso directo CHG-H4-001, 335/335 a PT409 y 320/320 al candidato inicial |
+| Suite completa | 368/368 PASSED en 21 archivos tras reorganizar acciones de matrícula; 367/367 corresponden al selector de todos los opcionales; 365/365 corresponden al arreglo de reapertura; 364/364 corresponden al filtro de anuladas y CHG-H4-002; 362/362 corresponden a compactacion visual; 359/359 corresponden al acceso directo CHG-H4-001, 335/335 a PT409 y 320/320 al candidato inicial |
 | build / build-safety | PASSED; advertencia bundle >500 kB conservada |
 | Modelo primero, antes de comandos/UI | PASSED en BEGIN/ROLLBACK: tablas, RLS, grants y cinco medios |
 | `test:payments:rollback` | PASSED; datos sintéticos y schema nuevo se revierten; comparación de huella de datos pre/post |
@@ -300,3 +300,12 @@ Regresión automatizada: todos/ninguno/mixto, actualización del total, obligato
 La primera ejecución de 367 tests detectó una carrera preexistente en la aserción de foco de PaymentAccess: comprobaba antes de ejecutarse el efecto de React. Se conserva la aserción de accesibilidad y se espera explícitamente con waitFor; sin cambios de comportamiento productivo de Pagos. Se repite la suite completa.
 
 Validación del selector: lint/typecheck/build/build-safety/diff-check correctos; suite completa 367/367 en 21 archivos con `npm test -- --maxWorkers=2`. La ejecución local anterior agotó 5s en un caso de navegación de Ciclos; la repetición limita procesos sin ampliar timeouts ni modificar ese test. La CI del candidato repite el workflow completo con su configuración ordinaria.
+
+
+## 10/11/2026 — Jerarquía de acciones en matrículas del Ciclo
+
+Mejora UX autorizada humanamente: Ver matrícula y Editar aparecen como botones secundarios compactos del mismo estilo; Cambiar Ciclo… pasa a un menú de tres puntos Más acciones. Solo matrículas activas de Ciclos elegibles y roles académicos conservan edición/menú; anuladas y estados de solo consulta muestran únicamente Ver matrícula. Se mantienen los bloqueos del borrador del Ciclo y el diálogo/comando existentes de cambio de Ciclo.
+
+El menú tiene nombre accesible por matrícula, navegación con teclado, Escape/clic exterior/Tab para cerrar y retorno de foco al cerrarlo o volver del diálogo. Se presenta fuera del contenedor con scroll para evitar recortes; no ejecuta comandos al abrirse. Pruebas cubren exposición de acciones, permisos/estados/bloqueo, cierre/foco y la misma RPC transaccional con selección explícita del destino, versiones y conflicto sin retry. Sin SQL, migraciones, nuevos permisos ni modificación de los cuatro documentos aprobados. Gate 2 pendiente; sin acceptance, merge ni H5. Resultados exactos y CI del candidato en entrega.
+
+Validación local de jerarquía de acciones: lint/typecheck/build/build-safety/diff-check correctos; suite completa 368/368 (21 archivos) y repetición focalizada CycleEnrollments 20/20 con las aserciones finales de visibilidad de roles/estados. No se declara QA visual humana ejecutada; revisión de temas/viewport/forced-colors queda pendiente. CI exacta del candidato en entrega.

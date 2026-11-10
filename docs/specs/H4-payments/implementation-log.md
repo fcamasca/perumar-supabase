@@ -168,3 +168,12 @@ Regresión automatizada: todos/ninguno/mixto, actualización del total, obligato
 La primera ejecución de 367 tests detectó una carrera preexistente en la aserción de foco de PaymentAccess: comprobaba antes de ejecutarse el efecto de React. Se conserva la aserción de accesibilidad y se espera explícitamente con waitFor; sin cambios de comportamiento productivo de Pagos. Se repite la suite completa.
 
 Validación del selector: lint/typecheck/build/build-safety/diff-check correctos; suite completa 367/367 en 21 archivos con `npm test -- --maxWorkers=2`. La ejecución local anterior agotó 5s en un caso de navegación de Ciclos; la repetición limita procesos sin ampliar timeouts ni modificar ese test. La CI del candidato repite el workflow completo con su configuración ordinaria.
+
+
+## 10/11/2026 — Jerarquía de acciones en matrículas del Ciclo
+
+Mejora UX autorizada humanamente: Ver matrícula y Editar aparecen como botones secundarios compactos del mismo estilo; Cambiar Ciclo… pasa a un menú de tres puntos Más acciones. Solo matrículas activas de Ciclos elegibles y roles académicos conservan edición/menú; anuladas y estados de solo consulta muestran únicamente Ver matrícula. Se mantienen los bloqueos del borrador del Ciclo y el diálogo/comando existentes de cambio de Ciclo.
+
+El menú tiene nombre accesible por matrícula, navegación con teclado, Escape/clic exterior/Tab para cerrar y retorno de foco al cerrarlo o volver del diálogo. Se presenta fuera del contenedor con scroll para evitar recortes; no ejecuta comandos al abrirse. Pruebas cubren exposición de acciones, permisos/estados/bloqueo, cierre/foco y la misma RPC transaccional con selección explícita del destino, versiones y conflicto sin retry. Sin SQL, migraciones, nuevos permisos ni modificación de los cuatro documentos aprobados. Gate 2 pendiente; sin acceptance, merge ni H5. Resultados exactos y CI del candidato en entrega.
+
+Validación local de jerarquía de acciones: lint/typecheck/build/build-safety/diff-check correctos; suite completa 368/368 (21 archivos) y repetición focalizada CycleEnrollments 20/20 con las aserciones finales de visibilidad de roles/estados. No se declara QA visual humana ejecutada; revisión de temas/viewport/forced-colors queda pendiente. CI exacta del candidato en entrega.
