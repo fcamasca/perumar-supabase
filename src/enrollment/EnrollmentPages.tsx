@@ -485,7 +485,6 @@ export function NewEnrollment({cycleContext,onComplete,onCancel,onEditorChange}:
 export function EnrollmentDetail() {
     const navigate=useNavigate();
     const [discountOpen,setDiscountOpen]=useState(false);
-    const initializedCharges=useRef(false);
     const { id } = useParams(), { client, state } = useSession(), [row, setRow] = useState<Row>(), [student, setStudent] = useState<Row>(), [cycle, setCycle] = useState<Row>(), [charges, setCharges] = useState<Row[]>([]), [tariffs, setTariffs] = useState<Row[]>([]), [options, setOptions] = useState<string[]>([]), [target, setTarget] = useState(''), [code, setCode] = useState(''), [discount, setDiscount] = useState(''), [reason, setReason] = useState(''), [message, setMessage] = useState('Cargando…'), [revision, setRevision] = useState(0), [busy, setBusy] = useState(false), [tab,setTab]=useState(0),[choosingCompany,setChoosingCompany]=useState(false),[sponsor,setSponsor]=useState<Row|null>(null),[detailsReady,setDetailsReady]=useState(false),[tariffStatus,setTariffStatus]=useState<'idle'|'loading'|'ready'|'error'>('idle');
     const [searchParams,setSearchParams]=useSearchParams(),[editing,setEditing]=useState(searchParams.get('editar')==='1');
     const { ask, dialog } = useConfirmation(busy), director = state.roles?.includes('DIRECTOR_ACADEMICO');
@@ -500,7 +499,7 @@ export function EnrollmentDetail() {
     useEffect(() => { let active = true; if (!target)
         return;setTariffStatus('loading'); void client.from('ciclo_tarifa').select('id,importe,obligatorio,tarifa(nombre,tipo,activo)').eq('ciclo_id', target).eq('activo', true).then(r => { if (active) {
         setTariffStatus(r.error?'error':'ready');setTariffs(r.error ? [] : (r.data as Row[]).filter(x => (x.tarifa as Record<string, unknown>)?.activo));
-        setOptions(!initializedCharges.current || target!==row?.ciclo_id ? (r.error?[]:(r.data as Row[]).filter(x=>(x.tarifa as Record<string,unknown>)?.activo).map(x=>x.id)) : charges.filter(x=>x.activo).map(x=>String(x.ciclo_tarifa_id)));if(!r.error)initializedCharges.current=true;
+        setOptions(target!==row?.ciclo_id ? (r.error?[]:(r.data as Row[]).filter(x=>(x.tarifa as Record<string,unknown>)?.activo).map(x=>x.id)) : charges.filter(x=>x.activo).map(x=>String(x.ciclo_tarifa_id)));
     } }); return () => { active = false; }; }, [client, target, row, charges]);
     const editable = detailsReady && row?.estado_codigo === 'ACTIVO' && ['PROGRAMADO', 'EN_CURSO'].includes(value(cycle, 'estado_codigo'));
     async function save(extra: Draft = {}, selected?: string[]) { if (!row || !editing || !editable || (selected && tariffStatus!=='ready'))

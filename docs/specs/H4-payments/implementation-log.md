@@ -148,3 +148,12 @@ Validación local CHG-H4-002: lint/typecheck, 364/364 unit tests, build y build-
 CI inicial `42852846574` (`c5b2d37`) detectó interferencia del nuevo fixture de cambio de Ciclo con TEST-H3-021-027: dejaba una matrícula sintética activa adicional en el Ciclo que luego debía permitir cambiar de Curso tras anular la matrícula original. El guard DB rechazó correctamente el cambio. Se cierra explícitamente la nueva matrícula sintética al terminar su prueba; no se relaja ninguna regla ni aserción H3. Se publica candidato corregido y se repite CI completa.
 
 CI `42853488272` (`168ac1d`) pasó la corrección del fixture y las demás invariantes H3 hasta el ensayo de configuración concurrente, donde persistía la expectativa anterior de un único cargo. Se actualiza esa aserción al nuevo contrato: exactamente dos cargos (Curso 650 + opcional 80, total 730), manteniendo la comprobación de importes de una única versión de configuración. No se sustituye ni debilita el ensayo concurrente. Se repite CI completa con el candidato siguiente.
+
+
+## 10/11/2026 — Corrección de selección guardada al reabrir Cargos
+
+Hallazgo humano posterior a CHG-H4-002: Ciclos → Matrículas → Editar matrícula → Cargos seleccionaba todos los conceptos en el primer montaje, aunque algunos opcionales estuvieran retirados. La inicialización UI aplicaba el valor por defecto del alta también a una matrícula existente. Se elimina esa excepción: en el Ciclo actual, la selección proviene siempre de `matricula_cargo.activo`; el alta y cambio de Ciclo mantienen la inclusión DB-side de CHG-H4-002. No se agregan cargos automáticamente ni se emite RPC al abrir.
+
+Regresión de UI: opcional vigente aparece marcado y puede desmarcarse; opcional retirado y tarifa nunca incorporada permanecen desmarcados tanto al cambiar de pestaña como al desmontar/reabrir la ficha, con total coherente y sin escrituras. Sin cambios de SQL, modelo financiero, permisos, inventario ni Spec aprobado. Validación y CI exacta en entrega del candidato. Gate 2 pendiente; sin acceptance, merge ni H5.
+
+Validación local del arreglo de reapertura: lint, typecheck, 365/365 pruebas en 21 archivos, build, build-safety y diff-check correctos. Sin migración adicional; inventario permanece en 21 migraciones y los mismos objetos. CI del candidato publicada en la entrega.
