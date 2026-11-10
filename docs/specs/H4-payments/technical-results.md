@@ -13,8 +13,9 @@ Migraciones nuevas, aditivas:
 | `20261109020000_h4_payment_model.sql` | pago, pago_aplicacion, catálogo MEDIO_PAGO, restricciones/índices, RLS/grants, vistas invoker y guards de historia/integridad |
 | `20261109030000_h4_payment_commands.sql` | registrar_pago y anular_pago transaccionales, idempotencia, locks, versiones y dos eventos mínimos |
 | `20261109040000_h4_enrollment_guards.sql` | Sustituye el guard H3 existente para aplicar solo restricciones financieras aprobadas; conserva CHG-H3-011 |
+| `20261109050000_logical_conflicts_pt409.sql` | Correccion pre-Gate 2: contratos de conflicto logico PT409 en cuatro funciones existentes |
 
-Inventario final controlado por `assertSecurityInventory`: **24 tablas públicas, 2 vistas invoker, 19 RPC públicas, 18 funciones privadas, 27 policies SELECT authenticated, 18 migraciones**. El verificador distingue tablas y vistas: una vista no se presenta como tabla con RLS; exige `security_invoker=true` y conserva los controles de sus tablas base. Los 52 pares objeto/rol de grants (26 objetos × authenticated/anon) se comprueban explícitamente: únicamente SELECT authenticated; sin DML/TRUNCATE cliente.
+Inventario final controlado por `assertSecurityInventory`: **24 tablas públicas, 2 vistas invoker, 19 RPC públicas, 18 funciones privadas, 27 policies SELECT authenticated, 19 migraciones**. El verificador distingue tablas y vistas: una vista no se presenta como tabla con RLS; exige `security_invoker=true` y conserva los controles de sus tablas base. Los 52 pares objeto/rol de grants (26 objetos × authenticated/anon) se comprueban explícitamente: únicamente SELECT authenticated; sin DML/TRUNCATE cliente.
 
 Tablas públicas: alumno, alumno_contacto_emergencia, app_roles, app_user_roles, app_users, auditoria, capitania, carrera, carrera_materia, catalogo, catalogo_valor, ciclo, ciclo_materia, ciclo_tarifa, departamento, distrito, empresa_patrocinadora, materia, matricula, matricula_cargo, **pago, pago_aplicacion**, provincia, tarifa. Permanecen los dos contadores privados y la secuencia de Alumno H3; ninguno nuevo para pagos.
 
@@ -49,7 +50,7 @@ Entorno local: Windows, Node 24.22.1 del runtime disponible. CI utiliza la versi
 | Comprobación | Evidencia |
 |---|---|
 | lint / typecheck / git diff --check | PASSED durante construcción |
-| Suite completa | 320/320 PASSED en 19 archivos; repetición final también exigida en CI del candidato |
+| Suite completa | 335/335 PASSED en 20 archivos tras la correccion pre-Gate 2; 320/320 corresponden al candidato anterior |
 | build / build-safety | PASSED; advertencia bundle >500 kB conservada |
 | Modelo primero, antes de comandos/UI | PASSED en BEGIN/ROLLBACK: tablas, RLS, grants y cinco medios |
 | `test:payments:rollback` | PASSED; datos sintéticos y schema nuevo se revierten; comparación de huella de datos pre/post |
@@ -171,7 +172,7 @@ La entrega informa SHA candidato exacto y su ejecución CI. Ninguna de estas ver
 
 Hallazgo recibido sobre el candidato `9da9697771064a29574498a4acdb2c12b00cc395`. Gate 2 NO aprobado; sin acceptance, merge ni H5.
 
-Fuente oficial (actualizada 04/11/2026): https://supabase.com/kb/troubleshooting/high-cpu-and-infinite-transaction-retries-when-using-custom-error-codes-in-rpc-functions-77326b
+Fuente oficial: [Supabase KB, actualizada 04/11/2026](https://supabase.com/kb/troubleshooting/high-cpu-and-infinite-transaction-retries-when-using-custom-error-codes-in-rpc-functions-77326b).
 
 Clasificacion de los cuatro RAISE deliberados historicos:
 
@@ -188,8 +189,24 @@ academicError, enrollmentError y paymentError reconocen PT409 y mantienen 40001/
 
 Validacion local: lint/typecheck/build/build-safety/diff-check PASSED; 335/335 pruebas en 20 archivos PASSED; rollback PASSED; suite aislada con comparacion de definiciones efectivas (normaliza solo CRLF/LF), cero RAISE manuales 40001 efectivos y trece carreras PASSED. 70+60/100 conserva un unico commit y el perdedor devuelve 40001 REAL; deadlock aislado adicional produce 40P01 REAL sin traduccion/retry. La base temporal se elimina en finally.
 
-Regresion API agregada: cinco RPC reales con version obsoleta (guardar_materia, cambiar_estado_ciclo, editar_matricula, registrar_pago, anular_pago), JWT ordinario Director, PT409 y HTTP 409; huellas de registros/versiones/aplicaciones/auditoria y conteo global de eventos sin cambios. Su ejecucion y la regresion completa H1-H3/expiracion/reset-repeat quedan PENDIENTES de la CI de esta correccion hasta observar SUCCESS.
+Regresion API agregada: cinco RPC reales con version obsoleta (guardar_materia, cambiar_estado_ciclo, editar_matricula, registrar_pago, anular_pago), JWT ordinario Director, PT409 y HTTP 409; huellas de registros/versiones/aplicaciones/auditoria y conteo global de eventos sin cambios. Ejecutada con resultado PASSED en CI 42751754228, commit 372cd047a74de5e499c0d9b30b9f76c7c865ee5b: tambien PASSED la regresion H1-H3, expiracion real, reconstruccion desde cero y repeticion completa.
 
 Busqueda final: cuatro coincidencias en archivos historicos inmutables; ninguna en la migracion correctora. Sobre pg_proc despues de aplicar la migracion en la base aislada: CERO RAISE deliberados 40001 en funciones public/private efectivas. Los errores reales de PostgreSQL no se reemplazan.
 
 Inventario funcional sin cambios: 24 tablas, 2 vistas, 19 RPC, 18 helpers y 27 policies. Solo el inventario de migraciones pasa de 18 a 19. Los cuatro documentos del Spec aprobado permanecen identicos.
+
+Residual de compatibilidad: no se ejecuta la Data API hospedada ni PostgREST 14. Se valida el contrato PT409 / HTTP 409 en el stack local/CI existente (CLI 2.121.0 / PostgREST 16.4), siguiendo la recomendacion oficial de Supabase. No se afirma haber reproducido el bucle de PostgREST 14. Los residuales humanos anteriores, forced-colors real NO VERIFICADO y bundle >500 kB, permanecen sin cambios.
+
+### Resultado pre-Gate 2 verificado
+
+[CI 42751754228 — COMPLETED / SUCCESS](https://github.com/fcamasca/perumar-supabase/actions/runs/42751754228), SHA exacto de codigo `372cd047a74de5e499c0d9b30b9f76c7c865ee5b`.
+
+- 335/335 unitarias en 20 archivos, lint, typecheck, build y build-safety: PASSED.
+- test:payments:rollback, test:payments:isolated y test:payments con JWT ordinarios: PASSED.
+- Cinco RPC H2/H3/H4 obsoletas: PT409 / HTTP 409, registros/versiones/aplicaciones y auditoria sin cambios; no se imprimen payloads en la evidencia (huellas SHA-256).
+- React: Asignatura/Tarifa/Pagos conservan borrador y ejecutan una unica llamada ante PT409, 40001 o 40P01; la siguiente decision es explicita del usuario.
+- Trece carreras existentes, incluido 70+60/100: PASSED, sin sobrepago ni retries. Se comprueba ademas 40001 NATIVO en esa carrera y 40P01 NATIVO en un deadlock aislado; no se traducen.
+- Inventario, matriz RLS, regresion H1-H3, token Auth expirado, reconstruccion desde cero y repeticion de integracion: PASSED.
+- git diff --check y comparacion de los cuatro documentos del Spec aprobado: PASSED; migraciones historicas intactas.
+
+La publicacion que incorpora esta evidencia es documental respecto de ese SHA de codigo. La entrega informa tambien su SHA candidato y CI exacta; no se modifica codigo despues de la validacion anterior. Sin acceptance, merge ni H5. Gate 2 NO APROBADO.

@@ -13,7 +13,7 @@ Los cuatro documentos aprobados se conservan idénticos. Las 17 OQ y C-H4-001 es
 | C: idempotencia y recuperacion | IMPLEMENTADO / validado | Replay, UUID global concurrente, cuerpo HTTP descartado tras commit y referencia minima |
 | D: anulacion | IMPLEMENTADO / validado | Transicion unica, fallos aislados, permisos Director y cruces concurrentes |
 | E: restricciones H3 | IMPLEMENTADO / validado | C-H4-001, descuento, traslado, estados y patrocinador; historia preservada |
-| F: UI, regresion y candidato | IMPLEMENTADO / evidencia de entrega | 320 unitarias; CI del candidato exacto se comprueba antes de entregar; humanos pendientes |
+| F: UI, regresion y candidato | IMPLEMENTADO / evidencia de entrega | 335 unitarias tras correccion pre-Gate 2; CI del candidato exacto se comprueba antes de entregar; humanos pendientes |
 
 No se resetea la base humana. Las pruebas locales de escritura deben revertirse mediante ROLLBACK; la concurrencia con fixtures confirmados se limita a una base desechable.
 
@@ -44,7 +44,7 @@ Los errores encontrados durante construccion se corrigieron y revalidaron; no se
 
 Hallazgo recibido sobre el candidato `9da9697771064a29574498a4acdb2c12b00cc395`. Gate 2 NO aprobado; sin acceptance, merge ni H5.
 
-Fuente oficial (actualizada 04/11/2026): https://supabase.com/kb/troubleshooting/high-cpu-and-infinite-transaction-retries-when-using-custom-error-codes-in-rpc-functions-77326b
+Fuente oficial: [Supabase KB, actualizada 04/11/2026](https://supabase.com/kb/troubleshooting/high-cpu-and-infinite-transaction-retries-when-using-custom-error-codes-in-rpc-functions-77326b).
 
 Clasificacion de los cuatro RAISE deliberados historicos:
 
@@ -61,8 +61,22 @@ academicError, enrollmentError y paymentError reconocen PT409 y mantienen 40001/
 
 Validacion local: lint/typecheck/build/build-safety/diff-check PASSED; 335/335 pruebas en 20 archivos PASSED; rollback PASSED; suite aislada con comparacion de definiciones efectivas (normaliza solo CRLF/LF), cero RAISE manuales 40001 efectivos y trece carreras PASSED. 70+60/100 conserva un unico commit y el perdedor devuelve 40001 REAL; deadlock aislado adicional produce 40P01 REAL sin traduccion/retry. La base temporal se elimina en finally.
 
-Regresion API agregada: cinco RPC reales con version obsoleta (guardar_materia, cambiar_estado_ciclo, editar_matricula, registrar_pago, anular_pago), JWT ordinario Director, PT409 y HTTP 409; huellas de registros/versiones/aplicaciones/auditoria y conteo global de eventos sin cambios. Su ejecucion y la regresion completa H1-H3/expiracion/reset-repeat quedan PENDIENTES de la CI de esta correccion hasta observar SUCCESS.
+Regresion API agregada: cinco RPC reales con version obsoleta (guardar_materia, cambiar_estado_ciclo, editar_matricula, registrar_pago, anular_pago), JWT ordinario Director, PT409 y HTTP 409; huellas de registros/versiones/aplicaciones/auditoria y conteo global de eventos sin cambios. Ejecutada con resultado PASSED en CI 42751754228, commit 372cd047a74de5e499c0d9b30b9f76c7c865ee5b: tambien PASSED la regresion H1-H3, expiracion real, reconstruccion desde cero y repeticion completa.
 
 Busqueda final: cuatro coincidencias en archivos historicos inmutables; ninguna en la migracion correctora. Sobre pg_proc despues de aplicar la migracion en la base aislada: CERO RAISE deliberados 40001 en funciones public/private efectivas. Los errores reales de PostgreSQL no se reemplazan.
 
 Inventario funcional sin cambios: 24 tablas, 2 vistas, 19 RPC, 18 helpers y 27 policies. Solo el inventario de migraciones pasa de 18 a 19. Los cuatro documentos del Spec aprobado permanecen identicos.
+
+### Resultado pre-Gate 2 verificado
+
+[CI 42751754228 — COMPLETED / SUCCESS](https://github.com/fcamasca/perumar-supabase/actions/runs/42751754228), SHA exacto de codigo `372cd047a74de5e499c0d9b30b9f76c7c865ee5b`.
+
+- 335/335 unitarias en 20 archivos, lint, typecheck, build y build-safety: PASSED.
+- test:payments:rollback, test:payments:isolated y test:payments con JWT ordinarios: PASSED.
+- Cinco RPC H2/H3/H4 obsoletas: PT409 / HTTP 409, registros/versiones/aplicaciones y auditoria sin cambios; no se imprimen payloads en la evidencia (huellas SHA-256).
+- React: Asignatura/Tarifa/Pagos conservan borrador y ejecutan una unica llamada ante PT409, 40001 o 40P01; la siguiente decision es explicita del usuario.
+- Trece carreras existentes, incluido 70+60/100: PASSED, sin sobrepago ni retries. Se comprueba ademas 40001 NATIVO en esa carrera y 40P01 NATIVO en un deadlock aislado; no se traducen.
+- Inventario, matriz RLS, regresion H1-H3, token Auth expirado, reconstruccion desde cero y repeticion de integracion: PASSED.
+- git diff --check y comparacion de los cuatro documentos del Spec aprobado: PASSED; migraciones historicas intactas.
+
+La publicacion que incorpora esta evidencia es documental respecto de ese SHA de codigo. La entrega informa tambien su SHA candidato y CI exacta; no se modifica codigo despues de la validacion anterior. Sin acceptance, merge ni H5. Gate 2 NO APROBADO.
