@@ -57,7 +57,7 @@ function PaymentSearch({context,setContext}:{context:SearchContext;setContext:Di
     const selected = context.mode === 0 ? context.studentId : context.cycleId
     if (!selected) { setLoading(false); return }
     setLoading(true)
-    let query = client.from('matricula_pago_listado').select(columns).eq(context.mode === 0 ? 'alumno_id' : 'ciclo_id', selected)
+    let query = client.from('matricula_pago_listado').select(columns).eq(context.mode === 0 ? 'alumno_id' : 'ciclo_id', selected).eq('matricula_estado', 'ACTIVO')
       .order('pendiente', { ascending: false }).order('ciclo_fecha_inicio', { ascending: false }).order('matricula_created_at', { ascending: false }).order('matricula_id', { ascending: false })
       .range(context.page * 30, context.page * 30 + 29)
     if (context.mode === 1 && context.filter.trim()) query = query.or(studentSearchFilter(context.filter))
@@ -78,7 +78,7 @@ function PaymentSearch({context,setContext}:{context:SearchContext;setContext:Di
     <div role="tabpanel" id={`payment-search-panel-${context.mode}`} aria-labelledby={`payment-search-tab-${context.mode}`} className="student-section-panel">
       <div className="filters academic-toolbar" role="search" aria-label={context.mode === 0 ? 'Buscar Alumno para pagos' : 'Buscar Ciclo para pagos'}><AcademicSearch label={context.mode === 0 ? 'Buscar Alumno' : 'Buscar Ciclo'} placeholder={context.mode === 0 ? 'Código, documento, nombres o apellidos' : 'Código de Ciclo'} value={context.mode === 0 ? context.studentQuery : context.cycleQuery} onChange={value => change(context.mode === 0 ? { studentQuery: value, studentPage: 0, studentId: '', page: 0 } : { cycleQuery: value, cyclePage: 0, cycleId: '', page: 0 })}/></div>
       {searchLoading && <p role="status">Buscando…</p>}{searchError && <p role="alert">{searchError}</p>}
-      {context.mode === 0 && !context.studentQuery.trim() && <p className="help-text">Busca un alumno para ver sus matrículas, incluidas las que ya no tienen pendiente.</p>}
+      {context.mode === 0 && !context.studentQuery.trim() && <p className="help-text">Busca un alumno para ver sus matrículas activas, incluidas las que ya no tienen pendiente.</p>}
       {!searchLoading && !searchError && (context.mode === 0 ? !!context.studentQuery.trim() : true) && <>
         <div className="table-scroll"><table aria-label={context.mode === 0 ? 'Resultados de alumnos' : 'Ciclos cobrables'}><thead><tr>{context.mode === 0 ? <><th>Código Alumno</th><th>Alumno</th><th>Documento</th></> : <><th>Ciclo</th><th>Curso</th><th>Estado</th></>}<th>Acción</th></tr></thead><tbody>
           {context.mode === 0 ? students.map(s => <tr key={s.id}><td>{s.codigo_alumno}</td><td>{fullName(s)}</td><td>{s.numero_di}</td><td><button type="button" className="secondary" aria-label={`Ver matrículas de ${fullName(s)}`} onClick={() => change({ studentId: s.id, page: 0 })}>Ver matrículas</button></td></tr>) : cycles.map(c => <tr key={c.id}><td>{c.codigo_ciclo}</td><td>{c.carrera.nombre}</td><td><StatusBadge value={c.estado_codigo}/></td><td><button type="button" className="secondary" aria-label={`Ver alumnos de ${c.codigo_ciclo}`} onClick={() => change({ cycleId: c.id, filter: '', page: 0 })}>Ver alumnos</button></td></tr>)}

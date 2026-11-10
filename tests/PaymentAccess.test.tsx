@@ -15,7 +15,7 @@ beforeEach(() => {
   client.from.mockImplementation((table:string) => {
     const log={table,eq:[] as unknown[][],order:[] as unknown[][],or:[] as unknown[][],in:[] as unknown[][],range:[] as unknown[][]};queries.push(log)
     const data=()=>table==='alumno'?[student]:table==='ciclo'?cycles:rows
-    const q={select:()=>q,eq:(...a:unknown[])=>{log.eq.push(a);return q},order:(...a:unknown[])=>{log.order.push(a);return q},or:(...a:unknown[])=>{log.or.push(a);return q},in:(...a:unknown[])=>{log.in.push(a);return q},ilike:()=>q,range:(...a:unknown[])=>{log.range.push(a);return q},single:()=>Promise.resolve({data:failed?null:rows.find(r=>r.matricula_id===log.eq[0]?.[1]),error:failed?{code:'404'}:null}),then:(resolve:(r:unknown)=>unknown)=>Promise.resolve({data:failed?null:data(),error:failed?{code:'FAILED'}:null}).then(resolve)}
+    const q={select:()=>q,eq:(...a:unknown[])=>{log.eq.push(a);return q},order:(...a:unknown[])=>{log.order.push(a);return q},or:(...a:unknown[])=>{log.or.push(a);return q},in:(...a:unknown[])=>{log.in.push(a);return q},ilike:()=>q,range:(...a:unknown[])=>{log.range.push(a);return q},single:()=>Promise.resolve({data:failed?null:rows.find(r=>r.matricula_id===log.eq[0]?.[1]),error:failed?{code:'404'}:null}),then:(resolve:(r:unknown)=>unknown)=>Promise.resolve({data:failed?null:table==='matricula_pago_listado'&&log.eq.some(([field])=>field==='matricula_estado')?rows.filter(r=>r.matricula_estado===log.eq.find(([field])=>field==='matricula_estado')?.[1]):data(),error:failed?{code:'FAILED'}:null}).then(resolve)}
     return q
   })
 })
@@ -71,4 +71,12 @@ it('keeps search context in React only, not history state, URL or browser storag
 
 it('payment context uses a compact heading and no second financial summary',async()=>{
  show('/pagos/m1');await screen.findByRole('region',{name:'Flujo H4 existente'});expect(screen.getByRole('heading',{name:'Pagos de matrícula · 2026-MA-m1'})).toHaveFocus();expect(screen.getByText('QUIROZ PEREZ, JUAN')).toBeVisible();expect(screen.getByText('PESCA')).toBeVisible();expect(screen.queryByText('Consulta los datos registrados.')).not.toBeInTheDocument();expect(screen.queryByText('Pendiente',{exact:true})).not.toBeInTheDocument();expect(screen.getByRole('button',{name:'Volver a matrículas del Alumno'})).toBeVisible()
+})
+
+it.each(['Por Alumno','Por Ciclo'])('excludes annulled enrollments in %s before paging, retaining active zero balances',async mode=>{
+ rows=[row('m1','100'),row('cancelled','999',{matricula_estado:'ANULADO'}),row('zero','0')]
+ if(mode==='Por Alumno')await byStudent()
+ else{show();fireEvent.click(screen.getByRole('tab',{name:'Por Ciclo'}));fireEvent.click(await screen.findByRole('button',{name:'Ver alumnos de 2026-001-MA'}));await screen.findByRole('button',{name:'Pagar matrícula 2026-MA-m1'})}
+ const table=screen.getByRole('table',{name:'Matrículas y saldos'});expect(within(table).getAllByRole('row')).toHaveLength(3);expect(within(table).queryByRole('button',{name:/cancelled/})).not.toBeInTheDocument();expect(within(table).getByRole('button',{name:'Ver matrícula 2026-MA-zero'})).toBeVisible()
+ expect(queries.filter(q=>q.table==='matricula_pago_listado').at(-1)?.eq).toContainEqual(['matricula_estado','ACTIVO']);expect(client.rpc).not.toHaveBeenCalled()
 })

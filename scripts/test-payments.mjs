@@ -41,11 +41,11 @@ try {
     if(state==='CERRADO')await rpc(D,'cambiar_estado_ciclo',{id:extraCycle.id,expected_updated_at:extraCycle.updated_at,destino:'CERRADO'})
   }
   for(const c of [D,O,M]){
-    const list=checked(await c.from('matricula_pago_listado').select('matricula_id,alumno_id,ciclo_id,codigo_alumno,apellido_paterno,apellido_materno,nombres,numero_di,codigo_ciclo,curso_nombre,ciclo_estado,base::text,abonado::text,pendiente::text').eq('alumno_id',student.id).order('pendiente',{ascending:false}).order('ciclo_fecha_inicio',{ascending:false}).order('matricula_created_at',{ascending:false}).order('matricula_id',{ascending:false}).range(0,29),'direct payments student list')
+    const list=checked(await c.from('matricula_pago_listado').select('matricula_id,alumno_id,ciclo_id,codigo_alumno,apellido_paterno,apellido_materno,nombres,numero_di,codigo_ciclo,curso_nombre,ciclo_estado,base::text,abonado::text,pendiente::text').eq('alumno_id',student.id).eq('matricula_estado','ACTIVO').order('pendiente',{ascending:false}).order('ciclo_fecha_inicio',{ascending:false}).order('matricula_created_at',{ascending:false}).order('matricula_id',{ascending:false}).range(0,29),'direct payments student list')
     assert.deepEqual(list.map(r=>r.pendiente),['100.00','20.00','0.00'])
     assert.deepEqual(list.map(r=>r.ciclo_estado),['PROGRAMADO','CERRADO','EN_CURSO'])
     for(const term of [student.codigo_alumno,student.numero_di,'PRUEBA SINTETICA','H4']){
-      const cycleList=checked(await c.from('matricula_pago_listado').select('matricula_id,pendiente::text').eq('ciclo_id',cycle.id).or(studentSearchFilter(term)).order('pendiente',{ascending:false}).order('matricula_id'),'direct payments cycle filter')
+      const cycleList=checked(await c.from('matricula_pago_listado').select('matricula_id,pendiente::text').eq('ciclo_id',cycle.id).eq('matricula_estado','ACTIVO').or(studentSearchFilter(term)).order('pendiente',{ascending:false}).order('matricula_id'),'direct payments cycle filter')
       assert.equal(cycleList.length,1);assert.equal(cycleList[0].matricula_id,enrollment.id)
     }
     assert.equal(checked(await c.from('matricula_pago_listado').select('matricula_id').eq('matricula_id',randomUUID()),'unknown direct payment ID').length,0)
@@ -153,6 +153,11 @@ try {
   assert.ok((await D.rpc('anular_pago',{id:second.id,expected_updated_at:second.updated_at,motivo:'BLOCKED'})).error)
   assert.ok((await D.rpc('registrar_pago',{p:payload('1')})).error)
   assert.equal(checked(await D.from('pago').select('estado_codigo').eq('id',second.id).single(),'terminal history').estado_codigo,'CONFIRMADO')
+  const activeStudentList=checked(await O.from('matricula_pago_listado').select('matricula_id,matricula_estado,pendiente::text').eq('alumno_id',student.id).eq('matricula_estado','ACTIVO').order('pendiente',{ascending:false}).order('matricula_id').range(0,29),'operational student payments after cancellation')
+  assert.equal(activeStudentList.length,2);assert.ok(activeStudentList.every(r=>r.matricula_id!==enrollment.id&&r.matricula_estado==='ACTIVO'));assert.ok(activeStudentList.some(r=>Number(r.pendiente)===0))
+  assert.equal(checked(await O.from('matricula_pago_listado').select('matricula_id').eq('ciclo_id',cycle.id).eq('matricula_estado','ACTIVO').range(0,29),'operational cycle payments after cancellation').length,0)
+  assert.equal(checked(await O.from('matricula_pago_listado').select('matricula_estado').eq('matricula_id',enrollment.id).single(),'cancelled enrollment history retained').matricula_estado,'ANULADO')
+  console.log('Operational payments omit annulled enrollments by Student/Cycle; active zero balances and cancelled history retained: PASSED')
   // No direct app role removal or catalog mutation persists after this suite; stack reset removes business fixtures.
   console.log('H4 ordinary JWT D/O/multirole, denied actors, revoked access, direct DML, recovery, cancellation, minimal Admin audit and terminal enrollment: PASSED')
   inspectDatabase("select 1;")

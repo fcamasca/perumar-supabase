@@ -127,3 +127,11 @@ No cambia ninguna operacion financiera: mismo registrar_pago/anular_pago, import
 Validacion local: lint, typecheck y 362/362 pruebas en 21 archivos PASSED; nuevas regresiones de seleccion mixta/todos/ninguno, confirmacion con importe, resumen unico y foco de encabezado. Payload transaccional y ausencia de retries siguen cubiertos. Build/build-safety y diff-check PASSED antes de publicar; la CI del candidato se informa en la entrega.
 
 Limitacion de evidencia: captura automatizada de escritorio no disponible por fallo de inicializacion del kernel; se intento reinicio y una unica repeticion. No se opero ni confirmo un pago desde el escritorio. Revision visual real de desktop/movil y forced-colors sigue NO VERIFICADA/PENDIENTE humana; no se afirma que una altura concreta de viewport haya sido comprobada.
+
+## Ajuste operativo aprobado el 10/11/2026: ocultar matriculas anuladas
+
+Solicitud humana: al ir a pagar, no mostrar matriculas anuladas. Ambos listados de Pagos (Por Alumno/Por Ciclo) incluyen ahora matricula_estado=ACTIVO en la consulta PostgREST antes de ordenar/paginar. Las activas con pendiente cero conservan Ver; no se cambia la proyeccion, el saldo ni las reglas financieras. La historia anulada sigue disponible en la ficha/contexto de matricula y por lectura autorizada; no se elimina ni se reactiva nada.
+
+Regresiones nuevas: exclusión de anuladas en ambas rutas y conservacion de activas con cero; API real comprueba listados filtrados e historia conservada. Sin migraciones/inventario nuevo ni cambios al Spec aprobado. Gate 2 pendiente; sin acceptance, merge ni H5. Resultados y CI del candidato se informan en la entrega.
+
+Filtro operativo validado localmente: 364/364 unitarias, lint/typecheck/build/diff-check PASSED. Misma rama y contratos financieros; CI exacta del commit se verifica antes de entregar.

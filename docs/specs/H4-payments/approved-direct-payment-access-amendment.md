@@ -8,7 +8,7 @@ Solicitud humana: agregar una opción principal Pagos porque el recorrido desde 
 
 Pagos → Por Alumno (inicial) / Por Ciclo → seleccionar matrícula → flujo H4 existente. Se conserva la pestaña Pagos contextual de matrícula. Director/Coordinador acceden; Admin sin rol académico no obtiene acceso financiero. RLS/DB son autoridad.
 
-Buscar Alumno reutiliza studentSearchFilter (código, documento, nombres y apellidos). Sus matrículas muestran Ciclo, Curso, estado de Ciclo, base/abonado/pendiente y acción. Por Ciclo admite Programado/En curso/Cerrado, con filtro de alumnos reutilizado. Cero permanece al final. Pendiente descendente, fecha de Ciclo descendente y desempates deterministas en DB. Matrículas anuladas/estados no cobrables admiten solo consulta.
+Buscar Alumno reutiliza studentSearchFilter (código, documento, nombres y apellidos). Sus matrículas muestran Ciclo, Curso, estado de Ciclo, base/abonado/pendiente y acción. Por Ciclo admite Programado/En curso/Cerrado, con filtro de alumnos reutilizado. Cero permanece al final. Pendiente descendente, fecha de Ciclo descendente y desempates deterministas en DB. Segun el ajuste humano del 10/11/2026, las matriculas anuladas no aparecen en los listados operativos. Su consulta historica se conserva; estados de Ciclo no cobrables admiten solo consulta.
 
 El detalle muestra Alumno/documento, matrícula, Ciclo, Curso y pendiente antes de operar. Reutiliza EnrollmentPayments sin nueva lógica financiera. Pagar abre su formulario existente; Ver ofrece consulta/historial. El retorno preserva contexto de búsqueda en estado React del workspace /pagos/* por identidad (no PII ni payload financiero en URL/history/storage).
 
@@ -33,3 +33,9 @@ El usuario reviso la pantalla de pago y aprobo compactarla («ok haz el cambio»
 Estilos limitados a Pagos, compartidos por acceso directo y contextual. Sin cambios de calculo, payload, RPC, permisos, idempotencia, PT409, modelo o inventario DB. La seleccion de todos conserva propuesta de pendientes completos y permite parciales; desmarcar todos equivale a desmarcar sus cargos. Se conserva el foco de entrada y las etiquetas accesibles.
 
 Revision visual automatica NO VERIFICADA: la herramienta de escritorio no pudo iniciar su kernel (error de entorno; sin acciones sobre pagos). No se marca una prueba humana/visual como ejecutada. Ver evidencia automatizada en technical-results.md.
+
+## Ajuste operativo aprobado el 10/11/2026: ocultar matriculas anuladas
+
+Solicitud humana: al ir a pagar, no mostrar matriculas anuladas. Ambos listados de Pagos (Por Alumno/Por Ciclo) incluyen ahora matricula_estado=ACTIVO en la consulta PostgREST antes de ordenar/paginar. Las activas con pendiente cero conservan Ver; no se cambia la proyeccion, el saldo ni las reglas financieras. La historia anulada sigue disponible en la ficha/contexto de matricula y por lectura autorizada; no se elimina ni se reactiva nada.
+
+Regresiones nuevas: exclusión de anuladas en ambas rutas y conservacion de activas con cero; API real comprueba listados filtrados e historia conservada. Sin migraciones/inventario nuevo ni cambios al Spec aprobado. Gate 2 pendiente; sin acceptance, merge ni H5. Resultados y CI del candidato se informan en la entrega.
