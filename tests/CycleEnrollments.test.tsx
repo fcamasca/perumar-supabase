@@ -116,6 +116,7 @@ it('keeps transfer in the more-actions menu and supports keyboard, dismissal and
  expect(screen.queryByRole('menuitem',{name:'Cambiar Ciclo…'})).not.toBeInTheDocument();expect(screen.getByRole('link',{name:'Editar matrícula'})).toHaveTextContent('Editar');
  more.focus();fireEvent.keyDown(more,{key:'ArrowDown'});const action=screen.getByRole('menuitem',{name:'Cambiar Ciclo…'});await waitFor(()=>expect(action).toHaveFocus());expect(more).toHaveAttribute('aria-expanded','true');
  fireEvent.keyDown(action,{key:'Escape'});expect(screen.queryByRole('menu')).not.toBeInTheDocument();expect(more).toHaveFocus();expect(more).toHaveAttribute('aria-expanded','false');
+ fireEvent.click(more);fireEvent.blur(screen.getByRole('menuitem'),{relatedTarget:more});fireEvent.click(more);expect(screen.queryByRole('menu')).not.toBeInTheDocument();
  fireEvent.click(more);fireEvent.pointerDown(document.body);expect(screen.queryByRole('menu')).not.toBeInTheDocument();
  fireEvent.click(more);fireEvent.keyDown(screen.getByRole('menuitem'),{key:'Tab'});expect(screen.queryByRole('menu')).not.toBeInTheDocument();
  fireEvent.click(more);fireEvent.click(screen.getByRole('menuitem'));const dialog=await screen.findByRole('dialog');expect(client.rpc).not.toHaveBeenCalled();fireEvent.click(within(dialog).getByRole('button',{name:'Cerrar panel de matrícula'}));await waitFor(()=>expect(more).toHaveFocus());
