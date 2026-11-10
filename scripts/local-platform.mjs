@@ -40,6 +40,7 @@ export function securityInventory() {
     'helpers', (select json_agg(json_build_object('name',p.proname,'owner',pg_get_userbyid(p.proowner),'definer',p.prosecdef,'volatility',p.provolatile,'config',p.proconfig,'args',pg_get_function_identity_arguments(p.oid),'definition',pg_get_functiondef(p.oid),'authenticated',has_function_privilege('authenticated',p.oid,'EXECUTE'),'anon',has_function_privilege('anon',p.oid,'EXECUTE')) order by p.proname) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='private'),
     'grants', (select json_agg(json_build_object('table',t.table_name,'role',r.name,'select',has_table_privilege(r.name,'public.'||t.table_name,'SELECT'),'insert',has_table_privilege(r.name,'public.'||t.table_name,'INSERT'),'update',has_table_privilege(r.name,'public.'||t.table_name,'UPDATE'),'delete',has_table_privilege(r.name,'public.'||t.table_name,'DELETE'),'truncate',has_table_privilege(r.name,'public.'||t.table_name,'TRUNCATE')) order by t.table_name,r.name) from information_schema.tables t cross join (values ('authenticated'),('anon')) r(name) where t.table_schema='public'),
     'sequences', (select json_agg(json_build_object('name',c.relname,'authenticated',has_sequence_privilege('authenticated',c.oid,'USAGE,SELECT,UPDATE'),'anon',has_sequence_privilege('anon',c.oid,'USAGE,SELECT,UPDATE')) order by c.relname) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='private' and c.relkind='S'),
+    'paymentCommands', (select json_agg(json_build_object('name',p.proname,'owner',pg_get_userbyid(p.proowner),'definer',p.prosecdef,'config',p.proconfig,'authenticated',has_function_privilege('authenticated',p.oid,'EXECUTE'),'anon',has_function_privilege('anon',p.oid,'EXECUTE'),'definition',pg_get_functiondef(p.oid)) order by p.proname) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname in ('registrar_pago','anular_pago')),
     'publicFunctions', (select count(*) from information_schema.routines where routine_schema='public'),
     'privateCreate', has_schema_privilege('authenticated','private','CREATE'),
     'publicCreate', has_schema_privilege('authenticated','public','CREATE'),
@@ -65,6 +66,8 @@ export function assertSecurityInventory(info) {
   if (JSON.stringify(info.helpers?.map(h => h.name)) !== JSON.stringify(names)
     || info.helpers.some(h => h.owner !== 'postgres' || !h.config?.includes('search_path=""') || h.anon
       || h.authenticated !== ['has_active_role', 'academic_user', 'functional_user'].includes(h.name))) throw new Error('Helpers H2 inesperados.')
+  if(JSON.stringify(info.paymentCommands?.map(f=>f.name))!==JSON.stringify(['anular_pago','registrar_pago'])
+    ||info.paymentCommands.some(f=>f.owner!=='postgres'||!f.definer||!f.authenticated||f.anon||!f.config?.includes('search_path=""')||!f.config?.includes('default_transaction_isolation=serializable')||/\bexecute\s+/i.test(f.definition)))throw new Error('Unsafe H4 payment command inventory.')
   const helper = info.helpers.find(h => h.name === 'has_active_role')
   if (!helper.definer || helper.volatility !== 's' || !helper.definition.includes('auth.uid()')
     || /\b(insert|update|delete|execute)\b/i.test(helper.definition)) throw new Error('Identidad de helper insegura.')

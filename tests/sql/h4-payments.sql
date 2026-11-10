@@ -24,6 +24,7 @@ do $$ declare actor uuid:=gen_random_uuid(); coordinator uuid:=gen_random_uuid()
 
  select v.id into medium from public.catalogo_valor v join public.catalogo cat on cat.id=v.catalogo_id where cat.codigo='MEDIO_PAGO' and v.codigo='EFECTIVO';
  select id into cargo_id from public.matricula_cargo where matricula_id=e.id and activo;
+ if not exists(select 1 from public.matricula_saldo where matricula_id=e.id and base=100 and abonado=0 and pendiente=100) then raise exception 'Initial balance incorrect';end if;
  payload:=jsonb_build_object('matricula_id',e.id,'expected_matricula_updated_at',e.updated_at,'idempotency_key',gen_random_uuid(),'importe','70.00','medio_pago_id',medium,'observaciones','  Nota Mixta  ','aplicaciones',jsonb_build_array(jsonb_build_object('matricula_cargo_id',cargo_id,'importe','70')));
  begin perform public.registrar_pago(payload||jsonb_build_object('importe','70.000'));raise exception 'Precision accepted';exception when invalid_parameter_value then null;end;
  begin perform public.registrar_pago(payload||jsonb_build_object('importe','0'));raise exception 'Zero accepted';exception when invalid_parameter_value then null;end;

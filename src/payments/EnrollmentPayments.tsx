@@ -34,8 +34,8 @@ export function EnrollmentPayments({ enrollment, version, enrollmentState, cycle
     setReady(false)
     void (async () => {
       const [s, c, h, cat] = await Promise.all([
-        client.from('matricula_saldo').select('base,abonado,pendiente').eq('matricula_id', enrollment).single(),
-        client.from('matricula_cargo_saldo').select('id,nombre,pendiente').eq('matricula_id', enrollment).eq('activo', true).order('id'),
+        client.from('matricula_saldo').select('base::text,abonado::text,pendiente::text').eq('matricula_id', enrollment).single(),
+        client.from('matricula_cargo_saldo').select('id,nombre,pendiente::text').eq('matricula_id', enrollment).eq('activo', true).order('id'),
         client.from('pago').select('id,importe,estado_codigo,created_at,updated_at,medio_etiqueta,observaciones,motivo_anulacion,anulado_por,anulado_at,pago_aplicacion(id,importe,matricula_cargo(nombre))').eq('matricula_id', enrollment).order('created_at', { ascending: false }).order('id').range(page * 20, page * 20 + 19),
         client.from('catalogo').select('id').eq('codigo', 'MEDIO_PAGO').eq('activo', true).single(),
       ])
@@ -52,11 +52,11 @@ export function EnrollmentPayments({ enrollment, version, enrollmentState, cycle
     if (key === 'unavailable') return
     setBusy(true)
     try {
-      const r = await client.from('pago').select('id,estado_codigo').eq('idempotency_key', key).eq('matricula_id', enrollment).maybeSingle()
+      const r = await client.from('pago').select('id,estado_codigo,anulado_at,anulado_por').eq('idempotency_key', key).eq('matricula_id', enrollment).maybeSingle()
       if (!alive.current) return
       if (r.error || !r.data) { setMessage(unknownResult); return }
       clearPaymentReference(user, enrollment); setPending(null); attempt.current = null; setOpen(false); setAmounts({}); setNotes('')
-      setMessage(`Pago recuperado. Estado actual: ${r.data.estado_codigo === 'ANULADO' ? 'Anulado' : 'Confirmado'}.`); loadRevision()
+      setMessage(`Pago recuperado. Estado actual: ${r.data.estado_codigo === 'ANULADO' ? `Anulado el ${new Date(r.data.anulado_at).toLocaleString('es-PE',{timeZone:'America/Lima'})} por ${r.data.anulado_por}` : 'Confirmado'}.`); loadRevision()
     } catch { if (alive.current) setMessage(unknownResult) }
     finally { if (alive.current) setBusy(false) }
   }, [client, enrollment, user, loadRevision])
@@ -88,7 +88,7 @@ export function EnrollmentPayments({ enrollment, version, enrollmentState, cycle
     let total = 0n
     for (const charge of charges) {
       const raw = amounts[charge.id] || '0', value = cents(raw), available = cents(String(charge.pendiente))
-      if (value === null || available === null || value > available) { setMessage('Revisa los importes: máximo dos decimales y sin superar el pendiente por cargo.'); return }
+      if (value === null || available === null || value > available) { setMessage('Revisa los importes: máximo dos decimales y sin superar el pendiente por cargo.'); amountInputs.current[charge.id]?.focus(); return }
       if (value > 0n) { applications.push({ matricula_cargo_id: charge.id, importe: decimal(value) }); total += value }
     }
     if (!applications.length || !medium || total > 999999999999n) { setMessage('Selecciona un medio y al menos un cargo con importe positivo dentro del límite permitido.'); return }
@@ -99,7 +99,7 @@ export function EnrollmentPayments({ enrollment, version, enrollmentState, cycle
     await send(payload)
   }
   async function annul(payment: Payment) {
-    const reason = await ask({ title: 'Anular pago', description: 'Conserva el pago y sus aplicaciones históricas. El importe deja de abonar a los cargos. No realiza una devolución.', reason: true, sensitive: true, confirmLabel: 'Anular pago' })
+    const reason = await ask({ title: 'Anular pago', description: 'Conserva el pago y sus aplicaciones históricas. El importe deja de abonar a los cargos. No realiza una devolución. Indica el motivo sin datos personales innecesarios.', reason: true, sensitive: true, confirmLabel: 'Anular pago' })
     if (reason === null || !alive.current) return
     if (reason.trim().length > 500) { setMessage('El motivo admite hasta 500 caracteres.'); return }
     setBusy(true)
@@ -120,7 +120,7 @@ export function EnrollmentPayments({ enrollment, version, enrollmentState, cycle
       const r = await client.from('pago').select('estado_codigo,anulado_por,anulado_at,updated_at').eq('id', uncertainCancellation).single()
       if (!alive.current) return
       if (r.error) setMessage(unknownResult)
-      else { setUncertainCancellation(null); setMessage(`Estado consultado: ${r.data.estado_codigo === 'ANULADO' ? 'Anulado' : 'Confirmado'}. No se repitió la anulación.`); loadRevision() }
+      else { setUncertainCancellation(null); setMessage(`Estado consultado: ${r.data.estado_codigo === 'ANULADO' ? `Anulado el ${new Date(r.data.anulado_at).toLocaleString('es-PE',{timeZone:'America/Lima'})} por ${r.data.anulado_por}` : 'Confirmado'}. No se repitió la anulación.`); loadRevision() }
     } catch { if (alive.current) setMessage(unknownResult) }
     finally { if (alive.current) setBusy(false) }
   }
@@ -141,7 +141,7 @@ export function EnrollmentPayments({ enrollment, version, enrollmentState, cycle
       <div className="form-actions"><button type="button" className="secondary" onClick={() => setOpen(false)}>Cancelar registro</button><button>Confirmar pago</button></div>
     </fieldset></InlineForm>}
     {!canRegister && <p className="help-text">Solo consulta: no se registran pagos para esta matrícula o estado del Ciclo.</p>}
-    <h3>Historial de pagos</h3><div className="table-scroll"><table aria-label="Historial de pagos"><thead><tr><th>Fecha de registro</th><th>Medio</th><th className="payment-money">Importe</th><th>Estado</th><th>Detalle</th><th>Acciones</th></tr></thead><tbody>{history.map(p => <tr key={p.id}><td>{new Date(p.created_at).toLocaleString('es-PE', { timeZone: 'America/Lima' })}</td><td>{p.medio_etiqueta}</td><td className="payment-money">{pen(p.importe)}</td><td><StatusBadge value={p.estado_codigo === 'ANULADO' ? 'ANULADO' : 'Confirmado'}/></td><td><details><summary>Ver aplicaciones</summary><ul>{p.pago_aplicacion.map(a => <li key={a.id}>{a.matricula_cargo.nombre}: {pen(a.importe)}</li>)}</ul>{p.observaciones && <p>Observaciones: {p.observaciones}</p>}{p.motivo_anulacion && <p>Motivo de anulación: {p.motivo_anulacion}</p>}</details></td><td>{director && enrollmentState === 'ACTIVO' && p.estado_codigo === 'CONFIRMADO' && <button type="button" className="sensitive" disabled={busy || !!pending || !!uncertainCancellation} onClick={() => void annul(p)}>Anular</button>}</td></tr>)}{ready && !history.length && <tr><td colSpan={6}>No hay pagos en esta página.</td></tr>}</tbody></table></div>
+    <h3>Historial de pagos</h3><div className="table-scroll"><table aria-label="Historial de pagos"><thead><tr><th>Fecha de registro</th><th>Medio</th><th className="payment-money">Importe</th><th>Estado</th><th>Detalle</th><th>Acciones</th></tr></thead><tbody>{history.map(p => <tr key={p.id}><td>{new Date(p.created_at).toLocaleString('es-PE', { timeZone: 'America/Lima' })}</td><td>{p.medio_etiqueta}</td><td className="payment-money">{pen(p.importe)}</td><td><StatusBadge value={p.estado_codigo === 'ANULADO' ? 'ANULADO' : 'Confirmado'}/></td><td><details><summary>Ver aplicaciones</summary><ul>{p.pago_aplicacion.map(a => <li key={a.id}>{a.matricula_cargo.nombre}: {pen(a.importe)}</li>)}</ul>{p.observaciones && <p>Observaciones: {p.observaciones}</p>}{p.motivo_anulacion && <><p>Motivo de anulación: {p.motivo_anulacion}</p><p>Anulado el {p.anulado_at ? new Date(p.anulado_at).toLocaleString('es-PE',{timeZone:'America/Lima'}) : 'No disponible'} · Usuario: {p.anulado_por}</p></>}</details></td><td>{director && enrollmentState === 'ACTIVO' && p.estado_codigo === 'CONFIRMADO' && <button type="button" className="sensitive" disabled={busy || !!pending || !!uncertainCancellation} onClick={() => void annul(p)}>Anular</button>}</td></tr>)}{ready && !history.length && <tr><td colSpan={6}>No hay pagos en esta página.</td></tr>}</tbody></table></div>
     <div className="form-actions"><span>Página {page + 1}</span><button type="button" className="secondary" disabled={busy || page === 0} onClick={() => setPage(page - 1)}>Página anterior</button><button type="button" className="secondary" disabled={busy || !ready || history.length < 20} onClick={() => setPage(page + 1)}>Página siguiente</button></div>
   </section>
 }

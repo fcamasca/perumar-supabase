@@ -43,6 +43,11 @@ do $$ declare actor uuid:=gen_random_uuid(); coordinator uuid:=gen_random_uuid()
  response:=public.registrar_pago(payload);
  select * into pay from jsonb_populate_record(null::public.pago,response);
  if jsonb_array_length(response->'aplicaciones')<>2 or (response->'saldo'->>'pendiente')::numeric<>40 or response->>'matricula_updated_at' is null or response->'aplicaciones'->0->>'concepto' is null then raise exception 'Incomplete command response';end if;
+ begin perform public.cambiar_estado_ciclo(c.id,c.updated_at,'ANULADO','SYNTHETIC');raise exception 'Cycle with confirmed payment annulled';exception when check_violation then if sqlerrm<>'PAYMENT_PREVENTS_CYCLE_STATE' then raise;end if;end;
+ t:=public.guardar_tarifa(jsonb_build_object('id',t.id,'expected_updated_at',t.updated_at,'codigo',t.codigo,'nombre',t.nombre,'tipo',t.tipo,'monto_por_defecto','999'));
+ select jsonb_agg(jsonb_build_object('tarifa_id',tarifa_id,'importe',case when obligatorio then '999' else importe::text end,'obligatorio',obligatorio::text)) into charges from public.ciclo_tarifa where ciclo_id=c.id;
+ c:=public.guardar_ciclo_tarifas(c.id,c.updated_at,charges);
+ if not exists(select 1 from public.matricula_saldo where matricula_id=e.id and base=120 and abonado=80 and pendiente=40) or (select importe from public.pago where id=pay.id)<>80 then raise exception 'Catalog tariff repriced historical debt';end if;
  select * into replay from jsonb_populate_record(null::public.pago,public.registrar_pago(payload||jsonb_build_object('aplicaciones',jsonb_build_array(payload->'aplicaciones'->1,payload->'aplicaciones'->0))));
  if replay.id<>pay.id then raise exception 'Order affected idempotency';end if;
  select * into e from public.matricula where id=e.id;
@@ -84,6 +89,13 @@ do $$ declare actor uuid:=gen_random_uuid(); coordinator uuid:=gen_random_uuid()
  begin perform public.editar_matricula(jsonb_build_object('id',e.id,'expected_updated_at',e.updated_at,'ciclo_id',target_cycle.id,'expected_ciclo_updated_at',target_cycle.updated_at),'{}'::uuid[]);raise exception 'Transfer after annulled payment accepted';exception when check_violation then if sqlerrm<>'PAYMENT_PREVENTS_CYCLE_TRANSFER' then raise;end if;end;
  target_cycle:=public.cambiar_estado_ciclo(target_cycle.id,target_cycle.updated_at,'DESIERTO','SYNTHETIC',(select v.id from public.catalogo_valor v join public.catalogo cat on cat.id=v.catalogo_id where cat.codigo='MOTIVO_CICLO_DESIERTO' and v.activo limit 1));
  begin perform public.registrar_pago(jsonb_build_object('matricula_id',other_enrollment.id,'expected_matricula_updated_at',other_enrollment.updated_at,'idempotency_key',gen_random_uuid(),'importe','1','medio_pago_id',medium,'aplicaciones',jsonb_build_array(jsonb_build_object('matricula_cargo_id',(select id from public.matricula_cargo where matricula_id=other_enrollment.id and activo),'importe','1'))));raise exception 'Deserted Cycle accepted payment';exception when check_violation then if sqlerrm<>'PAYMENT_CYCLE_INELIGIBLE' then raise;end if;end;
+ -- Isolated defensive fixture only: H3 normally makes an enrolled ANULADO Cycle unreachable.
+ -- Temporarily bypass its H3 guard only to prove registrar_pago independently rejects that DB state.
+ alter table public.ciclo disable trigger ciclo_enrollment_guard;
+ update public.ciclo set estado_codigo='ANULADO',motivo='SYNTHETIC DEFENSIVE FIXTURE',motivo_desierto_id=null where id=target_cycle.id;
+ alter table public.ciclo enable trigger ciclo_enrollment_guard;
+ begin perform public.registrar_pago(jsonb_build_object('matricula_id',other_enrollment.id,'expected_matricula_updated_at',other_enrollment.updated_at,'idempotency_key',gen_random_uuid(),'importe','1','medio_pago_id',medium,'aplicaciones',jsonb_build_array(jsonb_build_object('matricula_cargo_id',(select id from public.matricula_cargo where matricula_id=other_enrollment.id and activo),'importe','1'))));raise exception 'Annulled Cycle accepted payment';exception when check_violation then if sqlerrm<>'PAYMENT_CYCLE_INELIGIBLE' then raise;end if;end;
+ begin perform public.cambiar_estado_ciclo(c.id,c.updated_at,'ANULADO','SYNTHETIC');raise exception 'Cycle with only cancelled payments annulled';exception when check_violation then if sqlerrm<>'PAYMENT_PREVENTS_CYCLE_STATE' then raise;end if;end;
  begin perform public.cambiar_estado_ciclo(c.id,c.updated_at,'DESIERTO','SYNTHETIC',(select v.id from public.catalogo_valor v join public.catalogo cat on cat.id=v.catalogo_id where cat.codigo='MOTIVO_CICLO_DESIERTO' and v.activo limit 1));raise exception 'Cycle with annulled payments deserted';exception when check_violation then if sqlerrm<>'PAYMENT_PREVENTS_CYCLE_STATE' then raise;end if;end;
  c:=public.cambiar_estado_ciclo(c.id,c.updated_at,'EN_CURSO');
  c:=public.cambiar_estado_ciclo(c.id,c.updated_at,'CERRADO');

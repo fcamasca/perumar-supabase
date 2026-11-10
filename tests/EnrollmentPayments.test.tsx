@@ -39,7 +39,7 @@ it('sends one transactional command with exact manual applications, no date or f
   await waitFor(()=>expect(changed).toHaveBeenCalled())
 })
 it('rejects excess precision before sending, without rounding',async()=>{
-  await show();fireEvent.click(screen.getByRole('button',{name:'Registrar pago'}));fireEvent.change(screen.getByRole('textbox',{name:'Importe para CURSO'}),{target:{value:'10.001'}});fireEvent.change(screen.getByRole('combobox'),{target:{value:'cash'}});fireEvent.click(screen.getByRole('button',{name:'Confirmar pago'}));expect(client.rpc).not.toHaveBeenCalled();expect(screen.getByRole('status')).toHaveTextContent('máximo dos decimales')
+  await show();fireEvent.click(screen.getByRole('button',{name:'Registrar pago'}));fireEvent.change(screen.getByRole('textbox',{name:'Importe para CURSO'}),{target:{value:'10.001'}});fireEvent.change(screen.getByRole('combobox'),{target:{value:'cash'}});fireEvent.click(screen.getByRole('button',{name:'Confirmar pago'}));expect(client.rpc).not.toHaveBeenCalled();expect(screen.getByRole('textbox',{name:'Importe para CURSO'})).toHaveFocus();expect(screen.getByRole('status')).toHaveTextContent('máximo dos decimales')
 })
 it('retains key after lost response and only replays the identical explicit attempt',async()=>{
   await show();fireEvent.click(screen.getByRole('button',{name:'Registrar pago'}));fireEvent.click(screen.getByRole('checkbox',{name:'Pagar CURSO'}));fireEvent.change(screen.getByRole('combobox'),{target:{value:'cash'}})
@@ -48,7 +48,7 @@ it('retains key after lost response and only replays the identical explicit atte
   const payload=client.rpc.mock.calls[0][1];client.rpc.mockResolvedValue({data:{id:'p'},error:null});fireEvent.click(screen.getByRole('button',{name:'Reenviar el mismo intento'}));await waitFor(()=>expect(client.rpc).toHaveBeenCalledTimes(2));expect(client.rpc.mock.calls[1][1]).toEqual(payload)
 })
 it('restores opaque reference and queries without an automatic write',async()=>{
-  savePaymentReference('u','m','91b635e5-e71d-45ab-9fe1-f658a3b7bc17');recovery={id:'p',estado_codigo:'ANULADO'}
+  savePaymentReference('u','m','91b635e5-e71d-45ab-9fe1-f658a3b7bc17');recovery={id:'p',estado_codigo:'ANULADO',anulado_at:'2026-11-09T12:00:00Z',anulado_por:'director'}
   render(<EnrollmentPayments {...props}/>);await screen.findByText(/Pago recuperado. Estado actual: Anulado/);expect(client.rpc).not.toHaveBeenCalled();expect(sessionStorage.length).toBe(0)
 })
 it('does not treat an empty recovery query as rollback',async()=>{
@@ -57,17 +57,19 @@ it('does not treat an empty recovery query as rollback',async()=>{
 it('annulled enrollment is read only even in a closed cycle',async()=>{
   render(<EnrollmentPayments {...props} enrollmentState="ANULADO" cycleState="CERRADO"/>);await screen.findByRole('table',{name:'Historial de pagos'});expect(screen.queryByRole('button',{name:'Registrar pago'})).not.toBeInTheDocument();expect(within(screen.getByRole('table')).queryByRole('button',{name:'Anular'})).not.toBeInTheDocument()
 })
-
 function historicalPayment(){return {id:'payment',importe:30,estado_codigo:'CONFIRMADO',created_at:'2026-11-09T12:00:00Z',updated_at:'pv1',medio_etiqueta:'Efectivo',observaciones:'<img src=x onerror=alert(1)>',motivo_anulacion:null,anulado_por:null,anulado_at:null,pago_aplicacion:[{id:'app',importe:30,matricula_cargo:{nombre:'CURSO'}}]}}
 it('escapes notes as text and keeps concepts derived, with no Edit action',async()=>{
  history=[historicalPayment()];await show();fireEvent.click(screen.getByText('Ver aplicaciones'));expect(screen.getByText(/Observaciones: <img/)).toBeInTheDocument();expect(document.querySelector('img')).toBeNull();expect(screen.queryByRole('button',{name:/Editar pago/})).not.toBeInTheDocument()
 })
 it('Director cancels via explicit required-reason dialog and a single command',async()=>{
- history=[historicalPayment()];await show();fireEvent.click(screen.getByRole('button',{name:'Anular'}));const dialog=screen.getByRole('dialog',{name:'Anular pago'});fireEvent.click(within(dialog).getByRole('button',{name:'Anular pago'}));expect(client.rpc).not.toHaveBeenCalled();expect(within(dialog).getByRole('alert')).toHaveTextContent('motivo');fireEvent.change(within(dialog).getByRole('textbox'),{target:{value:'Correcci�n'}});client.rpc.mockResolvedValue({data:{id:'payment',estado_codigo:'ANULADO'},error:null});fireEvent.click(within(dialog).getByRole('button',{name:'Anular pago'}));await waitFor(()=>expect(client.rpc).toHaveBeenCalledExactlyOnceWith('anular_pago',{id:'payment',expected_updated_at:'pv1',motivo:'CORRECCI�N'}))
+ history=[historicalPayment()];await show();fireEvent.click(screen.getByRole('button',{name:'Anular'}));const dialog=screen.getByRole('dialog',{name:'Anular pago'});fireEvent.click(within(dialog).getByRole('button',{name:'Anular pago'}));expect(client.rpc).not.toHaveBeenCalled();expect(within(dialog).getByRole('alert')).toHaveTextContent('motivo');fireEvent.change(within(dialog).getByRole('textbox'),{target:{value:'Corrección'}});client.rpc.mockResolvedValue({data:{id:'payment',estado_codigo:'ANULADO'},error:null});fireEvent.click(within(dialog).getByRole('button',{name:'Anular pago'}));await waitFor(()=>expect(client.rpc).toHaveBeenCalledExactlyOnceWith('anular_pago',{id:'payment',expected_updated_at:'pv1',motivo:'CORRECCIÓN'}))
 })
 it('Coordinator sees history and registers, but no cancellation action',async()=>{
  identity.roles=['COORDINADOR_ACADEMICO'];history=[historicalPayment()];await show();expect(screen.getByRole('table',{name:'Historial de pagos'})).toHaveTextContent('Confirmado');expect(screen.queryByRole('button',{name:'Anular'})).not.toBeInTheDocument()
 })
 it('closed cycle still permits payment registration without academic editing',async()=>{
  await show({cycleState:'CERRADO'});expect(screen.getByRole('button',{name:'Registrar pago'})).toBeEnabled()
+})
+it('preserves draft on explicit version conflict and refreshes only on user consultation',async()=>{
+ await show();fireEvent.click(screen.getByRole('button',{name:'Registrar pago'}));fireEvent.change(screen.getByRole('textbox',{name:'Importe para CURSO'}),{target:{value:'30'}});fireEvent.change(screen.getByRole('combobox'),{target:{value:'cash'}});client.rpc.mockResolvedValue({error:{code:'40001',message:'stale'}});fireEvent.click(screen.getByRole('button',{name:'Confirmar pago'}));await screen.findByText(/La información cambió durante/);expect(client.rpc).toHaveBeenCalledTimes(1);expect(screen.getByRole('textbox',{name:'Importe para CURSO'})).toHaveValue('30');expect(changed).not.toHaveBeenCalled();fireEvent.click(screen.getByRole('button',{name:'Consultar saldo e historial'}));expect(changed).toHaveBeenCalledTimes(1);expect(client.rpc).toHaveBeenCalledTimes(1)
 })

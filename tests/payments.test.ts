@@ -34,3 +34,9 @@ it.each([
   ['PAYMENT_PREVENTS_CARGO_RETIREMENT', /no puede retirarse/],
   ['PAYMENT_IDEMPOTENCY_CONFLICT', /otro contenido/],
 ])('gives specific safe feedback for %s', (message, expected) => expect(paymentError({ message })).toMatch(expected))
+
+it('formats a derived balance above the per-payment cap without clipping or floating point',()=>{
+ expect(pen('10000000000.01')).toBe('S/ 10000000000.01')
+ expect(pen('99999999999999999.99')).toBe('S/ 99999999999999999.99')
+ expect(cents('10000000000.01')).toBeNull()
+})

@@ -76,6 +76,8 @@ try {
     enrollment=await byId('matricula',enrollment.id)
     await rpc(D,'registrar_pago',{p:payload('1')})
   }
+  const exactRead=checked(await O.from('matricula_saldo').select('base::text,abonado::text,pendiente::text').eq('matricula_id',enrollment.id).single(),'exact text projection')
+  assert.equal(exactRead.abonado,'21.00');assert.equal(exactRead.pendiente,'79.00')
   const firstPage=checked(await O.from('pago').select('id,importe').eq('matricula_id',enrollment.id).order('created_at',{ascending:false}).order('id').range(0,19),'first payment page')
   const nextPage=checked(await O.from('pago').select('id,importe').eq('matricula_id',enrollment.id).order('created_at',{ascending:false}).order('id').range(20,39),'next payment page')
   assert.equal(firstPage.length,20);assert.equal(nextPage.length,2)
