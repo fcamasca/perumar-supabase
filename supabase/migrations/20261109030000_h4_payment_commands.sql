@@ -1,5 +1,5 @@
 -- Concrete payment commands. Values are validated as text BEFORE numeric(12,2) casts.
-create function public.registrar_pago(p jsonb) returns public.pago
+create function public.registrar_pago(p jsonb) returns jsonb
 language plpgsql security definer set search_path='' set default_transaction_isolation='serializable' as $$
 declare prior public.matricula; enrollment public.matricula; result public.pago;
  cycle public.ciclo; medium public.catalogo_valor; item jsonb; normalized jsonb:='[]';
@@ -48,7 +48,7 @@ begin
  (select jsonb_agg(jsonb_build_object('matricula_cargo_id',a.matricula_cargo_id,'importe',a.importe) order by a.matricula_cargo_id::text)
  from public.pago_aplicacion a where a.pago_id=result.id) then
  raise exception using errcode='23505',message='PAYMENT_IDEMPOTENCY_CONFLICT'; end if;
- return result;
+ return to_jsonb(result)||jsonb_build_object('aplicaciones',(select jsonb_agg(to_jsonb(a)||jsonb_build_object('concepto',(select c.nombre from public.matricula_cargo c where c.id=a.matricula_cargo_id)) order by a.matricula_cargo_id) from public.pago_aplicacion a where a.pago_id=result.id),'saldo',(select to_jsonb(s) from public.matricula_saldo s where s.matricula_id=result.matricula_id),'matricula_updated_at',(select m.updated_at from public.matricula m where m.id=result.matricula_id));
  end if;
  perform private.require_version(enrollment.updated_at,(p->>'expected_matricula_updated_at')::timestamptz);
  if enrollment.estado_codigo<>'ACTIVO' then raise exception using errcode='23514',message='PAYMENT_ENROLLMENT_INACTIVE'; end if;
@@ -74,10 +74,10 @@ begin
  update public.matricula set updated_at=clock_timestamp() where id=enrollment.id;
  insert into public.auditoria(entidad,registro_id,accion,actor,new_values)
  values('pago',result.id,'REGISTRADO',auth.uid(),jsonb_build_object('pago_id',result.id,'matricula_id',enrollment.id));
- return result;
+ return to_jsonb(result)||jsonb_build_object('aplicaciones',(select jsonb_agg(to_jsonb(a)||jsonb_build_object('concepto',(select c.nombre from public.matricula_cargo c where c.id=a.matricula_cargo_id)) order by a.matricula_cargo_id) from public.pago_aplicacion a where a.pago_id=result.id),'saldo',(select to_jsonb(s) from public.matricula_saldo s where s.matricula_id=result.matricula_id),'matricula_updated_at',(select m.updated_at from public.matricula m where m.id=result.matricula_id));
 end $$;
 
-create function public.anular_pago(id uuid,expected_updated_at timestamptz,motivo text) returns public.pago
+create function public.anular_pago(id uuid,expected_updated_at timestamptz,motivo text) returns jsonb
 language plpgsql security definer set search_path='' set default_transaction_isolation='serializable' as $$
 declare payment public.pago; prior public.matricula; enrollment public.matricula;
 begin
@@ -102,7 +102,7 @@ begin
  update public.matricula set updated_at=clock_timestamp() where public.matricula.id=enrollment.id;
  insert into public.auditoria(entidad,registro_id,accion,actor,motivo,new_values)
  values('pago',payment.id,'ANULADO',auth.uid(),btrim(motivo),jsonb_build_object('pago_id',payment.id,'matricula_id',enrollment.id));
- return payment;
+ return to_jsonb(payment)||jsonb_build_object('aplicaciones',(select jsonb_agg(to_jsonb(a)||jsonb_build_object('concepto',(select c.nombre from public.matricula_cargo c where c.id=a.matricula_cargo_id)) order by a.matricula_cargo_id) from public.pago_aplicacion a where a.pago_id=payment.id),'saldo',(select to_jsonb(s) from public.matricula_saldo s where s.matricula_id=payment.matricula_id),'matricula_updated_at',(select m.updated_at from public.matricula m where m.id=payment.matricula_id));
 end $$;
 revoke all on function public.registrar_pago(jsonb),public.anular_pago(uuid,timestamptz,text) from public,anon,authenticated;
 grant execute on function public.registrar_pago(jsonb),public.anular_pago(uuid,timestamptz,text) to authenticated;

@@ -7,7 +7,7 @@ import { clearPaymentReference, readPaymentReference, savePaymentReference } fro
 import './payments.css'
 
 type Charge = { id: string; nombre: string; pendiente: number | string }
-type Payment = { id: string; importe: string | number; estado_codigo: string; created_at: string; updated_at: string; medio_etiqueta: string; observaciones: string | null; motivo_anulacion: string | null; pago_aplicacion: { id: string; importe: string | number; matricula_cargo: { nombre: string } }[] }
+type Payment = { id: string; importe: string | number; estado_codigo: string; created_at: string; updated_at: string; medio_etiqueta: string; observaciones: string | null; motivo_anulacion: string | null; anulado_por: string | null; anulado_at: string | null; pago_aplicacion: { id: string; importe: string | number; matricula_cargo: { nombre: string } }[] }
 type Summary = { base: number | string; abonado: number | string; pendiente: number | string }
 type Medium = { id: string; nombre: string }
 type Payload = Record<string, unknown>
@@ -35,7 +35,7 @@ export function EnrollmentPayments({ enrollment, version, enrollmentState, cycle
       const [s, c, h, cat] = await Promise.all([
         client.from('matricula_saldo').select('base,abonado,pendiente').eq('matricula_id', enrollment).single(),
         client.from('matricula_cargo_saldo').select('id,nombre,pendiente').eq('matricula_id', enrollment).eq('activo', true).order('id'),
-        client.from('pago').select('id,importe,estado_codigo,created_at,updated_at,medio_etiqueta,observaciones,motivo_anulacion,pago_aplicacion(id,importe,matricula_cargo(nombre))').eq('matricula_id', enrollment).order('created_at', { ascending: false }).order('id').range(page * 20, page * 20 + 19),
+        client.from('pago').select('id,importe,estado_codigo,created_at,updated_at,medio_etiqueta,observaciones,motivo_anulacion,anulado_por,anulado_at,pago_aplicacion(id,importe,matricula_cargo(nombre))').eq('matricula_id', enrollment).order('created_at', { ascending: false }).order('id').range(page * 20, page * 20 + 19),
         client.from('catalogo').select('id').eq('codigo', 'MEDIO_PAGO').eq('activo', true).single(),
       ])
       if (!active) return
@@ -62,7 +62,7 @@ export function EnrollmentPayments({ enrollment, version, enrollmentState, cycle
   // Restore minimal opaque reference after reload; SELECT only, never an automatic write.
   const recoveryStarted = useRef<string | null>(null)
   useEffect(() => { if (pending && recoveryStarted.current !== pending) { recoveryStarted.current = pending; void recover(pending) } }, [pending, recover])
-  async function send(payload: Payload, key: string) {
+  async function send(payload: Payload) {
     if (saving.current) return
     saving.current = true; setBusy(true); setMessage('')
     try {
@@ -70,6 +70,7 @@ export function EnrollmentPayments({ enrollment, version, enrollmentState, cycle
       if (!alive.current) return
       if (r.error) {
         // SQLSTATE is a definitive failed transaction. Transport errors are ambiguous.
+        if (r.error.message === 'PAYMENT_IDEMPOTENCY_CONFLICT') { setMessage(paymentError(r.error)); return }
         if (/^[0-9A-Z]{5}$/.test(r.error.code ?? '')) {
           clearPaymentReference(user, enrollment); setPending(null); attempt.current = null; setMessage(paymentError(r.error))
         } else setMessage(unknownResult)
@@ -79,8 +80,6 @@ export function EnrollmentPayments({ enrollment, version, enrollmentState, cycle
       setMessage('Pago registrado.'); loadRevision()
     } catch { if (alive.current) setMessage(unknownResult) }
     finally { saving.current = false; if (alive.current) setBusy(false) }
-    // Keep the same key/payload in memory only if the result is uncertain.
-    void key
   }
   async function register() {
     if (busy || pending || !ready || !canRegister) return
@@ -96,7 +95,7 @@ export function EnrollmentPayments({ enrollment, version, enrollmentState, cycle
     try { savePaymentReference(user, enrollment, key) }
     catch { setMessage('No se pudo conservar la referencia de recuperación. El pago no fue enviado.'); return }
     attempt.current = { key, payload }; recoveryStarted.current = key; setPending(key)
-    await send(payload, key)
+    await send(payload)
   }
   async function annul(payment: Payment) {
     const reason = await ask({ title: 'Anular pago', description: 'Conserva el pago y sus aplicaciones históricas. El importe deja de abonar a los cargos. No realiza una devolución.', reason: true, sensitive: true, confirmLabel: 'Anular pago' })
@@ -117,7 +116,7 @@ export function EnrollmentPayments({ enrollment, version, enrollmentState, cycle
     if (!uncertainCancellation) return
     setBusy(true)
     try {
-      const r = await client.from('pago').select('estado_codigo').eq('id', uncertainCancellation).single()
+      const r = await client.from('pago').select('estado_codigo,anulado_por,anulado_at,updated_at').eq('id', uncertainCancellation).single()
       if (!alive.current) return
       if (r.error) setMessage(unknownResult)
       else { setUncertainCancellation(null); setMessage(`Estado consultado: ${r.data.estado_codigo === 'ANULADO' ? 'Anulado' : 'Confirmado'}. No se repitió la anulación.`); loadRevision() }
@@ -130,7 +129,7 @@ export function EnrollmentPayments({ enrollment, version, enrollmentState, cycle
     {message && <p role="status" className="payment-message">{message}</p>}
     {!ready && <p role="status">Saldo no disponible para operar.</p>}
     {summary && <dl className="payment-summary"><div><dt>Base de cargos activos</dt><dd>{pen(summary.base)}</dd></div><div><dt>Abonado vigente</dt><dd>{pen(summary.abonado)}</dd></div><div><dt>Pendiente</dt><dd><strong>{pen(summary.pendiente)}</strong></dd></div></dl>}
-    {pending && <div className="payment-recovery"><p>Hay un intento pendiente de confirmar. La clave se conserva para evitar duplicados.</p><button type="button" disabled={busy} onClick={() => void recover(pending)}>Consultar resultado del intento</button>{attempt.current && <button type="button" className="secondary" disabled={busy} onClick={() => void send(attempt.current!.payload, attempt.current!.key)}>Reenviar el mismo intento</button>}</div>}
+    {pending && <div className="payment-recovery"><p>Hay un intento pendiente de confirmar. La clave se conserva para evitar duplicados.</p><button type="button" disabled={busy} onClick={() => void recover(pending)}>Consultar resultado del intento</button>{attempt.current && <button type="button" className="secondary" disabled={busy} onClick={() => void send(attempt.current!.payload)}>Reenviar el mismo intento</button>}</div>}
     {uncertainCancellation && <button type="button" disabled={busy} onClick={() => void queryCancellation()}>Consultar estado de anulación</button>}
     {canRegister && !open && <button type="button" disabled={busy || !ready || !!pending || !!uncertainCancellation} onClick={() => { setOpen(true); setMessage('') }}>Registrar pago</button>}
     {open && <InlineForm className="payment-form" onSubmit={() => void register()}><fieldset disabled={busy || !!pending || !!uncertainCancellation || !ready}><legend>Registrar pago</legend>

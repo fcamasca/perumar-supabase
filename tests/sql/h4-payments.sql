@@ -29,6 +29,7 @@ do $$ declare actor uuid:=gen_random_uuid(); coordinator uuid:=gen_random_uuid()
  begin perform public.registrar_pago(payload||jsonb_build_object('importe','0'));raise exception 'Zero accepted';exception when invalid_parameter_value then null;end;
  begin perform public.registrar_pago(payload||jsonb_build_object('fecha_operacion','2030-01-01'));raise exception 'Date accepted';exception when invalid_parameter_value then null;end;
  begin perform public.registrar_pago(payload||jsonb_build_object('importe','100.01','aplicaciones',jsonb_build_array(jsonb_build_object('matricula_cargo_id',cargo_id,'importe','100.01'))));raise exception 'Overpayment accepted';exception when check_violation then if sqlerrm<>'PAYMENT_EXCEEDS_PENDING' then raise;end if;end;
+ -- H4_FAULT_REGISTER_BEGIN
  -- Forced failures after each stage must roll back data, parent version, key and audit together.
  foreach stage in array array['pago','pago_aplicacion','matricula','auditoria'] loop
  select jsonb_build_object('version',updated_at,'payments',(select count(*) from public.pago),'applications',(select count(*) from public.pago_aplicacion),'audit',(select count(*) from public.auditoria)) into failures_before from public.matricula where id=e.id;
@@ -37,13 +38,14 @@ do $$ declare actor uuid:=gen_random_uuid(); coordinator uuid:=gen_random_uuid()
  execute format('drop trigger h4_failure on public.%I',stage);
  if failures_before is distinct from (select jsonb_build_object('version',updated_at,'payments',(select count(*) from public.pago),'applications',(select count(*) from public.pago_aplicacion),'audit',(select count(*) from public.auditoria)) from public.matricula where id=e.id) then raise exception 'Partial payment escaped rollback';end if;
  end loop;
- pay:=public.registrar_pago(payload);
+ -- H4_FAULT_REGISTER_END
+ select * into pay from jsonb_populate_record(null::public.pago,public.registrar_pago(payload));
  if pay.observaciones<>'Nota Mixta' or pay.registrado_por<>actor or pay.estado_codigo<>'CONFIRMADO' then raise exception 'Payment metadata invalid';end if;
  if not exists(select 1 from public.matricula_saldo where matricula_id=e.id and base=100 and abonado=70 and pendiente=30) then raise exception 'Balance mismatch';end if;
  select * into e from public.matricula where id=e.id;
  old_version:=e.updated_at;
  select count(*) into before_audit from public.auditoria;
- replay:=public.registrar_pago(payload||jsonb_build_object('importe','70.0','observaciones','Nota Mixta'));
+ select * into replay from jsonb_populate_record(null::public.pago,public.registrar_pago(payload||jsonb_build_object('importe','70.0','observaciones','Nota Mixta')));
  if replay.id<>pay.id or (select updated_at from public.matricula where id=e.id)<>old_version or (select count(*) from public.auditoria)<>before_audit then raise exception 'Replay produced effects';end if;
  begin perform public.registrar_pago(payload||jsonb_build_object('observaciones','different'));raise exception 'Key mutation accepted';exception when unique_violation then if sqlerrm<>'PAYMENT_IDEMPOTENCY_CONFLICT' then raise;end if;end;
  begin perform public.editar_matricula(jsonb_build_object('id',e.id,'expected_updated_at',e.updated_at,'descuento','31','motivo_descuento','EXCESS'));raise exception 'Discount below paid accepted';exception when check_violation then if sqlerrm<>'PAYMENT_DISCOUNT_BELOW_PAID' then raise;end if;end;
@@ -52,10 +54,11 @@ do $$ declare actor uuid:=gen_random_uuid(); coordinator uuid:=gen_random_uuid()
  begin update public.matricula_cargo set activo=false,motivo_inactivacion='TEST' where id=cargo_id;raise exception 'Paid cargo retired';exception when check_violation then if sqlerrm<>'PAYMENT_PREVENTS_CARGO_RETIREMENT' then raise;end if;end;
  perform set_config('request.jwt.claim.sub',coordinator::text,true);
  begin perform public.anular_pago(pay.id,pay.updated_at,'Reason');raise exception 'Coordinator annulled';exception when insufficient_privilege then null;end;
- replay:=public.registrar_pago(payload);
+ select * into replay from jsonb_populate_record(null::public.pago,public.registrar_pago(payload));
  if replay.id<>pay.id then raise exception 'Coordinator replay denied';end if;
  perform set_config('request.jwt.claim.sub',actor::text,true);
  begin perform public.anular_pago(pay.id,pay.updated_at,' ');raise exception 'Blank reason accepted';exception when invalid_parameter_value then null;end;
+ -- H4_FAULT_CANCEL_BEGIN
  foreach stage in array array['pago','matricula','auditoria'] loop
  select jsonb_build_object('payment',to_jsonb(pay),'version',updated_at,'audit',(select count(*) from public.auditoria)) into failures_before from public.matricula where id=e.id;
  execute format('create trigger h4_failure after %s on public.%I for each row execute function pg_temp.h4_fail()',case when stage='auditoria' then 'insert' else 'update' end,stage);
@@ -63,12 +66,13 @@ do $$ declare actor uuid:=gen_random_uuid(); coordinator uuid:=gen_random_uuid()
  execute format('drop trigger h4_failure on public.%I',stage);
  if failures_before is distinct from (select jsonb_build_object('payment',(select to_jsonb(pp) from public.pago pp where id=pay.id),'version',updated_at,'audit',(select count(*) from public.auditoria)) from public.matricula where id=e.id) then raise exception 'Partial cancellation escaped rollback';end if;
  end loop;
- pay:=public.anular_pago(pay.id,pay.updated_at,'Correction');
+ -- H4_FAULT_CANCEL_END
+ select * into pay from jsonb_populate_record(null::public.pago,public.anular_pago(pay.id,pay.updated_at,'Correction'));
  if not exists(select 1 from public.matricula_saldo where matricula_id=e.id and abonado=0 and pendiente=70) then raise exception 'Annulment balance mismatch';end if;
  if (select count(*) from public.pago_aplicacion where pago_id=pay.id)<>1 then raise exception 'Applications lost';end if;
  begin perform public.anular_pago(pay.id,pay.updated_at,'Again');raise exception 'Double annulment accepted';exception when check_violation then if sqlerrm<>'PAYMENT_ALREADY_CANCELLED' then raise;end if;end;
  update public.catalogo_valor set activo=false where id=medium;
- replay:=public.registrar_pago(payload);
+ select * into replay from jsonb_populate_record(null::public.pago,public.registrar_pago(payload));
  if replay.id<>pay.id or replay.estado_codigo<>'ANULADO' then raise exception 'Inactive catalog replay resurrected or denied';end if;
  update public.matricula_cargo set activo=false,motivo_inactivacion='NO VIGENTE APPLICATIONS' where id=cargo_id;
  if not exists(select 1 from public.pago_aplicacion where matricula_cargo_id=cargo_id) then raise exception 'Historical reference lost';end if;

@@ -25,6 +25,8 @@ try {
   sql(reference)
   if(sql("select to_regclass('public.pago') is not null")!=='t') for(const name of ['20261109020000_h4_payment_model','20261109030000_h4_payment_commands','20261109040000_h4_enrollment_guards'])sql(readFileSync(`supabase/migrations/${name}.sql`,'utf8'))
   sql(readFileSync('tests/sql/h4-payments.sql','utf8'))
+  sql(readFileSync('tests/sql/h4-regression.sql','utf8'))
+  console.log('H4 isolated H3 regression, C-H4-001, states, historical UUIDs and sponsor: PASSED')
   console.log('H4 isolated schema + reference bootstrap and rollback invariants: PASSED')
   const fixtureSource=readFileSync('tests/sql/h4-payments.sql','utf8')
   const setup=fixtureSource.slice(fixtureSource.indexOf('do $$'),fixtureSource.indexOf(' select v.id into medium'))
@@ -43,7 +45,7 @@ try {
   }
   const asActor=(f,body)=>`begin isolation level serializable;select set_config('request.jwt.claim.sub','${f.actor}',true);${body};set constraints all immediate;commit;`
   const payload=(f,amount,key=randomUUID())=>({matricula_id:f.enrollment,expected_matricula_updated_at:f.version,idempotency_key:key,importe:amount,medio_pago_id:f.medium,aplicaciones:[{matricula_cargo_id:f.charge,importe:amount}]})
-  const register=p=>`select (public.registrar_pago('${JSON.stringify(p)}'::jsonb)).id`
+  const register=p=>`select public.registrar_pago('${JSON.stringify(p)}'::jsonb)->>'id'`
   const run=(statement)=>{
     const child=spawn('docker',['exec','-i',container,'psql','-U','postgres','-d',database,'-At','-v','ON_ERROR_STOP=1','-v','VERBOSITY=sqlstate'],{windowsHide:true})
     let output='';child.stdout.on('data',chunk=>output+=chunk);child.stderr.on('data',()=>{})
@@ -85,7 +87,7 @@ try {
   }
   {
     const f=fixture();sql(asActor(f,register(payload(f,'70'))));const p=JSON.parse(sql(`select row_to_json(p) from public.pago p where matricula_id='${f.enrollment}'`))
-    const cancel=`select (public.anular_pago('${p.id}','${p.updated_at}','SYNTHETIC CORRECTION')).id`
+    const cancel=`select public.anular_pago('${p.id}','${p.updated_at}','SYNTHETIC CORRECTION')->>'id'`
     await race(f,cancel,cancel);assert.equal(balance(f).abonado,0)
     assert.equal(sql(`select count(*) from public.auditoria where entidad='pago' and registro_id='${p.id}' and accion='ANULADO'`),'1')
     console.log('H4 concurrent annulment: PASSED (one release/event)')
@@ -97,7 +99,7 @@ try {
   {
     const f=fixture();sql(asActor(f,register(payload(f,'70'))));f.version=freshVersion(f)
     const p=JSON.parse(sql(`select row_to_json(p) from public.pago p where matricula_id='${f.enrollment}'`))
-    await race(f,`select (public.anular_pago('${p.id}','${p.updated_at}','SYNTHETIC')).id`,register(payload(f,'30')))
+    await race(f,`select public.anular_pago('${p.id}','${p.updated_at}','SYNTHETIC')->>'id'`,register(payload(f,'30')))
     assert.ok(balance(f).pendiente>=0);console.log('H4 annulment vs new payment: PASSED')
   }
   {
