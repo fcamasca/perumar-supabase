@@ -57,3 +57,8 @@ En Editar matrícula → Cargos, usar el check del encabezado para marcar/desmar
 ### Acciones de matrícula en el Ciclo (pendiente humano)
 
 Comprobar botones compactos Ver matrícula / Editar y menú ⋮ Más acciones con Cambiar Ciclo…; anuladas solo muestran Ver matrícula. Probar teclado, Escape, clic fuera y retorno de foco al cerrar el diálogo. Revisar posicionamiento del menú en última fila, ventana estrecha y temas visuales; no se presume verificación humana de estos casos.
+
+
+### Guardado de cargos y confirmación (pendiente humano)
+
+Abrir Editar matrícula → Cargos sin modificar: Guardar cargos debe estar deshabilitado. Cambiar un opcional lo habilita; revertirlo lo deshabilita. Guardar un cambio válido: observar Guardando… y luego Cargos guardados correctamente; el botón vuelve a quedar deshabilitado tras consultar los datos guardados. Un nuevo cambio elimina el aviso previo. Si DB rechaza retirar un cargo pagado o hay conflicto, conservar selección/error y no mostrar éxito.

@@ -485,6 +485,7 @@ export function NewEnrollment({cycleContext,onComplete,onCancel,onEditorChange}:
 export function EnrollmentDetail() {
     const navigate=useNavigate();
     const [discountOpen,setDiscountOpen]=useState(false);
+    const [chargeNotice,setChargeNotice]=useState('');
     const { id } = useParams(), { client, state } = useSession(), [row, setRow] = useState<Row>(), [student, setStudent] = useState<Row>(), [cycle, setCycle] = useState<Row>(), [charges, setCharges] = useState<Row[]>([]), [tariffs, setTariffs] = useState<Row[]>([]), [options, setOptions] = useState<string[]>([]), [target, setTarget] = useState(''), [code, setCode] = useState(''), [discount, setDiscount] = useState(''), [reason, setReason] = useState(''), [message, setMessage] = useState('Cargando…'), [revision, setRevision] = useState(0), [busy, setBusy] = useState(false), [tab,setTab]=useState(0),[choosingCompany,setChoosingCompany]=useState(false),[sponsor,setSponsor]=useState<Row|null>(null),[detailsReady,setDetailsReady]=useState(false),[tariffStatus,setTariffStatus]=useState<'idle'|'loading'|'ready'|'error'>('idle');
     const [searchParams,setSearchParams]=useSearchParams(),[editing,setEditing]=useState(searchParams.get('editar')==='1');
     const { ask, dialog } = useConfirmation(busy), director = state.roles?.includes('DIRECTOR_ACADEMICO');
@@ -502,11 +503,12 @@ export function EnrollmentDetail() {
         setOptions(target!==row?.ciclo_id ? (r.error?[]:(r.data as Row[]).filter(x=>(x.tarifa as Record<string,unknown>)?.activo).map(x=>x.id)) : charges.filter(x=>x.activo).map(x=>String(x.ciclo_tarifa_id)));
     } }); return () => { active = false; }; }, [client, target, row, charges]);
     const editable = detailsReady && row?.estado_codigo === 'ACTIVO' && ['PROGRAMADO', 'EN_CURSO'].includes(value(cycle, 'estado_codigo'));
-    async function save(extra: Draft = {}, selected?: string[]) { if (!row || !editing || !editable || (selected && tariffStatus!=='ready'))
+    async function save(extra: Draft = {}, selected?: string[]) { if (!row || busy || !editing || !editable || (selected && (tariffStatus!=='ready'||!pendingCharges)))
         return; setBusy(true); const destination = cycle; const p = { id: row.id, expected_updated_at: row.updated_at, ...extra, ...(selected ? { ciclo_id: target, expected_ciclo_updated_at: destination?.updated_at } : {}) }; const r = await client.rpc('editar_matricula', { p, ...(selected ? { opcionales: selected } : {}) }); setBusy(false); if (r.error)
         setMessage(enrollmentError(r.error));
     else {
         if('empresa_patrocinadora_id' in extra)setChoosingCompany(false);if('descuento' in extra)setDiscountOpen(false);setRevision(revision + 1);
+        if(selected){setTariffStatus('loading');setChargeNotice('Cargos guardados correctamente.')}
         setMessage('Matrícula actualizada.');
     } }
     async function annul() { if (!row)
@@ -515,7 +517,7 @@ export function EnrollmentDetail() {
         setMessage(enrollmentError(r.error));
     else
         setRevision(revision + 1); }
-    function leaveEdit(){setDiscountOpen(false);setEditing(false);setChoosingCompany(false);setCode(value(row,'codigo_matricula'));setTarget(value(row,'ciclo_id'));setDiscount('');setReason('');setOptions(charges.filter(c=>c.activo).map(c=>String(c.ciclo_tarifa_id)));const next=new URLSearchParams(searchParams);next.delete('editar');setSearchParams(next,{replace:true})}
+    function leaveEdit(){setChargeNotice('');setDiscountOpen(false);setEditing(false);setChoosingCompany(false);setCode(value(row,'codigo_matricula'));setTarget(value(row,'ciclo_id'));setDiscount('');setReason('');setOptions(charges.filter(c=>c.activo).map(c=>String(c.ciclo_tarifa_id)));const next=new URLSearchParams(searchParams);next.delete('editar');setSearchParams(next,{replace:true})}
     const back=()=>navigate(row?`/academico/ciclos?ciclo=${String(row.ciclo_id)}&seccion=matriculas`:'/academico/ciclos');
     const careerCharge=charges.find(c=>c.activo&&c.tipo==='CARRERA');
     function closeDiscount(){setDiscountOpen(false);setDiscount('');setReason('')}
@@ -543,14 +545,15 @@ export function EnrollmentDetail() {
       </div>
       <div hidden={tab!==1} role="tabpanel" id="enrollment-detail-panel-1" aria-labelledby="enrollment-detail-tab-1" tabIndex={0} className="student-section-panel"><h3>Cargos</h3>
         {editable&&editing?<><InlineForm className="enrollment-detail-form enrollment-charge-form" onSubmit={()=>void save({},options.filter(id=>tariffs.find(t=>t.id===id)?.obligatorio===false))}>
-        <div className="table-scroll enrollment-charges-grid"><table aria-label="Tarifas de la matrícula"><thead><tr><th scope="col"><input type="checkbox" aria-label="Seleccionar todos los cargos opcionales" title="Marcar o desmarcar todos los cargos opcionales" ref={element=>{if(element)element.indeterminate=someOptionalCharges&&!allOptionalCharges}} checked={allOptionalCharges} disabled={busy||tariffStatus!=='ready'||!optionalChargeRows.length} onChange={e=>{setDiscountOpen(false);setOptions(e.target.checked?optionalChargeRows.map(c=>c.id):[])}}/></th><th>Concepto</th><th>Subtotal</th><th>Descuento</th><th>Total</th></tr></thead><tbody>
-        {chargeRows.map(c=><tr key={c.id}><td><input type="checkbox" aria-label={`Incluir ${c.name}`} disabled={busy||tariffStatus!=='ready'||c.required} checked={c.selected} onChange={e=>{setDiscountOpen(false);setOptions(e.target.checked?[...options,c.id]:options.filter(id=>id!==c.id))}}/></td><td>{c.name}{c.required&&<small className="help-text"> · Obligatoria</small>}</td><td>{money(c.original)}</td><td>{money(c.selected?c.discount:0)}</td><td>{money(c.selected?c.original-c.discount:0)}</td></tr>)}
+        <div className="table-scroll enrollment-charges-grid"><table aria-label="Tarifas de la matrícula"><thead><tr><th scope="col"><input type="checkbox" aria-label="Seleccionar todos los cargos opcionales" title="Marcar o desmarcar todos los cargos opcionales" ref={element=>{if(element)element.indeterminate=someOptionalCharges&&!allOptionalCharges}} checked={allOptionalCharges} disabled={busy||tariffStatus!=='ready'||!optionalChargeRows.length} onChange={e=>{setChargeNotice('');setDiscountOpen(false);setOptions(e.target.checked?optionalChargeRows.map(c=>c.id):[])}}/></th><th>Concepto</th><th>Subtotal</th><th>Descuento</th><th>Total</th></tr></thead><tbody>
+        {chargeRows.map(c=><tr key={c.id}><td><input type="checkbox" aria-label={`Incluir ${c.name}`} disabled={busy||tariffStatus!=='ready'||c.required} checked={c.selected} onChange={e=>{setChargeNotice('');setDiscountOpen(false);setOptions(e.target.checked?[...options,c.id]:options.filter(id=>id!==c.id))}}/></td><td>{c.name}{c.required&&<small className="help-text"> · Obligatoria</small>}</td><td>{money(c.original)}</td><td>{money(c.selected?c.discount:0)}</td><td>{money(c.selected?c.original-c.discount:0)}</td></tr>)}
         {extraCharges.map(c=><tr key={c.id}><td>Incluido</td><td>{value(c,'nombre')}<small className="help-text"> · Cargo vigente conservado</small></td><td>{money(c.importe_original)}</td><td>{money(c.descuento)}</td><td>{money(c.importe_final)}</td></tr>)}
         </tbody><tfoot><tr><th colSpan={4}>Subtotal</th><td>{money(previewSubtotal/100)}</td></tr><tr><th colSpan={4}>Descuento</th><td>{money(previewDiscount/100)}</td></tr><tr><th colSpan={4}>Total</th><td><strong>{money((previewSubtotal-previewDiscount)/100)}</strong></td></tr></tfoot></table></div>
         <p className="help-text">Desmarca los conceptos opcionales que no correspondan. Los importes son una vista previa; se confirman al guardar.</p>
         {tariffStatus==='loading'&&<p role="status">Cargando conceptos…</p>}{tariffStatus==='error'&&<p role="alert">No se pudieron cargar los conceptos. No se pueden guardar cambios incompletos.</p>}
-        <div className="form-actions enrollment-charge-actions"><button disabled={busy||tariffStatus!=='ready'}>Guardar cargos</button>{director&&<button type="button" className="secondary" disabled={busy||pendingCharges} onClick={()=>{setDiscount(String(careerCharge?.descuento??0));setReason('');setMessage('');setDiscountOpen(true)}}>{Number(careerCharge?.descuento)>0?'Modificar descuento':'Aplicar descuento'}</button>}</div>
+        <div className="form-actions enrollment-charge-actions"><button disabled={busy||tariffStatus!=='ready'||!pendingCharges}>{busy?'Guardando…':'Guardar cargos'}</button>{director&&<button type="button" className="secondary" disabled={busy||pendingCharges} onClick={()=>{setDiscount(String(careerCharge?.descuento??0));setReason('');setMessage('');setDiscountOpen(true)}}>{Number(careerCharge?.descuento)>0?'Modificar descuento':'Aplicar descuento'}</button>}</div>
         </InlineForm>
+        {chargeNotice&&<p role="status" className="success">{chargeNotice}</p>}
         {director&&pendingCharges&&<p className="help-text">Guarda los cargos antes de aplicar o modificar el descuento.</p>}
         {director&&<>
 

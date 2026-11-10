@@ -179,3 +179,14 @@ El menú tiene nombre accesible por matrícula, navegación con teclado, Escape/
 Validación local de jerarquía de acciones: lint/typecheck/build/build-safety/diff-check correctos; suite completa 368/368 (21 archivos) y repetición focalizada CycleEnrollments 20/20 con las aserciones finales de visibilidad de roles/estados. No se declara QA visual humana ejecutada; revisión de temas/viewport/forced-colors queda pendiente. CI exacta del candidato en entrega.
 
 Revisión adicional del menú: al devolver el foco al propio botón ⋮, el blur no cierra anticipadamente el menú; así un segundo clic lo cierra en vez de reabrirlo. Regresión explícita blur→clic y 20/20 casos de CycleEnrollments correctos; lint/typecheck/diff-check repetidos. La CI final cubre esta corrección de interacción.
+
+
+## 10/11/2026 — Guardar cargos solo con cambios y confirmación persistente
+
+Solicitud humana: Guardar cargos no debe parecer activo cuando no se modificó la selección; confirmar visiblemente al terminar. Se reutiliza la comparación existente `pendingCharges` para deshabilitar el botón cuando la selección coincide con los cargos guardados, incluyendo volver al valor original desde check individual/todos. La función de envío también rechaza un submit sin cambios y mientras está ocupada.
+
+Durante el envío muestra Guardando… y bloquea la selección. Al confirmar la RPC, mantiene los controles de cargos bloqueados hasta recargar su estado desde DB y presenta Cargos guardados correctamente en una región status; la recarga de detalle ya no borra esa confirmación. Modificar de nuevo la selección o salir de edición elimina el mensaje anterior. Un conflicto mantiene el borrador, muestra el error existente y no declara éxito ni reintenta. No cambia ninguna regla financiera, RPC, permiso, migración ni Spec aprobado.
+
+Regresión: estado inicial limpio; toggles individuales/todos y reversión; submit sin cambios sin RPC; envío pendiente; actualización del estado guardado y confirmación persistente tras recarga/pestañas; nuevo cambio limpia el aviso; PT409 conserva selección sin retry/éxito falso. Fixture de detalle devuelve objetos independientes por lectura para representar las respuestas reales de Supabase. Gate 2 pendiente; sin acceptance, merge ni H5. Resultados y CI exacta del candidato en entrega.
+
+Validación local de guardado/feedback: lint/typecheck, EnrollmentPages 61/61, suite completa 370/370 (21 archivos), build, build-safety y diff-check correctos. Confirmación con la clase success existente, sin CSS nuevo. No migraciones ni cambios de inventario. QA humana pendiente; CI exacta del candidato en entrega.
