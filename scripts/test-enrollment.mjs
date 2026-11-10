@@ -316,8 +316,10 @@ try {
         assert.ok(configRace.some(r => !r.error));
         if (!configRace[0].error) {
             const charge = checked(await D.from('matricula_cargo').select('*').eq('matricula_id', configRace[0].data.id), 'race charge');
-            assert.equal(charge.length, 1);
-            assert.equal(charge[0].importe_original, 650);
+            assert.equal(charge.length, 2);
+            assert.equal(charge.find(c=>c.tipo==='CARRERA').importe_original, 650);
+            assert.equal(charge.find(c=>c.tipo==='OTRO').importe_original, 80);
+            assert.equal(charge.reduce((sum,c)=>sum+Number(c.importe_final),0),730);
         }
         const z = await readyStudent(), terminalCycle = await configure(await cycle(career1, '2048-03-01'));
         const race = await Promise.all([D.rpc('registrar_matricula', { p: { alumno_id: z.id, expected_alumno_updated_at: z.updated_at, ciclo_id: terminalCycle.id, expected_ciclo_updated_at: terminalCycle.updated_at }, opcionales: [] }), D.rpc('cambiar_estado_ciclo', { ...version(terminalCycle), destino: 'ANULADO', motivo: 'CONCURRENT' })]);
