@@ -79,6 +79,8 @@ try {
         const moved=await rpc(O,'editar_matricula',{p:{...version(restored),ciclo_id:c2.id,expected_ciclo_updated_at:c2.updated_at},opcionales:[]});
         const destination=(await rows('matricula_cargo')).filter(c=>c.matricula_id===moved.id&&c.activo);
         assert.equal(destination.length,2);assert.equal(destination.reduce((sum,c)=>sum+Number(c.importe_final),0),780);
+        // Leave no extra active enrollment in c2: later H3 tests isolate its career-change guard.
+        await rpc(O,'anular_matricula',{...version(moved),motivo:'CI_FIXTURE_COMPLETE'});
         const beforeInitial=(await rows('alumno')).length;
         reject(await O.rpc('guardar_alumno',{p:{...payload(),contactos:[{...initialContact,parentesco_id:cat.SEXO}]}}));
         assert.equal((await rows('alumno')).length,beforeInitial);
