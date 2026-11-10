@@ -73,7 +73,7 @@ begin
  select result.id,(x->>'matricula_cargo_id')::uuid,(x->>'importe')::numeric from jsonb_array_elements(normalized) x;
  update public.matricula set updated_at=clock_timestamp() where id=enrollment.id;
  insert into public.auditoria(entidad,registro_id,accion,actor,new_values)
- values('pago',result.id,'REGISTRADO',auth.uid(),jsonb_build_object('pago_id',result.id,'matricula_id',enrollment.id));
+ values('pago',result.id,'PAGO_REGISTRADO',auth.uid(),jsonb_build_object('pago_id',result.id,'matricula_id',enrollment.id));
  return to_jsonb(result)||jsonb_build_object('aplicaciones',(select jsonb_agg(to_jsonb(a)||jsonb_build_object('concepto',(select c.nombre from public.matricula_cargo c where c.id=a.matricula_cargo_id)) order by a.matricula_cargo_id) from public.pago_aplicacion a where a.pago_id=result.id),'saldo',(select to_jsonb(s) from public.matricula_saldo s where s.matricula_id=result.matricula_id),'matricula_updated_at',(select m.updated_at from public.matricula m where m.id=result.matricula_id));
 end $$;
 
@@ -101,7 +101,7 @@ begin
  where pay.id=payment.id returning * into payment;
  update public.matricula set updated_at=clock_timestamp() where public.matricula.id=enrollment.id;
  insert into public.auditoria(entidad,registro_id,accion,actor,motivo,new_values)
- values('pago',payment.id,'ANULADO',auth.uid(),btrim(motivo),jsonb_build_object('pago_id',payment.id,'matricula_id',enrollment.id));
+ values('pago',payment.id,'PAGO_ANULADO',auth.uid(),btrim(motivo),jsonb_build_object('pago_id',payment.id,'matricula_id',enrollment.id));
  return to_jsonb(payment)||jsonb_build_object('aplicaciones',(select jsonb_agg(to_jsonb(a)||jsonb_build_object('concepto',(select c.nombre from public.matricula_cargo c where c.id=a.matricula_cargo_id)) order by a.matricula_cargo_id) from public.pago_aplicacion a where a.pago_id=payment.id),'saldo',(select to_jsonb(s) from public.matricula_saldo s where s.matricula_id=payment.matricula_id),'matricula_updated_at',(select m.updated_at from public.matricula m where m.id=payment.matricula_id));
 end $$;
 revoke all on function public.registrar_pago(jsonb),public.anular_pago(uuid,timestamptz,text) from public,anon,authenticated;

@@ -559,7 +559,7 @@ export function EnrollmentDetail() {
       <div hidden={tab!==2} role="tabpanel" id="enrollment-detail-panel-2" aria-labelledby="enrollment-detail-tab-2" tabIndex={0} className="student-section-panel"><h3>Historial</h3><p className="help-text">Datos conservados al matricular y cargos retirados. Los cambios posteriores de la ficha no modifican esta información.</p><details><summary>Datos del alumno al matricular</summary><HistoricalStudent snapshot={row.alumno_snapshot}/></details><h3>Cargos retirados</h3>{chargeTable(charges.filter(c=>!c.activo),true)}{row.estado_codigo==='ANULADO'&&<p>Motivo de anulación: {value(row,'motivo_anulacion')||'No registrado'}</p>}</div>
       <div hidden={tab!==3} role="tabpanel" id="enrollment-detail-panel-3" aria-labelledby="enrollment-detail-tab-3" tabIndex={0} className="student-section-panel">{tab===3&&<EnrollmentPayments key={`${state.userId}:${row.id}`} enrollment={row.id} version={value(row,'updated_at')} enrollmentState={value(row,'estado_codigo')} cycleState={value(cycle,'estado_codigo')} onChanged={()=>setRevision(x=>x+1)}/>}</div>
       <div className="form-actions enrollment-detail-actions">{editing&&editable&&<button type="button" className="secondary" disabled={busy} onClick={leaveEdit}>Cancelar edición</button>}{row.estado_codigo==='ACTIVO'&&<button type="button" className="sensitive" disabled={busy} onClick={()=>void annul()}>Anular matrícula</button>}</div>
-      {!editable&&<p className="help-text">Solo consulta.{row.estado_codigo==='ACTIVO'?' Puedes anular esta matrícula con motivo.':''}</p>}</>}
+      {!editable&&tab!==3&&<p className="help-text">Solo consulta.{row.estado_codigo==='ACTIVO'?' Puedes anular esta matrícula con motivo.':''}</p>}</>}
     </section>;
 
 }

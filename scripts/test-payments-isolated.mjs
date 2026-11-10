@@ -52,12 +52,12 @@ try {
     const done=new Promise((resolve,reject)=>{child.on('error',reject);child.on('close',code=>resolve({ok:code===0,output}))})
     child.stdin.end(statement);return done
   }
-  async function race(f,left,right) {
+  async function race(f,left,right,otherCycle=null) {
     // The coordinator holds the common Cycle lock until BOTH real sessions wait on it.
     const gate=spawn('docker',['exec','-i',container,'psql','-U','postgres','-d',database,'-At','-v','ON_ERROR_STOP=1'],{windowsHide:true})
     let locked=false;gate.stdout.on('data',chunk=>{if(String(chunk).includes('H4_BARRIER'))locked=true});gate.stderr.on('data',()=>{})
     const ended=new Promise((resolve,reject)=>{gate.on('error',reject);gate.on('close',code=>code===0?resolve():reject(new Error('Barrier failed')))})
-    gate.stdin.write(`begin;select id from public.ciclo where id='${f.cycle}' for update;select 'H4_BARRIER';\n`)
+    gate.stdin.write(`begin;select id from public.ciclo where id in ('${f.cycle}'${otherCycle?`, '${otherCycle}'`:''}) order by id for update;select 'H4_BARRIER';\n`)
     const deadline=Date.now()+15000
     try {
       while(!locked&&Date.now()<deadline)await new Promise(r=>setTimeout(r,25))
@@ -89,7 +89,7 @@ try {
     const f=fixture();sql(asActor(f,register(payload(f,'70'))));const p=JSON.parse(sql(`select row_to_json(p) from public.pago p where matricula_id='${f.enrollment}'`))
     const cancel=`select public.anular_pago('${p.id}','${p.updated_at}','SYNTHETIC CORRECTION')->>'id'`
     await race(f,cancel,cancel);assert.equal(balance(f).abonado,0)
-    assert.equal(sql(`select count(*) from public.auditoria where entidad='pago' and registro_id='${p.id}' and accion='ANULADO'`),'1')
+    assert.equal(sql(`select count(*) from public.auditoria where entidad='pago' and registro_id='${p.id}' and accion='PAGO_ANULADO'`),'1')
     console.log('H4 concurrent annulment: PASSED (one release/event)')
   }
   {
@@ -118,6 +118,28 @@ try {
     await race(f,register(payload(f,'70')),`select (public.cambiar_estado_ciclo('${f.cycle}','${f.cycleVersion}','DESIERTO','SYNTHETIC','${reason}')).id`)
     assert.equal(sql(`select count(*) from public.pago p join public.matricula m on m.id=p.matricula_id join public.ciclo c on c.id=m.ciclo_id where m.id='${f.enrollment}' and c.estado_codigo in ('DESIERTO','ANULADO')`),'0')
     console.log('H4 payment vs forbidden Cycle state: PASSED')
+  }
+  {
+    const f=fixture();sql(asActor(f,register(payload(f,'70'))));f.version=freshVersion(f)
+    const p=JSON.parse(sql(`select row_to_json(p) from public.pago p where matricula_id='${f.enrollment}'`))
+    await race(f,`select public.anular_pago('${p.id}','${p.updated_at}','SYNTHETIC')->>'id'`,`select (public.editar_matricula('${JSON.stringify({id:f.enrollment,expected_updated_at:f.version,descuento:'50',motivo_descuento:'SYNTHETIC'})}'::jsonb)).id`)
+    assert.ok(balance(f).pendiente>=0);console.log('H4 annulment vs discount: PASSED')
+  }
+  {
+    const f=fixture();sql(asActor(f,register(payload(f,'70'))));f.version=freshVersion(f)
+    const p=JSON.parse(sql(`select row_to_json(p) from public.pago p where matricula_id='${f.enrollment}'`))
+    await race(f,`select public.anular_pago('${p.id}','${p.updated_at}','SYNTHETIC')->>'id'`,`select (public.anular_matricula('${f.enrollment}','${f.version}','SYNTHETIC')).id`)
+    assert.ok(balance(f).pendiente>=0);console.log('H4 annulment vs enrollment freeze: PASSED')
+  }
+  {
+    const f=fixture(),other=fixture(),key=randomUUID();await race(f,register(payload(f,'70',key)),register(payload(other,'60',key)),other.cycle)
+    assert.equal(sql(`select count(*) from public.pago where idempotency_key='${key}'`),'1')
+    assert.ok(balance(f).pendiente>=0&&balance(other).pendiente>=0)
+    console.log('H4 same global UUID / different enrollments concurrently: PASSED')
+  }
+  {
+    const f=fixture();await race(f,register(payload(f,'70')),`select (public.editar_matricula('${JSON.stringify({id:f.enrollment,expected_updated_at:f.version,empresa_patrocinadora_id:null})}'::jsonb)).id`)
+    assert.ok(balance(f).pendiente>=0);console.log('H4 payment vs sponsor edit: PASSED')
   }
   {
     const f=fixture();await race(f,register(payload(f,'70')),`select (public.anular_matricula('${f.enrollment}','${f.version}','SYNTHETIC')).id`)

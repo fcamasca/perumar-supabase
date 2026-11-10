@@ -1,7 +1,7 @@
 begin;
 set local lock_timeout='3s';
 create function pg_temp.h4_fail() returns trigger language plpgsql as $$ begin raise exception using errcode='P0001',message='H4_SYNTHETIC_FAILURE'; end $$;
-do $$ declare actor uuid:=gen_random_uuid(); coordinator uuid:=gen_random_uuid(); m public.materia; extra public.materia; career public.carrera; c public.ciclo; a public.alumno; p jsonb; t public.tarifa; e public.matricula; original jsonb; charges jsonb; old_version timestamptz; rel uuid; pay public.pago; replay public.pago; medium uuid; cargo_id uuid; payload jsonb; before_audit bigint; stage text; failures_before jsonb; second_pay public.pago; target_cycle public.ciclo; company public.empresa_patrocinadora; old_cargo uuid; option_id uuid; other_cargo uuid; response jsonb; invalid text; token text:=upper(substr(replace(gen_random_uuid()::text,'-',''),1,8)); begin
+do $$ declare actor uuid:=gen_random_uuid(); coordinator uuid:=gen_random_uuid(); m public.materia; extra public.materia; career public.carrera; c public.ciclo; a public.alumno; p jsonb; t public.tarifa; e public.matricula; original jsonb; charges jsonb; old_version timestamptz; rel uuid; pay public.pago; replay public.pago; medium uuid; cargo_id uuid; payload jsonb; before_audit bigint; stage text; failures_before jsonb; second_pay public.pago; target_cycle public.ciclo; company public.empresa_patrocinadora; old_cargo uuid; option_id uuid; other_cargo uuid; response jsonb; invalid text; other_enrollment public.matricula; token text:=upper(substr(replace(gen_random_uuid()::text,'-',''),1,8)); begin
  insert into auth.users(id) values(actor),(coordinator);
  insert into public.app_users(id) values(actor),(coordinator);
  insert into public.app_user_roles(user_id,role_code) values(actor,'DIRECTOR_ACADEMICO'),(coordinator,'COORDINADOR_ACADEMICO');
@@ -62,9 +62,28 @@ do $$ declare actor uuid:=gen_random_uuid(); coordinator uuid:=gen_random_uuid()
  if not exists(select 1 from public.matricula_cargo where matricula_id=e.id and tipo='OTRO' and activo and id<>old_cargo) or exists(select 1 from public.pago_aplicacion where matricula_cargo_id<>old_cargo and pago_id=second_pay.id) then raise exception 'Cargo UUID history reassigned';end if;
  company:=public.guardar_empresa_patrocinadora(jsonb_build_object('ruc','20999999999','razon_social','H4 SYNTHETIC'));
  e:=public.editar_matricula(jsonb_build_object('id',e.id,'expected_updated_at',e.updated_at,'empresa_patrocinadora_id',company.id));
+ response:=public.registrar_pago(jsonb_build_object('matricula_id',e.id,'expected_matricula_updated_at',e.updated_at,'idempotency_key',gen_random_uuid(),'importe','1','medio_pago_id',medium,'aplicaciones',jsonb_build_array(jsonb_build_object('matricula_cargo_id',cargo_id,'importe','1'))));
+ select * into second_pay from jsonb_populate_record(null::public.pago,response);
+ select * into e from public.matricula where id=e.id;
+ company:=public.guardar_empresa_patrocinadora(jsonb_build_object('ruc','20888888888','razon_social','H4 SYNTHETIC SECOND'));
+ e:=public.editar_matricula(jsonb_build_object('id',e.id,'expected_updated_at',e.updated_at,'empresa_patrocinadora_id',company.id));
+ if (select matricula_id from public.pago where id=second_pay.id)<>e.id or (select matricula_cargo_id from public.pago_aplicacion where pago_id=second_pay.id)<>cargo_id then raise exception 'Sponsor edit reassigned financial history';end if;
+ perform public.anular_pago(second_pay.id,second_pay.updated_at,'SYNTHETIC');
+ select * into e from public.matricula where id=e.id;
  e:=public.editar_matricula(jsonb_build_object('id',e.id,'expected_updated_at',e.updated_at,'empresa_patrocinadora_id',null));
  target_cycle:=public.guardar_ciclo(jsonb_build_object('carrera_id',career.id,'fecha_inicio','2038-02-01','fecha_fin','2038-02-02','departamento_id',p->>'domicilio_departamento_id','provincia_id',p->>'domicilio_provincia_id','distrito_id',p->>'domicilio_distrito_id','capitania_id',(select id from public.capitania where active limit 1)));
+ target_cycle:=public.guardar_ciclo_tarifas(target_cycle.id,target_cycle.updated_at,jsonb_build_array(jsonb_build_object('tarifa_id',(select tarifa_id from public.matricula_cargo where id=cargo_id),'importe','100','obligatorio','true')));
+ other_enrollment:=public.registrar_matricula(jsonb_build_object('alumno_id',a.id,'expected_alumno_updated_at',a.updated_at,'ciclo_id',target_cycle.id,'expected_ciclo_updated_at',target_cycle.updated_at));
+ begin perform public.registrar_pago(payload||jsonb_build_object('matricula_id',other_enrollment.id));raise exception 'Global key reused for another enrollment';exception when unique_violation then if sqlerrm<>'PAYMENT_IDEMPOTENCY_CONFLICT' then raise;end if;end;
+ begin perform public.registrar_pago(payload||jsonb_build_object('matricula_id',other_enrollment.id,'expected_matricula_updated_at',other_enrollment.updated_at,'idempotency_key',gen_random_uuid()));raise exception 'Foreign charge accepted';exception when check_violation then if sqlerrm<>'PAYMENT_CARGO_INVALID' then raise;end if;end;
+ begin
+ insert into public.pago(matricula_id,idempotency_key,importe,medio_pago_id,medio_codigo,medio_etiqueta,registrado_por) values(e.id,gen_random_uuid(),1,medium,'EFECTIVO','Efectivo',actor);
+ set constraints all immediate;
+ raise exception 'Payment without applications committed';
+ exception when check_violation then if sqlerrm<>'PAYMENT_APPLICATIONS_INVALID' then raise;end if;end;
  begin perform public.editar_matricula(jsonb_build_object('id',e.id,'expected_updated_at',e.updated_at,'ciclo_id',target_cycle.id,'expected_ciclo_updated_at',target_cycle.updated_at),'{}'::uuid[]);raise exception 'Transfer after annulled payment accepted';exception when check_violation then if sqlerrm<>'PAYMENT_PREVENTS_CYCLE_TRANSFER' then raise;end if;end;
+ target_cycle:=public.cambiar_estado_ciclo(target_cycle.id,target_cycle.updated_at,'DESIERTO','SYNTHETIC',(select v.id from public.catalogo_valor v join public.catalogo cat on cat.id=v.catalogo_id where cat.codigo='MOTIVO_CICLO_DESIERTO' and v.activo limit 1));
+ begin perform public.registrar_pago(jsonb_build_object('matricula_id',other_enrollment.id,'expected_matricula_updated_at',other_enrollment.updated_at,'idempotency_key',gen_random_uuid(),'importe','1','medio_pago_id',medium,'aplicaciones',jsonb_build_array(jsonb_build_object('matricula_cargo_id',(select id from public.matricula_cargo where matricula_id=other_enrollment.id and activo),'importe','1'))));raise exception 'Deserted Cycle accepted payment';exception when check_violation then if sqlerrm<>'PAYMENT_CYCLE_INELIGIBLE' then raise;end if;end;
  begin perform public.cambiar_estado_ciclo(c.id,c.updated_at,'DESIERTO','SYNTHETIC',(select v.id from public.catalogo_valor v join public.catalogo cat on cat.id=v.catalogo_id where cat.codigo='MOTIVO_CICLO_DESIERTO' and v.activo limit 1));raise exception 'Cycle with annulled payments deserted';exception when check_violation then if sqlerrm<>'PAYMENT_PREVENTS_CYCLE_STATE' then raise;end if;end;
  c:=public.cambiar_estado_ciclo(c.id,c.updated_at,'EN_CURSO');
  c:=public.cambiar_estado_ciclo(c.id,c.updated_at,'CERRADO');

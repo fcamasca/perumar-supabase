@@ -1,7 +1,7 @@
 begin;
 set local lock_timeout='3s';
 create function pg_temp.h4_fail() returns trigger language plpgsql as $$ begin raise exception using errcode='P0001',message='H4_SYNTHETIC_FAILURE'; end $$;
-do $$ declare actor uuid:=gen_random_uuid(); coordinator uuid:=gen_random_uuid(); m public.materia; extra public.materia; career public.carrera; c public.ciclo; a public.alumno; p jsonb; t public.tarifa; e public.matricula; original jsonb; charges jsonb; old_version timestamptz; rel uuid; pay public.pago; replay public.pago; medium uuid; cargo_id uuid; payload jsonb; before_audit bigint; stage text; failures_before jsonb; token text:=upper(substr(replace(gen_random_uuid()::text,'-',''),1,8)); begin
+do $$ declare actor uuid:=gen_random_uuid(); coordinator uuid:=gen_random_uuid(); m public.materia; extra public.materia; career public.carrera; c public.ciclo; a public.alumno; p jsonb; t public.tarifa; e public.matricula; original jsonb; charges jsonb; old_version timestamptz; rel uuid; pay public.pago; replay public.pago; medium uuid; cargo_id uuid; payload jsonb; before_audit bigint; field text; stage text; failures_before jsonb; token text:=upper(substr(replace(gen_random_uuid()::text,'-',''),1,8)); begin
  insert into auth.users(id) values(actor),(coordinator);
  insert into public.app_users(id) values(actor),(coordinator);
  insert into public.app_user_roles(user_id,role_code) values(actor,'DIRECTOR_ACADEMICO'),(coordinator,'COORDINADOR_ACADEMICO');
@@ -29,6 +29,9 @@ do $$ declare actor uuid:=gen_random_uuid(); coordinator uuid:=gen_random_uuid()
  begin perform public.registrar_pago(payload||jsonb_build_object('importe','0'));raise exception 'Zero accepted';exception when invalid_parameter_value then null;end;
  begin perform public.registrar_pago(payload||jsonb_build_object('fecha_operacion','2030-01-01'));raise exception 'Date accepted';exception when invalid_parameter_value then null;end;
  begin perform public.registrar_pago(payload||jsonb_build_object('importe','100.01','aplicaciones',jsonb_build_array(jsonb_build_object('matricula_cargo_id',cargo_id,'importe','100.01'))));raise exception 'Overpayment accepted';exception when check_violation then if sqlerrm<>'PAYMENT_EXCEEDS_PENDING' then raise;end if;end;
+ foreach field in array array['created_at','registrado_por','estado_codigo','saldo','descuento','concepto','moneda'] loop
+ begin perform public.registrar_pago(payload||jsonb_build_object(field,'FORGED'));raise exception 'Forged field accepted';exception when invalid_parameter_value then null;end;
+ end loop;
  -- H4_FAULT_REGISTER_BEGIN
  -- Forced failures after each stage must roll back data, parent version, key and audit together.
  foreach stage in array array['pago','pago_aplicacion','matricula','auditoria'] loop
@@ -71,9 +74,11 @@ do $$ declare actor uuid:=gen_random_uuid(); coordinator uuid:=gen_random_uuid()
  if not exists(select 1 from public.matricula_saldo where matricula_id=e.id and abonado=0 and pendiente=70) then raise exception 'Annulment balance mismatch';end if;
  if (select count(*) from public.pago_aplicacion where pago_id=pay.id)<>1 then raise exception 'Applications lost';end if;
  begin perform public.anular_pago(pay.id,pay.updated_at,'Again');raise exception 'Double annulment accepted';exception when check_violation then if sqlerrm<>'PAYMENT_ALREADY_CANCELLED' then raise;end if;end;
- update public.catalogo_valor set activo=false where id=medium;
+ update public.catalogo_valor set activo=false,nombre='NEW LABEL' where id=medium;
+ select * into e from public.matricula where id=e.id;
+ begin perform public.registrar_pago(payload||jsonb_build_object('idempotency_key',gen_random_uuid(),'expected_matricula_updated_at',e.updated_at));raise exception 'Inactive medium accepted for new payment';exception when check_violation then null;end;
  select * into replay from jsonb_populate_record(null::public.pago,public.registrar_pago(payload));
- if replay.id<>pay.id or replay.estado_codigo<>'ANULADO' then raise exception 'Inactive catalog replay resurrected or denied';end if;
+ if replay.id<>pay.id or replay.estado_codigo<>'ANULADO' or replay.medio_etiqueta<>pay.medio_etiqueta then raise exception 'Inactive catalog replay resurrected or denied';end if;
  update public.matricula_cargo set activo=false,motivo_inactivacion='NO VIGENTE APPLICATIONS' where id=cargo_id;
  if not exists(select 1 from public.pago_aplicacion where matricula_cargo_id=cargo_id) then raise exception 'Historical reference lost';end if;
  begin delete from public.pago where id=pay.id;raise exception 'Payment deleted';exception when check_violation then null;end;

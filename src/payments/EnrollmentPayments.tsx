@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { InlineForm, StatusBadge, useConfirmation } from '../academic/AcademicUi'
 import { useSession } from '../security/SessionProvider'
 import { cents, decimal, pen } from './money'
@@ -19,6 +19,7 @@ export function EnrollmentPayments({ enrollment, version, enrollmentState, cycle
   const [amounts, setAmounts] = useState<Record<string, string>>({}), [medium, setMedium] = useState(''), [notes, setNotes] = useState('')
   const [message, setMessage] = useState(''), [busy, setBusy] = useState(false), [ready, setReady] = useState(false), [open, setOpen] = useState(false), [page, setPage] = useState(0), [revision, setRevision] = useState(0)
   const [pending, setPending] = useState<string | null>(null), [uncertainCancellation, setUncertainCancellation] = useState<string | null>(null)
+  const formId=useId(), amountInputs=useRef<Record<string,HTMLInputElement|null>>({})
   const attempt = useRef<{ key: string; payload: Payload } | null>(null), alive = useRef(true), saving = useRef(false)
   const { ask, dialog } = useConfirmation(busy)
   const director = state.roles?.includes('DIRECTOR_ACADEMICO'), canRegister = enrollmentState === 'ACTIVO' && ['PROGRAMADO', 'EN_CURSO', 'CERRADO'].includes(cycleState)
@@ -125,8 +126,8 @@ export function EnrollmentPayments({ enrollment, version, enrollmentState, cycle
   }
   const total = Object.values(amounts).reduce((sum, raw) => sum + (cents(raw || '0') ?? 0n), 0n)
   return <section className="payments" aria-label="Pagos de matrícula">{dialog}
-    <div className="payments-heading"><h3>Pagos</h3><button type="button" className="secondary" disabled={busy} onClick={() => setRevision(x => x + 1)}>Consultar saldo e historial</button></div>
-    {message && <p role="status" className="payment-message">{message}</p>}
+    <div className="payments-heading"><h3>Pagos</h3><button type="button" className="secondary" disabled={busy} onClick={loadRevision}>Consultar saldo e historial</button></div>
+    {message && <p role="status" id={`${formId}-message`} className="payment-message">{message}</p>}
     {!ready && <p role="status">Saldo no disponible para operar.</p>}
     {summary && <dl className="payment-summary"><div><dt>Base de cargos activos</dt><dd>{pen(summary.base)}</dd></div><div><dt>Abonado vigente</dt><dd>{pen(summary.abonado)}</dd></div><div><dt>Pendiente</dt><dd><strong>{pen(summary.pendiente)}</strong></dd></div></dl>}
     {pending && <div className="payment-recovery"><p>Hay un intento pendiente de confirmar. La clave se conserva para evitar duplicados.</p><button type="button" disabled={busy} onClick={() => void recover(pending)}>Consultar resultado del intento</button>{attempt.current && <button type="button" className="secondary" disabled={busy} onClick={() => void send(attempt.current!.payload)}>Reenviar el mismo intento</button>}</div>}
@@ -135,7 +136,7 @@ export function EnrollmentPayments({ enrollment, version, enrollmentState, cycle
     {open && <InlineForm className="payment-form" onSubmit={() => void register()}><fieldset disabled={busy || !!pending || !!uncertainCancellation || !ready}><legend>Registrar pago</legend>
       <p className="help-text">Selecciona los cargos y cuánto pagar en cada uno. La fecha y el saldo definitivo los confirma la base de datos.</p>
       <button type="button" className="secondary" onClick={() => setAmounts(Object.fromEntries(charges.map(c => [c.id, String(c.pendiente)])))}>Seleccionar todos los pendientes</button>
-      <div className="table-scroll"><table><thead><tr><th>Selección</th><th>Concepto</th><th className="payment-money">Pendiente</th><th className="payment-money">Pagar (S/)</th></tr></thead><tbody>{charges.map(c => <tr key={c.id}><td><input type="checkbox" aria-label={`Pagar ${c.nombre}`} disabled={cents(String(c.pendiente)) === 0n} checked={(cents(amounts[c.id] || '0') ?? 0n) > 0n} onChange={e => setAmounts({ ...amounts, [c.id]: e.target.checked ? String(c.pendiente) : '0' })}/></td><td>{c.nombre}</td><td className="payment-money">{pen(c.pendiente)}</td><td className="payment-money"><input aria-label={`Importe para ${c.nombre}`} inputMode="decimal" type="text" maxLength={13} value={amounts[c.id] ?? ''} onChange={e => setAmounts({ ...amounts, [c.id]: e.target.value })}/></td></tr>)}</tbody><tfoot><tr><th colSpan={3}>Total a pagar</th><td className="payment-money"><strong>{pen(total)}</strong></td></tr></tfoot></table></div>
+      <div className="table-scroll"><table><thead><tr><th>Selección</th><th>Concepto</th><th className="payment-money">Pendiente</th><th className="payment-money">Pagar (S/)</th></tr></thead><tbody>{charges.map(c => <tr key={c.id}><td><input type="checkbox" aria-label={`Pagar ${c.nombre}`} disabled={cents(String(c.pendiente)) === 0n} checked={(cents(amounts[c.id] || '0') ?? 0n) > 0n} onChange={e => setAmounts({ ...amounts, [c.id]: e.target.checked ? String(c.pendiente) : '0' })}/></td><td>{c.nombre}</td><td className="payment-money">{pen(c.pendiente)}</td><td className="payment-money"><input ref={element=>{amountInputs.current[c.id]=element}} aria-invalid={!!amounts[c.id]&&(cents(amounts[c.id])===null||(cents(amounts[c.id])??0n)>(cents(String(c.pendiente))??0n))} aria-describedby={message?`${formId}-message`:undefined} aria-label={`Importe para ${c.nombre}`} inputMode="decimal" type="text" maxLength={13} value={amounts[c.id] ?? ''} onChange={e => setAmounts({ ...amounts, [c.id]: e.target.value })}/></td></tr>)}</tbody><tfoot><tr><th colSpan={3}>Total a pagar</th><td className="payment-money"><strong>{pen(total)}</strong></td></tr></tfoot></table></div>
       <div className="payment-fields"><label>Medio de pago *<select required value={medium} onChange={e => setMedium(e.target.value)}><option value="">Seleccionar</option>{media.map(m => <option key={m.id} value={m.id}>{m.nombre}</option>)}</select></label><label>Observaciones (opcional)<textarea rows={2} maxLength={500} value={notes} onChange={e => setNotes(e.target.value)}/></label></div>
       <div className="form-actions"><button type="button" className="secondary" onClick={() => setOpen(false)}>Cancelar registro</button><button>Confirmar pago</button></div>
     </fieldset></InlineForm>}
