@@ -47,3 +47,8 @@ Formato de devolución: `Bloque N: OK / FALLÓ / NO VERIFICADO; rol; pasos; resu
 ### CHG-H4-002 — Tarifas opcionales incluidas inicialmente (pendiente humano)
 
 Configurar un Ciclo con un cargo obligatorio y otro opcional. Agregar alumno: ambos deben estar en Cargos y Pagos. En Editar matrícula retirar el opcional sin pagos: el obligatorio permanece y disminuye el saldo. Otros alumnos no cambian. Pagar parte de un opcional y comprobar que no permite retirarlo mientras tenga aplicaciones vigentes. Cambiar de Ciclo incorpora todos los cargos del destino sin descuento. Una matrícula anterior no recibe cargos retroactivos; agregarle un opcional requiere selección explícita y Guardar cargos.
+
+
+### Seleccionar todos en Cargos (pendiente humano)
+
+En Editar matrícula → Cargos, usar el check del encabezado para marcar/desmarcar todos los opcionales; el obligatorio permanece seleccionado. Comprobar estado mixto y totales al cambiar un opcional, y persistencia después de Guardar cargos y reabrir la ficha. El control no guarda automáticamente ni permite retirar cargos con pagos vigentes.

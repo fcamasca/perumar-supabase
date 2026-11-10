@@ -810,3 +810,23 @@ it('reopening enrollment editing keeps retired and never-added optional charges 
  await screen.findByRole('button',{name:'Guardar código'});fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));await waitFor(()=>expect(screen.getByRole('checkbox',{name:'Incluir CERTIFICADO'})).toBeEnabled());
  expect(screen.getByRole('checkbox',{name:'Incluir CERTIFICADO'})).not.toBeChecked();expect(screen.getByRole('checkbox',{name:'Incluir NUEVO CONCEPTO'})).not.toBeChecked();expect(client.rpc).not.toHaveBeenCalled();
 });
+
+
+it('selects all optional charges with mixed state and keeps mandatory charges included',async()=>{
+ showIndividualEnrollment(true,[{id:'required',ciclo_tarifa_id:'fee',nombre:'CURSO',tipo:'CARRERA',activo:true,importe_original:100,descuento:0,importe_final:100},{id:'optional',ciclo_tarifa_id:'extra',nombre:'CERTIFICADO',tipo:'OTRO',activo:true,importe_original:22,descuento:0,importe_final:22}],[{id:'fee',importe:100,obligatorio:true,tarifa:{nombre:'CURSO',tipo:'CARRERA',activo:true}},{id:'extra',importe:22,obligatorio:false,tarifa:{nombre:'CERTIFICADO',tipo:'OTRO',activo:true}},{id:'new',importe:35,obligatorio:false,tarifa:{nombre:'BANCO',tipo:'OTRO',activo:true}}]);
+ await screen.findByRole('button',{name:'Guardar código'});fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));
+ const all=await screen.findByRole('checkbox',{name:'Seleccionar todos los cargos opcionales'});await waitFor(()=>expect(all).toBeEnabled());
+ const required=screen.getByRole('checkbox',{name:'Incluir CURSO'}),certificate=screen.getByRole('checkbox',{name:'Incluir CERTIFICADO'}),bank=screen.getByRole('checkbox',{name:'Incluir BANCO'}),totals=screen.getByRole('table',{name:'Tarifas de la matrícula'}).querySelector('tfoot');
+ expect(all).toBePartiallyChecked();expect(certificate).toBeChecked();expect(bank).not.toBeChecked();expect(totals).toHaveTextContent('TotalS/122.00');
+ fireEvent.click(all);expect(all).toBeChecked();expect(all).not.toBePartiallyChecked();expect(certificate).toBeChecked();expect(bank).toBeChecked();expect(totals).toHaveTextContent('TotalS/157.00');
+ fireEvent.click(all);expect(all).not.toBeChecked();expect(certificate).not.toBeChecked();expect(bank).not.toBeChecked();expect(required).toBeChecked();expect(required).toBeDisabled();expect(totals).toHaveTextContent('TotalS/100.00');
+ fireEvent.click(certificate);expect(all).toBePartiallyChecked();fireEvent.click(all);expect(all).toBeChecked();expect(client.rpc).not.toHaveBeenCalled();
+ fireEvent.click(screen.getByRole('tab',{name:'Resumen'}));fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));expect(all).toBeChecked();
+ client.rpc.mockResolvedValue({data:{id:'m1'},error:null});fireEvent.click(screen.getByRole('button',{name:'Guardar cargos'}));await waitFor(()=>expect(client.rpc).toHaveBeenCalledExactlyOnceWith('editar_matricula',{p:{id:'m1',expected_updated_at:'mv1',ciclo_id:'c1',expected_ciclo_updated_at:'cv1'},opcionales:['extra','new']}));
+});
+
+it('disables selecting all when enrollment has no optional charges',async()=>{
+ showIndividualEnrollment(true,[{id:'required',ciclo_tarifa_id:'fee',nombre:'CURSO',tipo:'CARRERA',activo:true,importe_original:100,descuento:0,importe_final:100}],[{id:'fee',importe:100,obligatorio:true,tarifa:{nombre:'CURSO',tipo:'CARRERA',activo:true}}]);
+ await screen.findByRole('button',{name:'Guardar código'});fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));await screen.findByRole('checkbox',{name:'Incluir CURSO'});
+ expect(screen.getByRole('checkbox',{name:'Seleccionar todos los cargos opcionales'})).toBeDisabled();expect(screen.getByRole('checkbox',{name:'Incluir CURSO'})).toBeChecked();expect(client.rpc).not.toHaveBeenCalled();
+});

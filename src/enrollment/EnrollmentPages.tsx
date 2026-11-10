@@ -524,6 +524,8 @@ export function EnrollmentDetail() {
         const existing=target===row?.ciclo_id?charges.find(c=>c.activo&&c.ciclo_tarifa_id===t.id):undefined;
         return {id:t.id,name:value(existing,'nombre')||value(t.tarifa as Record<string,unknown>,'nombre'),required:t.obligatorio===true,selected:t.obligatorio===true||options.includes(t.id),original:Number(existing?.importe_original??t.importe),discount:Number(existing?.descuento??0)};
     });
+    const optionalChargeRows=chargeRows.filter(c=>!c.required);
+    const allOptionalCharges=optionalChargeRows.length>0&&optionalChargeRows.every(c=>c.selected),someOptionalCharges=optionalChargeRows.some(c=>c.selected);
     const pendingCharges=target!==row?.ciclo_id||tariffs.some(t=>!t.obligatorio&&options.includes(t.id)!==charges.some(c=>c.activo&&c.ciclo_tarifa_id===t.id));
     const extraCharges=target===row?.ciclo_id?charges.filter(c=>c.activo&&!tariffs.some(t=>t.id===c.ciclo_tarifa_id)):[];
     const previewSubtotal=chargeRows.filter(c=>c.selected).reduce((n,c)=>n+Math.round(c.original*100),0)+extraCharges.reduce((n,c)=>n+Math.round(Number(c.importe_original)*100),0);
@@ -541,7 +543,7 @@ export function EnrollmentDetail() {
       </div>
       <div hidden={tab!==1} role="tabpanel" id="enrollment-detail-panel-1" aria-labelledby="enrollment-detail-tab-1" tabIndex={0} className="student-section-panel"><h3>Cargos</h3>
         {editable&&editing?<><InlineForm className="enrollment-detail-form enrollment-charge-form" onSubmit={()=>void save({},options.filter(id=>tariffs.find(t=>t.id===id)?.obligatorio===false))}>
-        <div className="table-scroll enrollment-charges-grid"><table aria-label="Tarifas de la matrícula"><thead><tr><th>Incluir</th><th>Concepto</th><th>Subtotal</th><th>Descuento</th><th>Total</th></tr></thead><tbody>
+        <div className="table-scroll enrollment-charges-grid"><table aria-label="Tarifas de la matrícula"><thead><tr><th scope="col"><input type="checkbox" aria-label="Seleccionar todos los cargos opcionales" title="Marcar o desmarcar todos los cargos opcionales" ref={element=>{if(element)element.indeterminate=someOptionalCharges&&!allOptionalCharges}} checked={allOptionalCharges} disabled={busy||tariffStatus!=='ready'||!optionalChargeRows.length} onChange={e=>{setDiscountOpen(false);setOptions(e.target.checked?optionalChargeRows.map(c=>c.id):[])}}/></th><th>Concepto</th><th>Subtotal</th><th>Descuento</th><th>Total</th></tr></thead><tbody>
         {chargeRows.map(c=><tr key={c.id}><td><input type="checkbox" aria-label={`Incluir ${c.name}`} disabled={busy||tariffStatus!=='ready'||c.required} checked={c.selected} onChange={e=>{setDiscountOpen(false);setOptions(e.target.checked?[...options,c.id]:options.filter(id=>id!==c.id))}}/></td><td>{c.name}{c.required&&<small className="help-text"> · Obligatoria</small>}</td><td>{money(c.original)}</td><td>{money(c.selected?c.discount:0)}</td><td>{money(c.selected?c.original-c.discount:0)}</td></tr>)}
         {extraCharges.map(c=><tr key={c.id}><td>Incluido</td><td>{value(c,'nombre')}<small className="help-text"> · Cargo vigente conservado</small></td><td>{money(c.importe_original)}</td><td>{money(c.descuento)}</td><td>{money(c.importe_final)}</td></tr>)}
         </tbody><tfoot><tr><th colSpan={4}>Subtotal</th><td>{money(previewSubtotal/100)}</td></tr><tr><th colSpan={4}>Descuento</th><td>{money(previewDiscount/100)}</td></tr><tr><th colSpan={4}>Total</th><td><strong>{money((previewSubtotal-previewDiscount)/100)}</strong></td></tr></tfoot></table></div>

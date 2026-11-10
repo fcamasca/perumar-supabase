@@ -70,7 +70,7 @@ it('keeps search context in React only, not history state, URL or browser storag
 })
 
 it('payment context uses a compact heading and no second financial summary',async()=>{
- show('/pagos/m1');await screen.findByRole('region',{name:'Flujo H4 existente'});expect(screen.getByRole('heading',{name:'Pagos de matrícula · 2026-MA-m1'})).toHaveFocus();expect(screen.getByText('QUIROZ PEREZ, JUAN')).toBeVisible();expect(screen.getByText('PESCA')).toBeVisible();expect(screen.queryByText('Consulta los datos registrados.')).not.toBeInTheDocument();expect(screen.queryByText('Pendiente',{exact:true})).not.toBeInTheDocument();expect(screen.getByRole('button',{name:'Volver a matrículas del Alumno'})).toBeVisible()
+ show('/pagos/m1');await screen.findByRole('region',{name:'Flujo H4 existente'});await waitFor(()=>expect(screen.getByRole('heading',{name:'Pagos de matrícula · 2026-MA-m1'})).toHaveFocus());expect(screen.getByText('QUIROZ PEREZ, JUAN')).toBeVisible();expect(screen.getByText('PESCA')).toBeVisible();expect(screen.queryByText('Consulta los datos registrados.')).not.toBeInTheDocument();expect(screen.queryByText('Pendiente',{exact:true})).not.toBeInTheDocument();expect(screen.getByRole('button',{name:'Volver a matrículas del Alumno'})).toBeVisible()
 })
 
 it.each(['Por Alumno','Por Ciclo'])('excludes annulled enrollments in %s before paging, retaining active zero balances',async mode=>{

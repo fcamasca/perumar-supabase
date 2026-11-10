@@ -157,3 +157,14 @@ Hallazgo humano posterior a CHG-H4-002: Ciclos → Matrículas → Editar matrí
 Regresión de UI: opcional vigente aparece marcado y puede desmarcarse; opcional retirado y tarifa nunca incorporada permanecen desmarcados tanto al cambiar de pestaña como al desmontar/reabrir la ficha, con total coherente y sin escrituras. Sin cambios de SQL, modelo financiero, permisos, inventario ni Spec aprobado. Validación y CI exacta en entrega del candidato. Gate 2 pendiente; sin acceptance, merge ni H5.
 
 Validación local del arreglo de reapertura: lint, typecheck, 365/365 pruebas en 21 archivos, build, build-safety y diff-check correctos. Sin migración adicional; inventario permanece en 21 migraciones y los mismos objetos. CI del candidato publicada en la entrega.
+
+
+## 10/11/2026 — Seleccionar todos los cargos opcionales
+
+Solicitud humana: agregar un check de seleccionar todos en la grilla Cargos de Editar matrícula. El encabezado marca/desmarca únicamente los opcionales y muestra estado mixto cuando la selección es parcial. Los obligatorios permanecen incluidos y bloqueados; sin opcionales, el control se deshabilita. Totales son vista previa; solo Guardar cargos ejecuta la RPC existente y conserva validación DB/H4 para cargos pagados. Marcar, desmarcar y navegar entre pestañas no genera escritura.
+
+Regresión automatizada: todos/ninguno/mixto, actualización del total, obligatorio intacto, selección conservada entre pestañas, payload explícito de opcionales al guardar y control deshabilitado sin opcionales. Se mantiene la regresión de reapertura que respeta los retiros guardados. Sin SQL/migración ni cambios de inventario, permisos o Spec aprobado. Gate 2 pendiente; sin acceptance, merge ni H5.
+
+La primera ejecución de 367 tests detectó una carrera preexistente en la aserción de foco de PaymentAccess: comprobaba antes de ejecutarse el efecto de React. Se conserva la aserción de accesibilidad y se espera explícitamente con waitFor; sin cambios de comportamiento productivo de Pagos. Se repite la suite completa.
+
+Validación del selector: lint/typecheck/build/build-safety/diff-check correctos; suite completa 367/367 en 21 archivos con `npm test -- --maxWorkers=2`. La ejecución local anterior agotó 5s en un caso de navegación de Ciclos; la repetición limita procesos sin ampliar timeouts ni modificar ese test. La CI del candidato repite el workflow completo con su configuración ordinaria.
