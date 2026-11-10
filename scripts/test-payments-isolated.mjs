@@ -33,6 +33,7 @@ try {
   console.log('Logical conflicts PT409: PASSED (effective definitions contain no deliberate 40001; function contracts otherwise identical)')
   sql('drop view if exists public.matricula_pago_listado;')
   sql(readFileSync('supabase/migrations/20261109060000_direct_payment_access.sql','utf8'))
+  sql(readFileSync('supabase/migrations/20261110010000_default_all_enrollment_charges.sql','utf8'))
   sql(readFileSync('tests/sql/h4-payments.sql','utf8'))
   sql(readFileSync('tests/sql/h4-regression.sql','utf8'))
   console.log('H4 isolated H3 regression, C-H4-001, states, historical UUIDs and sponsor: PASSED')

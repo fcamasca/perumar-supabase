@@ -29,6 +29,18 @@ do $$ declare actor uuid:=gen_random_uuid(); coordinator uuid:=gen_random_uuid()
  select jsonb_agg(jsonb_build_object('tarifa_id',tarifa_id,'importe',importe::text,'obligatorio',obligatorio::text)) into charges from public.ciclo_tarifa where ciclo_id=c.id;
  c:=public.guardar_ciclo_tarifas(c.id,c.updated_at,charges||jsonb_build_array(jsonb_build_object('tarifa_id',t.id,'importe','20','obligatorio','false')));
  select id into option_id from public.ciclo_tarifa where ciclo_id=c.id and tarifa_id=t.id;
+ -- CHG-H4-002: no retroactive charges; all active tariffs included for a new pupil.
+ if (select count(*) from public.matricula_cargo where matricula_id=e.id and activo)<>1 then raise exception 'Cycle configuration changed existing charges';end if;
+ declare fresh public.alumno; enrolled public.matricula; begin
+ fresh:=public.guardar_alumno(p||jsonb_build_object('numero_di',left(replace(gen_random_uuid()::text,'-',''),30)));
+ enrolled:=public.registrar_matricula(jsonb_build_object('alumno_id',fresh.id,'expected_alumno_updated_at',fresh.updated_at,'ciclo_id',c.id,'expected_ciclo_updated_at',c.updated_at),'{}'::uuid[]);
+ if not exists(select 1 from public.matricula_saldo where matricula_id=enrolled.id and base=120 and pendiente=120) then raise exception 'Default optional cargo missing from payment balance';end if;
+ if (select count(*) from public.matricula_cargo_saldo where matricula_id=enrolled.id and activo)<>2 then raise exception 'Payment cargo list omitted default optional';end if;
+ enrolled:=public.editar_matricula(jsonb_build_object('id',enrolled.id,'expected_updated_at',enrolled.updated_at,'expected_ciclo_updated_at',c.updated_at),'{}'::uuid[]);
+ if not exists(select 1 from public.matricula_saldo where matricula_id=enrolled.id and base=100 and pendiente=100) then raise exception 'Individual optional retirement failed';end if;
+ if (select count(*) from public.matricula_cargo where matricula_id=enrolled.id and activo and tipo='CARRERA')<>1 or (select count(*) from public.matricula_cargo where matricula_id=enrolled.id and not activo and tipo='OTRO')<>1 then raise exception 'Mandatory cargo or optional history lost';end if;
+ end;
+
  e:=public.editar_matricula(jsonb_build_object('id',e.id,'expected_updated_at',e.updated_at,'expected_ciclo_updated_at',c.updated_at),array[option_id]);
  select id into cargo_id from public.matricula_cargo where matricula_id=e.id and tipo='CARRERA' and activo;
  select id into old_cargo from public.matricula_cargo where matricula_id=e.id and tipo='OTRO' and activo;

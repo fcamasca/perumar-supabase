@@ -70,7 +70,15 @@ try {
         const quick=await rpc(O,'registrar_matricula',{p:{ciclo_id:c3.id,expected_ciclo_updated_at:c3.updated_at,alumno_id:quickPupil.id,expected_alumno_updated_at:quickPupil.updated_at,empresa_patrocinadora_id:null},opcionales:[]});
         assert.equal(quick.empresa_patrocinadora_id,null);
         const quickCharges=(await rows('matricula_cargo')).filter(charge=>charge.matricula_id===quick.id&&charge.activo);
-        assert.equal(quickCharges.length,1);assert.equal(Number(quickCharges[0].descuento),0);assert.equal(Number(quickCharges[0].importe_final),650);
+        assert.equal(quickCharges.length,2);assert.equal(quickCharges.reduce((sum,c)=>sum+Number(c.importe_final),0),730);assert.ok(quickCharges.every(c=>Number(c.descuento)===0));
+        const reduced=await rpc(O,'editar_matricula',{p:{...version(quick),expected_ciclo_updated_at:c3.updated_at},opcionales:[]});
+        const remaining=(await rows('matricula_cargo')).filter(c=>c.matricula_id===quick.id&&c.activo);
+        assert.equal(remaining.length,1);assert.equal(remaining[0].tipo,'CARRERA');
+        assert.equal((await rows('matricula_cargo')).filter(c=>c.matricula_id===quick.id&&!c.activo).length,1);
+        const restored=await rpc(O,'editar_matricula',{p:{...version(reduced),expected_ciclo_updated_at:c3.updated_at},opcionales:[option(c3)]});
+        const moved=await rpc(O,'editar_matricula',{p:{...version(restored),ciclo_id:c2.id,expected_ciclo_updated_at:c2.updated_at},opcionales:[]});
+        const destination=(await rows('matricula_cargo')).filter(c=>c.matricula_id===moved.id&&c.activo);
+        assert.equal(destination.length,2);assert.equal(destination.reduce((sum,c)=>sum+Number(c.importe_final),0),780);
         const beforeInitial=(await rows('alumno')).length;
         reject(await O.rpc('guardar_alumno',{p:{...payload(),contactos:[{...initialContact,parentesco_id:cat.SEXO}]}}));
         assert.equal((await rows('alumno')).length,beforeInitial);

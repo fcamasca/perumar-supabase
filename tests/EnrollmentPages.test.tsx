@@ -657,21 +657,21 @@ it('enrollment uses freely navigable tabs, preserves data and registers only on 
  fireEvent.change(screen.getByRole('searchbox',{name:'Buscar Alumno'}),{target:{value:'muñoz ana'}});
  fireEvent.click(await screen.findByRole('button',{name:'Seleccionar Alumno'}));await screen.findByText('A-0000001 · MUÑOZ PEREZ, ANA MARIA');
  expect(searches).toHaveBeenCalledWith(studentSearchFilter('MUÑOZ ANA'));
- fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));fireEvent.click(await screen.findByRole('checkbox',{name:/SEGURO/}));
+ fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));expect(await screen.findByRole('checkbox',{name:/SEGURO/})).toBeChecked();expect(screen.getByRole('checkbox',{name:/SEGURO/})).toBeDisabled();
  expect(screen.getByRole('checkbox',{name:/CARRERA/})).toBeDisabled();
  fireEvent.click(screen.getByRole('tab',{name:'Datos de matrícula'}));expect(screen.getByRole('combobox',{name:'Ciclo'})).toHaveValue('c1');
  fireEvent.click(screen.getByRole('tab',{name:'Resumen'}));expect(screen.getByRole('table',{name:'Resumen de cargos'})).toHaveTextContent('SEGURO');expect(client.rpc).not.toHaveBeenCalled();
  client.rpc.mockResolvedValue({data:{id:'m1',codigo_matricula:'2026-NAV-001'},error:null});fireEvent.click(screen.getByRole('button',{name:'Confirmar matrícula'}));
- await waitFor(()=>expect(client.rpc).toHaveBeenCalledExactlyOnceWith('registrar_matricula',{p:{ciclo_id:'c1',expected_ciclo_updated_at:'cv1',alumno_id:pupil.id,expected_alumno_updated_at:'sv1',empresa_patrocinadora_id:null},opcionales:['extra']}));
+ await waitFor(()=>expect(client.rpc).toHaveBeenCalledExactlyOnceWith('registrar_matricula',{p:{ciclo_id:'c1',expected_ciclo_updated_at:'cv1',alumno_id:pupil.id,expected_alumno_updated_at:'sv1',empresa_patrocinadora_id:null},opcionales:[]}));
  expect(await screen.findByRole('heading',{name:'Matrícula registrada'})).toBeVisible();
 });
-it('changing enrollment Cycle resets optional charges and Director discount without dropping the pupil',async()=>{
+it('changing enrollment Cycle includes all charges and resets Director discount without dropping the pupil',async()=>{
  sessionState.roles=['DIRECTOR_ACADEMICO'];enrollmentFixture();render(<MemoryRouter><NewEnrollment/></MemoryRouter>);
  await screen.findByRole('option',{name:/2026-001-NAV/});fireEvent.change(screen.getByRole('combobox',{name:'Ciclo'}),{target:{value:'c1'}});
  fireEvent.change(screen.getByRole('searchbox',{name:'Buscar Alumno'}),{target:{value:'00123456'}});fireEvent.click(await screen.findByRole('button',{name:'Seleccionar Alumno'}));await screen.findByText('A-0000001 · MUÑOZ PEREZ, ANA MARIA');
- fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));fireEvent.click(await screen.findByRole('checkbox',{name:/SEGURO/}));fireEvent.change(screen.getByRole('spinbutton',{name:'Descuento del Curso (S/)'}),{target:{value:'10'}});fireEvent.change(screen.getByLabelText(/^Motivo descuento/),{target:{value:'AUTORIZADO'}});
+ fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));expect(await screen.findByRole('checkbox',{name:/SEGURO/})).toBeChecked();expect(screen.getByRole('checkbox',{name:/SEGURO/})).toBeDisabled();fireEvent.change(screen.getByRole('spinbutton',{name:'Descuento del Curso (S/)'}),{target:{value:'10'}});fireEvent.change(screen.getByLabelText(/^Motivo descuento/),{target:{value:'AUTORIZADO'}});
  fireEvent.click(screen.getByRole('tab',{name:'Datos de matrícula'}));fireEvent.change(screen.getByRole('combobox',{name:'Ciclo'}),{target:{value:'c2'}});
- fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));await waitFor(()=>expect(screen.getByRole('checkbox',{name:/SEGURO/})).not.toBeChecked());expect(screen.getByRole('spinbutton',{name:'Descuento del Curso (S/)'})).toHaveValue(0);expect(screen.getByLabelText(/^Motivo descuento/)).toHaveValue('');
+ fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));await waitFor(()=>expect(screen.getByRole('checkbox',{name:/SEGURO/})).toBeChecked());expect(screen.getByRole('spinbutton',{name:'Descuento del Curso (S/)'})).toHaveValue(0);expect(screen.getByLabelText(/^Motivo descuento/)).toHaveValue('');
  fireEvent.click(screen.getByRole('tab',{name:'Resumen'}));expect(within(screen.getByRole('tabpanel',{name:'Resumen'})).getByText(/MUÑOZ PEREZ, ANA MARIA · 00123456/)).toBeVisible();expect(client.rpc).not.toHaveBeenCalled();
 });
 it('enrollment search is debounced, includes both surnames/name/document and ignores obsolete results',async()=>{

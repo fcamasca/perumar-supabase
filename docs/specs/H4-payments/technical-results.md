@@ -15,8 +15,9 @@ Migraciones nuevas, aditivas:
 | `20261109040000_h4_enrollment_guards.sql` | Sustituye el guard H3 existente para aplicar solo restricciones financieras aprobadas; conserva CHG-H3-011 |
 | `20261109050000_logical_conflicts_pt409.sql` | Correccion pre-Gate 2: contratos de conflicto logico PT409 en cuatro funciones existentes |
 | `20261109060000_direct_payment_access.sql` | CHG-H4-001: una vista invoker de contexto y saldo existente para acceso directo, sin N+1 |
+| `20261110010000_default_all_enrollment_charges.sql` | CHG-H4-002: todos los cargos activos incluidos al alta/cambio de Ciclo, sin backfill |
 
-Inventario final controlado por `assertSecurityInventory`: **24 tablas públicas, 3 vistas invoker, 19 RPC públicas, 18 funciones privadas, 27 policies SELECT authenticated, 20 migraciones**. El verificador distingue tablas y vistas: una vista no se presenta como tabla con RLS; exige `security_invoker=true` y conserva los controles de sus tablas base. Los 54 pares objeto/rol de grants (27 objetos × authenticated/anon) se comprueban explícitamente: únicamente SELECT authenticated; sin DML/TRUNCATE cliente.
+Inventario final controlado por `assertSecurityInventory`: **24 tablas públicas, 3 vistas invoker, 19 RPC públicas, 18 funciones privadas, 27 policies SELECT authenticated, 21 migraciones**. El verificador distingue tablas y vistas: una vista no se presenta como tabla con RLS; exige `security_invoker=true` y conserva los controles de sus tablas base. Los 54 pares objeto/rol de grants (27 objetos × authenticated/anon) se comprueban explícitamente: únicamente SELECT authenticated; sin DML/TRUNCATE cliente.
 
 Tablas públicas: alumno, alumno_contacto_emergencia, app_roles, app_user_roles, app_users, auditoria, capitania, carrera, carrera_materia, catalogo, catalogo_valor, ciclo, ciclo_materia, ciclo_tarifa, departamento, distrito, empresa_patrocinadora, materia, matricula, matricula_cargo, **pago, pago_aplicacion**, provincia, tarifa. Permanecen los dos contadores privados y la secuencia de Alumno H3; ninguno nuevo para pagos.
 
@@ -266,3 +267,12 @@ Solicitud humana: al ir a pagar, no mostrar matriculas anuladas. Ambos listados 
 Regresiones nuevas: exclusión de anuladas en ambas rutas y conservacion de activas con cero; API real comprueba listados filtrados e historia conservada. Sin migraciones/inventario nuevo ni cambios al Spec aprobado. Gate 2 pendiente; sin acceptance, merge ni H5. Resultados y CI del candidato se informan en la entrega.
 
 Validacion del filtro operativo: lint/typecheck/build/diff-check y 364/364 pruebas en 21 archivos PASSED. Ambas rutas incluyen estado ACTIVO antes de ordenar/paginar; no se modifica el esquema ni el historial. CI exacta informada en la entrega.
+
+
+## 10/11/2026 — CHG-H4-002: inclusión inicial de cargos opcionales
+
+Decisión humana y contrato: [enmienda aprobada](approved-default-charges-amendment.md). Todas las tarifas activas se incluyen DB-side en el alta y en el Ciclo destino. Obligatoria impide retiro; opcional permite retiro por alumno, sujeto a los guards H4 de pagos vigentes. La edición conserva selección explícita y trazabilidad histórica. No hay backfill ni modificación automática de matrículas existentes.
+
+Migración aditiva `20261110010000_default_all_enrollment_charges.sql`: reemplaza un helper existente. Inventario de objetos sin cambios: 24 tablas, 3 vistas invoker, 19 RPC, 18 helpers, 27 policies; total 21 migraciones. Cuatro documentos del Spec aprobado intactos. Gate 2 pendiente; sin acceptance, merge ni H5. Validación del candidato: ver entrega y CI exacta; ninguna prueba humana nueva se presume ejecutada.
+
+Validación local CHG-H4-002: lint/typecheck, 364/364 unit tests, build y build-safety correctos. `test:payments:isolated` pasó regresión H3/H4, inclusión/retiro individual de opcionales, saldo/cargos, 13 carreras con barreras (incluye 70+60 sobre 100), PT409 y errores nativos 40001/40P01, sin retries. `test:payments:rollback` pasó. Nueva migración aplicada mediante `migration up --local`, sin reset; fingerprint de Alumno/matrícula/cargos/auditoría/Ciclos/catálogos idéntico antes/después. Reconstrucción desde cero, JWT/API, expiración y regresión completa quedan verificadas en la CI del nuevo candidato; su SHA/run exactos se reportan en la entrega.

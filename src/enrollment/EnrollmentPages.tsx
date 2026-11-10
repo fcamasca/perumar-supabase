@@ -387,7 +387,7 @@ export function Companies({ choose }: { choose?: (r: Row | null) => void }) {
 }
 export function NewEnrollment({cycleContext,onComplete,onCancel,onEditorChange}:{cycleContext?:Row;onComplete?:(row:Row)=>void;onCancel?:()=>void;onEditorChange?:(editing:boolean)=>void}={}) {
     const { client, state }=useSession(), navigate=useNavigate();
-    const [cycles,setCycles]=useState<Row[]>([]),[cycle,setCycle]=useState<Row|undefined>(cycleContext),[student,setStudent]=useState<Row>(),[company,setCompany]=useState<Row|null>(null),[charges,setCharges]=useState<Row[]>([]),[options,setOptions]=useState<string[]>([]);
+    const [cycles,setCycles]=useState<Row[]>([]),[cycle,setCycle]=useState<Row|undefined>(cycleContext),[student,setStudent]=useState<Row>(),[company,setCompany]=useState<Row|null>(null),[charges,setCharges]=useState<Row[]>([]);
     const [tab,setTab]=useState(0),[search,setSearch]=useState(''),[found,setFound]=useState<Row[]>([]),[searchStatus,setSearchStatus]=useState<'idle'|'loading'|'ready'|'error'>('idle');
     const [editor,setEditor]=useState(false),[editing,setEditing]=useState(false),[choosingCompany,setChoosingCompany]=useState(false),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[registered,setRegistered]=useState<Row>(),[discount,setDiscount]=useState('0'),[reason,setReason]=useState(''),[code,setCode]=useState('');
     const [tariffsStatus,setTariffsStatus]=useState<'idle'|'loading'|'ready'|'error'>('idle');
@@ -415,20 +415,20 @@ export function NewEnrollment({cycleContext,onComplete,onCancel,onEditorChange}:
     },[client,search]);
     async function chooseStudent(id:string){
         setBusy(true);
-        try{if(cycleContext){const existing=await client.from('matricula').select('id').eq('ciclo_id',cycleContext.id).eq('alumno_id',id).limit(1);if(existing.error){setMessage('No se pudo comprobar la matrícula del Alumno. Vuelve a seleccionarlo.');return}if(existing.data.length){setMessage('El Alumno ya tiene una matrícula en este Ciclo, incluso si está anulada. Consulta la grilla de matriculados.');return}}const r=await client.from('alumno').select('*').eq('id',id).single();if(r.error)setMessage('No se pudo cargar la ficha del Alumno. Vuelve a seleccionarlo.');else{setStudent(r.data as Row);setSearch('');setFound([]);setCompany(null);setOptions([]);setDiscount('0');setReason('');setCode('')}}
+        try{if(cycleContext){const existing=await client.from('matricula').select('id').eq('ciclo_id',cycleContext.id).eq('alumno_id',id).limit(1);if(existing.error){setMessage('No se pudo comprobar la matrícula del Alumno. Vuelve a seleccionarlo.');return}if(existing.data.length){setMessage('El Alumno ya tiene una matrícula en este Ciclo, incluso si está anulada. Consulta la grilla de matriculados.');return}}const r=await client.from('alumno').select('*').eq('id',id).single();if(r.error)setMessage('No se pudo cargar la ficha del Alumno. Vuelve a seleccionarlo.');else{setStudent(r.data as Row);setSearch('');setFound([]);setCompany(null);setDiscount('0');setReason('');setCode('')}}
         catch{setMessage('No se pudo cargar la ficha del Alumno. Vuelve a seleccionarlo.')}
         finally{setBusy(false)}
     }
     function chooseCycle(id:string){
         if(id===cycle?.id)return;
-        setCycle(cycles.find(c=>c.id===id));setCharges([]);setOptions([]);setDiscount('0');setReason('');setTariffsStatus(id?'loading':'idle');
+        setCycle(cycles.find(c=>c.id===id));setCharges([]);setDiscount('0');setReason('');setTariffsStatus(id?'loading':'idle');
         if(cycle)setMessage('Al cambiar de Ciclo se actualizarán los cargos; los opcionales y el descuento se reiniciaron.');
     }
     async function confirm(){
         if(!cycle || !student){setMessage('Selecciona el Ciclo y el Alumno antes de confirmar.');setTab(0);setTimeout(()=>studentSearch.current?.focus(),0);return}
         if(tariffsStatus!=='ready' || !charges.length){setMessage('Revisa los cargos del Ciclo antes de confirmar.');setTab(1);return}
         setBusy(true);const p={ciclo_id:cycle.id,expected_ciclo_updated_at:cycle.updated_at,alumno_id:student.id,expected_alumno_updated_at:student.updated_at,empresa_patrocinadora_id:company?.id??null,...(code?{codigo_matricula:code}:{}),...(director?{descuento:discount,motivo_descuento:reason}:{})};
-        try{const r=await client.rpc('registrar_matricula',{p,opcionales:options});if(r.error)setMessage(enrollmentError(r.error));else{if(onComplete)onComplete(r.data as Row);else{setRegistered(r.data as Row);setMessage('Matrícula registrada correctamente.')}}}
+        try{const r=await client.rpc('registrar_matricula',{p,opcionales:[]});if(r.error)setMessage(enrollmentError(r.error));else{if(onComplete)onComplete(r.data as Row);else{setRegistered(r.data as Row);setMessage('Matrícula registrada correctamente.')}}}
         catch{setMessage('Respuesta no confirmada. Consulta el historial del Alumno antes de reintentar.')}
         finally{setBusy(false)}
     }
@@ -437,10 +437,10 @@ export function NewEnrollment({cycleContext,onComplete,onCancel,onEditorChange}:
         const r=await client.from('ciclo').select('id,codigo_ciclo,carrera_id,estado_codigo,updated_at').eq('id',cycle.id).single();
         if(r.error || !['PROGRAMADO','EN_CURSO'].includes(r.data.estado_codigo)){setMessage('El Ciclo ya no permite matrícula. Selecciona otro.');setCycle(undefined);setCharges([]);setTariffsStatus('idle')}
         else{setCycle(r.data as Row);setCharges([]);setTariffsStatus('loading')}
-        setTab(0);setStudent(undefined);setCompany(null);setOptions([]);setDiscount('0');setReason('');setCode('');setSearch('');setFound([]);setRegistered(undefined);setChoosingCompany(false);
+        setTab(0);setStudent(undefined);setCompany(null);setDiscount('0');setReason('');setCode('');setSearch('');setFound([]);setRegistered(undefined);setChoosingCompany(false);
     }
     const studentName=(a:Row)=>`${value(a,'apellido_paterno')} ${value(a,'apellido_materno')}, ${value(a,'nombres')}`;
-    const chosenCharges=charges.filter(c=>c.obligatorio===true || options.includes(c.id));
+    const chosenCharges=charges;
     if(editor)return <StudentEditor initial={editing?student:undefined} done={r=>{setStudent(r);setEditor(false);setMessage('Alumno guardado; revisa contactos antes de confirmar matrícula.')}} cancel={()=>setEditor(false)}/>;
     if(registered)return <section><h2>Matrícula registrada</h2><p>{value(registered,'codigo_matricula')}</p><button onClick={()=>void another()}>Matricular otro alumno en este Ciclo</button><button onClick={()=>navigate(`/matriculas/${registered.id}`)}>Ver matrícula</button></section>;
     const content=<section className="enrollment-record">{!cycleContext && <EditorHeading>Registrar Matrícula</EditorHeading>}
@@ -457,7 +457,7 @@ export function NewEnrollment({cycleContext,onComplete,onCancel,onEditorChange}:
                         {searchStatus==='ready' && <>{cycleContext ? <ul className="enrollment-pupil-matches" aria-label="Coincidencias de alumnos">{found.map(a=><li key={a.id}><div><strong>{studentName(a)}</strong><small>{value(a,'codigo_alumno')} · {value(a,'numero_di')}</small></div><button type="button" className="secondary" onClick={()=>void chooseStudent(a.id)}>Seleccionar</button></li>)}{!found.length && <li>No hay alumnos que coincidan. Puedes registrar uno nuevo.</li>}</ul> : <div className="table-scroll"><table aria-label="Resultados de alumnos"><thead><tr><th>Alumno</th><th>Documento</th><th>Acción</th></tr></thead><tbody>{found.map(a=><tr key={a.id}><td>{studentName(a)}<small className="secondary-text">{value(a,'codigo_alumno')}</small></td><td>{value(a,'numero_di')}</td><td><button type="button" onClick={()=>void chooseStudent(a.id)}>Seleccionar Alumno</button></td></tr>)}{!found.length && <tr><td colSpan={3}>No hay alumnos que coincidan. Puedes registrar uno nuevo.</td></tr>}</tbody></table></div>}{found.length===20 && <small>Se muestran hasta 20 coincidencias. Escribe más para precisar la búsqueda.</small>}</>}
                     </div>}
                     {(!cycleContext || !student) && <button type="button" className="secondary" onClick={()=>{setEditing(false);setEditor(true)}}><NewStudentLabel/></button>}
-                    {student && <div className="enrollment-selected-student"><strong>{value(student,'codigo_alumno')} · {studentName(student)}</strong><span>{value(student,'numero_di')}</span><div className="record-header-actions">{cycleContext && <button type="button" className="secondary" onClick={()=>{setStudent(undefined);setCompany(null);setOptions([]);setDiscount('0');setReason('');setCode('');setSearch('')}}>Cambiar alumno</button>}<button type="button" className="secondary" onClick={()=>{setEditing(true);setEditor(true)}}>Completar / editar ficha</button><Link to={`/alumnos/${student.id}`}>Ver ficha y contactos</Link></div></div>}
+                    {student && <div className="enrollment-selected-student"><strong>{value(student,'codigo_alumno')} · {studentName(student)}</strong><span>{value(student,'numero_di')}</span><div className="record-header-actions">{cycleContext && <button type="button" className="secondary" onClick={()=>{setStudent(undefined);setCompany(null);setDiscount('0');setReason('');setCode('');setSearch('')}}>Cambiar alumno</button>}<button type="button" className="secondary" onClick={()=>{setEditing(true);setEditor(true)}}>Completar / editar ficha</button><Link to={`/alumnos/${student.id}`}>Ver ficha y contactos</Link></div></div>}
                     {(!cycleContext || student) && <div><h3>Empresa patrocinadora (opcional)</h3><p>{company?value(company,'razon_social'):'Sin patrocinador'}</p><div className="record-header-actions"><button type="button" className="secondary" onClick={()=>setChoosingCompany(true)}>Elegir empresa</button>{company && <button type="button" className="secondary" onClick={()=>setCompany(null)}>Quitar patrocinador</button>}</div></div>}
                 </fieldset>
             </div>
@@ -466,7 +466,7 @@ export function NewEnrollment({cycleContext,onComplete,onCancel,onEditorChange}:
                 {tariffsStatus==='loading' && <p role="status">Cargando cargos del Ciclo…</p>}
                 {tariffsStatus==='error' && <p role="alert">No se pudieron cargar los cargos. Vuelve a seleccionar el Ciclo antes de confirmar.</p>}
                 {cycle && tariffsStatus==='ready' && !charges.length && <p role="alert">El Ciclo no tiene tarifas activas disponibles. Revisa su configuración.</p>}
-                <fieldset disabled={busy || tariffsStatus!=='ready'}><legend>Tarifas del Ciclo</legend>{charges.map(c=><label key={c.id}><input type="checkbox" disabled={c.obligatorio===true} checked={c.obligatorio===true || options.includes(c.id)} onChange={e=>setOptions(e.target.checked?[...options,c.id]:options.filter(id=>id!==c.id))}/>{value(c.tarifa as Record<string,unknown>,'nombre')} — S/{value(c,'importe')} {c.obligatorio?'(Obligatoria)':'(Opcional)'}</label>)}
+                <fieldset disabled={busy || tariffsStatus!=='ready'}><legend>Tarifas del Ciclo</legend><p className="help-text">Se incluyen todas las tarifas activas. Después de matricular puedes retirar los cargos opcionales de este alumno, si no tienen pagos vigentes.</p>{charges.map(c=><label key={c.id}><input type="checkbox" disabled checked/>{value(c.tarifa as Record<string,unknown>,'nombre')} — S/{value(c,'importe')} {c.obligatorio?'(Obligatoria)':'(Opcional)'}</label>)}
                     {director && <><label>Descuento del Curso (S/)<input type="number" min="0" step="0.01" value={discount} onChange={e=>setDiscount(formTextValue(e.currentTarget))}/></label><label>Motivo descuento (sin datos personales)<textarea rows={2} required={Number(discount)>0} maxLength={500} value={reason} onChange={e=>setReason(formTextValue(e.currentTarget))}/></label></>}
                 </fieldset>
             </div>

@@ -135,3 +135,12 @@ Solicitud humana: al ir a pagar, no mostrar matriculas anuladas. Ambos listados 
 Regresiones nuevas: exclusión de anuladas en ambas rutas y conservacion de activas con cero; API real comprueba listados filtrados e historia conservada. Sin migraciones/inventario nuevo ni cambios al Spec aprobado. Gate 2 pendiente; sin acceptance, merge ni H5. Resultados y CI del candidato se informan en la entrega.
 
 Filtro operativo validado localmente: 364/364 unitarias, lint/typecheck/build/diff-check PASSED. Misma rama y contratos financieros; CI exacta del commit se verifica antes de entregar.
+
+
+## 10/11/2026 — CHG-H4-002: inclusión inicial de cargos opcionales
+
+Decisión humana y contrato: [enmienda aprobada](approved-default-charges-amendment.md). Todas las tarifas activas se incluyen DB-side en el alta y en el Ciclo destino. Obligatoria impide retiro; opcional permite retiro por alumno, sujeto a los guards H4 de pagos vigentes. La edición conserva selección explícita y trazabilidad histórica. No hay backfill ni modificación automática de matrículas existentes.
+
+Migración aditiva `20261110010000_default_all_enrollment_charges.sql`: reemplaza un helper existente. Inventario de objetos sin cambios: 24 tablas, 3 vistas invoker, 19 RPC, 18 helpers, 27 policies; total 21 migraciones. Cuatro documentos del Spec aprobado intactos. Gate 2 pendiente; sin acceptance, merge ni H5. Validación del candidato: ver entrega y CI exacta; ninguna prueba humana nueva se presume ejecutada.
+
+Validación local CHG-H4-002: lint/typecheck, 364/364 unit tests, build y build-safety correctos. `test:payments:isolated` pasó regresión H3/H4, inclusión/retiro individual de opcionales, saldo/cargos, 13 carreras con barreras (incluye 70+60 sobre 100), PT409 y errores nativos 40001/40P01, sin retries. `test:payments:rollback` pasó. Nueva migración aplicada mediante `migration up --local`, sin reset; fingerprint de Alumno/matrícula/cargos/auditoría/Ciclos/catálogos idéntico antes/después. Reconstrucción desde cero, JWT/API, expiración y regresión completa quedan verificadas en la CI del nuevo candidato; su SHA/run exactos se reportan en la entrega.

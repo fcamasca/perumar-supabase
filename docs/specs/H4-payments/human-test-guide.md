@@ -42,3 +42,8 @@ Mantener esa terminal abierta y usar las credenciales de ensayo elegidas allí. 
 9. **Arquitectura y Gate 2 (044–045).** Revisar inventario, comandos concretos, mínimo privilegio, locks, rollback y recuperación en [technical-results.md](technical-results.md). No hay deuda persistida, API adicional, ledger ni mantenimiento de catálogos. Registrar una decisión humana independiente sobre el SHA candidato y sus riesgos.
 
 Formato de devolución: `Bloque N: OK / FALLÓ / NO VERIFICADO; rol; pasos; resultado observado; navegador/SO; residual`. Una aprobación global no se convierte en subcasos humanos no reportados. Acceptance, merge a main y H5 requieren autorización posterior.
+
+
+### CHG-H4-002 — Tarifas opcionales incluidas inicialmente (pendiente humano)
+
+Configurar un Ciclo con un cargo obligatorio y otro opcional. Agregar alumno: ambos deben estar en Cargos y Pagos. En Editar matrícula retirar el opcional sin pagos: el obligatorio permanece y disminuye el saldo. Otros alumnos no cambian. Pagar parte de un opcional y comprobar que no permite retirarlo mientras tenga aplicaciones vigentes. Cambiar de Ciclo incorpora todos los cargos del destino sin descuento. Una matrícula anterior no recibe cargos retroactivos; agregarle un opcional requiere selección explícita y Guardar cargos.

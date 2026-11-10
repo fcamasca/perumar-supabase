@@ -49,7 +49,7 @@ export function QuickEnrollmentSearch({cycle,close,added}:{cycle:Cycle;close:()=
  const returnCycle=encodeURIComponent(cycle.id)
  return <EnrollmentDrawer title={`Agregar alumnos a ${cycle.codigo_ciclo}`} busy={!!busy} close={close}>
   <label>Buscar Alumno<input ref={searchInput} type="search" maxLength={150} value={search} disabled={!!busy} placeholder="Apellidos, nombres o número de documento" onChange={e=>setSearch(formTextValue(e.currentTarget))}/></label>
-  <small>Agregar registra la matrícula con los cargos obligatorios. Los demás datos se completan desde Editar matrícula.</small>
+  <small>Agregar incluye todas las tarifas activas del Ciclo. Puedes retirar las opcionales de cada alumno desde Editar matrícula, en Cargos.</small>
   {message&&<p role={message.startsWith('Matrícula ')?'status':'alert'}>{message}</p>}
   {failed&&<p><Link to={`/alumnos/${failed.id}?editar=1&ciclo=${returnCycle}`} onClick={close}>Completar ficha de {failed.apellido_paterno} {failed.nombres}</Link></p>}
   {status==='idle'&&<p className="help-text">Escribe al menos 2 caracteres.</p>}{status==='loading'&&<p role="status">Buscando alumnos…</p>}{status==='error'&&<p role="alert">No se pudo buscar alumnos. Modifica la búsqueda para consultar de nuevo.</p>}
