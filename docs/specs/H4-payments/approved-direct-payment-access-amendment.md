@@ -25,3 +25,11 @@ Sin cambios en dinero, aplicaciones, idempotencia, locks/SERIALIZABLE, PT409, au
 ## Evidencia tecnica del 10/11/2026
 
 Implementada sobre la base indicada. [CI 42758669622 SUCCESS](https://github.com/fcamasca/perumar-supabase/actions/runs/42758669622), codigo `914bb837ef570e214798f05634be363e2049d272`; 359/359 pruebas. Inventario: una vista adicional, sin tablas/RPC/helpers/policies nuevos. [Detalle tecnico](technical-results.md), [registro](implementation-log.md) y [guia humana actualizada](human-test-guide.md). La entrega verifica asimismo el SHA documental final. Revisión humana y Gate 2 PENDIENTES.
+
+## Ajuste visual aprobado el 10/11/2026
+
+El usuario reviso la pantalla de pago y aprobo compactarla («ok haz el cambio»): encabezado con matricula/estado/retorno en una fila; contexto alumno/DI y Curso/Ciclo en dos lineas; un unico resumen Base/Abonado/Pendiente con Actualizar; sin subtitulo Pagos ni instrucciones redundantes; formulario al ancho del contenido; seleccion total desde el checkbox del encabezado; Medio mas corto y Observaciones de dos lineas ampliable; acciones separadas, Cancelar a la izquierda y Confirmar pago con el importe a la derecha, en barra sticky al desplazar cargos largos.
+
+Estilos limitados a Pagos, compartidos por acceso directo y contextual. Sin cambios de calculo, payload, RPC, permisos, idempotencia, PT409, modelo o inventario DB. La seleccion de todos conserva propuesta de pendientes completos y permite parciales; desmarcar todos equivale a desmarcar sus cargos. Se conserva el foco de entrada y las etiquetas accesibles.
+
+Revision visual automatica NO VERIFICADA: la herramienta de escritorio no pudo iniciar su kernel (error de entorno; sin acciones sobre pagos). No se marca una prueba humana/visual como ejecutada. Ver evidencia automatizada en technical-results.md.

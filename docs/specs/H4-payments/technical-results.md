@@ -51,7 +51,7 @@ Entorno local: Windows, Node 24.22.1 del runtime disponible. CI utiliza la versi
 | Comprobación | Evidencia |
 |---|---|
 | lint / typecheck / git diff --check | PASSED durante construcción |
-| Suite completa | 359/359 PASSED en 21 archivos tras CHG-H4-001; 335/335 corresponden a la correccion PT409 y 320/320 al candidato inicial |
+| Suite completa | 362/362 PASSED en 21 archivos tras compactacion visual; 359/359 corresponden al acceso directo CHG-H4-001, 335/335 a PT409 y 320/320 al candidato inicial |
 | build / build-safety | PASSED; advertencia bundle >500 kB conservada |
 | Modelo primero, antes de comandos/UI | PASSED en BEGIN/ROLLBACK: tablas, RLS, grants y cinco medios |
 | `test:payments:rollback` | PASSED; datos sintéticos y schema nuevo se revierten; comparación de huella de datos pre/post |
@@ -248,3 +248,13 @@ Archivos afectados por esta enmienda:
 - docs/specs/H4-payments/approved-direct-payment-access-amendment.md; implementation-log.md; technical-results.md; human-test-guide.md.
 
 La entrega publica tambien el SHA y la CI exacta del commit documental final, sin codigo posterior a 914bb83. Enmienda UX implementada, no cambio de reglas financieras. Todos los ensayos humanos siguen pendientes; forced-colors real NO VERIFICADO, QA visual/movil pendiente y advertencia de bundle >500 kB conservada. Sin garantia de carga masiva; contexto descartado al recargar o abandonar Pagos. Sin acceptance, merge ni H5; Gate 2 NO APROBADO.
+
+## Compactacion visual de Pagos — 10/11/2026
+
+Aprobada por el usuario tras revisar la captura del candidato 5d2ff47. Detalle en [enmienda UX](approved-direct-payment-access-amendment.md). Se compactan encabezado/contexto, se elimina el pendiente duplicado y el subtitulo redundante, se alinea formulario al ancho disponible y se reduce el alto de campos/espaciados. Seleccionar todos pasa al encabezado de la tabla con estado mixto accesible. La barra de acciones sticky presenta Cancelar a la izquierda y Confirmar pago con el total a la derecha. Estilos acotados a Pagos, incluidos sus accesos contextual/directo.
+
+No cambia ninguna operacion financiera: mismo registrar_pago/anular_pago, importes/payload, idempotencia, errores PT409, roles ni esquema. No nuevas migraciones/dependencias; inventario permanece 24 tablas/3 vistas/19 RPC/18 helpers/27 policies/20 migraciones. Spec aprobado intacto. Gate 2 NO aprobado; sin acceptance, merge ni H5.
+
+Validacion local: lint, typecheck y 362/362 pruebas en 21 archivos PASSED; nuevas regresiones de seleccion mixta/todos/ninguno, confirmacion con importe, resumen unico y foco de encabezado. Payload transaccional y ausencia de retries siguen cubiertos. Build/build-safety y diff-check PASSED antes de publicar; la CI del candidato se informa en la entrega.
+
+Limitacion de evidencia: captura automatizada de escritorio no disponible por fallo de inicializacion del kernel; se intento reinicio y una unica repeticion. No se opero ni confirmo un pago desde el escritorio. Revision visual real de desktop/movil y forced-colors sigue NO VERIFICADA/PENDIENTE humana; no se afirma que una altura concreta de viewport haya sido comprobada.

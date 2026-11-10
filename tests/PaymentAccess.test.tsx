@@ -68,3 +68,7 @@ it('parent refresh preserves the existing payment component after a confirmation
 it('keeps search context in React only, not history state, URL or browser storage',async()=>{
  sessionStorage.clear();localStorage.clear();await byStudent();fireEvent.click(screen.getByRole('button',{name:'Pagar matrícula 2026-MA-m1'}));await screen.findByRole('region',{name:'Flujo H4 existente'});const navigation=JSON.parse(screen.getByTestId('navigation-state').textContent!);expect(navigation).toEqual({pathname:'/pagos/m1',search:'',state:{register:true}});expect(sessionStorage.length).toBe(0);expect(localStorage.length).toBe(0)
 })
+
+it('payment context uses a compact heading and no second financial summary',async()=>{
+ show('/pagos/m1');await screen.findByRole('region',{name:'Flujo H4 existente'});expect(screen.getByRole('heading',{name:'Pagos de matrícula · 2026-MA-m1'})).toHaveFocus();expect(screen.getByText('QUIROZ PEREZ, JUAN')).toBeVisible();expect(screen.getByText('PESCA')).toBeVisible();expect(screen.queryByText('Consulta los datos registrados.')).not.toBeInTheDocument();expect(screen.queryByText('Pendiente',{exact:true})).not.toBeInTheDocument();expect(screen.getByRole('button',{name:'Volver a matrículas del Alumno'})).toBeVisible()
+})

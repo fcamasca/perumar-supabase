@@ -23,7 +23,7 @@ it('manual selection proposes full pending, supports partial and unchecked zero'
   fireEvent.change(screen.getByRole('textbox',{name:'Importe para CURSO'}),{target:{value:'30.25'}})
   expect(screen.getByRole('checkbox',{name:'Pagar CURSO'})).toBeChecked()
   fireEvent.click(screen.getByRole('checkbox',{name:'Pagar CURSO'})); expect(screen.getByRole('textbox',{name:'Importe para CURSO'})).toHaveValue('0')
-  fireEvent.click(screen.getByRole('button',{name:'Seleccionar todos los pendientes'})); expect(screen.getByRole('textbox',{name:'Importe para OTRO'})).toHaveValue('20')
+  fireEvent.click(screen.getByRole('checkbox',{name:'Seleccionar todos los pendientes'})); expect(screen.getByRole('textbox',{name:'Importe para OTRO'})).toHaveValue('20')
   expect(client.rpc).not.toHaveBeenCalled()
 })
 it('sends one transactional command with exact manual applications, no date or free concept', async () => {
@@ -32,18 +32,18 @@ it('sends one transactional command with exact manual applications, no date or f
   fireEvent.change(screen.getByRole('combobox',{name:/Medio de pago/}),{target:{value:'cash'}})
   fireEvent.change(screen.getByRole('textbox',{name:/Observaciones/}),{target:{value:' Nota Mixta '}})
   client.rpc.mockResolvedValue({data:{id:'p'},error:null})
-  fireEvent.click(screen.getByRole('button',{name:'Confirmar pago'}))
+  fireEvent.click(screen.getByRole('button',{name:/^Confirmar pago/}))
   await waitFor(()=>expect(client.rpc).toHaveBeenCalledTimes(1))
   const [command,{p}]=client.rpc.mock.calls[0]
   expect(command).toBe('registrar_pago');expect(p).toEqual({matricula_id:'m',expected_matricula_updated_at:'v1',idempotency_key:expect.any(String),importe:'30.25',medio_pago_id:'cash',observaciones:'Nota Mixta',aplicaciones:[{matricula_cargo_id:'c1',importe:'30.25'}]})
   await waitFor(()=>expect(changed).toHaveBeenCalled())
 })
 it('rejects excess precision before sending, without rounding',async()=>{
-  await show();fireEvent.click(screen.getByRole('button',{name:'Registrar pago'}));fireEvent.change(screen.getByRole('textbox',{name:'Importe para CURSO'}),{target:{value:'10.001'}});fireEvent.change(screen.getByRole('combobox'),{target:{value:'cash'}});fireEvent.click(screen.getByRole('button',{name:'Confirmar pago'}));expect(client.rpc).not.toHaveBeenCalled();expect(screen.getByRole('textbox',{name:'Importe para CURSO'})).toHaveFocus();expect(screen.getByRole('status')).toHaveTextContent('máximo dos decimales')
+  await show();fireEvent.click(screen.getByRole('button',{name:'Registrar pago'}));fireEvent.change(screen.getByRole('textbox',{name:'Importe para CURSO'}),{target:{value:'10.001'}});fireEvent.change(screen.getByRole('combobox'),{target:{value:'cash'}});fireEvent.click(screen.getByRole('button',{name:/^Confirmar pago/}));expect(client.rpc).not.toHaveBeenCalled();expect(screen.getByRole('textbox',{name:'Importe para CURSO'})).toHaveFocus();expect(screen.getByRole('status')).toHaveTextContent('máximo dos decimales')
 })
 it('retains key after lost response and only replays the identical explicit attempt',async()=>{
   await show();fireEvent.click(screen.getByRole('button',{name:'Registrar pago'}));fireEvent.click(screen.getByRole('checkbox',{name:'Pagar CURSO'}));fireEvent.change(screen.getByRole('combobox'),{target:{value:'cash'}})
-  client.rpc.mockRejectedValue(new Error('network'));fireEvent.click(screen.getByRole('button',{name:'Confirmar pago'}));await screen.findByText(/Resultado sin confirmar/)
+  client.rpc.mockRejectedValue(new Error('network'));fireEvent.click(screen.getByRole('button',{name:/^Confirmar pago/}));await screen.findByText(/Resultado sin confirmar/)
   expect(client.rpc).toHaveBeenCalledTimes(1);expect(screen.getByRole('textbox',{name:'Importe para CURSO'})).toBeDisabled()
   const payload=client.rpc.mock.calls[0][1];client.rpc.mockResolvedValue({data:{id:'p'},error:null});fireEvent.click(screen.getByRole('button',{name:'Reenviar el mismo intento'}));await waitFor(()=>expect(client.rpc).toHaveBeenCalledTimes(2));expect(client.rpc.mock.calls[1][1]).toEqual(payload)
 })
@@ -71,9 +71,21 @@ it('closed cycle still permits payment registration without academic editing',as
  await show({cycleState:'CERRADO'});expect(screen.getByRole('button',{name:'Registrar pago'})).toBeEnabled()
 })
 it.each(['PT409','40001','40P01'])('preserves draft and requires user consultation for %s',async code=>{
- await show();fireEvent.click(screen.getByRole('button',{name:'Registrar pago'}));fireEvent.change(screen.getByRole('textbox',{name:'Importe para CURSO'}),{target:{value:'30'}});fireEvent.change(screen.getByRole('combobox'),{target:{value:'cash'}});client.rpc.mockResolvedValue({error:{code,message:'stale'}});fireEvent.click(screen.getByRole('button',{name:'Confirmar pago'}));await screen.findByText(/La información cambió durante/);expect(client.rpc).toHaveBeenCalledTimes(1);expect(screen.getByRole('textbox',{name:'Importe para CURSO'})).toHaveValue('30');expect(changed).not.toHaveBeenCalled();fireEvent.click(screen.getByRole('button',{name:'Consultar saldo e historial'}));expect(changed).toHaveBeenCalledTimes(1);expect(client.rpc).toHaveBeenCalledTimes(1)
+ await show();fireEvent.click(screen.getByRole('button',{name:'Registrar pago'}));fireEvent.change(screen.getByRole('textbox',{name:'Importe para CURSO'}),{target:{value:'30'}});fireEvent.change(screen.getByRole('combobox'),{target:{value:'cash'}});client.rpc.mockResolvedValue({error:{code,message:'stale'}});fireEvent.click(screen.getByRole('button',{name:/^Confirmar pago/}));await screen.findByText(/La información cambió durante/);expect(client.rpc).toHaveBeenCalledTimes(1);expect(screen.getByRole('textbox',{name:'Importe para CURSO'})).toHaveValue('30');expect(changed).not.toHaveBeenCalled();fireEvent.click(screen.getByRole('button',{name:'Consultar saldo e historial'}));expect(changed).toHaveBeenCalledTimes(1);expect(client.rpc).toHaveBeenCalledTimes(1)
 })
 
 it('direct Pagar opens the existing manual form without automatically writing',async()=>{
- render(<EnrollmentPayments {...props} initialRegister/>);await waitFor(()=>expect(screen.getByRole('button',{name:'Confirmar pago'})).toBeEnabled());expect(screen.getByRole('textbox',{name:'Importe para CURSO'})).toBeVisible();expect(client.rpc).not.toHaveBeenCalled()
+ render(<EnrollmentPayments {...props} initialRegister/>);await waitFor(()=>expect(screen.getByRole('button',{name:/^Confirmar pago/})).toBeEnabled());expect(screen.getByRole('textbox',{name:'Importe para CURSO'})).toBeVisible();expect(client.rpc).not.toHaveBeenCalled()
+})
+
+it('table header selection supports mixed, all and none without sending a payment',async()=>{
+ render(<EnrollmentPayments {...props} initialRegister/>);await waitFor(()=>expect(screen.getByRole('textbox',{name:'Importe para CURSO'})).toBeEnabled())
+ const all=screen.getByRole('checkbox',{name:'Seleccionar todos los pendientes'});expect(all).not.toBeChecked()
+ fireEvent.click(screen.getByRole('checkbox',{name:'Pagar CURSO'}));expect(all).toBePartiallyChecked()
+ fireEvent.click(all);expect(all).toBeChecked();expect(screen.getByRole('textbox',{name:'Importe para OTRO'})).toHaveValue('20');expect(screen.getByRole('button',{name:'Confirmar pago · S/ 120.00'})).toBeEnabled()
+ fireEvent.click(all);expect(all).not.toBeChecked();expect(all).not.toBePartiallyChecked();expect(screen.getByRole('textbox',{name:'Importe para CURSO'})).toHaveValue('0');expect(screen.getByRole('textbox',{name:'Importe para OTRO'})).toHaveValue('0');expect(client.rpc).not.toHaveBeenCalled()
+})
+it('compact summary is unique and a partial amount is explicit in the confirmation',async()=>{
+ render(<EnrollmentPayments {...props} initialRegister/>);await waitFor(()=>expect(screen.getByRole('textbox',{name:'Importe para CURSO'})).toBeEnabled());expect(screen.queryByRole('heading',{name:'Pagos'})).not.toBeInTheDocument();expect(screen.getAllByText('Base',{exact:true})).toHaveLength(1);expect(screen.getAllByText('Abonado',{exact:true})).toHaveLength(1)
+ fireEvent.change(screen.getByRole('textbox',{name:'Importe para CURSO'}),{target:{value:'30.25'}});expect(screen.getByRole('button',{name:'Confirmar pago · S/ 30.25'})).toBeVisible();expect(screen.getByRole('textbox',{name:/Observaciones/})).toHaveAttribute('rows','2');expect(client.rpc).not.toHaveBeenCalled()
 })

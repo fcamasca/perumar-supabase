@@ -1,6 +1,6 @@
-import { useEffect, useState, type Dispatch, type SetStateAction } from 'react'
+import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { AcademicPagination, AcademicRecordHeader, AcademicSearch, AcademicTabs } from '../academic/AcademicLayout'
+import { AcademicPagination, AcademicSearch, AcademicTabs } from '../academic/AcademicLayout'
 import { StatusBadge } from '../academic/AcademicUi'
 import { studentSearchFilter } from '../lib/studentSearch'
 import { useSession } from '../security/SessionProvider'
@@ -102,6 +102,8 @@ function PaymentSearch({context,setContext}:{context:SearchContext;setContext:Di
 function PaymentRecord({ id, context }: { id: string;context:SearchContext }) {
   const { client, state } = useSession(), location = useLocation(), navigate = useNavigate()
   const [row, setRow] = useState<PaymentRow>(), [error, setError] = useState(''), [revision, setRevision] = useState(0)
+  const heading=useRef<HTMLHeadingElement>(null)
+  useEffect(()=>{if(row)heading.current?.focus()},[row?.matricula_id])
   useEffect(() => {
     let active = true
     setError('')
@@ -115,9 +117,8 @@ function PaymentRecord({ id, context }: { id: string;context:SearchContext }) {
   const back = () => navigate('/pagos')
   if (!row) return <section><h2>Pagos de matrícula</h2>{error ? <p role="alert">{error}</p> : <p role="status">Consultando matrícula…</p>}<button type="button" className="secondary" onClick={back}>Volver a resultados</button></section>
   return <section className="academic-record payments">
-    <AcademicRecordHeader title="Pagos de matrícula" name={row.codigo_matricula} status={<StatusBadge value={row.matricula_estado === 'ACTIVO' ? 'Activa' : 'Anulada'}/>} editing={false} busy={false} backLabel={context.mode === 1 ? 'Volver a alumnos del Ciclo' : 'Volver a matrículas del Alumno'} editLabel="" onBack={back}/>
-    <dl className="review-fields"><div><dt>Alumno</dt><dd>{fullName(row)}</dd></div><div><dt>Código Alumno / documento</dt><dd>{row.codigo_alumno} · {row.numero_di}</dd></div><div><dt>Ciclo</dt><dd>{row.codigo_ciclo} · {row.ciclo_estado}</dd></div><div><dt>Curso</dt><dd>{row.curso_nombre}</dd></div><div><dt>Pendiente</dt><dd>{pen(row.pendiente)}</dd></div></dl>
-    <p className="help-text">Comprueba el alumno, Ciclo y Curso antes de confirmar el pago.</p>
+    <header className="payment-record-header"><div className="payment-record-title"><h2 ref={heading} tabIndex={-1}>Pagos de matrícula · {row.codigo_matricula}</h2><StatusBadge value={row.matricula_estado === 'ACTIVO' ? 'Activa' : 'Anulada'}/></div><button type="button" className="secondary" aria-label={context.mode === 1 ? 'Volver a alumnos del Ciclo' : 'Volver a matrículas del Alumno'} onClick={back}>← Volver a resultados</button></header>
+    <div className="payment-record-context"><p><strong>{fullName(row)}</strong><span>{row.codigo_alumno} · DI {row.numero_di}</span></p><p><strong>{row.curso_nombre}</strong><span>Ciclo {row.codigo_ciclo} · {row.ciclo_estado.replaceAll('_',' ')}</span></p></div>
     <EnrollmentPayments enrollment={row.matricula_id} version={row.matricula_updated_at} enrollmentState={row.matricula_estado} cycleState={row.ciclo_estado} initialRegister={location.state?.register === true && payable(row)} onChanged={() => setRevision(v => v + 1)}/>
   </section>
 }
