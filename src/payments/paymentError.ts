@@ -19,7 +19,7 @@ export function paymentError(error: { code?: string; message?: string }): string
   }
   if (error.message && messages[error.message]) return messages[error.message]
   if (error.code === '42501') return 'No tienes permiso vigente para esta operación.'
-  if (['40001', '40P01'].includes(error.code ?? '')) return 'La información cambió durante la operación. Consulta los datos y vuelve a confirmar; no se reintentó automáticamente.'
+  if (['PT409', '40001', '40P01'].includes(error.code ?? '')) return 'La información cambió durante la operación. Consulta los datos y vuelve a confirmar; no se reintentó automáticamente.'
   if (error.message === 'Valor de catálogo no válido o inactivo') return 'Selecciona un medio de pago activo del catálogo Medios de pago.'
   return 'No se pudo completar la operación. Revisa los datos y consulta el estado antes de intentar otra vez.'
 }

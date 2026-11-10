@@ -57,9 +57,9 @@ it('Admin Sistema does not gain academic routes from its name', () => {
   expect(screen.getByRole('alert')).toHaveTextContent('no autorizado')
   expect(screen.queryByText('Private academic form')).not.toBeInTheDocument()
 })
-it('stale save retains input, reports conflict, and never silently retries', async () => {
+it.each(['PT409','40001','40P01'])('stale save retains input and never retries for %s', async code => {
   session(['DIRECTOR_ACADEMICO'])
-  rpc.mockResolvedValue({ error: { code: '40001', message: 'internal detail must not show' }, data: null })
+  rpc.mockResolvedValue({ error: { code, message: 'internal detail must not show' }, data: null })
   render(<Materias />)
   fireEvent.click(await screen.findByRole('button', { name: 'Editar NAVEGACIÓN' }))
   fireEvent.change(screen.getByLabelText('Nombre de Asignatura'), { target: { value: 'EDITADO' } })

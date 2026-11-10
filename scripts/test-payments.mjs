@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { randomUUID } from 'node:crypto'
+import { randomUUID, createHash } from 'node:crypto'
 import { createFixtures, publicClient, checked } from './h2-fixtures.mjs'
 import { inspectDatabase, assertSecurityInventory, securityInventory } from './local-platform.mjs'
 
@@ -32,6 +32,28 @@ try {
   const charge=checked(await D.from('matricula_cargo').select('*').eq('matricula_id',enrollment.id).single(),'charge')
   const payload=amount=>({matricula_id:enrollment.id,expected_matricula_updated_at:enrollment.updated_at,idempotency_key:randomUUID(),importe:amount,medio_pago_id:value('MEDIO_PAGO','EFECTIVO'),aplicaciones:[{matricula_cargo_id:charge.id,importe:amount}]})
   const p=payload('30'),payment=await rpc(O,'registrar_pago',{p})
+  // Real PostgREST conflict contracts: no stale write, version advance or success audit.
+  const financialSnapshot=async()=>createHash('sha256').update(JSON.stringify({
+    enrollment:await byId('matricula',enrollment.id),
+    payments:checked(await D.from('pago').select('*').eq('matricula_id',enrollment.id).order('id'),'conflict payment snapshot'),
+    applications:checked(await D.from('pago_aplicacion').select('*').eq('pago_id',payment.id).order('id'),'conflict application snapshot'),
+    audit:checked(await D.from('auditoria').select('*').in('registro_id',[enrollment.id,payment.id,cycle.id,subject.id]).order('id'),'conflict audit snapshot'),
+    cycle:await byId('ciclo',cycle.id),subject:await byId('materia',subject.id),auditCount:inspectDatabase('select count(*) from public.auditoria;'),
+  })).digest('hex')
+  for(const [command,args] of [
+    ['registrar_pago',{p:payload('1')}], // Old enrollment version predates the first committed payment.
+    ['anular_pago',{id:payment.id,expected_updated_at:'2000-01-01T00:00:00Z',motivo:'STALE SYNTHETIC'}],
+    ['editar_matricula',{p:{id:enrollment.id,expected_updated_at:enrollment.updated_at,empresa_patrocinadora_id:null}}],
+    ['guardar_materia',{p:{id:subject.id,expected_updated_at:'2000-01-01T00:00:00Z',nombre:'MUST NOT MUTATE'}}],
+    ['cambiar_estado_ciclo',{id:cycle.id,expected_updated_at:'2000-01-01T00:00:00Z',destino:'EN_CURSO'}],
+  ]){
+    const before=await financialSnapshot()
+    const result=await D.rpc(command,args)
+    assert.equal(result.error?.code,'PT409',command+' stale conflict SQLSTATE')
+    assert.equal(result.status,409,command+' conflict HTTP status')
+    assert.equal(await financialSnapshot(),before,command+' stale request mutated data/version/audit')
+  }
+  console.log('Pre-Gate 2: five real H2/H3/H4 RPC stale conflicts: PASSED (PT409 / HTTP 409, unchanged records, versions and audit)')
   assert.equal(payment.registrado_por,fixture.entries.O.id)
   assert.equal((await rpc(D,'registrar_pago',{p})).id,payment.id)
   assert.equal((await rpc(M,'registrar_pago',{p})).id,payment.id)

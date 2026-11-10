@@ -30,7 +30,7 @@ do $$ declare actor uuid:=gen_random_uuid(); coordinator uuid:=gen_random_uuid()
  perform set_config('request.jwt.claim.sub',actor::text,true);
  c:=public.cambiar_materia_ciclo(c.id,m.id,c.updated_at,false,true);
  if not exists(select 1 from public.ciclo_materia where id=rel and not activo and motivo_inactivacion='RETIRO_MANUAL') then raise exception 'Retirement lost history';end if;
- begin perform public.cambiar_materia_ciclo(c.id,m.id,old_version,true,true);raise exception 'Stale confirmation accepted';exception when serialization_failure then null;end;
+ begin perform public.cambiar_materia_ciclo(c.id,m.id,old_version,true,true);raise exception 'Stale confirmation accepted';exception when sqlstate 'PT409' then null;end;
  begin update public.ciclo_materia set activo=true,motivo_inactivacion=null where id=rel;raise exception 'Confirmation context leaked';exception when check_violation then null;end;
  c:=public.cambiar_materia_ciclo(c.id,m.id,c.updated_at,true,true);
  if not exists(select 1 from public.ciclo_materia where id=rel and activo and origen='HEREDADA') then raise exception 'Reactivation replaced history';end if;
@@ -42,7 +42,7 @@ do $$ declare actor uuid:=gen_random_uuid(); coordinator uuid:=gen_random_uuid()
  if (select count(*) from public.auditoria where registro_id in (select id from public.ciclo_materia where ciclo_id=c.id) and motivo='Director confirma cambio de asignaturas del Ciclo con matrículas activas')<>3 then raise exception 'Missing confirmed audit';end if;
  c:=public.cambiar_estado_ciclo(c.id,c.updated_at,'EN_CURSO');
  c:=public.cambiar_estado_ciclo(c.id,c.updated_at,'CERRADO');
- begin perform public.cambiar_materia_ciclo(c.id,m.id,c.updated_at,false,true);raise exception 'Terminal accepted';exception when serialization_failure then null;end;
+ begin perform public.cambiar_materia_ciclo(c.id,m.id,c.updated_at,false,true);raise exception 'Terminal accepted';exception when sqlstate 'PT409' then null;end;
  set constraints all immediate;
 end $$;
 rollback;

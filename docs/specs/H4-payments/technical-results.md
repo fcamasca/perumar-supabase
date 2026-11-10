@@ -166,3 +166,30 @@ No se identificó una desviación funcional intencionada respecto del Spec aprob
 - La base humana no se reseteó ni recibió fixtures automáticos confirmados de H4. Secuencias pueden consumir números en transacciones revertidas, conforme al código Alumno sin requisito gapless. Las nuevas migraciones se aplican para pruebas humanas mediante migration up --local, no reset.
 
 La entrega informa SHA candidato exacto y su ejecución CI. Ninguna de estas verificaciones concede Gate 2. **H5 NO INICIADO.**
+
+## Correccion pre-Gate 2: conflictos logicos PT409
+
+Hallazgo recibido sobre el candidato `9da9697771064a29574498a4acdb2c12b00cc395`. Gate 2 NO aprobado; sin acceptance, merge ni H5.
+
+Fuente oficial (actualizada 04/11/2026): https://supabase.com/kb/troubleshooting/high-cpu-and-infinite-transaction-retries-when-using-custom-error-codes-in-rpc-functions-77326b
+
+Clasificacion de los cuatro RAISE deliberados historicos:
+
+| Funcion | Origen | Significado | Correccion |
+|---|---|---|---|
+| private.require_version | H2, 20261022160000:73 | expected_updated_at ausente/obsoleto | PT409 |
+| public.cambiar_estado_ciclo | H2, 20261022160000:350 | Transicion no aplicable o version obsoleta; ninguna fila actualizada | PT409 |
+| public.registrar_pago | H4, 20261109030000:41 | Padres/contexto cambiaron entre lectura preliminar y lock | PT409 |
+| public.anular_pago | H4, 20261109030000:94 | Padres/contexto cambiaron entre lectura preliminar y lock | PT409 |
+
+Nueva migracion aditiva `20261109050000_logical_conflicts_pt409.sql`: reemplaza esas cuatro funciones existentes, sin cambiar firmas, permisos, aislamiento, locks ni cuerpos salvo esos SQLSTATE. H2 conserva su default_transaction_isolation=serializable efectivo. No modifica las migraciones anteriores ni traduce excepciones reales del motor.
+
+academicError, enrollmentError y paymentError reconocen PT409 y mantienen 40001/40P01 defensivos con los mensajes existentes. Regresiones React de Asignatura, Tarifa y Pagos conservan borrador y una sola invocacion para los tres codigos.
+
+Validacion local: lint/typecheck/build/build-safety/diff-check PASSED; 335/335 pruebas en 20 archivos PASSED; rollback PASSED; suite aislada con comparacion de definiciones efectivas (normaliza solo CRLF/LF), cero RAISE manuales 40001 efectivos y trece carreras PASSED. 70+60/100 conserva un unico commit y el perdedor devuelve 40001 REAL; deadlock aislado adicional produce 40P01 REAL sin traduccion/retry. La base temporal se elimina en finally.
+
+Regresion API agregada: cinco RPC reales con version obsoleta (guardar_materia, cambiar_estado_ciclo, editar_matricula, registrar_pago, anular_pago), JWT ordinario Director, PT409 y HTTP 409; huellas de registros/versiones/aplicaciones/auditoria y conteo global de eventos sin cambios. Su ejecucion y la regresion completa H1-H3/expiracion/reset-repeat quedan PENDIENTES de la CI de esta correccion hasta observar SUCCESS.
+
+Busqueda final: cuatro coincidencias en archivos historicos inmutables; ninguna en la migracion correctora. Sobre pg_proc despues de aplicar la migracion en la base aislada: CERO RAISE deliberados 40001 en funciones public/private efectivas. Los errores reales de PostgreSQL no se reemplazan.
+
+Inventario funcional sin cambios: 24 tablas, 2 vistas, 19 RPC, 18 helpers y 27 policies. Solo el inventario de migraciones pasa de 18 a 19. Los cuatro documentos del Spec aprobado permanecen identicos.

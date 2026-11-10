@@ -21,7 +21,7 @@ const cicloColumns = 'id,carrera_id,codigo_ciclo,fecha_inicio,fecha_fin,nombre_p
 
 export function academicError(error: { code?: string; message?: string } | null, entity: 'Asignatura' | 'Curso' | 'Ciclo' = 'Ciclo'): string {
   if(error?.message?.startsWith('PAYMENT_')) return paymentError(error)
-  if (error?.code === '40001') return 'El registro fue modificado por otro usuario. Actualiza la información antes de volver a guardar.'
+  if (['PT409', '40001', '40P01'].includes(error?.code ?? '')) return 'El registro fue modificado por otro usuario. Actualiza la información antes de volver a guardar.'
   if (error?.code === '23505') {
     const field = /_codigo_key/.test(error.message ?? '') ? 'código' : /_nombre_key/.test(error.message ?? '') ? 'nombre' : entity === 'Curso' && /_sigla_key/.test(error.message ?? '') ? 'sigla' : null
     return field ? `El ${field} de ${entity} ya está utilizado, incluso en registros inactivos.` : entity === 'Asignatura' ? 'El nombre de Asignatura ya está utilizado, incluso en registros inactivos.' : entity === 'Curso' ? 'El nombre o sigla de Curso ya está utilizado, incluso en registros inactivos.' : 'La relación o el código ya está registrado.'

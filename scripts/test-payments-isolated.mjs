@@ -24,6 +24,13 @@ try {
   const reference=docker(['pg_dump','-U','postgres','-d','postgres','--data-only',...refTables.flatMap(t=>['--table',`public.${t}`])])
   sql(reference)
   if(sql("select to_regclass('public.pago') is not null")!=='t') for(const name of ['20261109020000_h4_payment_model','20261109030000_h4_payment_commands','20261109040000_h4_enrollment_guards'])sql(readFileSync(`supabase/migrations/${name}.sql`,'utf8'))
+  const conflictFunctions="select json_object_agg(n.nspname||'.'||p.proname,pg_get_functiondef(p.oid)) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where (n.nspname='private' and p.proname='require_version') or (n.nspname='public' and p.proname in ('cambiar_estado_ciclo','registrar_pago','anular_pago'));"
+  const definitionsBefore=JSON.parse(sql(conflictFunctions))
+  sql(readFileSync('supabase/migrations/20261109050000_logical_conflicts_pt409.sql','utf8'))
+  const definitionsAfter=JSON.parse(sql(conflictFunctions))
+  for(const [name,definition] of Object.entries(definitionsBefore))assert.equal(definitionsAfter[name].replaceAll('\r\n','\n'),definition.replaceAll('\r\n','\n').replaceAll("errcode='40001'","errcode='PT409'"),'Only the deliberate error contract may change')
+  assert.equal(sql("select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname in ('public','private') and p.prosrc ~* 'errcode[[:space:]]*=[[:space:]]*''40001''';"),'0')
+  console.log('Logical conflicts PT409: PASSED (effective definitions contain no deliberate 40001; function contracts otherwise identical)')
   sql(readFileSync('tests/sql/h4-payments.sql','utf8'))
   sql(readFileSync('tests/sql/h4-regression.sql','utf8'))
   console.log('H4 isolated H3 regression, C-H4-001, states, historical UUIDs and sponsor: PASSED')
@@ -48,8 +55,8 @@ try {
   const register=p=>`select public.registrar_pago('${JSON.stringify(p)}'::jsonb)->>'id'`
   const run=(statement)=>{
     const child=spawn('docker',['exec','-i',container,'psql','-U','postgres','-d',database,'-At','-v','ON_ERROR_STOP=1','-v','VERBOSITY=sqlstate'],{windowsHide:true})
-    let output='';child.stdout.on('data',chunk=>output+=chunk);child.stderr.on('data',()=>{})
-    const done=new Promise((resolve,reject)=>{child.on('error',reject);child.on('close',code=>resolve({ok:code===0,output}))})
+    let output='',error='';child.stdout.on('data',chunk=>output+=chunk);child.stderr.on('data',chunk=>error+=chunk)
+    const done=new Promise((resolve,reject)=>{child.on('error',reject);child.on('close',code=>resolve({ok:code===0,output,sqlstate:error.match(/\b(40001|40P01|PT409|23505|23514)\b/)?.[1]}))})
     child.stdin.end(statement);return done
   }
   async function race(f,left,right,otherCycle=null) {
@@ -74,7 +81,7 @@ try {
   const balance=f=>JSON.parse(sql(`select row_to_json(s) from public.matricula_saldo s where matricula_id='${f.enrollment}'`))
   const freshVersion=f=>sql(`select updated_at from public.matricula where id='${f.enrollment}'`)
   {
-    const f=fixture();await race(f,register(payload(f,'70')),register(payload(f,'60')))
+    const f=fixture();const result=await race(f,register(payload(f,'70')),register(payload(f,'60')));assert.equal(result.find(r=>!r.ok).sqlstate,'40001','The real SERIALIZABLE failure must still propagate unchanged')
     const s=balance(f);assert.ok([60,70].includes(s.abonado));assert.ok(s.pendiente>=0);assert.notEqual(s.abonado,130)
     console.log('H4 70+60 / saldo100: PASSED (2 SERIALIZABLE connections, lock barrier, one commit, no retries)')
   }
@@ -144,6 +151,30 @@ try {
   {
     const f=fixture();await race(f,register(payload(f,'70')),`select (public.anular_matricula('${f.enrollment}','${f.version}','SYNTHETIC')).id`)
     assert.ok(balance(f).pendiente>=0);console.log('H4 payment vs enrollment annulment: PASSED')
+  }
+  {
+    // Engine-produced deadlock, isolated SQL harness only. Product lock ordering is NOT changed.
+    const first=fixture(),second=fixture()
+    const session=own=>{
+      const child=spawn('docker',['exec','-i',container,'psql','-U','postgres','-d',database,'-At','-v','ON_ERROR_STOP=1','-v','VERBOSITY=sqlstate'],{windowsHide:true})
+      const state={ready:false};let error=''
+      child.stdout.on('data',chunk=>{if(String(chunk).includes('NATIVE_DEADLOCK_READY'))state.ready=true})
+      child.stderr.on('data',chunk=>error+=chunk)
+      const done=new Promise((resolve,reject)=>{child.on('error',reject);child.on('close',code=>resolve({ok:code===0,sqlstate:error.match(/\b40P01\b/)?.[0]}))})
+      child.stdin.write(`begin;set local deadlock_timeout='100ms';select id from public.ciclo where id='${own}' for update;select 'NATIVE_DEADLOCK_READY';\n`)
+      return {child,state,done}
+    }
+    const a=session(first.cycle),b=session(second.cycle),deadline=Date.now()+15000
+    try {
+      while((!a.state.ready||!b.state.ready)&&Date.now()<deadline)await new Promise(r=>setTimeout(r,25))
+      assert.ok(a.state.ready&&b.state.ready,'Both sessions must hold their first lock')
+      a.child.stdin.end(`select id from public.ciclo where id='${second.cycle}' for update;commit;\n`)
+      b.child.stdin.end(`select id from public.ciclo where id='${first.cycle}' for update;commit;\n`)
+      const result=await Promise.all([a.done,b.done]);assert.equal(result.filter(r=>r.ok).length,1);assert.equal(result.find(r=>!r.ok).sqlstate,'40P01')
+      console.log('Native PostgreSQL 40001 (70/60 race) and 40P01 (real deadlock): PASSED, untranslated and without retry')
+    } finally {
+      for(const x of [a,b])if(!x.child.stdin.writableEnded)x.child.stdin.end('rollback;\n')
+    }
   }
 } finally {
   if(created)docker(['dropdb','-U','postgres','--force',database])

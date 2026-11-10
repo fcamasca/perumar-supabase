@@ -243,7 +243,7 @@ try {
     const concurrent = await Promise.all(capitanias.slice(4, 10).map(cap => O.rpc('guardar_ciclo', { p: { ...base, carrera_id: carrera.id, capitania_id: cap.id, fecha_inicio: '2039-01-01', fecha_fin: '2039-01-01' } })))
     const successful = concurrent.filter(result => !result.error).map(result => result.data)
     assert.ok(successful.length > 0)
-    assert.ok(concurrent.every(result => !result.error || result.error.code === '40001'))
+    assert.ok(concurrent.every(result => !result.error || ['PT409','40001','40P01'].includes(result.error.code)))
     assert.equal(new Set(successful.map(c => c.correlativo)).size, successful.length)
     inspectDatabase("update private.ciclo_correlativo set ultimo=greatest(ultimo,998) where anio=extract(year from clock_timestamp() at time zone 'America/Lima');")
     for (const cap of capitanias.slice(10, 12)) {

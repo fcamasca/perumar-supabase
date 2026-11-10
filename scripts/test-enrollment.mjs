@@ -244,7 +244,7 @@ try {
         const wins = race.filter(r => !r.error);
         assert.ok(wins.length > 0);
         assert.equal(new Set(wins.map(r => r.data.codigo_matricula)).size, wins.length);
-        assert.ok(race.every(r => !r.error || r.error.code === '40001'));
+        assert.ok(race.every(r => !r.error || ['PT409','40001','40P01'].includes(r.error.code)));
         assert.equal(inspectDatabase("select extract(year from timestamptz '2027-01-01 02:00:00+00' at time zone 'America/Lima');"), '2026');
         const originalDefinition = inspectDatabase("select pg_get_functiondef('public.registrar_matricula(jsonb,uuid[])'::regprocedure);");
         const nextYearDefinition = originalDefinition.replace("y:=extract(year from clock_timestamp() at time zone 'America/Lima')", "y:=extract(year from (clock_timestamp()+interval '1 year') at time zone 'America/Lima')");

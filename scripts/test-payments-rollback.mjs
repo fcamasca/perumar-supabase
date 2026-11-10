@@ -16,6 +16,6 @@ const before = inspectDatabase(fingerprint)
 const installed = inspectDatabase("select to_regclass('public.pago') is not null;") === 't'
 const migrations = installed ? '' : ['20261109020000_h4_payment_model','20261109030000_h4_payment_commands','20261109040000_h4_enrollment_guards'].map(name => readFileSync(`supabase/migrations/${name}.sql`, 'utf8')).join('\n')
 const test = readFileSync('tests/sql/h4-payments.sql', 'utf8').replace(/^begin;/, '').replace(/ -- H4_FAULT_REGISTER_BEGIN[\s\S]*? -- H4_FAULT_REGISTER_END/, '').replace(/ -- H4_FAULT_CANCEL_BEGIN[\s\S]*? -- H4_FAULT_CANCEL_END/, '')
-runLocal('docker', ['exec','-i','supabase_db_perumar-supabase','psql','-U','postgres','-d','postgres','-At','-v','ON_ERROR_STOP=1'], `begin;${migrations}\n${test}`)
+runLocal('docker', ['exec','-i','supabase_db_perumar-supabase','psql','-U','postgres','-d','postgres','-At','-v','ON_ERROR_STOP=1'], `begin;${migrations}\n${readFileSync('supabase/migrations/20261109050000_logical_conflicts_pt409.sql','utf8')}\n${test}`)
 assert.equal(inspectDatabase(fingerprint), before, 'H4 rollback changed existing data')
 console.log('H4 model, register, precision, idempotency, annulment, balance, H3 guards and minimal audit: PASSED (DB rollback; no persisted fixtures)')
