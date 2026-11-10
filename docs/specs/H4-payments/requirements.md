@@ -1,8 +1,8 @@
 # H4 — Pagos: requirements
 
-Versión 0.1 · 09/11/2026 (America/Lima).
+Versión 0.2 · 09/11/2026 (America/Lima).
 
-**SPEC ELABORADO. OQ ABIERTAS. PENDIENTE DE REVISIÓN HUMANA Y GATE 1. CONSTRUCCIÓN NO AUTORIZADA.**
+**SPEC ACTUALIZADO CON DECISIONES HUMANAS. 17 OQ RESUELTAS. GATE 1 PENDIENTE. CONSTRUCCIÓN NO AUTORIZADA.**
 
 ## Base y precedencia
 
@@ -12,150 +12,177 @@ Precedencia: instrucción humana actual y [PLAN_MVP, H4 — Pagos](../../PLAN_MV
 
 H3 se interpreta con [requirements](../H3-enrollment/requirements.md), [design](../H3-enrollment/design.md), cierre y enmiendas vigentes, no con estados históricos previos a gates. En particular: [edición individual/cargos](../H3-enrollment/approved-quick-add-amendment.md), [tarifas por Ciclo](../H3-enrollment/approved-cycle-tariffs-amendment.md), [código Alumno y experiencia/modalidad](../H3-enrollment/approved-career-student-code-amendment.md), [terminología](../H3-enrollment/approved-ui-terminology-amendment.md), [carga inicial](../H3-enrollment/approved-authorized-courses-initial-load.md) y [confirmación Director en asignaturas](../H3-enrollment/approved-director-cycle-subjects-amendment.md). Las demás enmiendas se conservan por la trazabilidad del acceptance. No se modifica H3 durante este trabajo.
 
-## Cruce funcional y límites de HU13
+## Decisiones humanas y precedencia vigente
 
-| Fuente | Incluido en H4 | Límite o pendiente |
-| --- | --- | --- |
-| HU13: alumno y ciclo, parcial/total, abonado/pendiente e historial | Operación sobre matrícula UUID existente, consulta e historial en pantalla | No deuda global del alumno entre varios ciclos ni pago distribuido entre matrículas |
-| HU13: monto, fecha, concepto y medio | Datos de pago necesarios, validados en servidor | Semántica de fecha/concepto y catálogo exacto requieren OQ |
-| HU13: efectivo, Yape, Plin, transferencia, tarjeta, etc. | Registro declarativo de medio | Son ejemplos, no seed cerrado ni integración de cobro; OQ-H4-008 |
-| HU13: informe de pagos/resumen | Historial y resumen operativo en pantalla | Informe detallado/exportaciones diferidos a hito autorizado; no generador de reportes |
-| HU13: comprobante en paso 8 | Confirmación en pantalla del registro y su identificador técnico | No recibo fiscal, comprobante documental, PDF, numeración legal ni Storage; H5 u otro hito autorizado |
-| PLAN: saldo 100 y concurrentes 70+60 | Invariante y prueba obligatoria | Bloquear excedentes en DB, no confiar en total/validación React |
-| H3: cargos UUID históricos y descuentos | Origen económico existente, sin repricing | Política ante nuevas mutaciones después del pago requiere decisiones humanas |
+Actualización autorizada el 09/11/2026 sobre el Spec base `143ea773e9ff77a7c52944fcc25b620f351c17ef`. La instrucción actual resuelve OQ-H4-001…017 y prevalece sobre las alternativas y dudas de la versión 0.1 y sobre los puntos amplios de HU13 que quedan recortados. Resolver OQ no equivale a aprobar Gate 1 del conjunto. Esta entrega sigue siendo exclusivamente los cuatro Markdown; no modifica H3 ni implementa H4.
 
-Los únicos resultados de esta fase son requirements/design/tasks/test-plan. Todos los contratos/modelos de diseño son **propuestos**, no aprobados ni implementados. Los invariantes impuestos por PLAN no se dejan opcionales. Una OQ afecta la solución concreta, nunca autoriza sobrepago o duplicación.
+| Fuente amplia | Regla vigente de H4 |
+| --- | --- |
+| HU13: fecha de pago capturada | No existe fecha de operación manual: solo timestamp DB de registro inmutable |
+| HU13: concepto ingresado | No campo concepto: se deriva de cargos seleccionados y pago_aplicacion |
+| HU13: medios abiertos «etc.» | Solo semilla autorizada Efectivo/Yape/Plin/Transferencia bancaria/Tarjeta, catálogo genérico |
+| HU13: alumno particular | Pago particular permitido con o sin patrocinador en matrícula; no asigna responsabilidades ni implementa HU14/HU15 |
+| HU13: informe/comprobante | Historial y resumen operativo en pantalla; sin documento fiscal/PDF, adjuntos ni informes/exportación amplios |
+| PLAN: deuda y consistencia | Cargos activos menos aplicaciones de pagos CONFIRMADO; saldo derivado, no tabla deuda ni saldo persistido |
 
 ## REQ-H4-001 — Gobernanza y alcance
 
-H4 se limita a cargos existentes como origen de deuda de una matrícula, pago particular, parcialidad, aplicación, saldo/historial, medios, idempotencia, concurrencia y auditoría. React + Supabase/PostgreSQL + RLS + constraints + RPC concretas; sin infraestructura nueva.
+H4 registra pagos particulares, parciales o completos, de una matrícula existente con imputación manual a cargos, consulta de deuda/saldo/historial, medios declarativos, anulación concreta, idempotencia, concurrencia y auditoría mínima. Arquitectura React + Supabase/PostgreSQL + RLS + constraints + RPC concretas; sin infraestructura adicional.
 
-**Criterios de aceptación:** El cambio de Spec contiene solo los cuatro Markdown de H4; las exclusiones permanecen fuera y no se aprueba ninguna OQ ni Gate 1 automáticamente.
-## REQ-H4-002 — Permisos server-side
+**Criterios de aceptación:** Solo se modifican cuatro Markdown en esta fase. Sin código, SQL ejecutable, migraciones, tests ejecutables, cambios H3, acceptance, merge a main ni H5.
 
-HU13 identifica Director y Coordinador como actores del registro; la matriz amplia tiene marcas ambiguas. No heredar por analogía todos los permisos de H3 ni conceder acceso financiero implícito a ADMIN_SISTEMA. La matriz exacta registrar/consultar/recuperar/mantener medios/corregir queda en OQ-H4-012. Reutilizar identidad y roles activos H1, mínimo privilegio, RLS y grants de solo lectura autorizada; mutación financiera exclusivamente por comando.
+## REQ-H4-002 — Permisos financieros
 
-**Criterios de aceptación:** JWT/rol/sujeto/estado se validan DB-side; rol cliente, metadata y ocultamiento UI no autorizan. Se prueban roles positivos y negativos de la matriz humana aprobada, también lectura por clave.
-## REQ-H4-003 — Origen y proyección de deuda
+Director y Coordinador activos registran pagos, consultan saldo/historial y recuperan la operación idempotente. Solo Director anula pagos. Admin Sistema no tiene permiso financiero por defecto; multirol suma capacidades explícitas activas. Identidad/rol/objeto se validan DB-side y no dependen de React o metadata cliente.
 
-La deuda deriva de importes finales históricos de matricula_cargo y pagos/aplicaciones confirmados según perímetro aprobado. No se toma monto_por_defecto ni precios actuales de tarifa/ciclo_tarifa para recalcular cargos. Sin tabla deuda ni saldo materializado independiente por defecto. Qué cargos integran la deuda, incluidos inactivos, requiere OQ-H4-003/017.
+**Criterios de aceptación:** RLS/grants mínimos y RPC con autorización explícita; negar mutación directa y accesos anónimo/inactivo/rol no permitido. Coordinador no anula ni falsificando payload/rol. Auditoría técnica mínima mantiene la visibilidad H2 sin abrir tablas financieras al Admin.
 
-**Criterios de aceptación:** Una lectura consistente presenta base exigible, abonado y pendiente; se demuestra la ecuación acordada y que tarifas posteriores no alteran cargos previos. Saldo pendiente no negativo; una contradicción no se oculta truncando a cero.
-## REQ-H4-004 — Aplicación e integridad relacional
+## REQ-H4-003 — Deuda y saldo derivados
 
-Un pago se refiere a una sola matrícula existente. Aplicación global a matrícula o imputación a uno/más cargos, y orden manual/automático, siguen abiertos (OQ-H4-001/002). Si se aprueba imputación por cargo, cada aplicación referencia UUID de pago y cargo de la misma matrícula; suma de aplicaciones igual a pago y ninguna excede pendiente del cargo.
+Base exigible = suma de importe_final de cargos activos de la matrícula. Abonado = suma de aplicaciones sobre esos cargos de pagos CONFIRMADO/no anulados. Pendiente = base − abonado. No tabla deuda ni saldo monetario materializado independiente. No usar tarifas actuales para recalcular cargos históricos.
 
-**Criterios de aceptación:** Tras cerrar OQ, la opción elegida tiene integridad DB y comprobaciones de suma/propiedad. No hay pagos sin aplicación efectiva, montos sin imputar ni relaciones con otra matrícula; no se implementan ambas alternativas innecesariamente.
-## REQ-H4-005 — Importes exactos
+**Criterios de aceptación:** Totales DB exactos y consistentes, pendiente nunca negativo; no truncar inconsistencias a cero. Retirados sin pagos no integran deuda, pagos ANULADO no integran abonado. Por cargo se cumple la misma ecuación y la suma concilia con matrícula.
 
-Pago estrictamente mayor que cero y menor o igual al pendiente autorizado por DB. Usar numeric y transporte decimal exacto, nunca float ni Number JavaScript como autoridad monetaria. Rechazar NaN, infinitos, negativos, cero, overflow y entradas no válidas. Escala/límite/moneda y regla de precisión se aprueban en OQ-H4-014, teniendo como antecedente cargos H3 en soles numeric(12,2).
+## REQ-H4-004 — Aplicaciones explícitas por cargo
 
-**Criterios de aceptación:** Pago parcial y exacto hasta saldo permitido; exceso incluso mínimo rechazado sin escrituras. No redondeo implícito no aprobado ni conversión monetaria; pruebas de límites y decimales definidas por la política acordada.
-## REQ-H4-006 — Elegibilidad y estados
+Cada pago pertenece a una sola matrícula y se aplica a uno o más matricula_cargo de esa misma matrícula mediante pago_aplicacion. Suma exacta de aplicaciones = importe total del pago. Aplicaciones positivas y no duplicadas por cargo, con propiedad/pendiente comprobados server-side.
 
-Pagar una matrícula existente de alumno particular, sin crear alumno, matrícula ni cargo desde el pago. El criterio exacto de particular frente a patrocinador actual/histórico es OQ-H4-015. Matrícula ANULADO y Ciclo CERRADO/DESIERTO/ANULADO requieren OQ-H4-004/005: H3 restringe edición académica, pero eso no demuestra por sí solo la política de cobro.
+**Criterios de aceptación:** No aplicación global sin detalle, monto sin imputar, cargo ajeno ni aplicación superior a pendiente individual. Se conserva UUID de cargo y aplicaciones históricas sin DELETE ni reasignación automática.
 
-**Criterios de aceptación:** DB verifica matrícula, pertenencia, estado de Ciclo y condición de particular bajo el mismo protocolo concurrente. Ningún estado pendiente se habilita por conveniencia técnica.
-## REQ-H4-007 — Compatibilidad financiera con mutaciones H3
+## REQ-H4-005 — Moneda e importes
 
-Antes de construir H4 se resuelve la interacción con descuento, retiro/reagregado opcional, traslado de Ciclo, patrocinador y anulación de matrícula (OQ-H4-003/004/016). Sin DELETE de historia ni migración silenciosa de aplicaciones entre cargos nuevos. No habilitar disminución de base por debajo de lo abonado ni perder pagos al ocultar cargos inactivos.
+PEN — Soles; importes positivos, máximo dos decimales, numeric compatible con numeric(12,2) de H3. Frontend restringe a dos decimales y backend vuelve a validar antes de conversión. Mayor precisión, cero/negativo, NaN/infinito, overflow y excedente sobre saldo se rechazan; no redondeo automático.
 
-**Criterios de aceptación:** La política acordada se verifica para cada ruta H3 relevante, también concurrente con pagar. Si requiere restringir H3, documentarlo para revisión en este Spec; este trabajo no modifica H3 ni asume aprobación de esas restricciones.
-## REQ-H4-008 — Fecha y concepto
+**Criterios de aceptación:** Pago parcial o exacto permitido según saldo DB; importe y total de aplicaciones iguales. Transporte decimal exacto y cálculos DB, nunca float como autoridad. Si aparece impedimento técnico de numeric(12,2), reportar antes de cambiarlo.
 
-HU13 requiere fecha y concepto. Separar timestamp de registro/actor, generados por DB, de fecha de operación financiera según OQ-H4-007. Concepto como referencia a cargo(s), descripción u otra semántica mínima queda en OQ-H4-009; no crea un concepto tarifario ni un nuevo cargo.
+## REQ-H4-006 — Estados y elegibilidad
 
-**Criterios de aceptación:** Se valida fecha real y concepto conforme a decisión explícita, con longitudes y límites fijados antes de Gate 1. Datos de operación no cambian en un reenvío equivalente ni sustituyen fecha/actor de auditoría.
+Matrícula ACTIVO permite pagos nuevos con Ciclo PROGRAMADO, EN_CURSO o CERRADO. DESIERTO/ANULADO no permiten registrar pagos. Matrícula ANULADO (ANULADA en UI) es inmutable y solo consulta: no nuevo pago, anulación de pago, edición de cargos/descuento/opciones ni otra mutación.
+
+**Criterios de aceptación:** CERRADO no elimina deuda ni prohíbe cobro H4. Ciclo con cualquier pago registrado no puede pasar a DESIERTO ni ANULADO; conservar también la restricción H3 de no anular Ciclo con matrículas. Conservar historia/pagos/cargos/auditoría y no crear cascadas.
+
+## REQ-H4-007 — Compatibilidad económica con H3
+
+Cargo con aplicación vigente no puede retirarse/inactivarse, sea parcial o total; no transferir aplicaciones ni sustituir UUID. Descuento, solo Director, permitido si nuevo importe_final ≥ aplicado vigente del cargo. Una matrícula con al menos un pago registrado no puede cambiar de Ciclo. Agregar/cambiar/quitar patrocinador sigue permitido bajo elegibilidad H3 y no altera pagos.
+
+**Criterios de aceptación:** Validar todas las rutas server-side bajo protocolo común. En este Spec, «pago registrado» para bloquear traslado y estado de Ciclo incluye filas ANULADO: la fila histórica existe, no se elimina. Nuevas restricciones no amplían permisos H3. La frontera de retiro tras anular todos los pagos se identifica en C-H4-001 hasta precisión humana.
+
+## REQ-H4-008 — Timestamp, observaciones y concepto derivado
+
+Fecha/hora de pago = timestamp de registro PostgreSQL inmutable. No fecha de operación pasada/futura introducida por usuario ni campo libre concepto. Concepto se deriva de los cargos de pago_aplicacion. Observaciones opcionales, texto plano ≤500 caracteres, trim y vacío→NULL, preservando mayúsculas/minúsculas; informativas, sin controlar negocio ni crear cargos/tarifas.
+
+**Criterios de aceptación:** Rechazar campos de fecha/actor/estado o concepto libre forjados. Notas con escape seguro, sin interpretar HTML ni exigir contenido especial. No editable después de confirmar; una corrección anula pago y registra uno nuevo.
+
 ## REQ-H4-009 — Medios de pago
 
-Registrar declarativamente el medio requerido por HU13, sin integración Yape/Plin/bancos ni validación de cobro externo. Reutilizar preferentemente catalogo/catalogo_valor de H3, sin motor de mantenimiento. Semilla exacta, vigencia y responsables de mantenimiento: OQ-H4-008.
+Usar catalogo/catalogo_valor existentes, categoría técnica propuesta MEDIO_PAGO. Semilla exacta: Efectivo, Yape, Plin, Transferencia bancaria y Tarjeta. No mantenimiento específico H4; mantenimiento genérico queda para otro alcance. No integración con proveedores, adjuntos ni comprobación bancaria.
 
-**Criterios de aceptación:** Nueva selección debe pertenecer al catálogo correcto y estar activa; FK genérica sola no basta. Un cambio posterior de etiqueta/vigencia no reescribe la identificación histórica del medio del pago confirmado.
-## REQ-H4-010 — Registro transaccional
+**Criterios de aceptación:** Validar en DB catálogo correcto y valor activo. Pago conserva ID y representación histórica de código/etiqueta resueltos DB, no enviada como autoridad por cliente; cambios/inactivaciones posteriores no reescriben pagos ni impiden recuperación histórica.
 
-Una sola RPC de escritura financiera concreta registra pago, aplicación elegida, avance de versión cuando corresponda y auditoría, en una transacción. Servidor recalcula pendiente desde datos confiables y valida todo antes de commit. React no encadena inserciones de pago/aplicación/auditoría ni recibe autoridad para saldos, estados o actor.
+## REQ-H4-010 — Registro y anulación transaccionales
 
-**Criterios de aceptación:** O se confirman todos los efectos una vez, o no queda ninguno. El registro devuelve UUID y datos financieros autorizados suficientes para comprobar resultado; confirmación en pantalla de pago parcial/completo se basa en proyección servidor.
-## REQ-H4-011 — Identidad idempotente
+registrar_pago registra pago, aplicaciones, versión y auditoría en una transacción DB; React no coordina escrituras ni decide saldo/montos/estados. Pago confirmado no se edita ni se elimina; solo puede anularse por Director con motivo obligatorio, actor y timestamp DB. Comando anular_pago separado, concreto, sin motor genérico de reversos.
 
-El pago debe resistir duplicados por reenvío. Evaluar una idempotency key UNIQUE persistida junto al pago, sin registro genérico adicional. Emisor/formato/unicidad/alcance/duración de la clave: OQ-H4-010. Misma clave y contenido equivalente recupera la misma operación; contenido distinto jamás se interpreta silenciosamente como un nuevo pago. Respuesta/normalización de conflicto: OQ-H4-011.
+**Criterios de aceptación:** Anular conserva fila/aplicaciones visibles y estado ANULADO; aplicaciones dejan de contar en abonado y saldo se recalcula. Si matrícula ANULADO, no anular pago. Para corregir: anular y nuevo pago con nueva clave. Sin devolución bancaria ni nota de crédito. Motivo trim no vacío ≤500 caracteres.
 
-**Criterios de aceptación:** Pruebas de mismo contenido, diferente contenido y simultaneidad demuestran un único efecto financiero y una sola auditoría de alta. No regenerar automáticamente la clave al perder la respuesta.
-## REQ-H4-012 — Respuesta ambigua y recuperación
+## REQ-H4-011 — Idempotencia exclusiva del registro
 
-Una respuesta perdida tras commit debe recuperarse sin riesgo de nuevo cobro. Consultar resultado por identidad de operación bajo autorización actual y reenvío explícito de la misma operación cuando corresponda; no retries financieros silenciosos. Persistencia/recuperación de clave tras recarga/cambio de sesión se cierra con OQ-H4-010/011.
+Frontend genera UUID opaco, no visible/editable, por intento de pago; UNIQUE global DB, asociado permanentemente al pago, sin TTL/reutilización ni tabla de comandos, sin PII o datos de negocio dentro de la clave. Misma operación reutiliza clave. Mismo contenido semántico normalizado recupera el mismo pago; distinto contenido implica conflicto/rechazo sin mutación.
 
-**Criterios de aceptación:** Distinguir confirmado, rechazado con certeza y resultado desconocido. Ausencia temporal en una consulta no equivale a rollback: conservar clave y no ofrecer crear otro pago hasta resolver o reconocer explícitamente la incertidumbre.
-## REQ-H4-013 — Concurrencia y locks
+**Criterios de aceptación:** No segundo pago, cambio del anterior ni segunda alta de auditoría por replay. Comparación DB tipada: matrícula, importe, medio, observaciones normalizadas y aplicaciones por cargo; no timestamp/actor DB o versión de transporte. No mezclar idempotency key de registro con anulación.
 
-Disciplinar todas las escrituras que alteran deuda/cobros con un bloqueo estable sobre matrícula y orden compatible H3, además de unicidad e aislamiento elegido. Recalcular saldo dentro de la transacción protegida, no desde caché o un precheck. SERIALIZABLE heredado se conserva como diseño recomendado; conflictos son explícitos.
+## REQ-H4-012 — Recuperación de respuesta ambigua
 
-**Criterios de aceptación:** Dos pagos 70 y 60 sobre saldo 100 nunca producen 130; se acepta solo lo que cabe o se rechaza por saldo/serialización. Probar conexiones separadas, misma clave y choque con descuento/traslado/retiro/anulación, sin deadlocks evitables ni retry oculto.
-## REQ-H4-014 — Rollback completo
+Tras pérdida de respuesta del commit se recupera por la misma clave con permiso actual, sin nuevo cobro ni retry silencioso. Guardar localmente solo identidad opaca de operación y contexto mínimo aislado por usuario; no payload financiero/PII. Un pago ya ANULADO se recupera como el mismo pago con estado actual, nunca se recrea.
 
-Fallo en pago, aplicación, validación diferida o auditoría revierte los efectos del intento, incluidas versiones/cualquier reserva transaccional de clave. Un fallo confirmado no deja dinero aplicado ni un éxito de auditoría. No hay llamadas externas dentro de la transacción.
+**Criterios de aceptación:** Distinguir confirmado/rechazo cierto/desconocido. Una lectura vacía puede significar transacción en curso: no declarar rollback ni emitir otra clave automáticamente. Reenvío consciente usa mismo UUID y contenido; no requiere que la versión antigua sirva para un alta nueva.
 
-**Criterios de aceptación:** Inyectar fallos controlados solo en entorno desechable de prueba; comparar estado antes/después. Un intento revertido con la misma clave puede resolverse conforme al protocolo de recuperación sin duplicar éxitos.
-## REQ-H4-015 — Auditoría atómica y minimización
+## REQ-H4-013 — Concurrencia y versiones
 
-Reutilizar public.auditoria con proyección explícita de pago/aplicación; actor y timestamp DB, evento, referencias y contexto suficientes para rastrear una operación. Campos económicos y lectores exactos requieren OQ-H4-013 por la visibilidad previa de auditoría H2. No trigger genérico que copie alumno_snapshot, ficha, contactos, secretos o payload completo.
+Bloquear fila estable Matrícula con orden compatible Ciclo(s)→Alumno→Matrícula→cargos/pagos; revalidar contexto bajo locks. Todos los escritores de deuda, pago/anulación, descuento, retiro, traslado, patrocinador y estados de matrícula/Ciclo relevantes deben coordinarse. Mantener SERIALIZABLE y optimistic concurrency H3 con conflictos explícitos.
 
-**Criterios de aceptación:** Auditoría y pago comparten commit/rollback; reenvío no genera segunda alta financiera. Revisar que cada rol vea solo información autorizada y que errores/logs no dupliquen datos personales ni información financiera innecesaria.
-## REQ-H4-016 — Consulta e historial
+**Criterios de aceptación:** Saldo 100, pagos concurrentes 70 y 60 nunca registran 130: gana uno o hay conflicto protector, sin reducir importe automáticamente ni retries ocultos. Probar anulación frente a cobro/descuento/cierre/anulación de matrícula, y misma clave en conexiones independientes.
 
-Consultar matrícula, ciclos asociados, cargos según perímetro, pagos y aplicaciones necesarias, total abonado y pendiente; historial paginado y orden estable por registro DB e ID. Separar fecha de operación de fecha de registro. No eliminar pagos/historia ni suprimir un pago porque el cargo cambió de estado.
+## REQ-H4-014 — Rollback y unicidad de efecto
 
-**Criterios de aceptación:** Una lectura DB consistente no mezcla agregados de instantes distintos. Estado completo se muestra al cumplir la ecuación aprobada, no por bandera mutable cliente. Solo historial operativo en pantalla; no informes amplios ni exportación.
-## REQ-H4-017 — UX coherente y accesibilidad
+Registro y anulación son transacciones completas con auditoría. Fallo en cualquier validación, aplicación, versión o evento revierte efectos del intento. No clave exitosa huérfana ni auditoría de éxito aislada. Anular ya ANULADO no vuelve a liberar saldo; estado/versiones lo protegen sin clave adicional de comandos.
 
-Reutilizar ficha de matrícula/Ciclo y estándar de grilla/búsqueda/acciones existente, sin duplicar módulos de deuda. Propuesta: sección Pagos en ficha individual con resumen e historial y acción Registrar pago breve. Ubicación final/formulario condicionado a OQ de aplicación. Mantener borrador al fallar, bloqueo de doble clic, foco/errores inline/teclado y temas H2.
+**Criterios de aceptación:** Inyectar fallos solo en CI/base desechable o rollback comprobado. Comparar filas/estado/versión/auditoría antes y después. Distinguir rollback real de commit con respuesta perdida y recuperar anulación incierta consultando el pago, sin duplicar evento.
 
-**Criterios de aceptación:** Operador identifica alumno/matrícula/Ciclo y saldo de referencia antes de confirmar. Medio declarativo no afirma cobro automático. Confirmación/mensajes no exponen SQL y permiten resolver resultado desconocido con la misma clave. Ensayo humano móvil/escritorio, cuatro temas y forced-colors real independiente.
-## REQ-H4-018 — Errores, versión y frontera de seguridad
+## REQ-H4-015 — Auditoría financiera mínima
 
-Errores seguros distinguibles para validación, exceso de saldo, autorización, versión/serialización, clave reutilizada con contenido distinto y resultado desconocido. No exponer saldo o existencia ajenos al rol autorizado. Conservar optimistic concurrency H3 y resolver su interacción con replay idempotente (DES-H4-011/013).
+Eventos pago registrado y pago anulado: pago_id, matricula_id, usuario, timestamp DB y motivo de anulación cuando corresponda. Reutilizar auditoria y proyección explícita, sin duplicar importe, medio, observaciones, aplicaciones, ficha/snapshot del alumno ni payload financiero completo. Detalle económico permanece en tablas financieras con sus permisos.
 
-**Criterios de aceptación:** En nuevas operaciones un borrador obsoleto no se acepta automáticamente. Recuperación de una operación ya confirmada no se convierte en otra escritura ni se invalida únicamente por la versión que ella misma avanzó. No secretos/PII en URL, almacenamiento persistente del borrador o logs.
-## REQ-H4-019 — Pruebas progresivas y regresión
+**Criterios de aceptación:** Evento atómico con operación; actor/fecha confiables; no secretos/PII ni clave de operación en logs de rutina. Un replay de registro o anulación repetida no crea un segundo evento de efecto financiero. No trigger genérico de copia completa.
 
-Construcción futura prueba por bloques modelo/validación, roles, comando/rollback, idempotencia, concurrencia y UI; integra H1/H2/H3 vigentes y sus enmiendas. No correr suites con fixtures persistidos sobre la base de pruebas humanas; usar CI/base desechable o transacciones verificadas de rollback.
+## REQ-H4-016 — Saldo e historial
 
-**Criterios de aceptación:** Antes de candidato técnico: lint/typecheck/unit/build, local integration, RLS/security, invariantes, respuestas ambiguas y 70+60 demostrados. En esta fase solo se comprueban documentos; todos los TEST permanecen NO EJECUTADOS.
-## REQ-H4-020 — Gates, evidencia y mantenibilidad
+Resumen DB por matrícula y cargos activos: base/abonado/pendiente; historial de pagos y aplicaciones incluye CONFIRMADO/ANULADO sin borrar, con timestamp de registro y datos de anulación pertinentes. Conceptos de cargos/medio históricos legibles. Orden estable y paginación, sin sumar solo página visible ni mezclar snapshots.
 
-Gate 1 requiere decisiones humanas sobre todas las OQ bloqueantes y aceptación del Spec exacto. Gate 2 futuro requiere candidato/CI exactos, evidencia técnica y humana sin ejecuciones inventadas, inventario y residual explícito. Revisar costo de entender UI→RPC→permisos→locks→aplicación→auditoría.
+**Criterios de aceptación:** Total pagado y saldo concilian con aplicaciones vigentes; pagos anulados dejan de abonar pero siguen visibles. Patrocinador no altera historia. Si no se autoriza todo el perímetro financiero, denegar resumen completo en vez de presentar saldo falso con pagos ocultos por RLS.
 
-**Criterios de aceptación:** No acceptance ni construcción ahora. No solución si deriva a API oculta, ledger genérico, nuevos servicios o capas no previstas: detener expansión y reportar. H5+ no se inicia por terminar H4.
-## OQ bloqueantes para revisión humana
+## REQ-H4-017 — UI de imputación manual y accesibilidad
 
-**OQ-H4-001 a OQ-H4-017: ABIERTAS / SIN DECISIÓN HUMANA.** Las recomendaciones son propuestas para discutir, no decisiones cerradas. Gate 1 no se asume ni se recomienda aprobar con política financiera incompleta. Resolverlas en una revisión documental consistente de los cuatro archivos antes de construir; puede reducirse el modelo al elegir una alternativa.
+Mostrar cargos pendientes de matrícula con checks e importe aplicado por cargo: marcar propone saldo completo; reducir permite parcial; importe >0 selecciona; desmarcar pone cero; Seleccionar todos propone saldo pendiente de todos, luego editable. Total a pagar suma aplicaciones. No FIFO, proporcionalidad, obligatorio primero ni reparto backend automático.
 
-| OQ | Pregunta y fundamento | REQ-H4 afectados |
-| --- | --- | --- |
-| OQ-H4-001 — Unidad de aplicación | ¿El pago se aplica globalmente a la matrícula o a uno/más matricula_cargo? Elegir una sola alternativa; HU13 habla de deuda por Ciclo y concepto, sin resolver granularidad. | 004, 010, 016 |
-| OQ-H4-002 — Distribución entre cargos | Si se elige cargo: ¿imputación manual o automática? Si automática, ¿qué prioridad, desempate, tratamiento de parcial y cargos a cero? No asumir FIFO, obligatorio primero ni proporcional. Si global, declarar esta OQ no aplicable humanamente. | 004, 010 |
-| OQ-H4-003 — Cargos inactivos con aplicaciones | ¿Una obligación aplicada sigue exigible al inactivar el cargo por retiro/traslado? ¿Se bloquea la inactivación, conserva deuda histórica u otra política sin devolución/reasignación silenciosa? Decidir también inactivos previos a H4 sin pagos. | 003, 007, 016 |
-| OQ-H4-004 — Matrícula ANULADO | ¿Se admiten pagos sobre matrícula anulada? ¿Se permite anular una matrícula con pagos? ¿Cómo se presenta el saldo/historia? H3 permite anulación sin reglas financieras; no inventar reversos. | 006, 007 |
-| OQ-H4-005 — Estado del Ciclo | ¿Se cobra con Ciclo CERRADO? Precisar PROGRAMADO/EN_CURSO y otros terminales DESIERTO/ANULADO, sin confundir cierre académico con obligación financiera. | 006 |
-| OQ-H4-006 — Corrección/anulación de pago confirmado | ¿Se incluye una corrección/anulación en H4 o queda fuera y el pago confirmado es solo consulta? Si se incluye, fijar permisos, motivo, estados, efecto en aplicaciones/saldo/idempotencia y auditoría; sin devoluciones/notas de crédito ni borrado. No crear otra RPC/flujo sin esa decisión. | 004, 010, 014, 015, 016 |
-| OQ-H4-007 — Fecha de operación | ¿Fecha del pago es día de operación o timestamp? ¿Qué fechas pasadas/futuras se admiten, zona y límites? Registro DB y actor siempre son independientes; propuesta de negocio local America/Lima requiere confirmación para operación. | 008, 011 |
-| OQ-H4-008 — Medios de pago | ¿Lista inicial exacta? HU13 enumera ejemplos abiertos. ¿Quién puede crear/activar/inactivar y desde qué mantenimiento existente? ¿Solo semilla versionada o una operación mínima autorizada? ¿Es necesario número de operación/referencia y con qué reglas? No integra proveedores ni adjuntos. | 009, 002 |
-| OQ-H4-009 — Concepto de HU13 | ¿Se deriva de cargo(s), se elige referencia existente o es descripción? ¿Obligatorio, longitud y contenido? Evitar nueva tarifa o cargo libre y doble captura si la aplicación ya define el concepto. | 004, 008 |
-| OQ-H4-010 — Clave idempotente y continuidad | ¿UUID opaco generado por cliente y UNIQUE global, o ámbito diferente? ¿Duración/retención, quién puede recuperar y cómo se conserva tras recarga/cambio de sesión/dispositivo? Propuesta: clave estable ligada al pago, sin caducidad/reutilización automática, no credencial. | 011, 012, 002 |
-| OQ-H4-011 — Misma clave con contenido diferente | ¿Se rechaza como conflicto de idempotencia? Es la recomendación segura; definir contenido semántico/normalización, campos de transporte excluidos, respuesta y operación original recuperable sin filtraciones. Nunca permitir dos pagos para la misma identidad. | 011, 012, 018 |
-| OQ-H4-012 — Permisos financieros exactos | HU13 propone Director/Coordinador para registrar. Confirmar registrar, saldo/historial, recuperar por clave, medios y eventual corrección para cada rol; multirol y acceso del Admin solo a auditoría mínima si corresponde. La matriz original tiene signos ambiguos. | 002, 009, 015, 016 |
-| OQ-H4-013 — Contenido financiero de auditoría | ¿Qué importes, aplicaciones, concepto, medio y referencia se guardan en auditoría y quién los consulta, considerando lectores H2 incluidos administradores? Propuesta mínima: actor/fecha/evento/UUID y contexto; detalle financiero en pago/aplicaciones bajo permisos. No PII ni copias de fichas. | 015, 002 |
-| OQ-H4-014 — Moneda, escala y cotas | ¿Confirmar soles, escala de dos decimales y cota compatible con numeric(12,2) de cargos H3? ¿Rechazar exceso de precisión sin redondeo? No introducir divisas/conversión; si la decisión excede H4, revisar alcance antes de Gate 1. | 005, 008 |
-| OQ-H4-015 — Definición de alumno particular | ¿Exigir empresa_patrocinadora_id nulo en matrícula al pagar? ¿Puede un alumno pagar personalmente una matrícula patrocinada? ¿Qué pasa si se cambia patrocinador después? H4 no implementa pagos/facturas de empresas ni distribución de responsabilidades. | 006, 007 |
-| OQ-H4-016 — Mutaciones H3 después del pago | Para descuento nuevo/aumentado/reducido, opciones, traslado, patrocinador y anulación: ¿qué se permite con pagos previos y con qué límites? Recomendada revisión bajo mismo lock; ninguna elección puede volver negativo el pendiente ni borrar/trasladar aplicaciones tácitamente. | 007, 013 |
-| OQ-H4-017 — Perímetro de deuda y saldos históricos | ¿La base inicial incluye solo cargos activos o también obligaciones históricas? Tras traslado, ¿seguimiento por matrícula, por Ciclo original de cargo u otro recorte? ¿Qué significa abonado y completo en cada vista? Evitar contar el mismo pago en origen/destino o borrar deuda al filtrar. | 003, 004, 007, 016 |
+**Criterios de aceptación:** Solo importes positivos de cargos seleccionados se envían; backend valida suma, propiedad y pendientes. Timestamp no editable; medio, observaciones opcionales, resumen e historial estándar. Director anula con diálogo/motivo. Teclado/foco/temas/móvil/forced-colors, mensajes y borrador coherentes; error no implica otro cobro.
 
-## Exclusiones expresas
+## REQ-H4-018 — Errores seguros y sesión
 
-HU14/HU15, facturas/pagos de patrocinadores y distribución entre facturas; SUNAT/facturación electrónica; comprobantes/PDF/H5; adjuntos/Storage; informes amplios, Excel/exportaciones; caja/bancos/conciliación, cuentas contables, pasarela o integración con proveedores; devoluciones/notas de crédito; deuda por varias matrículas; multiinstitución; notificaciones, descuentos por workflow; EVOL-001/002 y H5+. No event sourcing, ledger genérico, CQRS, colas, Lambda, Edge Functions, backend adicional ni microservicios. Corrección de pago no se incorpora por defecto: OQ-H4-006 decide su mínimo o diferimiento sin habilitar exclusiones.
+Distinguir validación/precisión, exceso global/por cargo, estado/permiso, versión/serialización, conflicto idempotente, pago ya anulado y respuesta desconocida. Rechazar inputs fuera de whitelist; no SQL dinámico ni datos ajenos. Descarta respuestas tardías de otra identidad y no usa React como autoridad.
 
-## Trazabilidad
+**Criterios de aceptación:** Conservar borrador/clave cuando corresponda; no renovar versión y reenviar automáticamente. Anulación incierta se consulta por UUID con autorización, no usa nueva clave de pago. Errores/auditoría/logs no duplican finanzas o PII innecesarias.
 
-Cada REQ-H4-n corresponde a DES-H4-n y TASK-H4-n; los TEST asociados y dependencias están en [tasks](tasks.md) y [test-plan](test-plan.md). [Design](design.md) separa invariantes fijos de propuestas sujetas a OQ. Ninguna cota, estado o permiso pendiente se completa por suposición en construcción.
+## REQ-H4-019 — Validación progresiva futura
 
-**H4: SOLO SPEC. PENDIENTE DE OQ, REVISIÓN HUMANA Y GATE 1. NO AUTORIZADO PARA CONSTRUCCIÓN.**
+Tras Gate 1, probar por bloques modelo/decimal/roles, registro e imputación, idempotencia, anulación/rollback, rutas H3 afectadas/concurrencia, consulta/UI y regresión H1–H3. JWT ordinario prueba autorización; admin solo prepara/observa casos aislados. No suites persistentes sobre base humana.
+
+**Criterios de aceptación:** Casos nuevos de decisiones humanas quedan cubiertos antes de candidato, incluido 70+60 y respuesta ambigua; lint/types/unit/build/security/integración. En esta fase solo verificaciones documentales; todos los TEST NO EJECUTADOS y tareas técnicas NO INICIADAS.
+
+## REQ-H4-020 — Gates y mantenibilidad
+
+Las 17 OQ resueltas se registran con decisión humana, sin inferir Gate 1. Someter los cuatro documentos exactos y cualquier contradicción pendiente a revisión; no construir antes de aprobación explícita. Gate 2 futuro requiere candidato/CI/evidencia/inventario/residuales y decisión independiente.
+
+**Criterios de aceptación:** No acceptance ni merge de construcción ahora; no H5. Justificar cada RPC/helper/policy por requisito y prueba; detener expansión ante API oculta, ledger genérico, infraestructura o abstracciones preventivas.
+
+## OQ-H4-001…017 — RESUELTAS por decisión humana del 09/11/2026
+
+El estado de todas estas OQ es **RESUELTA**. Las dudas/alternativas de 0.1 quedan sustituidas; no se implementa aplicación global ni distribución automática. Esta resolución no concede Gate 1.
+
+| OQ | Estado | Decisión humana vigente | REQ-H4 principales |
+| --- | --- | --- | --- |
+| OQ-H4-001 | RESUELTA | Un pago, una matrícula, una o más aplicaciones a cargos propios; pago_aplicacion obligatoria y suma exacta. Sin deuda/saldo persistidos. | 003, 004, 010 |
+| OQ-H4-002 | RESUELTA | Imputación manual: check propone pendiente completo, parcial editable, >0 selecciona, desmarcar cero, seleccionar todos y total suma. Sin reparto automático. | 004, 017 |
+| OQ-H4-003 | RESUELTA | Cargo con al menos una aplicación vigente no se retira/inactiva; parcial o total. Sin traslado de aplicación/UUID. Sin pagos sigue H3. Véase precisión C-H4-001. | 007 |
+| OQ-H4-004 | RESUELTA | Matrícula ANULADO inmutable/consulta: sin pagos nuevos, anulación de pagos, cambios de cargos/descuento/opciones ni otra mutación; conserva toda historia. | 006, 007, 010 |
+| OQ-H4-005 | RESUELTA | Cobrar con PROGRAMADO/EN_CURSO/CERRADO, no DESIERTO/ANULADO. Ciclo con pagos registrados no pasa a DESIERTO/ANULADO. | 006, 013 |
+| OQ-H4-006 | RESUELTA | Pago no editable ni DELETE; Director puede anular con motivo/actor/timestamp DB. Estado ANULADO y aplicaciones no abonan; corrección por anular y nuevo pago. Matrícula ANULADO bloquea anulación. | 010, 014 |
+| OQ-H4-007 | RESUELTA | Solo timestamp DB de registro inmutable; sin fecha de operación manual. Observaciones/notas opcionales libres informativas; cota técnica 500 caracteres conforme al patrón existente. | 008 |
+| OQ-H4-008 | RESUELTA | catalogo/catalogo_valor: Efectivo, Yape, Plin, Transferencia bancaria, Tarjeta. Sin mantenimiento específico ni integración externa; representación histórica de medio. | 009 |
+| OQ-H4-009 | RESUELTA | Sin concepto libre independiente: se deriva de cargos seleccionados a través de pago_aplicacion. Notas no crean conceptos/cargos/tarifas. | 008, 017 |
+| OQ-H4-010 | RESUELTA | UUID opaco por intento generado frontend, oculto/no editable, UNIQUE DB permanente, sin TTL/reutilización/PII/datos de negocio ni tabla de comandos; mismo intento reutiliza clave. | 011, 012 |
+| OQ-H4-011 | RESUELTA | Misma clave/contenido normalizado recupera exactamente el mismo pago; distinto contenido conflicto/rechazo sin mutación. Comparación server-side. | 011 |
+| OQ-H4-012 | RESUELTA | Director registra/consulta/recupera/anula; Coordinador registra/consulta/recupera, no anula; Admin sin permiso financiero por defecto. | 002 |
+| OQ-H4-013 | RESUELTA | Solo evento, pago_id, matricula_id, usuario, timestamp DB y motivo de anulación. No duplicar importe/medio/notas/aplicaciones/ficha/payload. | 015 |
+| OQ-H4-014 | RESUELTA | PEN, máximo dos decimales, backend y frontend validan; rechazar precisión extra sin redondear; numeric compatible con numeric(12,2) H3. | 005 |
+| OQ-H4-015 | RESUELTA | Se admite pago particular con o sin empresa patrocinadora. No se determina responsabilidad económica ni se reparte deuda empresa/alumno; HU14/15 excluidas. | 006, 007 |
+| OQ-H4-016 | RESUELTA | Descuento final ≥ aplicado vigente; matrícula con pago registrado no cambia Ciclo; patrocinador puede agregarse/cambiarse/quitarse sin reasignar pagos, bajo demás reglas H3; cargo pagado no se retira y ANULADO es inmutable. | 007, 013 |
+| OQ-H4-017 | RESUELTA | Base = finales de cargos activos; abonado = aplicaciones de pagos vigentes sobre esos cargos; pendiente = base − abonado, nunca negativo ni truncado a cero. Pagos anulados no abonan; no traslado a otro Ciclo. | 003, 016 |
+
+## Precisión de consistencia C-H4-001 — retiro después de anular todos los pagos
+
+OQ-H4-003 prohíbe retirar con aplicación **vigente** y devuelve cargos sin pagos a reglas H3; OQ-H4-017 resume que un cargo que «ya recibió pago» no puede retirarse. Falta precisar si, tras anular todos sus pagos, el bloqueo cesa por no quedar aplicaciones vigentes o persiste históricamente. Se pidió aclaración humana; no se elige silenciosamente una interpretación. Las 17 decisiones se conservan RESUELTAS, pero esta precisión transversal debe cerrarse antes de Gate 1; el caso de prueba correspondiente no afirma resultado definitivo para esa frontera. En cualquier variante no se borran aplicaciones ni se mueven a otro cargo.
+
+## Lecturas literales e implicaciones conservadas
+
+«Pago registrado» en las restricciones de traslado de matrícula y transición de Ciclo se refiere a existencia histórica de fila pago, incluido ANULADO; la anulación no borra ese registro. Es distinto de «aplicación vigente», que abona únicamente con pago CONFIRMADO.
+
+No se añadió prohibición de anular matrícula ACTIVO con pagos: se conservan permisos/reglas H3 de esa transición. Una vez ANULADO, H4 congela también pagos: no nuevas altas ni anulaciones de pago; saldo/historia se consultan sin reverso automático. Registrar esta consecuencia no concede permiso de editar una anulada ni elimina deuda por cambiar estado.
+
+## Exclusiones y trazabilidad
+
+Fuera de H4: HU14/HU15, facturas/pagos de patrocinadores, distribución entre facturas o entre matrículas; SUNAT/facturación electrónica; comprobantes/PDF/H5, adjuntos/Storage; informes/exportaciones amplias; caja/bancos/conciliación/cuentas contables; pasarela/integraciones; devoluciones/notas de crédito; notificaciones, workflow de descuentos, EVOL-001/002 y H5+. Sin ledger, tabla deuda, saldo materializado, event sourcing, CQRS, outbox, colas, Edge Functions, API adicional ni motor genérico de reversos.
+
+REQ-H4-n → DES-H4-n → TASK-H4-n; pruebas/dependencias en [tasks](tasks.md) y [test-plan](test-plan.md); diseño en [design](design.md). Solo documentación: sin evidencia técnica H4 ejecutada.
+
+**17 OQ RESUELTAS. PRECISIÓN C-H4-001 Y REVISIÓN/GATE 1 PENDIENTES. CONSTRUCCIÓN NO AUTORIZADA.**

@@ -1,181 +1,177 @@
 # H4 — Pagos: tasks
 
-Versión 0.1 · 09/11/2026 (America/Lima).
+Versión 0.2 · 09/11/2026 (America/Lima).
 
-**PLAN DE TRABAJO FUTURO. OQ ABIERTAS. GATE 1 PENDIENTE. CONSTRUCCIÓN NO AUTORIZADA.**
+**17 OQ RESUELTAS HUMANAMENTE. TAREAS TÉCNICAS NO INICIADAS. GATE 1 PENDIENTE.**
 
-Trazabilidad uno a uno REQ-H4-n → DES-H4-n → TASK-H4-n. Los TEST pueden cubrir varios requisitos y se enumeran por tarea. [Requirements](requirements.md), [design](design.md), [test-plan](test-plan.md). Ninguna tarea técnica se ejecuta ahora. No generar SQL, migraciones, React ni pruebas ejecutables durante esta fase.
+REQ-H4-n → DES-H4-n → TASK-H4-n; TEST pueden cubrir varios requisitos. [Requirements](requirements.md), [design](design.md), [test-plan](test-plan.md). Solo documentación actual; ninguna tarea implementada ni prueba financiera ejecutada. TASK-H4-001 es prerrequisito de todas 002–020; C-H4-001 requiere precisión antes de Gate 1. Las dependencias numéricas no exigen orden estricto por ID y no autorizan empezar implementación.
 
-TASK-H4-001 es prerrequisito de todas las tareas 002–020; todas las OQ de requirements están ABIERTAS. No comenzar un bloque mientras una decisión que lo afecta siga pendiente. Las dependencias numéricas siguientes no implican orden estricto por ID; permiten implementar un bloque pequeño y validarlo antes del siguiente. Elegir la alternativa global/cargo elimina trabajo innecesario, no habilita tareas de ambos modelos por rutina.
-
-## TASK-H4-001 — Gate 1 y decisiones humanas
+## TASK-H4-001 — Revisión del Spec y Gate 1
 
 - Trazabilidad: REQ-H4-001 → DES-H4-001. Pruebas: TEST-H4-001.
-- Dependencias: Ninguna; requiere revisión y decisión humana.
-- Trabajo futuro: Resolver OQ-H4-001…017 en los cuatro documentos, elegir granularidad y fijar política de estados/mutaciones/roles/clave/medios/fecha/concepto. Obtener Gate 1 sobre SHA exacto. No escribir implementación antes.
-- Finalización: Decisión humana y Spec consistente, con alcance, matriz y contrato cerrados; registro futuro siguiendo gobernanza H3. Esta tarea no está aprobada por generar estos Markdown.
-- Estado: PENDIENTE DE OQ / REVISIÓN HUMANA Y GATE 1.
+- Dependencias: Ninguna; revisión y decisión humana.
+- Trabajo futuro: Consolidar 17 OQ RESUELTAS en los cuatro documentos, cerrar precisión C-H4-001 y obtener Gate 1 sobre SHA exacto. No implementar mientras falte aprobación.
+- Finalización: Decisiones coherentes sin alternativas descartadas y autorización explícita del conjunto; este trabajo no la concede.
+- Estado: PENDIENTE DE REVISIÓN / GATE 1.
 
-## TASK-H4-002 — Permisos financieros mínimos
+## TASK-H4-002 — Permisos financieros
 
-- Trazabilidad: REQ-H4-002 → DES-H4-002. Pruebas: TEST-H4-002, TEST-H4-003, TEST-H4-004, TEST-H4-020, TEST-H4-029, TEST-H4-032, TEST-H4-037, TEST-H4-042.
+- Trazabilidad: REQ-H4-002 → DES-H4-002. Pruebas: TEST-H4-002, TEST-H4-003, TEST-H4-004, TEST-H4-020, TEST-H4-029, TEST-H4-032, TEST-H4-037, TEST-H4-042, TEST-H4-047.
 - Dependencias: TASK-H4-001 y TASK-H4-004.
-- Trabajo futuro: Tras aprobación de matriz, reutilizar identidad/roles activos; configurar RLS/grants de tablas/proyección y autorización del comando. Comprobar accesos directos y recuperación por clave.
-- Finalización: Casos positivos/negativos por JWT ordinario, sin facultad implícita del Admin ni de metadata cliente.
-- Estado: NO INICIADA / BLOQUEADA POR GATE 1 Y OQ.
+- Trabajo futuro: Configurar RLS/grants y autorización de comandos/lecturas: D/O registran/leen/recuperan; solo D anula. Sin privilegio financiero Admin, actor cliente ni acceso directo.
+- Finalización: JWT ordinario positivo/negativo, incluida anulación forjada y recuperación por clave; auditoría mínima no abre finanzas al Admin.
+- Estado: NO INICIADA / BLOQUEADA POR GATE 1.
 
-## TASK-H4-003 — Proyección de deuda y saldo
+## TASK-H4-003 — Proyección exacta de deuda
 
 - Trazabilidad: REQ-H4-003 → DES-H4-003. Pruebas: TEST-H4-005, TEST-H4-006, TEST-H4-014.
 - Dependencias: TASK-H4-001 y TASK-H4-004, TASK-H4-005.
-- Trabajo futuro: Expresar base exigible y aplicaciones efectivas según perímetro aprobado, sin deuda/saldo persistidos ni repricing de cargos. Preparar lectura DB consistente.
-- Finalización: Ecuación aprobada demostrada con cargos a cero, históricos/inactivos y pagos, sin sumas sobre páginas React.
-- Estado: NO INICIADA / BLOQUEADA POR GATE 1 Y OQ.
+- Trabajo futuro: Calcular base de cargos activos, aplicaciones de pagos CONFIRMADO y pendiente; sin tabla deuda/saldo materializado ni repricing.
+- Finalización: Totales/cargo y matrícula concilian, anulados fuera de abonado, historia visible y resumen autorizado consistente.
+- Estado: NO INICIADA / BLOQUEADA POR GATE 1.
 
-## TASK-H4-004 — Modelo mínimo de pago/aplicación
+## TASK-H4-004 — Modelo pago y pago_aplicacion
 
-- Trazabilidad: REQ-H4-004 → DES-H4-004. Pruebas: TEST-H4-007, TEST-H4-008, TEST-H4-018.
+- Trazabilidad: REQ-H4-004 → DES-H4-004. Pruebas: TEST-H4-007, TEST-H4-008, TEST-H4-018, TEST-H4-053.
 - Dependencias: TASK-H4-001.
-- Trabajo futuro: Crear solo pago y, si procede, pago_aplicacion; integridad/FKs/propiedad/UNIQUE/índices mínimos. Omitir estructura redundante de alternativa descartada. Estados solo si corrección fue aprobada.
-- Finalización: Modelo corresponde a OQ resueltas, conserva UUID e historia H3 y no introduce ledger, deuda ni reservas persistidas sin necesidad.
-- Estado: NO INICIADA / BLOQUEADA POR GATE 1 Y OQ.
+- Trabajo futuro: Definir ambas tablas con integridad/propiedad/suma/UNIQUE, estados CONFIRMADO/ANULADO, timestamps DB y representación histórica de medio. Sin fecha manual/concepto libre ni estructura global alternativa.
+- Finalización: Pago/aplicaciones no editables/DELETE; suma exacta, clave permanente y datos de anulación consistentes.
+- Estado: NO INICIADA / BLOQUEADA POR GATE 1.
 
-## TASK-H4-005 — Validación monetaria y contrato de inputs
+## TASK-H4-005 — PEN y validaciones
 
-- Trazabilidad: REQ-H4-005 → DES-H4-005. Pruebas: TEST-H4-008, TEST-H4-009, TEST-H4-010, TEST-H4-015, TEST-H4-022.
+- Trazabilidad: REQ-H4-005 → DES-H4-005. Pruebas: TEST-H4-008, TEST-H4-009, TEST-H4-010, TEST-H4-015, TEST-H4-022, TEST-H4-052, TEST-H4-053.
 - Dependencias: TASK-H4-001 y TASK-H4-004.
-- Trabajo futuro: Validar decimal exacto, precisión/cota/moneda y >0 antes de conversión; whitelist, tipos, rechazos y coherencia de aplicaciones cuando corresponda.
-- Finalización: Límites/NaN/infinito/overflow y exceso sobre saldo no producen registros ni redondeo no aprobado.
-- Estado: NO INICIADA / BLOQUEADA POR GATE 1 Y OQ.
+- Trabajo futuro: Validar numeric(12,2), positivo, dos decimales antes de cast, overflow y pendiente por cargo/total; whitelist de inputs y cantidades manuales.
+- Finalización: Rechazo de datos inválidos sin redondeo, total validado DB y sin autoridad float/React.
+- Estado: NO INICIADA / BLOQUEADA POR GATE 1.
 
-## TASK-H4-006 — Estados y particular elegible
+## TASK-H4-006 — Estados de pago/matrícula/Ciclo
 
-- Trazabilidad: REQ-H4-006 → DES-H4-006. Pruebas: TEST-H4-011, TEST-H4-012, TEST-H4-013, TEST-H4-016.
+- Trazabilidad: REQ-H4-006 → DES-H4-006. Pruebas: TEST-H4-011, TEST-H4-012, TEST-H4-013, TEST-H4-016, TEST-H4-047, TEST-H4-049, TEST-H4-051.
 - Dependencias: TASK-H4-001 y TASK-H4-002, TASK-H4-003.
-- Trabajo futuro: Aplicar política aprobada de matrícula ANULADO, Ciclos terminales y particular/patrocinado con revalidación bajo lock. Sin pagos de empresa ni alta de matrícula desde pago.
-- Finalización: Todos los estados/pertenencias permitidos y denegados tienen pruebas; no inferencias por analogía con edición H3.
-- Estado: NO INICIADA / BLOQUEADA POR GATE 1 Y OQ.
+- Trabajo futuro: Implementar cobro ACTIVO y PROGRAMADO/EN_CURSO/CERRADO, bloqueo DESIERTO/ANULADO y congelamiento de matrícula ANULADO. Bloquear transiciones de Ciclo con pagos registrados.
+- Finalización: Casos explícitos por estado, incluidos pagos ANULADO históricos, sin relajar prohibición H3 de Ciclo con matrículas.
+- Estado: NO INICIADA / BLOQUEADA POR GATE 1.
 
-## TASK-H4-007 — Coordinación económica de H3
+## TASK-H4-007 — Restricciones financieras sobre H3
 
-- Trazabilidad: REQ-H4-007 → DES-H4-007. Pruebas: TEST-H4-006, TEST-H4-012, TEST-H4-014, TEST-H4-015, TEST-H4-016, TEST-H4-033, TEST-H4-042.
+- Trazabilidad: REQ-H4-007 → DES-H4-007. Pruebas: TEST-H4-006, TEST-H4-011, TEST-H4-012, TEST-H4-014, TEST-H4-015, TEST-H4-016, TEST-H4-033, TEST-H4-042, TEST-H4-049, TEST-H4-050, TEST-H4-051, TEST-H4-052, TEST-H4-055.
 - Dependencias: TASK-H4-001 y TASK-H4-002, TASK-H4-004, TASK-H4-005, TASK-H4-013.
-- Trabajo futuro: Acotar únicamente las rutas H3 necesarias: descuento/opciones/traslado/patrocinador/anulación según decisiones. Compartir protocolo estable y preservar historia sin mover aplicaciones tácitamente.
-- Finalización: Cambios con pagos previos no ocultan deuda, no exceden límites y funcionan bajo concurrencia; diferencias H3 concretas documentadas y autorizadas.
-- Estado: NO INICIADA / BLOQUEADA POR GATE 1 Y OQ.
+- Trabajo futuro: Coordinar retiro con aplicaciones vigentes, descuento final≥aplicado, traslado bloqueado por cualquier pago y patrocinador mutable bajo H3. Resolver retiro después de anular todos según C-H4-001 antes de construir.
+- Finalización: Rutas directas/indirectas y concurrencia no eluden reglas; historia/UUID/aplicaciones conservados y H3 solo adaptado en lo autorizado.
+- Estado: NO INICIADA / BLOQUEADA POR GATE 1.
 
-## TASK-H4-008 — Fecha y concepto aprobados
+## TASK-H4-008 — Timestamp, notas y conceptos
 
-- Trazabilidad: REQ-H4-008 → DES-H4-008. Pruebas: TEST-H4-017, TEST-H4-018.
+- Trazabilidad: REQ-H4-008 → DES-H4-008. Pruebas: TEST-H4-017, TEST-H4-018, TEST-H4-054.
 - Dependencias: TASK-H4-001 y TASK-H4-004, TASK-H4-005.
-- Trabajo futuro: Aplicar fecha de operación separada de registro DB y concepto mínimo acordado, límites/normalización y representación de historia.
-- Finalización: Fechas/zona/longitudes/semántica y replay estables; no creación de cargo ni dato bancario no requerido.
-- Estado: NO INICIADA / BLOQUEADA POR GATE 1 Y OQ.
+- Trabajo futuro: Solo created_at/actor DB; observaciones opcionales planas≤500, concepto derivado de cargos y motivo de anulación separado obligatorio≤500.
+- Finalización: Sin edición de pago ni fecha/concepto manuales; texto escapado sin semántica financiera, representación histórica correcta.
+- Estado: NO INICIADA / BLOQUEADA POR GATE 1.
 
-## TASK-H4-009 — Medios de pago mínimos
+## TASK-H4-009 — Medios genéricos y semilla
 
 - Trazabilidad: REQ-H4-009 → DES-H4-009. Pruebas: TEST-H4-019, TEST-H4-020.
 - Dependencias: TASK-H4-001 y TASK-H4-002, TASK-H4-004.
-- Trabajo futuro: Reutilizar catálogo genérico, sembrar solo valores autorizados y validar catálogo/activo. Implementar mantenimiento solo si fue aprobado y necesario.
-- Finalización: Lectura histórica/selección nueva y roles correctos; sin proveedor, adjunto ni motor adicional.
-- Estado: NO INICIADA / BLOQUEADA POR GATE 1 Y OQ.
+- Trabajo futuro: Sembrar cinco opciones autorizadas en catalogo/catalogo_valor, validar pertenencia/vigencia y conservar ID/código/etiqueta histórica DB.
+- Finalización: Sin mantenimiento específico ni integraciones; cambios posteriores de catálogo no reescriben pagos ni bloquean recuperación.
+- Estado: NO INICIADA / BLOQUEADA POR GATE 1.
 
-## TASK-H4-010 — Comando transaccional de alta
+## TASK-H4-010 — Registrar y anular: comandos concretos
 
-- Trazabilidad: REQ-H4-010 → DES-H4-010. Pruebas: TEST-H4-021, TEST-H4-022, TEST-H4-034, TEST-H4-039.
+- Trazabilidad: REQ-H4-010 → DES-H4-010. Pruebas: TEST-H4-012, TEST-H4-021, TEST-H4-022, TEST-H4-034, TEST-H4-039, TEST-H4-046, TEST-H4-047, TEST-H4-048, TEST-H4-055.
 - Dependencias: TASK-H4-001 y TASK-H4-002, TASK-H4-003, TASK-H4-005, TASK-H4-006, TASK-H4-007, TASK-H4-008, TASK-H4-009, TASK-H4-011, TASK-H4-013, TASK-H4-015.
-- Trabajo futuro: Implementar la única RPC concreta de registro con permisos, locks/versiones, saldo DB, pago/aplicación y auditoría atómicos. Sin coordinación financiera React.
-- Finalización: Alta parcial/total y respuesta mínima confiables, sin escrituras parciales ni bypass por campos cliente.
-- Estado: NO INICIADA / BLOQUEADA POR GATE 1 Y OQ.
+- Trabajo futuro: Implementar registrar_pago transaccional y anular_pago separado solo Director; versiones, aplicaciones e historial sin DELETE. No mezclar idempotencia del registro con anulación ni motor genérico de reversos.
+- Finalización: Registro atómico y anulación única con motivo/actor/timestamp DB; saldo derivado recuperado, matrícula ANULADO bloqueada.
+- Estado: NO INICIADA / BLOQUEADA POR GATE 1.
 
-## TASK-H4-011 — Idempotencia financiera
+## TASK-H4-011 — Idempotencia del registro
 
-- Trazabilidad: REQ-H4-011 → DES-H4-011. Pruebas: TEST-H4-023, TEST-H4-024, TEST-H4-025, TEST-H4-026, TEST-H4-031, TEST-H4-032, TEST-H4-038.
+- Trazabilidad: REQ-H4-011 → DES-H4-011. Pruebas: TEST-H4-023, TEST-H4-024, TEST-H4-025, TEST-H4-026, TEST-H4-031, TEST-H4-032, TEST-H4-038, TEST-H4-054.
 - Dependencias: TASK-H4-001 y TASK-H4-004, TASK-H4-005.
-- Trabajo futuro: Implementar clave UNIQUE y comparación semántica aprobadas en pago; gestionar mismo contenido y conflicto distinto, sin endpoint genérico ni reemitir clave automáticamente.
-- Finalización: Reenvío confirmado devuelve misma operación y no cambia aplicaciones/versión/auditoría; alcance/retención y permisos comprobados.
-- Estado: NO INICIADA / BLOQUEADA POR GATE 1 Y OQ.
+- Trabajo futuro: UUID opaco cliente UNIQUE permanente, igualdad semántica DB normalizada y rechazo de contenido distinto. Conservar clave de pago ANULADO sin resurrección.
+- Finalización: Un efecto por clave y una alta de auditoría; sin TTL/tabla comandos/actualización del pago por replay.
+- Estado: NO INICIADA / BLOQUEADA POR GATE 1.
 
-## TASK-H4-012 — Recuperación de respuesta ambigua
+## TASK-H4-012 — Recuperación y continuidad mínima
 
-- Trazabilidad: REQ-H4-012 → DES-H4-012. Pruebas: TEST-H4-026, TEST-H4-027, TEST-H4-028, TEST-H4-029, TEST-H4-038, TEST-H4-041.
+- Trazabilidad: REQ-H4-012 → DES-H4-012. Pruebas: TEST-H4-026, TEST-H4-027, TEST-H4-028, TEST-H4-029, TEST-H4-038, TEST-H4-041, TEST-H4-048.
 - Dependencias: TASK-H4-001 y TASK-H4-010, TASK-H4-011, TASK-H4-016.
-- Trabajo futuro: Implementar consulta autorizada por identidad y estados UI de incertidumbre; continuidad de clave después de recarga según decisión aprobada. Reenvío solo consciente y de misma operación.
-- Finalización: Commit perdido se recupera; vacío temporal no se presenta como fracaso definitivo ni dispara nuevo cobro.
-- Estado: NO INICIADA / BLOQUEADA POR GATE 1 Y OQ.
+- Trabajo futuro: Resolver commit ambiguo por clave con permisos actuales y referencia local opaca por usuario/pestaña, sin payload persistido. Anulación ambigua se consulta por id/estado, sin clave adicional.
+- Finalización: Mismo UUID/estado real tras recarga/reenvío consciente; vacío temporal no dispara otra alta y no hay retry silencioso.
+- Estado: NO INICIADA / BLOQUEADA POR GATE 1.
 
-## TASK-H4-013 — Protocolo común de concurrencia
+## TASK-H4-013 — Locks compatibles y versiones
 
-- Trazabilidad: REQ-H4-013 → DES-H4-013. Pruebas: TEST-H4-030, TEST-H4-031, TEST-H4-032, TEST-H4-033, TEST-H4-044.
+- Trazabilidad: REQ-H4-013 → DES-H4-013. Pruebas: TEST-H4-030, TEST-H4-031, TEST-H4-032, TEST-H4-033, TEST-H4-044, TEST-H4-049, TEST-H4-052, TEST-H4-055.
 - Dependencias: TASK-H4-001 y TASK-H4-004.
-- Trabajo futuro: Establecer orden compatible Ciclo(s)→Alumno→Matrícula→cargos/pagos, relectura de referencias, unicidad y SERIALIZABLE/versiones. Aplicarlo en escritores financieros y mutaciones H3 relevantes.
-- Finalización: Matriz de locks revisada y caso 70+60/100 probado con conexiones independientes; no saldo viejo ni retry silencioso.
-- Estado: NO INICIADA / BLOQUEADA POR GATE 1 Y OQ.
+- Trabajo futuro: Fijar protocolo Ciclos→Alumno→Matrícula→cargos/pagos y SERIALIZABLE para ambas RPC y rutas H3 económicas/estado; relectura y conflictos explícitos.
+- Finalización: 70+60 sobre100, clave simultánea y anulaciones/mutaciones concurrentes, sin sobrepago/doble liberación/estado prohibido.
+- Estado: NO INICIADA / BLOQUEADA POR GATE 1.
 
-## TASK-H4-014 — Rollback e inyección controlada
+## TASK-H4-014 — Rollback y efectos únicos
 
-- Trazabilidad: REQ-H4-014 → DES-H4-014. Pruebas: TEST-H4-027, TEST-H4-034, TEST-H4-035.
+- Trazabilidad: REQ-H4-014 → DES-H4-014. Pruebas: TEST-H4-027, TEST-H4-034, TEST-H4-035, TEST-H4-046, TEST-H4-048, TEST-H4-055.
 - Dependencias: TASK-H4-001 y TASK-H4-010, TASK-H4-013, TASK-H4-015.
-- Trabajo futuro: Probar atomicidad por etapa y caída en auditoría; harness solo aislado, sin endpoint de producto. Distinguir rollback cierto de transporte después del commit.
-- Finalización: Comparación DB antes/después y limpieza/restauración incluso con fallo, sin reservas o éxitos huérfanos.
-- Estado: NO INICIADA / BLOQUEADA POR GATE 1 Y OQ.
+- Trabajo futuro: Probar fallo por etapa de registro/anulación, versión/eventos y recuperación distinta de rollback. Harness solo aislado con restauración incluso fallos.
+- Finalización: No pago/aplicación/estado/clave exitosa/evento huérfanos, sin nueva liberación de saldo al repetir anulación.
+- Estado: NO INICIADA / BLOQUEADA POR GATE 1.
 
-## TASK-H4-015 — Auditoría atómica mínima
+## TASK-H4-015 — Auditoría mínima de dos eventos
 
-- Trazabilidad: REQ-H4-015 → DES-H4-015. Pruebas: TEST-H4-035, TEST-H4-036, TEST-H4-044.
+- Trazabilidad: REQ-H4-015 → DES-H4-015. Pruebas: TEST-H4-035, TEST-H4-036, TEST-H4-044, TEST-H4-046.
 - Dependencias: TASK-H4-001 y TASK-H4-002, TASK-H4-004.
-- Trabajo futuro: Reutilizar auditoría existente con proyección aprobada por evento, actor/fecha DB y visibilidad controlada. Justificar cualquier adaptación al helper existente por dato concreto.
-- Finalización: Trazabilidad financiera sin PII/payload completo ni exposición a lectores no aprobados; replay sin segunda alta.
-- Estado: NO INICIADA / BLOQUEADA POR GATE 1 Y OQ.
+- Trabajo futuro: Reutilizar auditoría explícita para registrado/anulado, IDs/actor/timestamp y motivo, sin importes/medio/notas/aplicaciones/PII/payload.
+- Finalización: Evento atómico y sin duplicados por replay; detalle en tablas financieras, no trigger genérico/copia completa.
+- Estado: NO INICIADA / BLOQUEADA POR GATE 1.
 
-## TASK-H4-016 — Consultas de saldo e historial
+## TASK-H4-016 — Lecturas de saldo e historial
 
-- Trazabilidad: REQ-H4-016 → DES-H4-016. Pruebas: TEST-H4-016, TEST-H4-037, TEST-H4-038.
+- Trazabilidad: REQ-H4-016 → DES-H4-016. Pruebas: TEST-H4-016, TEST-H4-037, TEST-H4-038, TEST-H4-046, TEST-H4-050.
 - Dependencias: TASK-H4-001 y TASK-H4-002, TASK-H4-003, TASK-H4-004, TASK-H4-011.
-- Trabajo futuro: Exponer proyección consistente y lecturas paginadas autorizadas, incluida recuperación por clave, etiquetas históricas y contexto de Ciclo acordado.
-- Finalización: Totales no dependen de página visible ni combinan snapshots distintos; filtros no pierden/reasignan pagos.
-- Estado: NO INICIADA / BLOQUEADA POR GATE 1 Y OQ.
+- Trabajo futuro: Proyección DB consistente y lecturas paginadas autorizadas de pago/aplicación, estados/medio/concepto histórico y recuperación por clave.
+- Finalización: Totales no dependen de página o pagos ocultos por RLS; anulados visibles sin abonar, patrocinador no reasigna.
+- Estado: NO INICIADA / BLOQUEADA POR GATE 1.
 
-## TASK-H4-017 — UI mínima de pagos
+## TASK-H4-017 — UI manual y anulación visible por rol
 
-- Trazabilidad: REQ-H4-017 → DES-H4-017. Pruebas: TEST-H4-039, TEST-H4-040, TEST-H4-043.
+- Trazabilidad: REQ-H4-017 → DES-H4-017. Pruebas: TEST-H4-039, TEST-H4-040, TEST-H4-043, TEST-H4-053.
 - Dependencias: TASK-H4-001 y TASK-H4-009, TASK-H4-010, TASK-H4-012, TASK-H4-016, TASK-H4-018.
-- Trabajo futuro: Extender el recorrido individual vigente con resumen/grilla y formulario de pago según modelo aprobado. Manejar foco/borrador/clave/estado desconocido y no incorporar comprobantes o informes.
-- Finalización: Flujo funcional y accesible bajo temas/teclado/móvil, operaciones y mensajes claros, sin autorización React.
-- Estado: NO INICIADA / BLOQUEADA POR GATE 1 Y OQ.
+- Trabajo futuro: Grilla de cargos pendientes con checks/importes/Seleccionar todos/total, medio/notas, fecha DB no editable e historial. Director anula con diálogo de motivo, sin Editar ni PDF.
+- Finalización: Interacciones exactas de decisión humana, foco/errores/temas/móvil y resolución de incertidumbre sin nuevo cobro automático.
+- Estado: NO INICIADA / BLOQUEADA POR GATE 1.
 
-## TASK-H4-018 — Errores seguros y control de sesión
+## TASK-H4-018 — Errores seguros y sesión
 
-- Trazabilidad: REQ-H4-018 → DES-H4-018. Pruebas: TEST-H4-004, TEST-H4-022, TEST-H4-025, TEST-H4-040, TEST-H4-041.
+- Trazabilidad: REQ-H4-018 → DES-H4-018. Pruebas: TEST-H4-004, TEST-H4-022, TEST-H4-025, TEST-H4-040, TEST-H4-041, TEST-H4-054.
 - Dependencias: TASK-H4-001 y TASK-H4-002, TASK-H4-010, TASK-H4-011, TASK-H4-012.
-- Trabajo futuro: Traducir validación/saldo/estado/versión/clave/transporte con errores seguros; descartar respuestas tardías al cambiar identidad y evitar datos sensibles en logs/URL.
-- Finalización: Conflictos y respuesta ambigua distinguidos, sin reintentos invisibles ni exposición de SQL/PII/finanzas ajenas.
-- Estado: NO INICIADA / BLOQUEADA POR GATE 1 Y OQ.
+- Trabajo futuro: Mensajes por precisión/saldo/cargo/permiso/estado/versión/clave/anulado/ambigüedad; whitelist, limpieza de UI y descarte de respuestas ajenas.
+- Finalización: Sin SQL dinámico, PII/finanzas en logs o versión renovada automáticamente; clave no autoriza lectura.
+- Estado: NO INICIADA / BLOQUEADA POR GATE 1.
 
-## TASK-H4-019 — Integración, concurrencia y revisión humana
+## TASK-H4-019 — Integración y revisión humana
 
 - Trazabilidad: REQ-H4-019 → DES-H4-019. Pruebas: TEST-H4-042, TEST-H4-043.
 - Dependencias: TASK-H4-001 y TASK-H4-002, TASK-H4-003, TASK-H4-004, TASK-H4-005, TASK-H4-006, TASK-H4-007, TASK-H4-008, TASK-H4-009, TASK-H4-010, TASK-H4-011, TASK-H4-012, TASK-H4-013, TASK-H4-014, TASK-H4-015, TASK-H4-016, TASK-H4-017, TASK-H4-018.
-- Trabajo futuro: Consolidar suites progresivas y regresión H1/H2/H3/H4 en base desechable, lint/types/unit/build y seguridad. Presentar recorrido humano con SHA y evidencias separadas.
-- Finalización: Casos técnicos ejecutados y humanos reales o residuales explícitos; sin datos de ensayo persistidos en base humana.
-- Estado: NO INICIADA / BLOQUEADA POR GATE 1 Y OQ.
+- Trabajo futuro: Pruebas progresivas y regresión H1/H2/H3/H4 en base desechable, bootstrap/seed/inventario, lint/types/unit/build/security, dos sesiones y revisión humana con candidato exacto.
+- Finalización: Resultados técnicos/humanos reales y residual explícito, sin ejecutar suites ahora ni dejar fixtures en base humana.
+- Estado: NO INICIADA / BLOQUEADA POR GATE 1.
 
 ## TASK-H4-020 — Candidato y Gate 2 futuro
 
-- Trazabilidad: REQ-H4-020 → DES-H4-020. Pruebas: TEST-H4-042, TEST-H4-044, TEST-H4-045.
+- Trazabilidad: REQ-H4-020 → DES-H4-020. Pruebas: TEST-H4-001, TEST-H4-042, TEST-H4-044, TEST-H4-045.
 - Dependencias: TASK-H4-001 y TASK-H4-019.
-- Trabajo futuro: Revisar arquitectura/mantenibilidad, publicar candidato e inventario, CI/evidencia y OQ resueltas. Solicitar decisión Gate 2; no concederla ni iniciar H5.
-- Finalización: Candidato exacto y paquete revisable. Acceptance/merge solo después de autorización humana independiente; este Spec termina antes de Gate 1.
-- Estado: NO INICIADA / BLOQUEADA POR GATE 1 Y OQ.
+- Trabajo futuro: Revisar arquitectura/inventario, publicar candidato/evidencia y pedir Gate 2 independiente, sin asumir aprobación ni iniciar H5.
+- Finalización: Acceptance/merge solo con autorización futura; mantener límites y detener expansión ante API oculta/infraestructura no necesaria.
+- Estado: NO INICIADA / BLOQUEADA POR GATE 1.
 
-## Bloques de validación propuestos
+## Bloques de validación futura
 
-1. Modelo/decimal/permisos y protocolo: 004, 005, 002, 013, 003; validar integridad, dinero y denegaciones antes de UI.
-2. Elegibilidad y compatibilidad H3, fecha/concepto/medios, idempotencia/auditoría: 006–009, 011, 015; verificar reglas decididas y datos mínimos.
-3. Alta y consultas/recuperación: 010, 016, 012, 014, 018; probar commit perdido, rollback y 70+60 antes de presentar un flujo como correcto.
-4. UI y regresión progresiva: 017, 019; roles, teclado, temas, dos sesiones y CI desechable. No esperar hasta el final para descubrir fallos transaccionales.
-5. Revisión arquitectónica y futuro Gate 2: 020. Registrar evidencia real y residual, sin aprobación automática.
+1. Modelo/decimal/roles/protocolo y deuda: 004/005/002/013/003; comprobar restricciones antes de UI.
+2. Estados/rutas H3 y datos mínimos: 006/007/008/009/011/015; validar decisiones humanas y medios antes de comandos.
+3. Registrar/anular, consultas, recuperación/rollback/errores: 010/016/012/014/018; probar commit perdido y 70+60 antes de presentar un flujo como correcto.
+4. UI y regresión: 017/019; checks/parciales, Director anula, Coordinador no, temas/teclado/dos sesiones y CI desechable.
+5. Arquitectura y Gate 2 futuro: 020; evidencia real y residual, nunca aprobación del agente.
 
-Las listas no crean tareas adicionales ni alteran dependencias. Verificación de Spec actual: únicamente links, IDs, cobertura y ausencia de ciclos de dependencias, más git diff --check. No se ejecutan suites técnicas/financieras ahora ni se modifica el cierre H3 o PLAN.
-
-**DETENERSE PARA REVISIÓN HUMANA Y GATE 1.**
+Las verificaciones actuales son solo enlaces/IDs/cobertura/dependencias y git diff --check. No se ejecutan suites ni se modifica H3, PLAN o aceptación. **DETENERSE PARA REVISIÓN HUMANA Y GATE 1.**
