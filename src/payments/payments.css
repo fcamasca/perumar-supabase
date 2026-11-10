@@ -1,0 +1,5 @@
+.payments-heading,.payment-summary,.payment-fields{display:flex;gap:1rem;justify-content:space-between;align-items:center;flex-wrap:wrap}
+.payment-summary{justify-content:flex-start;margin:1rem 0}.payment-summary>div{min-width:10rem}.payment-summary dd{margin:.3rem 0;font-variant-numeric:tabular-nums}
+.payments .payment-money{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}.payments td.payment-money input{width:9rem;text-align:right;max-width:100%}
+.payment-form{margin:1rem 0}.payment-form fieldset{padding:0;border:0;min-width:0}.payment-form table{margin:.75rem 0}.payment-fields{align-items:flex-start}.payment-fields>label{flex:1;min-width:12rem}.payment-recovery{border:1px solid currentColor;border-radius:.5rem;padding:.75rem;margin:1rem 0}.payment-recovery button+button{margin-left:.5rem}.payment-message{border-left:3px solid currentColor;padding:.75rem}.payments details p{white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:600px){.payment-fields{display:block}.payment-summary{gap:.75rem}.payments td,.payments th{padding:.5rem}.payment-recovery button+button{margin:.5rem 0 0}}

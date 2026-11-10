@@ -1,7 +1,9 @@
+import { paymentError } from '../payments/paymentError'
 export function enrollmentError(error: {
     code?: string;
     message?: string;
 } | null) {
+    if(error?.message?.startsWith('PAYMENT_')) return paymentError(error);
     const validationMessages: Record<string,string> = {
         'Descuento no válido': 'El descuento debe ser un importe no negativo con un máximo de dos decimales.',
         'Complete la ficha del Alumno': 'Completa los datos obligatorios de la ficha del alumno antes de matricularlo.',
