@@ -1,12 +1,12 @@
 # H4 — Pagos: test-plan
 
-Versión 0.2 · 09/11/2026 (America/Lima).
+Versión 0.3 · 09/11/2026 (America/Lima).
 
 **TODOS LOS TEST: NO EJECUTADOS. 17 OQ RESUELTAS. CONSTRUCCIÓN BLOQUEADA POR GATE 1.**
 
 ## Preparación futura y evidencia
 
-[Requirements](requirements.md) registra decisiones, alcance y C-H4-001; [design](design.md) modelo/contratos definitivos para revisión y [tasks](tasks.md) dependencias. No se conservan pruebas de aplicación global o reparto automático como alternativas: solo se comprueba explícitamente su ausencia. Se añaden casos 046–055 para anulación/restricciones nuevas e interacción manual. La frontera C-H4-001 no se cierra por suposición; precisar antes de Gate 1.
+[Requirements](requirements.md) registra decisiones, alcance y C-H4-001; [design](design.md) modelo/contratos definitivos para revisión y [tasks](tasks.md) dependencias. No se conservan pruebas de aplicación global o reparto automático como alternativas: solo se comprueba explícitamente su ausencia. Se añaden casos 046–055 para anulación/restricciones nuevas e interacción manual. C-H4-001 está RESUELTA humanamente: sin aplicaciones vigentes puede retirarse el cargo conforme a H3, conservando historia y demás bloqueos.
 
 Entorno futuro Supabase/PostgreSQL aislado y datos sintéticos, cinco medios autorizados, actores con JWT ordinarios. Admin solo prepara/observa fallos acotados y no demuestra permiso final. No reset ni suites con residuos sobre base humana. Cleanup/restauración incluso con fallo; no confundir eliminar identidades con limpiar negocio. Evidencia segura, sin secretos, fichas, payload financiero o identificadores personales en logs.
 
@@ -124,7 +124,7 @@ Revisión humana futura debe registrar SHA, roles, pasos, navegador/SO, resultad
 
 - Tipo: Integración.
 - Trazabilidad: REQ-H4-007 → DES-H4-007 → TASK-H4-007; REQ-H4-003 → DES-H4-003 → TASK-H4-003.
-- Escenario y resultado esperado: Con al menos una aplicación vigente de pago CONFIRMADO, retirar/inactivar cargo se rechaza, incluso parcial; no mover aplicación ni sustituir UUID al reagregar. Cargo sin pagos conserva H3. Tras anular todos los pagos, frontera exacta C-H4-001 requiere precisión humana antes de fijar resultado; no elegirla tácitamente.
+- Escenario y resultado esperado: Con al menos una aplicación vigente de pago CONFIRMADO, retirar/inactivar cargo se rechaza, incluso parcial; no mover aplicación ni sustituir UUID al reagregar. Cargo sin aplicaciones vigentes conserva H3. Tras anular todos sus pagos, verificar aplicado vigente = 0 y permitir retiro si matrícula/estado/rol lo admiten; cargo sale de base, pago/aplicaciones/UUID históricos permanecen. Con otro pago CONFIRMADO restante, seguir bloqueando retiro. C-H4-001 RESUELTA.
 - Evidencia futura: candidato/actor y resultado seguro; cuando aplica, filas/versiones/estado/aplicaciones/saldo/auditoría antes y después y ausencia de efectos del rechazo.
 - Estado: NO EJECUTADO.
 
@@ -204,7 +204,7 @@ Revisión humana futura debe registrar SHA, roles, pasos, navegador/SO, resultad
 
 - Tipo: Integración.
 - Trazabilidad: REQ-H4-011 → DES-H4-011 → TASK-H4-011.
-- Escenario y resultado esperado: Reenviar mismo contenido normalizado: mismo pago_id y datos originales, sin nueva aplicación/evento/avance de versión. Orden de aplicaciones y 10/10.0/10.00 equivalentes; versión de transporte y actor/timestamp DB no cambian identidad. Recuperar pago ANULADO sin recrearlo.
+- Escenario y resultado esperado: Reenviar mismo contenido normalizado: mismo pago_id y datos originales, sin nueva aplicación/evento/avance de versión. Orden de aplicaciones y 10/10.0/10.00 equivalentes; versión de transporte y actor/timestamp DB no cambian identidad. Recuperar pago ANULADO sin recrearlo, también si su cargo fue retirado posteriormente conforme a C-H4-001; las aplicaciones siguen apuntando al UUID histórico.
 - Evidencia futura: candidato/actor y resultado seguro; cuando aplica, filas/versiones/estado/aplicaciones/saldo/auditoría antes y después y ausencia de efectos del rechazo.
 - Estado: NO EJECUTADO.
 
@@ -412,7 +412,7 @@ Revisión humana futura debe registrar SHA, roles, pasos, navegador/SO, resultad
 
 - Tipo: Integración/regresión.
 - Trazabilidad: REQ-H4-007 → DES-H4-007 → TASK-H4-007; REQ-H4-016 → DES-H4-016 → TASK-H4-016.
-- Escenario y resultado esperado: Matrícula con única fila pago ANULADO conserva bloqueo de cambio de Ciclo. No limpiar clave/historia, no copiar pagos a destino; sin filas pago se conservan cambios H3 autorizados. Se distingue pago registrado de aplicación vigente.
+- Escenario y resultado esperado: Matrícula con única fila pago ANULADO conserva bloqueo de cambio de Ciclo. No limpiar clave/historia, no copiar pagos a destino; sin filas pago se conservan cambios H3 autorizados. Se distingue pago registrado de aplicación vigente: aunque el cargo sin aplicaciones vigentes pueda retirarse conforme a H3, traslado de matrícula y estados de Ciclo siguen bloqueados por la fila pago histórica.
 - Evidencia futura: candidato/actor y resultado seguro; cuando aplica, filas/versiones/estado/aplicaciones/saldo/auditoría antes y después y ausencia de efectos del rechazo.
 - Estado: NO EJECUTADO.
 

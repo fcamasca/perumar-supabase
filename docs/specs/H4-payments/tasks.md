@@ -1,16 +1,16 @@
 # H4 — Pagos: tasks
 
-Versión 0.2 · 09/11/2026 (America/Lima).
+Versión 0.3 · 09/11/2026 (America/Lima).
 
 **17 OQ RESUELTAS HUMANAMENTE. TAREAS TÉCNICAS NO INICIADAS. GATE 1 PENDIENTE.**
 
-REQ-H4-n → DES-H4-n → TASK-H4-n; TEST pueden cubrir varios requisitos. [Requirements](requirements.md), [design](design.md), [test-plan](test-plan.md). Solo documentación actual; ninguna tarea implementada ni prueba financiera ejecutada. TASK-H4-001 es prerrequisito de todas 002–020; C-H4-001 requiere precisión antes de Gate 1. Las dependencias numéricas no exigen orden estricto por ID y no autorizan empezar implementación.
+REQ-H4-n → DES-H4-n → TASK-H4-n; TEST pueden cubrir varios requisitos. [Requirements](requirements.md), [design](design.md), [test-plan](test-plan.md). Solo documentación actual; ninguna tarea implementada ni prueba financiera ejecutada. TASK-H4-001 es prerrequisito de todas 002–020; C-H4-001 está RESUELTA: retiro permitido sin aplicaciones vigentes, conservando bloqueos H3 e historia. Las dependencias numéricas no exigen orden estricto por ID y no autorizan empezar implementación.
 
 ## TASK-H4-001 — Revisión del Spec y Gate 1
 
 - Trazabilidad: REQ-H4-001 → DES-H4-001. Pruebas: TEST-H4-001.
 - Dependencias: Ninguna; revisión y decisión humana.
-- Trabajo futuro: Consolidar 17 OQ RESUELTAS en los cuatro documentos, cerrar precisión C-H4-001 y obtener Gate 1 sobre SHA exacto. No implementar mientras falte aprobación.
+- Trabajo futuro: Consolidar 17 OQ RESUELTAS en los cuatro documentos, incorporar C-H4-001 RESUELTA y obtener Gate 1 sobre SHA exacto. No implementar mientras falte aprobación.
 - Finalización: Decisiones coherentes sin alternativas descartadas y autorización explícita del conjunto; este trabajo no la concede.
 - Estado: PENDIENTE DE REVISIÓN / GATE 1.
 
@@ -58,7 +58,7 @@ REQ-H4-n → DES-H4-n → TASK-H4-n; TEST pueden cubrir varios requisitos. [Requ
 
 - Trazabilidad: REQ-H4-007 → DES-H4-007. Pruebas: TEST-H4-006, TEST-H4-011, TEST-H4-012, TEST-H4-014, TEST-H4-015, TEST-H4-016, TEST-H4-033, TEST-H4-042, TEST-H4-049, TEST-H4-050, TEST-H4-051, TEST-H4-052, TEST-H4-055.
 - Dependencias: TASK-H4-001 y TASK-H4-002, TASK-H4-004, TASK-H4-005, TASK-H4-013.
-- Trabajo futuro: Coordinar retiro con aplicaciones vigentes, descuento final≥aplicado, traslado bloqueado por cualquier pago y patrocinador mutable bajo H3. Resolver retiro después de anular todos según C-H4-001 antes de construir.
+- Trabajo futuro: Coordinar retiro con aplicaciones vigentes, descuento final≥aplicado, traslado bloqueado por cualquier pago y patrocinador mutable bajo H3. Permitir retiro tras anular todos los pagos del cargo si no quedan aplicaciones vigentes, conforme a H3 y C-H4-001 RESUELTA; no levantar bloqueo de traslado/estado de Ciclo por pagos registrados.
 - Finalización: Rutas directas/indirectas y concurrencia no eluden reglas; historia/UUID/aplicaciones conservados y H3 solo adaptado en lo autorizado.
 - Estado: NO INICIADA / BLOQUEADA POR GATE 1.
 

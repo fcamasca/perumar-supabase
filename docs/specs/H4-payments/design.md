@@ -1,6 +1,6 @@
 # H4 — Pagos: design
 
-Versión 0.2 · 09/11/2026 (America/Lima).
+Versión 0.3 · 09/11/2026 (America/Lima).
 
 **17 OQ RESUELTAS HUMANAMENTE. SPEC PENDIENTE DE REVISIÓN Y GATE 1. SIN IMPLEMENTACIÓN.**
 
@@ -29,7 +29,7 @@ Para matrícula M: base exigible = suma de importe_final de sus matricula_cargo 
 
 Cargos retirados sin pagos no generan deuda. No filtrar pagos confirmados de un cargo activo por vigencia actual del catálogo/tarifa/medio. Nunca recalcular importes desde tarifa/ciclo_tarifa actuales, trasladar abonos a otro UUID o truncar un negativo a cero. No tabla deuda, saldo persistido ni bandera PAGADO independiente. CERRADO conserva deuda pendiente; ANULADO de matrícula no la borra: queda resumen de solo consulta conforme a la misma ecuación.
 
-La carga inicial H4 calcula desde cargos H3 ya existentes, sin inventar pagos de apertura ni saldos manuales. Un traslado de matrícula sin pagos conserva H3; cuando ya existe una fila pago, aunque anulada, el traslado se prohíbe, por lo que no hay reparto de pagos entre Ciclos. C-H4-001 precisa el retiro del cargo tras anular todas sus aplicaciones; no altera qué se suma hoy.
+La carga inicial H4 calcula desde cargos H3 ya existentes, sin inventar pagos de apertura ni saldos manuales. Un traslado de matrícula sin pagos conserva H3; cuando ya existe una fila pago, aunque anulada, el traslado se prohíbe, por lo que no hay reparto de pagos entre Ciclos. C-H4-001 RESUELTA: tras anular todos los pagos y no quedar aplicaciones vigentes, el cargo puede retirarse conforme a H3 y sale de base; pago/aplicaciones históricos se conservan, sin abonado perdido.
 
 ## DES-H4-004 — Modelo definitivo de aplicación por cargo
 
@@ -77,7 +77,7 @@ Anular pago requiere Director, pago CONFIRMADO y matrícula ACTIVO. No se agrega
 
 | Ruta | Regla nueva acordada, además de H3 |
 | --- | --- |
-| Retirar/inactivar cargo | Denegar con aplicaciones vigentes, parcial o total; ninguna reasignación/UUID sustituto. Frontera tras anular todas: C-H4-001 |
+| Retirar/inactivar cargo | Denegar con aplicaciones vigentes, parcial o total; ninguna reasignación/UUID sustituto. Sin aplicaciones vigentes, incluido tras anular todos sus pagos, permitir conforme a H3; conservar historia (C-H4-001 RESUELTA) |
 | Descuento sobre CARRERA | Solo Director y original − nuevo descuento ≥ aplicado vigente al cargo; igualdad válida, por debajo rechazar |
 | Trasladar matrícula a otro Ciclo | Denegar si existe al menos un pago, incluido ANULADO; no transferir aplicaciones ni crear destino para eludir bloqueo |
 | Cambiar patrocinador | Permitido agregar/cambiar/quitar con pagos, conforme a elegibilidad/rol/versiones H3; no altera cargos ni pagos y no reparte deuda |
@@ -86,7 +86,7 @@ Anular pago requiere Director, pago CONFIRMADO y matrícula ACTIVO. No se agrega
 | Tarifas/configuración/medios posteriores | No repricing de cargo/pago ni reescritura de representación histórica |
 | Asignaturas CHG-H3-011 | Mantener confirmación Director y alcance exclusivamente académico; no genera ajuste monetario |
 
-Proteger entradas directas/indirectas de editar_matricula, anular_matricula, cambio de estado y modificación de cargos, sin otorgar nuevos permisos a Coordinador. Matrícula ANULADO sigue inmutable. Si todos los pagos se anulan, el aplicado vigente cae a cero; no desaparece la fila histórica que bloquea traslado/estado de Ciclo. No añadir contabilidad, devoluciones o reparación automática para esa diferencia.
+Proteger entradas directas/indirectas de editar_matricula, anular_matricula, cambio de estado y modificación de cargos, sin otorgar nuevos permisos a Coordinador. Matrícula ANULADO sigue inmutable. Si todos los pagos de un cargo se anulan, el aplicado vigente cae a cero y puede retirarse conforme a H3; no desaparecen las aplicaciones históricas ni la fila pago que sigue bloqueando traslado/estado de Ciclo. Reagregar después crea un cargo con UUID nuevo conforme a H3; no reactiva el cargo retirado ni transfiere aplicaciones históricas al nuevo. No añadir contabilidad, devoluciones o reparación automática para esa diferencia.
 
 Esta fase no modifica funciones/guards H3: documenta la futura adaptación autorizada mínima por H4, bajo protocolo común y regresión. Las garantías financieras no pueden eludirse mediante un camino H3 que continúe fuera del lock.
 
@@ -203,4 +203,4 @@ Base H3 aceptada: 22 tablas públicas, 17 RPC, 16 helpers, 25 policies SELECT y 
 
 Son criterios de diseño aplicados, no certificación. No ledger, deuda persistida, outbox, CQRS/event sourcing, motor de reversos, colas, Edge Function o API oculta. Si aparece necesidad de expansión para cumplir este mínimo, detenerse y reportar antes de añadirla.
 
-Las 17 OQ están RESUELTAS por la instrucción humana; C-H4-001 requiere precisión de consistencia antes de Gate 1. Revisar cuatro documentos exactos, luego solicitar Gate 1 sin concederlo. Construcción y futura aceptación/Gate 2 requieren instrucciones independientes. Sin implementación/acceptance/merge ahora y sin H5.
+Las 17 OQ y C-H4-001 están RESUELTAS por decisión humana; no quedan contradicciones de negocio identificadas en esta revisión. Revisar cuatro documentos exactos, luego solicitar Gate 1 sin concederlo. Construcción y futura aceptación/Gate 2 requieren instrucciones independientes. Sin implementación/acceptance/merge ahora y sin H5.

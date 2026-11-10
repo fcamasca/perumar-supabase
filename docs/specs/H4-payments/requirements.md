@@ -1,6 +1,6 @@
 # H4 — Pagos: requirements
 
-Versión 0.2 · 09/11/2026 (America/Lima).
+Versión 0.3 · 09/11/2026 (America/Lima).
 
 **SPEC ACTUALIZADO CON DECISIONES HUMANAS. 17 OQ RESUELTAS. GATE 1 PENDIENTE. CONSTRUCCIÓN NO AUTORIZADA.**
 
@@ -65,7 +65,7 @@ Matrícula ACTIVO permite pagos nuevos con Ciclo PROGRAMADO, EN_CURSO o CERRADO.
 
 Cargo con aplicación vigente no puede retirarse/inactivarse, sea parcial o total; no transferir aplicaciones ni sustituir UUID. Descuento, solo Director, permitido si nuevo importe_final ≥ aplicado vigente del cargo. Una matrícula con al menos un pago registrado no puede cambiar de Ciclo. Agregar/cambiar/quitar patrocinador sigue permitido bajo elegibilidad H3 y no altera pagos.
 
-**Criterios de aceptación:** Validar todas las rutas server-side bajo protocolo común. En este Spec, «pago registrado» para bloquear traslado y estado de Ciclo incluye filas ANULADO: la fila histórica existe, no se elimina. Nuevas restricciones no amplían permisos H3. La frontera de retiro tras anular todos los pagos se identifica en C-H4-001 hasta precisión humana.
+**Criterios de aceptación:** Validar todas las rutas server-side bajo protocolo común. En este Spec, «pago registrado» para bloquear traslado y estado de Ciclo incluye filas ANULADO: la fila histórica existe, no se elimina. Nuevas restricciones no amplían permisos H3. Si no queda ninguna aplicación vigente, incluido después de anular todos los pagos del cargo, puede retirarse conforme a H3, siempre que matrícula/estado/rol permitan esa operación; se conserva historia y aplicaciones. Precisión C-H4-001 RESUELTA.
 
 ## REQ-H4-008 — Timestamp, observaciones y concepto derivado
 
@@ -153,7 +153,7 @@ El estado de todas estas OQ es **RESUELTA**. Las dudas/alternativas de 0.1 queda
 | --- | --- | --- | --- |
 | OQ-H4-001 | RESUELTA | Un pago, una matrícula, una o más aplicaciones a cargos propios; pago_aplicacion obligatoria y suma exacta. Sin deuda/saldo persistidos. | 003, 004, 010 |
 | OQ-H4-002 | RESUELTA | Imputación manual: check propone pendiente completo, parcial editable, >0 selecciona, desmarcar cero, seleccionar todos y total suma. Sin reparto automático. | 004, 017 |
-| OQ-H4-003 | RESUELTA | Cargo con al menos una aplicación vigente no se retira/inactiva; parcial o total. Sin traslado de aplicación/UUID. Sin pagos sigue H3. Véase precisión C-H4-001. | 007 |
+| OQ-H4-003 | RESUELTA | Cargo con al menos una aplicación vigente no se retira/inactiva; parcial o total. Sin traslado de aplicación/UUID. Sin aplicaciones vigentes sigue H3, también tras anular todos sus pagos. Precisión C-H4-001 RESUELTA. | 007 |
 | OQ-H4-004 | RESUELTA | Matrícula ANULADO inmutable/consulta: sin pagos nuevos, anulación de pagos, cambios de cargos/descuento/opciones ni otra mutación; conserva toda historia. | 006, 007, 010 |
 | OQ-H4-005 | RESUELTA | Cobrar con PROGRAMADO/EN_CURSO/CERRADO, no DESIERTO/ANULADO. Ciclo con pagos registrados no pasa a DESIERTO/ANULADO. | 006, 013 |
 | OQ-H4-006 | RESUELTA | Pago no editable ni DELETE; Director puede anular con motivo/actor/timestamp DB. Estado ANULADO y aplicaciones no abonan; corrección por anular y nuevo pago. Matrícula ANULADO bloquea anulación. | 010, 014 |
@@ -169,9 +169,13 @@ El estado de todas estas OQ es **RESUELTA**. Las dudas/alternativas de 0.1 queda
 | OQ-H4-016 | RESUELTA | Descuento final ≥ aplicado vigente; matrícula con pago registrado no cambia Ciclo; patrocinador puede agregarse/cambiarse/quitarse sin reasignar pagos, bajo demás reglas H3; cargo pagado no se retira y ANULADO es inmutable. | 007, 013 |
 | OQ-H4-017 | RESUELTA | Base = finales de cargos activos; abonado = aplicaciones de pagos vigentes sobre esos cargos; pendiente = base − abonado, nunca negativo ni truncado a cero. Pagos anulados no abonan; no traslado a otro Ciclo. | 003, 016 |
 
-## Precisión de consistencia C-H4-001 — retiro después de anular todos los pagos
+## Precisión de consistencia C-H4-001 — RESUELTA humanamente
 
-OQ-H4-003 prohíbe retirar con aplicación **vigente** y devuelve cargos sin pagos a reglas H3; OQ-H4-017 resume que un cargo que «ya recibió pago» no puede retirarse. Falta precisar si, tras anular todos sus pagos, el bloqueo cesa por no quedar aplicaciones vigentes o persiste históricamente. Se pidió aclaración humana; no se elige silenciosamente una interpretación. Las 17 decisiones se conservan RESUELTAS, pero esta precisión transversal debe cerrarse antes de Gate 1; el caso de prueba correspondiente no afirma resultado definitivo para esa frontera. En cualquier variante no se borran aplicaciones ni se mueven a otro cargo.
+Decisión humana del 09/11/2026: **«Sí, si no quedan aplicaciones vigentes»**. El bloqueo de retiro/inactivación depende de aplicaciones de pagos CONFIRMADO vigentes, no de que alguna vez se haya registrado un pago. Tras anular todos los pagos que abonaban el cargo, si aplicado vigente = 0, puede retirarse conforme a las demás reglas H3. Una aplicación vigente restante, parcial o total, mantiene el bloqueo.
+
+Retirar no elimina pago/aplicaciones ni sus UUID históricos. El cargo pasa a inactivo y sale de la base exigible; al no tener aplicaciones vigentes, no se pierde abonado ni se reasigna a otro cargo. Matrícula ANULADO y demás bloqueos H3 siguen aplicando: esta precisión no autoriza mutaciones sobre ellos.
+
+Es distinto del bloqueo de traslado de matrícula y transición de Ciclo: esos controles siguen basándose en **pagos registrados**, incluidos ANULADO, y no se levantan por esta precisión. Las 17 OQ y C-H4-001 están RESUELTAS; Gate 1 del Spec aún no está aprobado.
 
 ## Lecturas literales e implicaciones conservadas
 
@@ -185,4 +189,4 @@ Fuera de H4: HU14/HU15, facturas/pagos de patrocinadores, distribución entre fa
 
 REQ-H4-n → DES-H4-n → TASK-H4-n; pruebas/dependencias en [tasks](tasks.md) y [test-plan](test-plan.md); diseño en [design](design.md). Solo documentación: sin evidencia técnica H4 ejecutada.
 
-**17 OQ RESUELTAS. PRECISIÓN C-H4-001 Y REVISIÓN/GATE 1 PENDIENTES. CONSTRUCCIÓN NO AUTORIZADA.**
+**17 OQ Y C-H4-001 RESUELTAS HUMANAMENTE. REVISIÓN/GATE 1 PENDIENTES. CONSTRUCCIÓN NO AUTORIZADA.**
