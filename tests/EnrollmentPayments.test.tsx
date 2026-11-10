@@ -73,3 +73,7 @@ it('closed cycle still permits payment registration without academic editing',as
 it.each(['PT409','40001','40P01'])('preserves draft and requires user consultation for %s',async code=>{
  await show();fireEvent.click(screen.getByRole('button',{name:'Registrar pago'}));fireEvent.change(screen.getByRole('textbox',{name:'Importe para CURSO'}),{target:{value:'30'}});fireEvent.change(screen.getByRole('combobox'),{target:{value:'cash'}});client.rpc.mockResolvedValue({error:{code,message:'stale'}});fireEvent.click(screen.getByRole('button',{name:'Confirmar pago'}));await screen.findByText(/La información cambió durante/);expect(client.rpc).toHaveBeenCalledTimes(1);expect(screen.getByRole('textbox',{name:'Importe para CURSO'})).toHaveValue('30');expect(changed).not.toHaveBeenCalled();fireEvent.click(screen.getByRole('button',{name:'Consultar saldo e historial'}));expect(changed).toHaveBeenCalledTimes(1);expect(client.rpc).toHaveBeenCalledTimes(1)
 })
+
+it('direct Pagar opens the existing manual form without automatically writing',async()=>{
+ render(<EnrollmentPayments {...props} initialRegister/>);await waitFor(()=>expect(screen.getByRole('button',{name:'Confirmar pago'})).toBeEnabled());expect(screen.getByRole('textbox',{name:'Importe para CURSO'})).toBeVisible();expect(client.rpc).not.toHaveBeenCalled()
+})

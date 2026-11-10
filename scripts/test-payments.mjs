@@ -1,3 +1,4 @@
+import { studentSearchFilter } from '../src/lib/studentSearch.ts'
 import assert from 'node:assert/strict'
 import { randomUUID, createHash } from 'node:crypto'
 import { createFixtures, publicClient, checked } from './h2-fixtures.mjs'
@@ -31,6 +32,25 @@ try {
   let enrollment=await rpc(O,'registrar_matricula',{p:{alumno_id:student.id,expected_alumno_updated_at:student.updated_at,ciclo_id:cycle.id,expected_ciclo_updated_at:cycle.updated_at}})
   const charge=checked(await D.from('matricula_cargo').select('*').eq('matricula_id',enrollment.id).single(),'charge')
   const payload=amount=>({matricula_id:enrollment.id,expected_matricula_updated_at:enrollment.updated_at,idempotency_key:randomUUID(),importe:amount,medio_pago_id:value('MEDIO_PAGO','EFECTIVO'),aplicaciones:[{matricula_cargo_id:charge.id,importe:amount}]})
+  // CHG-H4-001: one authorized projection request, global numeric order and zero history.
+  for(const [month,amount,state] of [['03','20','CERRADO'],['04','0','EN_CURSO']]){
+    let extraCycle=await rpc(D,'guardar_ciclo',{p:{...geo,carrera_id:career.id,capitania_id:(await rows('capitania'))[0].id,fecha_inicio:`2046-${month}-01`,fecha_fin:`2046-${month}-02`}})
+    extraCycle=await rpc(D,'guardar_ciclo_tarifas',{ciclo_id:extraCycle.id,expected_updated_at:extraCycle.updated_at,configuracion:[{tarifa_id:tariff.id,importe:amount,obligatorio:'true'}]})
+    await rpc(O,'registrar_matricula',{p:{alumno_id:student.id,expected_alumno_updated_at:student.updated_at,ciclo_id:extraCycle.id,expected_ciclo_updated_at:extraCycle.updated_at}})
+    extraCycle=await rpc(D,'cambiar_estado_ciclo',{id:extraCycle.id,expected_updated_at:extraCycle.updated_at,destino:'EN_CURSO'})
+    if(state==='CERRADO')await rpc(D,'cambiar_estado_ciclo',{id:extraCycle.id,expected_updated_at:extraCycle.updated_at,destino:'CERRADO'})
+  }
+  for(const c of [D,O,M]){
+    const list=checked(await c.from('matricula_pago_listado').select('matricula_id,alumno_id,ciclo_id,codigo_alumno,apellido_paterno,apellido_materno,nombres,numero_di,codigo_ciclo,curso_nombre,ciclo_estado,base::text,abonado::text,pendiente::text').eq('alumno_id',student.id).order('pendiente',{ascending:false}).order('ciclo_fecha_inicio',{ascending:false}).order('matricula_created_at',{ascending:false}).order('matricula_id',{ascending:false}).range(0,29),'direct payments student list')
+    assert.deepEqual(list.map(r=>r.pendiente),['100.00','20.00','0.00'])
+    assert.deepEqual(list.map(r=>r.ciclo_estado),['PROGRAMADO','CERRADO','EN_CURSO'])
+    for(const term of [student.codigo_alumno,student.numero_di,'PRUEBA SINTETICA','H4']){
+      const cycleList=checked(await c.from('matricula_pago_listado').select('matricula_id,pendiente::text').eq('ciclo_id',cycle.id).or(studentSearchFilter(term)).order('pendiente',{ascending:false}).order('matricula_id'),'direct payments cycle filter')
+      assert.equal(cycleList.length,1);assert.equal(cycleList[0].matricula_id,enrollment.id)
+    }
+    assert.equal(checked(await c.from('matricula_pago_listado').select('matricula_id').eq('matricula_id',randomUUID()),'unknown direct payment ID').length,0)
+  }
+  console.log('CHG-H4-001 authorized direct lists: PASSED (single projection, numeric 100/20/0, all eligible states, shared filters, nonexistent ID)')
   const p=payload('30'),payment=await rpc(O,'registrar_pago',{p})
   // Real PostgREST conflict contracts: no stale write, version advance or success audit.
   const financialSnapshot=async()=>createHash('sha256').update(JSON.stringify({
@@ -62,7 +82,10 @@ try {
     assert.equal(checked(await c.from('pago').select('id').eq('idempotency_key',p.idempotency_key),'recovery').length,1)
   }
   for(const name of ['A','B','N','F','I']){
-    for(const table of ['pago','pago_aplicacion','matricula_saldo','matricula_cargo_saldo'])assert.equal(checked(await clients[name].from(table).select('*'),'denied financial read').length,0)
+    for(const table of ['pago','pago_aplicacion','matricula_saldo','matricula_cargo_saldo','matricula_pago_listado'])assert.equal(checked(await clients[name].from(table).select('*'),'denied financial read').length,0)
+    assert.equal(checked(await clients[name].from('matricula_pago_listado').select('*').eq('matricula_id',enrollment.id),'unauthorized manipulated enrollment ID').length,0)
+    assert.equal(checked(await clients[name].from('matricula_pago_listado').select('*').eq('alumno_id',student.id),'unauthorized manipulated student ID').length,0)
+    assert.equal(checked(await clients[name].from('matricula_pago_listado').select('*').eq('ciclo_id',cycle.id),'unauthorized manipulated cycle ID').length,0)
     assert.ok((await clients[name].rpc('registrar_pago',{p})).error)
     assert.ok((await clients[name].rpc('anular_pago',{id:payment.id,expected_updated_at:payment.updated_at,motivo:'SYNTHETIC'})).error)
   }
@@ -73,6 +96,7 @@ try {
   }
   const anonymous=publicClient(fixture.config)
   assert.ok((await anonymous.from('pago').select('*')).error)
+  assert.ok((await anonymous.from('matricula_pago_listado').select('*')).error)
   assert.ok((await anonymous.rpc('registrar_pago',{p})).error)
   const invalid=await fetch(`${fixture.config.url}/rest/v1/pago`,{headers:{apikey:fixture.config.key,Authorization:'Bearer invalid'}})
   assert.equal(invalid.status,401)

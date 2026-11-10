@@ -31,6 +31,8 @@ try {
   for(const [name,definition] of Object.entries(definitionsBefore))assert.equal(definitionsAfter[name].replaceAll('\r\n','\n'),definition.replaceAll('\r\n','\n').replaceAll("errcode='40001'","errcode='PT409'"),'Only the deliberate error contract may change')
   assert.equal(sql("select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname in ('public','private') and p.prosrc ~* 'errcode[[:space:]]*=[[:space:]]*''40001''';"),'0')
   console.log('Logical conflicts PT409: PASSED (effective definitions contain no deliberate 40001; function contracts otherwise identical)')
+  sql('drop view if exists public.matricula_pago_listado;')
+  sql(readFileSync('supabase/migrations/20261109060000_direct_payment_access.sql','utf8'))
   sql(readFileSync('tests/sql/h4-payments.sql','utf8'))
   sql(readFileSync('tests/sql/h4-regression.sql','utf8'))
   console.log('H4 isolated H3 regression, C-H4-001, states, historical UUIDs and sponsor: PASSED')
@@ -83,6 +85,7 @@ try {
   {
     const f=fixture();const result=await race(f,register(payload(f,'70')),register(payload(f,'60')));assert.equal(result.find(r=>!r.ok).sqlstate,'40001','The real SERIALIZABLE failure must still propagate unchanged')
     const s=balance(f);assert.ok([60,70].includes(s.abonado));assert.ok(s.pendiente>=0);assert.notEqual(s.abonado,130)
+    const projected=JSON.parse(sql(`select row_to_json(v) from public.matricula_pago_listado v where matricula_id='${f.enrollment}'`));assert.equal(projected.pendiente,s.pendiente);assert.equal(projected.alumno_id,f.student);assert.equal(projected.ciclo_id,f.cycle)
     console.log('H4 70+60 / saldo100: PASSED (2 SERIALIZABLE connections, lock barrier, one commit, no retries)')
   }
   {

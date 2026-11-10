@@ -210,3 +210,19 @@ Residual de compatibilidad: no se ejecuta la Data API hospedada ni PostgREST 14.
 - git diff --check y comparacion de los cuatro documentos del Spec aprobado: PASSED; migraciones historicas intactas.
 
 La publicacion que incorpora esta evidencia es documental respecto de ese SHA de codigo. La entrega informa tambien su SHA candidato y CI exacta; no se modifica codigo despues de la validacion anterior. Sin acceptance, merge ni H5. Gate 2 NO APROBADO.
+
+## CHG-H4-001: acceso directo a Pagos posterior a Gate 1
+
+Solicitud humana sobre `42e7737d23cf42ec5c70fd44c67f1bb2b6c8ba50`. [Enmienda aprobada y justificacion previa de lectura](approved-direct-payment-access-amendment.md). Gate 2 NO aprobado; cuatro documentos del Spec sin cambios; no acceptance, merge ni H5.
+
+Menu Pagos (Director/Coordinador), rutas /pagos y /pagos/:id bajo AcademicOnly. Por Alumno inicial; studentSearchFilter reutilizado para codigo/DI/nombres/apellidos. Por Ciclo admite PROGRAMADO/EN_CURSO/CERRADO y filtra alumnos con el mismo helper. Pendiente DESC numerico en DB, luego fecha del Ciclo, fecha de matricula e ID descendentes. Cero visible al final; anuladas/estados no cobrables solo Ver.
+
+Se agrega exclusivamente la vista invoker matricula_pago_listado mediante 20261109060000_direct_payment_access.sql. La necesidad se justifico antes de implementarla: une contexto y matricula_saldo en una consulta filtrable/paginada/ordenada, sin N+1 ni repetir formula financiera. SELECT authenticated, sin DML/anon; RLS de las mismas tablas/vistas H4. Inventario: 24 tablas, 3 vistas, 19 RPC, 18 helpers, 27 policies y 20 migraciones. Solo una vista y su grant SELECT adicionales, sin cambios de permisos sobre tablas o comandos.
+
+PaymentAccess solo busca, presenta saldo DB y abre EnrollmentPayments existente. initialRegister es un indicador UI que muestra el mismo formulario al pulsar Pagar, sin llamadas financieras automaticas. El detalle reconsulta por ID bajo RLS y muestra alumno/DI/Ciclo/Curso/pendiente; IDs desconocidos o sin acceso tienen el mismo mensaje seguro. Pestaña Pagos contextual conservada. No cambios en RPC/modelo/estados/dinero/locks/PT409/idempotencia/auditoria.
+
+Contexto de busqueda/seleccion/filtro/paginas en estado React de /pagos/* por identidad, conservado al volver; no PII ni saldos en history.state/URL/storage. Se descarta al abandonar/recargar el modulo o cambiar de identidad. history.state contiene solo el indicador UI de apertura del formulario.
+
+Validacion local: lint/typecheck, 359/359 pruebas en 21 archivos PASSED; suite financiera aislada conserva las trece carreras, 70+60/100, PT409 y errores nativos. Rollback local PASSED sin fixtures persistidos. Build/build-safety y diff-check se completan antes de publicacion. Pruebas API nuevas de proyeccion/orden numerico 100-20-0/filtros/roles e IDs manipulados, junto con regresion H1-H3/expiracion/reset-repeat, se ejecutaran en CI desechable; PENDIENTES hasta observar resultado real.
+
+Guia humana, Bloque 1 actualizado al nuevo acceso principal. Todas las pruebas humanas siguen PENDIENTES; no se infieren resultados de los tests DOM. Residuales: forced-colors real y QA visual/movil pendientes; busqueda sin persistencia entre recargas; sin ensayo masivo de throughput. Misma arquitectura React + Supabase/RLS/RPC concretas, sin backend adicional ni motor de deuda.

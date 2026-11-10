@@ -13,11 +13,11 @@ type Medium = { id: string; nombre: string }
 type Payload = Record<string, unknown>
 const unknownResult = 'Resultado sin confirmar. Consulta el estado antes de registrar otro pago. No se ha realizado ningún reintento automático.'
 
-export function EnrollmentPayments({ enrollment, version, enrollmentState, cycleState, onChanged }: { enrollment: string; version: string; enrollmentState: string; cycleState: string; onChanged: () => void }) {
+export function EnrollmentPayments({ enrollment, version, enrollmentState, cycleState, onChanged, initialRegister = false }: { enrollment: string; version: string; enrollmentState: string; cycleState: string; onChanged: () => void; initialRegister?: boolean }) {
   const { client, state } = useSession(), user = state.userId ?? ''
   const [summary, setSummary] = useState<Summary>(), [charges, setCharges] = useState<Charge[]>([]), [history, setHistory] = useState<Payment[]>([]), [media, setMedia] = useState<Medium[]>([])
   const [amounts, setAmounts] = useState<Record<string, string>>({}), [medium, setMedium] = useState(''), [notes, setNotes] = useState('')
-  const [message, setMessage] = useState(''), [busy, setBusy] = useState(false), [ready, setReady] = useState(false), [open, setOpen] = useState(false), [page, setPage] = useState(0), [revision, setRevision] = useState(0)
+  const [message, setMessage] = useState(''), [busy, setBusy] = useState(false), [ready, setReady] = useState(false), [open, setOpen] = useState(initialRegister), [page, setPage] = useState(0), [revision, setRevision] = useState(0)
   const [pending, setPending] = useState<string | null>(null), [uncertainCancellation, setUncertainCancellation] = useState<string | null>(null)
   const formId=useId(), amountInputs=useRef<Record<string,HTMLInputElement|null>>({})
   const attempt = useRef<{ key: string; payload: Payload } | null>(null), alive = useRef(true), saving = useRef(false)
