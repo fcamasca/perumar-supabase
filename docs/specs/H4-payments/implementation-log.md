@@ -93,6 +93,27 @@ PaymentAccess solo busca, presenta saldo DB y abre EnrollmentPayments existente.
 
 Contexto de busqueda/seleccion/filtro/paginas en estado React de /pagos/* por identidad, conservado al volver; no PII ni saldos en history.state/URL/storage. Se descarta al abandonar/recargar el modulo o cambiar de identidad. history.state contiene solo el indicador UI de apertura del formulario.
 
-Validacion local: lint/typecheck, 359/359 pruebas en 21 archivos PASSED; suite financiera aislada conserva las trece carreras, 70+60/100, PT409 y errores nativos. Rollback local PASSED sin fixtures persistidos. Build/build-safety y diff-check se completan antes de publicacion. Pruebas API nuevas de proyeccion/orden numerico 100-20-0/filtros/roles e IDs manipulados, junto con regresion H1-H3/expiracion/reset-repeat, se ejecutaran en CI desechable; PENDIENTES hasta observar resultado real.
+Validacion local: lint/typecheck, 359/359 pruebas en 21 archivos PASSED; suite financiera aislada conserva las trece carreras, 70+60/100, PT409 y errores nativos. Rollback local PASSED sin fixtures persistidos. Build/build-safety y diff-check PASSED antes de publicacion y repetidos en CI. Pruebas API nuevas de proyeccion/orden numerico 100-20-0/filtros/roles e IDs manipulados, regresion H1-H3, expiracion y reset-repeat: PASSED en CI 42758669622 del SHA 914bb837ef570e214798f05634be363e2049d272.
 
 Guia humana, Bloque 1 actualizado al nuevo acceso principal. Todas las pruebas humanas siguen PENDIENTES; no se infieren resultados de los tests DOM. Residuales: forced-colors real y QA visual/movil pendientes; busqueda sin persistencia entre recargas; sin ensayo masivo de throughput. Misma arquitectura React + Supabase/RLS/RPC concretas, sin backend adicional ni motor de deuda.
+
+### CHG-H4-001: evidencia verificada el 10/11/2026
+
+[CI 42758669622 — COMPLETED / SUCCESS](https://github.com/fcamasca/perumar-supabase/actions/runs/42758669622), codigo exacto `914bb837ef570e214798f05634be363e2049d272`.
+
+- 359/359 pruebas en 21 archivos, lint/typecheck/build/build-safety: PASSED.
+- Matriz JWT/RLS y nuevos listados: Director/Coordinador/multirol autorizados; Admin y actores no habilitados no obtienen filas ni consultando IDs conocidos/manipulados. Anon sin SELECT. Inventario de tres vistas invoker/grants exactos: PASSED.
+- Consulta real Por Alumno con tres matriculas: pendiente numerico 100.00, 20.00 y 0.00 en ese orden. PROGRAMADO/EN_CURSO/CERRADO, filtros compartidos de codigo/DI/nombres/apellidos y UUID inexistente: PASSED.
+- UI: Por Alumno inicial; busquedas y listados; Pagar/Ver apuntan al mismo EnrollmentPayments; estados no cobrables/anuladas de consulta; retorno conserva filtros/seleccion/pagina en React, sin PII/saldo en URL/history/storage. El nuevo indicador de abrir formulario no dispara ninguna RPC: PASSED DOM.
+- Reutilizacion financiera: trece carreras conservadas, 70+60/100 sin sobrepago, deadlock nativo 40P01, serializacion nativa 40001, PT409/HTTP409 sin mutacion/auditoria, rollback, regresion H1-H3, expiracion real y reconstruccion/repeticion completa: PASSED.
+- No se reseteo ni migró la base humana; ninguna fixture H4 confirmada en ella. El runner aislado elimina su base temporal.
+
+Archivos afectados por esta enmienda:
+
+- src/security/SecurityRoutes.tsx; src/payments/PaymentAccess.tsx; src/payments/EnrollmentPayments.tsx.
+- supabase/migrations/20261109060000_direct_payment_access.sql.
+- scripts/local-platform.mjs; scripts/test-payments.mjs; scripts/test-payments-isolated.mjs.
+- tests/PaymentAccess.test.tsx; tests/SecurityRoutes.test.tsx; tests/EnrollmentPayments.test.tsx.
+- docs/specs/H4-payments/approved-direct-payment-access-amendment.md; implementation-log.md; technical-results.md; human-test-guide.md.
+
+La entrega publica tambien el SHA y la CI exacta del commit documental final, sin codigo posterior a 914bb83. Enmienda UX implementada, no cambio de reglas financieras. Todos los ensayos humanos siguen pendientes; forced-colors real NO VERIFICADO, QA visual/movil pendiente y advertencia de bundle >500 kB conservada. Sin garantia de carga masiva; contexto descartado al recargar o abandonar Pagos. Sin acceptance, merge ni H5; Gate 2 NO APROBADO.

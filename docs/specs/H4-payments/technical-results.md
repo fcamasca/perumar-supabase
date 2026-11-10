@@ -14,12 +14,13 @@ Migraciones nuevas, aditivas:
 | `20261109030000_h4_payment_commands.sql` | registrar_pago y anular_pago transaccionales, idempotencia, locks, versiones y dos eventos mínimos |
 | `20261109040000_h4_enrollment_guards.sql` | Sustituye el guard H3 existente para aplicar solo restricciones financieras aprobadas; conserva CHG-H3-011 |
 | `20261109050000_logical_conflicts_pt409.sql` | Correccion pre-Gate 2: contratos de conflicto logico PT409 en cuatro funciones existentes |
+| `20261109060000_direct_payment_access.sql` | CHG-H4-001: una vista invoker de contexto y saldo existente para acceso directo, sin N+1 |
 
-Inventario final controlado por `assertSecurityInventory`: **24 tablas públicas, 2 vistas invoker, 19 RPC públicas, 18 funciones privadas, 27 policies SELECT authenticated, 19 migraciones**. El verificador distingue tablas y vistas: una vista no se presenta como tabla con RLS; exige `security_invoker=true` y conserva los controles de sus tablas base. Los 52 pares objeto/rol de grants (26 objetos × authenticated/anon) se comprueban explícitamente: únicamente SELECT authenticated; sin DML/TRUNCATE cliente.
+Inventario final controlado por `assertSecurityInventory`: **24 tablas públicas, 3 vistas invoker, 19 RPC públicas, 18 funciones privadas, 27 policies SELECT authenticated, 20 migraciones**. El verificador distingue tablas y vistas: una vista no se presenta como tabla con RLS; exige `security_invoker=true` y conserva los controles de sus tablas base. Los 54 pares objeto/rol de grants (27 objetos × authenticated/anon) se comprueban explícitamente: únicamente SELECT authenticated; sin DML/TRUNCATE cliente.
 
 Tablas públicas: alumno, alumno_contacto_emergencia, app_roles, app_user_roles, app_users, auditoria, capitania, carrera, carrera_materia, catalogo, catalogo_valor, ciclo, ciclo_materia, ciclo_tarifa, departamento, distrito, empresa_patrocinadora, materia, matricula, matricula_cargo, **pago, pago_aplicacion**, provincia, tarifa. Permanecen los dos contadores privados y la secuencia de Alumno H3; ninguno nuevo para pagos.
 
-Vistas nuevas: **matricula_cargo_saldo** para imputación manual por cargo; **matricula_saldo** para resumen completo de matrícula independiente de páginas del historial. PostgreSQL calcula base/abonado/pendiente en cada consulta, sin saldo almacenado, clamp ni repricing. La UI solicita proyecciones monetarias como texto y calcula previsualizaciones en centavos enteros BigInt; la autoridad sigue siendo DB.
+Vistas nuevas: **matricula_cargo_saldo** para imputación manual por cargo; **matricula_saldo** para resumen completo de matrícula independiente de páginas del historial; **matricula_pago_listado** reutiliza ese resumen y agrega contexto para la enmienda de acceso directo. PostgreSQL calcula base/abonado/pendiente en cada consulta, sin saldo almacenado, clamp ni repricing. La UI solicita proyecciones monetarias como texto y calcula previsualizaciones en centavos enteros BigInt; la autoridad sigue siendo DB.
 
 RPC finales: guardar_materia, guardar_carrera, cambiar_active_materia, cambiar_active_carrera, guardar_ciclo, cambiar_materia_ciclo, cambiar_estado_ciclo, guardar_alumno, guardar_contacto_emergencia, retirar_contacto_emergencia, guardar_empresa_patrocinadora, guardar_tarifa, cambiar_activo_tarifa, guardar_ciclo_tarifas, registrar_matricula, editar_matricula, anular_matricula, **registrar_pago, anular_pago**. Solo las dos últimas son nuevas. No endpoint de deuda, recuperación, mantenimiento de medios ni fallos.
 
@@ -50,7 +51,7 @@ Entorno local: Windows, Node 24.22.1 del runtime disponible. CI utiliza la versi
 | Comprobación | Evidencia |
 |---|---|
 | lint / typecheck / git diff --check | PASSED durante construcción |
-| Suite completa | 335/335 PASSED en 20 archivos tras la correccion pre-Gate 2; 320/320 corresponden al candidato anterior |
+| Suite completa | 359/359 PASSED en 21 archivos tras CHG-H4-001; 335/335 corresponden a la correccion PT409 y 320/320 al candidato inicial |
 | build / build-safety | PASSED; advertencia bundle >500 kB conservada |
 | Modelo primero, antes de comandos/UI | PASSED en BEGIN/ROLLBACK: tablas, RLS, grants y cinco medios |
 | `test:payments:rollback` | PASSED; datos sintéticos y schema nuevo se revierten; comparación de huella de datos pre/post |
@@ -223,6 +224,27 @@ PaymentAccess solo busca, presenta saldo DB y abre EnrollmentPayments existente.
 
 Contexto de busqueda/seleccion/filtro/paginas en estado React de /pagos/* por identidad, conservado al volver; no PII ni saldos en history.state/URL/storage. Se descarta al abandonar/recargar el modulo o cambiar de identidad. history.state contiene solo el indicador UI de apertura del formulario.
 
-Validacion local: lint/typecheck, 359/359 pruebas en 21 archivos PASSED; suite financiera aislada conserva las trece carreras, 70+60/100, PT409 y errores nativos. Rollback local PASSED sin fixtures persistidos. Build/build-safety y diff-check se completan antes de publicacion. Pruebas API nuevas de proyeccion/orden numerico 100-20-0/filtros/roles e IDs manipulados, junto con regresion H1-H3/expiracion/reset-repeat, se ejecutaran en CI desechable; PENDIENTES hasta observar resultado real.
+Validacion local: lint/typecheck, 359/359 pruebas en 21 archivos PASSED; suite financiera aislada conserva las trece carreras, 70+60/100, PT409 y errores nativos. Rollback local PASSED sin fixtures persistidos. Build/build-safety y diff-check PASSED antes de publicacion y repetidos en CI. Pruebas API nuevas de proyeccion/orden numerico 100-20-0/filtros/roles e IDs manipulados, regresion H1-H3, expiracion y reset-repeat: PASSED en CI 42758669622 del SHA 914bb837ef570e214798f05634be363e2049d272.
 
 Guia humana, Bloque 1 actualizado al nuevo acceso principal. Todas las pruebas humanas siguen PENDIENTES; no se infieren resultados de los tests DOM. Residuales: forced-colors real y QA visual/movil pendientes; busqueda sin persistencia entre recargas; sin ensayo masivo de throughput. Misma arquitectura React + Supabase/RLS/RPC concretas, sin backend adicional ni motor de deuda.
+
+### CHG-H4-001: evidencia verificada el 10/11/2026
+
+[CI 42758669622 — COMPLETED / SUCCESS](https://github.com/fcamasca/perumar-supabase/actions/runs/42758669622), codigo exacto `914bb837ef570e214798f05634be363e2049d272`.
+
+- 359/359 pruebas en 21 archivos, lint/typecheck/build/build-safety: PASSED.
+- Matriz JWT/RLS y nuevos listados: Director/Coordinador/multirol autorizados; Admin y actores no habilitados no obtienen filas ni consultando IDs conocidos/manipulados. Anon sin SELECT. Inventario de tres vistas invoker/grants exactos: PASSED.
+- Consulta real Por Alumno con tres matriculas: pendiente numerico 100.00, 20.00 y 0.00 en ese orden. PROGRAMADO/EN_CURSO/CERRADO, filtros compartidos de codigo/DI/nombres/apellidos y UUID inexistente: PASSED.
+- UI: Por Alumno inicial; busquedas y listados; Pagar/Ver apuntan al mismo EnrollmentPayments; estados no cobrables/anuladas de consulta; retorno conserva filtros/seleccion/pagina en React, sin PII/saldo en URL/history/storage. El nuevo indicador de abrir formulario no dispara ninguna RPC: PASSED DOM.
+- Reutilizacion financiera: trece carreras conservadas, 70+60/100 sin sobrepago, deadlock nativo 40P01, serializacion nativa 40001, PT409/HTTP409 sin mutacion/auditoria, rollback, regresion H1-H3, expiracion real y reconstruccion/repeticion completa: PASSED.
+- No se reseteo ni migró la base humana; ninguna fixture H4 confirmada en ella. El runner aislado elimina su base temporal.
+
+Archivos afectados por esta enmienda:
+
+- src/security/SecurityRoutes.tsx; src/payments/PaymentAccess.tsx; src/payments/EnrollmentPayments.tsx.
+- supabase/migrations/20261109060000_direct_payment_access.sql.
+- scripts/local-platform.mjs; scripts/test-payments.mjs; scripts/test-payments-isolated.mjs.
+- tests/PaymentAccess.test.tsx; tests/SecurityRoutes.test.tsx; tests/EnrollmentPayments.test.tsx.
+- docs/specs/H4-payments/approved-direct-payment-access-amendment.md; implementation-log.md; technical-results.md; human-test-guide.md.
+
+La entrega publica tambien el SHA y la CI exacta del commit documental final, sin codigo posterior a 914bb83. Enmienda UX implementada, no cambio de reglas financieras. Todos los ensayos humanos siguen pendientes; forced-colors real NO VERIFICADO, QA visual/movil pendiente y advertencia de bundle >500 kB conservada. Sin garantia de carga masiva; contexto descartado al recargar o abandonar Pagos. Sin acceptance, merge ni H5; Gate 2 NO APROBADO.

@@ -10,7 +10,7 @@ Pagos → Por Alumno (inicial) / Por Ciclo → seleccionar matrícula → flujo 
 
 Buscar Alumno reutiliza studentSearchFilter (código, documento, nombres y apellidos). Sus matrículas muestran Ciclo, Curso, estado de Ciclo, base/abonado/pendiente y acción. Por Ciclo admite Programado/En curso/Cerrado, con filtro de alumnos reutilizado. Cero permanece al final. Pendiente descendente, fecha de Ciclo descendente y desempates deterministas en DB. Matrículas anuladas/estados no cobrables admiten solo consulta.
 
-El detalle muestra Alumno/documento, matrícula, Ciclo, Curso y pendiente antes de operar. Reutiliza EnrollmentPayments sin nueva lógica financiera. Pagar abre su formulario existente; Ver ofrece consulta/historial. El retorno preserva contexto de búsqueda en estado de navegación en memoria (no PII ni payload financiero en URL/storage).
+El detalle muestra Alumno/documento, matrícula, Ciclo, Curso y pendiente antes de operar. Reutiliza EnrollmentPayments sin nueva lógica financiera. Pagar abre su formulario existente; Ver ofrece consulta/historial. El retorno preserva contexto de búsqueda en estado React del workspace /pagos/* por identidad (no PII ni payload financiero en URL/history/storage).
 
 ## Justificación previa de lectura agregada
 
@@ -21,3 +21,7 @@ Se autoriza por la cláusula de lecturas de esta solicitud una sola vista espec�
 ## Límites y evidencia
 
 Sin cambios en dinero, aplicaciones, idempotencia, locks/SERIALIZABLE, PT409, auditoría, permisos financieros o reglas H3/H4. Sin API/servicio, mantenimiento, facturación ni H5. La validación y resultados reales se registran en implementation-log.md y technical-results.md. Pruebas humanas PENDIENTES, incluyendo accesibilidad visual/móvil/forced-colors real.
+
+## Evidencia tecnica del 10/11/2026
+
+Implementada sobre la base indicada. [CI 42758669622 SUCCESS](https://github.com/fcamasca/perumar-supabase/actions/runs/42758669622), codigo `914bb837ef570e214798f05634be363e2049d272`; 359/359 pruebas. Inventario: una vista adicional, sin tablas/RPC/helpers/policies nuevos. [Detalle tecnico](technical-results.md), [registro](implementation-log.md) y [guia humana actualizada](human-test-guide.md). La entrega verifica asimismo el SHA documental final. Revisión humana y Gate 2 PENDIENTES.
