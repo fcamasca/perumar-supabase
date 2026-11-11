@@ -62,3 +62,8 @@ Comprobar botones compactos Ver matrícula / Editar y menú ⋮ Más acciones co
 ### Guardado de cargos y confirmación (pendiente humano)
 
 Abrir Editar matrícula → Cargos sin modificar: Guardar cargos debe estar deshabilitado. Cambiar un opcional lo habilita; revertirlo lo deshabilita. Guardar un cambio válido: observar Guardando… y luego Cargos guardados correctamente; el botón vuelve a quedar deshabilitado tras consultar los datos guardados. Un nuevo cambio elimina el aviso previo. Si DB rechaza retirar un cargo pagado o hay conflicto, conservar selección/error y no mostrar éxito.
+
+
+### Validación de importe en Pagos (pendiente humano)
+
+Ingresar un importe superior al pendiente: observar borde/foco de error y explicación junto al campo con el límite exacto; al confirmar debe aparecer una alerta de validación y conservar el valor para corregirlo. Probar más de dos decimales y corregir: desaparece la validación local sin envío automático. Éxito usa confirmación diferenciada; conflictos del servidor conservan borrador y requieren decisión explícita. Revisar temas visuales y contraste real sin presumir esa ejecución.

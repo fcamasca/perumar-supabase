@@ -37,9 +37,10 @@ it('sends one transactional command with exact manual applications, no date or f
   const [command,{p}]=client.rpc.mock.calls[0]
   expect(command).toBe('registrar_pago');expect(p).toEqual({matricula_id:'m',expected_matricula_updated_at:'v1',idempotency_key:expect.any(String),importe:'30.25',medio_pago_id:'cash',observaciones:'Nota Mixta',aplicaciones:[{matricula_cargo_id:'c1',importe:'30.25'}]})
   await waitFor(()=>expect(changed).toHaveBeenCalled())
+  expect(screen.getByText('Pago registrado.')).toHaveClass('success');expect(screen.getByText('Pago registrado.')).toHaveAttribute('role','status')
 })
 it('rejects excess precision before sending, without rounding',async()=>{
-  await show();fireEvent.click(screen.getByRole('button',{name:'Registrar pago'}));fireEvent.change(screen.getByRole('textbox',{name:'Importe para CURSO'}),{target:{value:'10.001'}});fireEvent.change(screen.getByRole('combobox'),{target:{value:'cash'}});fireEvent.click(screen.getByRole('button',{name:/^Confirmar pago/}));expect(client.rpc).not.toHaveBeenCalled();expect(screen.getByRole('textbox',{name:'Importe para CURSO'})).toHaveFocus();expect(screen.getByRole('status')).toHaveTextContent('máximo dos decimales')
+  await show();fireEvent.click(screen.getByRole('button',{name:'Registrar pago'}));fireEvent.change(screen.getByRole('textbox',{name:'Importe para CURSO'}),{target:{value:'10.001'}});fireEvent.change(screen.getByRole('combobox'),{target:{value:'cash'}});fireEvent.click(screen.getByRole('button',{name:/^Confirmar pago/}));expect(client.rpc).not.toHaveBeenCalled();expect(screen.getByRole('textbox',{name:'Importe para CURSO'})).toHaveFocus();expect(screen.getByRole('alert')).toHaveTextContent('máximo dos decimales')
 })
 it('retains key after lost response and only replays the identical explicit attempt',async()=>{
   await show();fireEvent.click(screen.getByRole('button',{name:'Registrar pago'}));fireEvent.click(screen.getByRole('checkbox',{name:'Pagar CURSO'}));fireEvent.change(screen.getByRole('combobox'),{target:{value:'cash'}})
@@ -89,3 +90,16 @@ it('compact summary is unique and a partial amount is explicit in the confirmati
  render(<EnrollmentPayments {...props} initialRegister/>);await waitFor(()=>expect(screen.getByRole('textbox',{name:'Importe para CURSO'})).toBeEnabled());expect(screen.queryByRole('heading',{name:'Pagos'})).not.toBeInTheDocument();expect(screen.getAllByText('Base',{exact:true})).toHaveLength(1);expect(screen.getAllByText('Abonado',{exact:true})).toHaveLength(1)
  fireEvent.change(screen.getByRole('textbox',{name:'Importe para CURSO'}),{target:{value:'30.25'}});expect(screen.getByRole('button',{name:'Confirmar pago · S/ 30.25'})).toBeVisible();expect(screen.getByRole('textbox',{name:/Observaciones/})).toHaveAttribute('rows','2');expect(client.rpc).not.toHaveBeenCalled()
 })
+
+
+it('marks overpayment as a linked field validation error and clears it after correction without sending',async()=>{
+ await show();fireEvent.click(screen.getByRole('button',{name:'Registrar pago'}));const input=screen.getByRole('textbox',{name:'Importe para CURSO'});
+ fireEvent.change(input,{target:{value:'150'}});expect(input).toHaveAttribute('aria-invalid','true');const error=document.getElementById(input.getAttribute('aria-describedby')!);expect(error).toHaveTextContent('El importe no puede superar el pendiente de S/ 100.00.');expect(error).toHaveClass('payment-field-error');
+ fireEvent.change(screen.getByRole('combobox'),{target:{value:'cash'}});fireEvent.click(screen.getByRole('button',{name:/^Confirmar pago/}));expect(screen.getByRole('alert')).toHaveClass('validation-errors');expect(screen.getByRole('alert')).toHaveTextContent('Revisa el importe de CURSO');expect(input).toHaveFocus();expect(input).toHaveValue('150');expect(client.rpc).not.toHaveBeenCalled();expect(sessionStorage.length).toBe(0);
+ fireEvent.change(input,{target:{value:'90.25'}});expect(input).toHaveAttribute('aria-invalid','false');expect(input).not.toHaveAttribute('aria-describedby');expect(screen.queryByRole('alert')).not.toBeInTheDocument();expect(screen.queryByText('El importe no puede superar el pendiente de S/ 100.00.')).not.toBeInTheDocument();expect(input).toHaveValue('90.25');expect(client.rpc).not.toHaveBeenCalled();
+});
+
+it('styles a server conflict as an error while preserving the draft',async()=>{
+ await show();fireEvent.click(screen.getByRole('button',{name:'Registrar pago'}));fireEvent.click(screen.getByRole('checkbox',{name:'Pagar CURSO'}));fireEvent.change(screen.getByRole('combobox'),{target:{value:'cash'}});
+ client.rpc.mockResolvedValueOnce({error:{code:'PT409',message:'stale'}});fireEvent.click(screen.getByRole('button',{name:/^Confirmar pago/}));expect(await screen.findByRole('alert')).toHaveTextContent('La información cambió durante');expect(screen.getByRole('alert')).toHaveClass('validation-errors');expect(client.rpc).toHaveBeenCalledTimes(1);
+});

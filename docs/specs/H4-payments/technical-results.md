@@ -52,7 +52,7 @@ Entorno local: Windows, Node 24.22.1 del runtime disponible. CI utiliza la versi
 | Comprobación | Evidencia |
 |---|---|
 | lint / typecheck / git diff --check | PASSED durante construcción |
-| Suite completa | 370/370 PASSED en 21 archivos tras corregir guardado/confirmación de cargos; 368/368 corresponden a acciones de matrícula; 367/367 corresponden al selector de todos los opcionales; 365/365 corresponden al arreglo de reapertura; 364/364 corresponden al filtro de anuladas y CHG-H4-002; 362/362 corresponden a compactacion visual; 359/359 corresponden al acceso directo CHG-H4-001, 335/335 a PT409 y 320/320 al candidato inicial |
+| Suite completa | 372/372 PASSED en 21 archivos tras mejorar la validación de importes de pago; 370/370 corresponden a guardado/confirmación de cargos; 368/368 corresponden a acciones de matrícula; 367/367 corresponden al selector de todos los opcionales; 365/365 corresponden al arreglo de reapertura; 364/364 corresponden al filtro de anuladas y CHG-H4-002; 362/362 corresponden a compactacion visual; 359/359 corresponden al acceso directo CHG-H4-001, 335/335 a PT409 y 320/320 al candidato inicial |
 | build / build-safety | PASSED; advertencia bundle >500 kB conservada |
 | Modelo primero, antes de comandos/UI | PASSED en BEGIN/ROLLBACK: tablas, RLS, grants y cinco medios |
 | `test:payments:rollback` | PASSED; datos sintéticos y schema nuevo se revierten; comparación de huella de datos pre/post |
@@ -322,3 +322,14 @@ Durante el envío muestra Guardando… y bloquea la selección. Al confirmar la 
 Regresión: estado inicial limpio; toggles individuales/todos y reversión; submit sin cambios sin RPC; envío pendiente; actualización del estado guardado y confirmación persistente tras recarga/pestañas; nuevo cambio limpia el aviso; PT409 conserva selección sin retry/éxito falso. Fixture de detalle devuelve objetos independientes por lectura para representar las respuestas reales de Supabase. Gate 2 pendiente; sin acceptance, merge ni H5. Resultados y CI exacta del candidato en entrega.
 
 Validación local de guardado/feedback: lint/typecheck, EnrollmentPages 61/61, suite completa 370/370 (21 archivos), build, build-safety y diff-check correctos. Confirmación con la clase success existente, sin CSS nuevo. No migraciones ni cambios de inventario. QA humana pendiente; CI exacta del candidato en entrega.
+
+
+## 10/11/2026 — Validación de importes de pago reconocible y vinculada al campo
+
+Hallazgo humano: el error de importe se mostraba como un status neutro y el foco azul ocultaba el borde de error. Se distinguen explícitamente mensajes de validación/error (alert + estilo validation-errors existente), éxito, advertencia de resultado incierto e información; no se deduce severidad del texto. Importes inválidos muestran detalle junto al campo, vinculado mediante aria-describedby y aria-invalid. Exceso indica el pendiente concreto; formato inválido explica máximo dos decimales. Borde/foco mantienen el color de error incluso con el campo activo, usando los tokens existentes y sin anular el borde dashed de forced-colors.
+
+Al corregir o desmarcar el importe se elimina la validación local anterior; los errores/conflictos del servidor no se borran por editar un importe. Se conservan valores, foco al primer importe inválido y no envío si la validación falla. Éxito y resultado ambiguo permanecen semánticamente diferenciados. No cambia el cálculo en centavos, las condiciones de validación, payload/RPC, UUID/idempotencia, recuperación, permisos ni autoridad DB. Sin SQL, migraciones, nueva dependencia o modificación del Spec aprobado.
+
+Regresión: exceso/precisión, mensaje de campo asociado, aria-invalid y alert de resumen, corrección sin RPC ni referencia de intento; éxito con status/success y conflicto PT409 visible con borrador/sin retry. QA visual humana de temas/viewport/contraste real pendiente. Gate 2 pendiente; sin acceptance, merge ni H5. Resultados y CI exacta en entrega.
+
+Validación local de mensajes/importe: lint/typecheck, EnrollmentPayments 19/19 y suite completa 372/372 (21 archivos) correctos. Éxito, conflicto, precisión/exceso, vinculación accesible y ausencia de escrituras ante validación cubiertos. Build/build-safety/diff-check antes de publicar; CI exacta y SHA en entrega. Sin cambios de inventario ni migraciones.

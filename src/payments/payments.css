@@ -36,3 +36,7 @@
  .payment-form .payment-actions{gap:.5rem}.payment-actions>button{padding:.6rem .75rem}
  .payment-recovery button+button{margin:.5rem 0 0}
 }
+
+/* Validation stays recognizable even while the invalid amount has focus. */
+.payments .payment-allocation input[aria-invalid=true],.payments .payment-allocation input[aria-invalid=true]:focus{border-color:var(--error);outline-color:var(--error)}
+.payments .payment-field-error{display:block;max-width:14rem;margin:.35rem 0 0;color:var(--error);font-size:.8rem;line-height:1.35;white-space:normal;text-align:left;overflow-wrap:anywhere}
