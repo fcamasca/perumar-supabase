@@ -333,3 +333,8 @@ Al corregir o desmarcar el importe se elimina la validación local anterior; los
 Regresión: exceso/precisión, mensaje de campo asociado, aria-invalid y alert de resumen, corrección sin RPC ni referencia de intento; éxito con status/success y conflicto PT409 visible con borrador/sin retry. QA visual humana de temas/viewport/contraste real pendiente. Gate 2 pendiente; sin acceptance, merge ni H5. Resultados y CI exacta en entrega.
 
 Validación local de mensajes/importe: lint/typecheck, EnrollmentPayments 19/19 y suite completa 372/372 (21 archivos) correctos. Éxito, conflicto, precisión/exceso, vinculación accesible y ausencia de escrituras ante validación cubiertos. Build/build-safety/diff-check antes de publicar; CI exacta y SHA en entrega. Sin cambios de inventario ni migraciones.
+
+
+## 12/11/2026 — Confirmación global de pruebas humanas
+
+El usuario reportó «listo ok las pruebas». Se registra **OK global reportado**, sin atribuir pasos, TEST o subcasos individuales no desglosados. Candidato de referencia de sesión: `0091190f0cf353d744d6b2d9a6447916d9c882d6`, con 372/372 y CI `42938230861` SUCCESS. El usuario confirmó expresamente Chrome / Windows 11 Pro y forced-colors real NO VERIFICADO. Versión de Chrome, roles y SHA ejecutado no fueron nuevamente indicados; no se inventan. No se presume residual aceptado. Detalle: [human-results.md](human-results.md). **Gate 2 continúa PENDIENTE**; no acceptance, merge, cierre ni H5.

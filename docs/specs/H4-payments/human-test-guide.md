@@ -1,6 +1,8 @@
 # H4 — Guía de pruebas humanas del candidato
 
-**Gate 2 PENDIENTE. Todas las pruebas humanas H4 están PENDIENTES. H5 NO INICIADO.**
+**12/11/2026: el usuario reportó OK global de las pruebas humanas. Entorno Chrome / Windows 11 Pro; detalle individual, roles y versión de Chrome no informados. Forced-colors real NO VERIFICADO. Gate 2 PENDIENTE. H5 NO INICIADO.**
+
+Evidencia y límites de la confirmación: [human-results.md](human-results.md). Las etiquetas históricas «pendiente humano» del recorrido no se convierten en ejecuciones individuales por esta aprobación global.
 
 Registrar antes de empezar: SHA (`git rev-parse HEAD`), rol, navegador/versión, SO, resultado por bloque y limitaciones. La evidencia humana de H3 no prueba H4.
 
