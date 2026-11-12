@@ -347,3 +347,8 @@ El usuario reportó «listo ok las pruebas». Se registra **OK global reportado*
 Decisión humana explícita sobre `0091190f0cf353d744d6b2d9a6447916d9c882d6`: **Gate 2 APROBADO HUMANAMENTE**. [Registro](gate-2.md). CI funcional `42938230861` y CI documental `43267712701` de `6943d5416dcf24ea81b6f3b30867090c2d3d83df`: COMPLETED / SUCCESS, verificadas. Solo documentación después del candidato; 372/372 pruebas automáticas. Reporte humano OK global en Chrome / Windows 11 Pro; no se inventan versión, roles ni subcasos individuales.
 
 **Forced-colors / contraste alto real de Windows: NO VERIFICADO — residual aceptado** expresamente para Gate 2 de H4, sin declararlo ejecutado, PASSED, validado ni heredado de H3. Se conservan advertencia de bundle >500 kB y Data API hospedada / PostgREST 14 no probada directamente, así como los demás límites técnicos documentados. Este estado vigente prevalece sobre menciones históricas de Gate 2 pendiente; los cuatro documentos aprobados no se modifican. **No acceptance.md, merge a main, cierre formal H4 ni H5 autorizados. H5 NO INICIADO.** SHA documental final y CI propia en entrega.
+
+
+## Cierre formal autorizado — 12/11/2026
+
+La instrucción posterior autoriza H4 CLOSED / ACEPTADO y su integración trazable tras CI SUCCESS del commit documental de cierre. [Acceptance](acceptance.md) consolida gates, candidato, enmiendas, evidencia e inventario sin cambiar código ni el Spec. La integración se hace efectiva al merge a main, cuya CI debe ser SUCCESS. Sustituye los bloqueos anteriores de cierre conservados como historial. Después queda autorizado H5 únicamente en fase Spec desde ese main exacto, sin permiso intermedio ni construcción H5. Residuales y granularidad de evidencia humana permanecen intactos.

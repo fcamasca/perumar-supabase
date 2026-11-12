@@ -704,8 +704,8 @@ El PLAN vigente debe reflejar el estado real del proyecto.
 | H1 Seguridad base | ACEPTADO / INTEGRADO — Gate 2 aprobado 22/10/2026 |
 | H2 Base académica | CLOSED / ACEPTADO / INTEGRADO — Gate 2 aprobado 22/10/2026; riesgo forced-colors aceptado |
 | H3 Alumno y Matrícula | CLOSED / ACEPTADO / INTEGRADO en main con el merge de este cierre — Gate 2 aprobado 09/11/2026; [aceptación](specs/H3-enrollment/acceptance.md), residual forced-colors aceptado |
-| H4 Pagos | Gate 2 APROBADO HUMANAMENTE 12/11/2026; [registro](specs/H4-payments/gate-2.md). Cierre formal / acceptance / merge NO AUTORIZADOS; forced-colors NO VERIFICADO — residual aceptado |
-| H5 Ficha PDF | NO INICIADO |
+| H4 Pagos | CLOSED / ACEPTADO; listo para integración en rama; INTEGRADO en main al incorporar este cierre. [Acceptance](specs/H4-payments/acceptance.md), Gate 2 humano 12/11/2026; forced-colors NO VERIFICADO — residual aceptado |
+| H5 Ficha PDF | SPEC autorizado desde main posterior a H4 integrado y verde; construcción NO AUTORIZADA / Gate 1 pendiente |
 | Gate A01 | BLOQUEADO |
 | H6 Expediente | BLOQUEADO |
 | H7 Patrocinadores y facturación | BLOQUEADO |
@@ -718,4 +718,6 @@ El PLAN vigente debe reflejar el estado real del proyecto.
 
 H3 está CLOSED / ACEPTADO humanamente; su integración en main se hace efectiva con el PR/merge commit de este cierre, condicionado a CI SUCCESS. Véase [acceptance.md](specs/H3-enrollment/acceptance.md).
 
-**H4 — Pagos: Gate 2 APROBADO HUMANAMENTE**, sin cierre formal ni integración a main autorizados. Candidato funcional `0091190f0cf353d744d6b2d9a6447916d9c882d6`; [registro Gate 2](specs/H4-payments/gate-2.md). Forced-colors: **NO VERIFICADO — residual aceptado**. Se conservan advertencia de bundle >500 kB y Data API hospedada / PostgREST 14 no probada directamente. Se requiere autorización humana posterior específica para acceptance, cierre formal y merge. **H5 NO INICIADO** y no se inicia automáticamente.
+**H4 — CLOSED / ACEPTADO / listo para integración**; **INTEGRADO** al incorporar este cierre a main mediante PR/merge commit y verificar CI SUCCESS. Candidato funcional `0091190f0cf353d744d6b2d9a6447916d9c882d6`; [acceptance](specs/H4-payments/acceptance.md) y [Gate 2](specs/H4-payments/gate-2.md). Forced-colors: **NO VERIFICADO — residual aceptado**; bundle >500 kB y Data API hospedada / PostgREST 14 no probada directamente se conservan.
+
+La instrucción humana del 12/11/2026 autoriza, inmediatamente después de H4 integrado y main verde, crear `feature/h5-enrollment-pdf-spec` desde ese main exacto y preparar **solo el Spec H5 — Ficha de matrícula PDF** (sección 5). Sin permiso intermedio. No cambia su alcance ni autoriza implementación, Edge Function, PDF, Storage, dependencias o backend alternativo. Resolver OQ y obtener Gate 1 H5 antes de construir. GATE-A01 sigue reservado a decisión humana tras evaluar H5.

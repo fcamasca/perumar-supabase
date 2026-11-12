@@ -41,3 +41,8 @@ El usuario reportó **OK global de las pruebas humanas sobre el recorrido H4** y
 La autorización actual se limita a registrar y publicar esta decisión y validar su commit documental en CI. **No autoriza acceptance.md, merge a main, cierre formal H4 ni inicio H5.** H4 permanece sin cierre formal y sin integración autorizada; **H5 NO INICIADO**. El siguiente paso exige autorización humana posterior específica.
 
 El SHA final de este registro y su CI propia se informan en la entrega para evitar una referencia circular al commit que contiene este archivo. No se modifica código funcional, SQL, migraciones, dependencias, UI, RLS ni RPC.
+
+
+## Autorización posterior de cierre e integración — 12/11/2026
+
+El usuario autorizó expresamente crear [acceptance.md](acceptance.md), cerrar H4 e integrarlo a main mediante PR/merge commit después de CI SUCCESS del cierre. También autorizó iniciar inmediatamente H5 **solo SPEC**, sin permiso intermedio, desde el main exacto integrado y verde. Esta decisión posterior sustituye los límites anteriores de cierre/inicio, conservados arriba como historia; no modifica el candidato funcional aprobado ni concede Gate 1 H5.

@@ -20,3 +20,8 @@ Respuesta de entorno: «chrome/Windows 11 Pro/contraste alto real de Windows (fo
 El usuario ratificó CI funcional `42938230861` SUCCESS y registro documental `6943d5416dcf24ea81b6f3b30867090c2d3d83df`, CI `43267712701` SUCCESS. Ambas CI y la ausencia de cambios funcionales posteriores se verificaron al registrar Gate 2. Bundle >500 kB y Data API hospedada / PostgREST 14 no probada directamente permanecen como limitaciones, sin atribuirles validación humana.
 
 **No están autorizados acceptance.md, cierre formal H4, merge a main ni H5. H5 NO INICIADO.** Se requiere autorización posterior específica.
+
+
+## Cierre formal autorizado — 12/11/2026
+
+La instrucción posterior autoriza H4 CLOSED / ACEPTADO y su integración trazable tras CI SUCCESS del commit documental de cierre. [Acceptance](acceptance.md) consolida gates, candidato, enmiendas, evidencia e inventario sin cambiar código ni el Spec. La integración se hace efectiva al merge a main, cuya CI debe ser SUCCESS. Sustituye los bloqueos anteriores de cierre conservados como historial. Después queda autorizado H5 únicamente en fase Spec desde ese main exacto, sin permiso intermedio ni construcción H5. Residuales y granularidad de evidencia humana permanecen intactos.
