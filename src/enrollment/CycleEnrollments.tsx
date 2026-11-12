@@ -1,4 +1,5 @@
-import {useEffect,useRef,useState} from 'react'
+import {useEffect,useId,useRef,useState} from 'react'
+import {createPortal} from 'react-dom'
 import {Link} from 'react-router-dom'
 import {useSession} from '../security/SessionProvider'
 import {AcademicPagination,AcademicSearch} from '../academic/AcademicLayout'
@@ -9,6 +10,24 @@ import {QuickEnrollmentSearch} from './QuickEnrollmentSearch'
 
 type Cycle={id:string;codigo_ciclo:string;estado_codigo:string;updated_at:string}
 type Enrollment={id:string;codigo_matricula:string;estado_codigo:string;alumno:{id:string;codigo_alumno:string;apellido_paterno:string;apellido_materno:string;nombres:string;numero_di:string}}
+// Row-specific disclosure: the exceptional transfer action stays out of the main buttons.
+function EnrollmentMoreActions({code,disabled,onChange}:{code:string;disabled:boolean;onChange:()=>void}) {
+ const id=useId(),trigger=useRef<HTMLButtonElement>(null),menu=useRef<HTMLDivElement>(null),item=useRef<HTMLButtonElement>(null)
+ const [position,setPosition]=useState<{top:number;left:number}|null>(null)
+ function open(){if(disabled)return;const rect=trigger.current!.getBoundingClientRect();setPosition({top:rect.bottom+56>window.innerHeight?Math.max(8,rect.top-48):rect.bottom+4,left:Math.max(8,Math.min(window.innerWidth-188,rect.right-180))})}
+ function close(restore=false){setPosition(null);if(restore)trigger.current?.focus()}
+ useEffect(()=>{
+  if(!position||disabled)return
+  item.current?.focus()
+  const outside=(event:PointerEvent)=>{if(!menu.current?.contains(event.target as Node)&&!trigger.current?.contains(event.target as Node))setPosition(null)}
+  const dismiss=()=>setPosition(null)
+  document.addEventListener('pointerdown',outside);window.addEventListener('resize',dismiss);window.addEventListener('scroll',dismiss,true)
+  return()=>{document.removeEventListener('pointerdown',outside);window.removeEventListener('resize',dismiss);window.removeEventListener('scroll',dismiss,true)}
+ },[position,disabled])
+ return <><button ref={trigger} type="button" className="secondary enrollment-more-trigger" aria-label={`Más acciones de matrícula ${code}`} title="Más acciones" aria-haspopup="menu" aria-expanded={!!position&&!disabled} aria-controls={position&&!disabled?id:undefined} disabled={disabled} onClick={()=>position?close():open()} onKeyDown={event=>{if(event.key==='ArrowDown'||event.key==='ArrowUp'){event.preventDefault();open()}}}><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
+ {position&&!disabled&&createPortal(<div ref={menu} id={id} role="menu" aria-label={`Más acciones de matrícula ${code}`} className="enrollment-actions-menu" style={position} onBlur={event=>{if(!event.currentTarget.contains(event.relatedTarget as Node|null)&&!trigger.current?.contains(event.relatedTarget as Node|null))close()}} onKeyDown={event=>{if(event.key==='Escape'){event.preventDefault();event.stopPropagation();close(true)}else if(['ArrowDown','ArrowUp','Home','End'].includes(event.key)){event.preventDefault();item.current?.focus()}else if(event.key==='Tab')close(true)}}><button ref={item} type="button" role="menuitem" onClick={()=>{close(true);onChange()}}>Cambiar Ciclo…</button></div>,document.body)}</>
+}
+
 export function CycleEnrollments({cycle,blocked=false,blockedMessage,onPanelChange}:{cycle:Cycle;blocked?:boolean;blockedMessage?:string;onPanelChange?:(open:boolean)=>void}) {
  const {client,state}=useSession()
  const [rows,setRows]=useState<Enrollment[]>([]),[count,setCount]=useState(0),[filter,setFilter]=useState(''),[page,setPage]=useState(0),[revision,setRevision]=useState(0),[loading,setLoading]=useState(true),[error,setError]=useState(''),[notice,setNotice]=useState('')
@@ -44,7 +63,7 @@ export function CycleEnrollments({cycle,blocked=false,blockedMessage,onPanelChan
    {blocked&&blockedMessage!==''&&<p className="help-text">{blockedMessage??'Guarda o cancela los cambios del Ciclo antes de matricular alumnos.'}</p>}
    {!eligible&&<p className="help-text">Este Ciclo solo permite consultar sus matrículas.</p>}
    {notice&&<p role="status">{notice}</p>}{error&&<p role="alert">{error}</p>}{loading&&<p role="status">Cargando matriculados…</p>}
-   <div className="table-scroll"><table aria-label="Alumnos matriculados en el Ciclo"><thead><tr><th>Alumno</th><th>Documento</th><th>Código de matrícula</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{!loading&&!error&&rows.map(row=><tr key={row.id}><td>{row.alumno.apellido_paterno} {row.alumno.apellido_materno}, {row.alumno.nombres}<small className="secondary-text">{row.alumno.codigo_alumno}</small></td><td>{row.alumno.numero_di}</td><td>{row.codigo_matricula}</td><td><StatusBadge value={row.estado_codigo==='ACTIVO'?'Activa':'Anulada'}/></td><td><div className="record-header-actions"><Link to={`/matriculas/${row.id}`}>Ver matrícula</Link>{academic&&eligible&&row.estado_codigo==='ACTIVO'&&<><Link to={`/matriculas/${row.id}?editar=1`}>Editar matrícula</Link><button type="button" className="secondary" disabled={blocked||opening||!!panelCycle||!!changingEnrollment} onClick={()=>setChangingEnrollment(row.id)}>Cambiar Ciclo</button></>}</div></td></tr>)}{!loading&&!error&&!rows.length&&<tr><td colSpan={5}>{filter?'No hay matriculados que coincidan con el filtro.':'No hay alumnos matriculados en este Ciclo.'}</td></tr>}</tbody></table></div>
+   <div className="table-scroll"><table aria-label="Alumnos matriculados en el Ciclo"><thead><tr><th>Alumno</th><th>Documento</th><th>Código de matrícula</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{!loading&&!error&&rows.map(row=><tr key={row.id}><td>{row.alumno.apellido_paterno} {row.alumno.apellido_materno}, {row.alumno.nombres}<small className="secondary-text">{row.alumno.codigo_alumno}</small></td><td>{row.alumno.numero_di}</td><td>{row.codigo_matricula}</td><td><StatusBadge value={row.estado_codigo==='ACTIVO'?'Activa':'Anulada'}/></td><td><div className="cycle-enrollment-actions"><Link to={`/matriculas/${row.id}`}>Ver matrícula</Link>{academic&&eligible&&row.estado_codigo==='ACTIVO'&&<><Link aria-label="Editar matrícula" to={`/matriculas/${row.id}?editar=1`}>Editar</Link><EnrollmentMoreActions code={row.codigo_matricula} disabled={blocked||opening||!!panelCycle||!!changingEnrollment} onChange={()=>setChangingEnrollment(row.id)}/></>}</div></td></tr>)}{!loading&&!error&&!rows.length&&<tr><td colSpan={5}>{filter?'No hay matriculados que coincidan con el filtro.':'No hay alumnos matriculados en este Ciclo.'}</td></tr>}</tbody></table></div>
    <nav aria-label="Páginas de matriculados">{(count>30||page>0)&&<AcademicPagination page={page} count={rows.length} disabled={loading||!!panelCycle} onChange={setPage} labels={{previous:'Página anterior',next:'Página siguiente'}}/>}</nav>
   </div>
   {changingEnrollment&&<ChangeEnrollmentCycle id={changingEnrollment} source={cycle} close={()=>setChangingEnrollment(undefined)} changed={()=>{setChangingEnrollment(undefined);setNotice('Matrícula trasladada. El código se conserva; consulta sus cargos en el Ciclo destino.');setRevision(v=>v+1)}}/>}

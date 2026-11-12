@@ -70,7 +70,17 @@ try {
         const quick=await rpc(O,'registrar_matricula',{p:{ciclo_id:c3.id,expected_ciclo_updated_at:c3.updated_at,alumno_id:quickPupil.id,expected_alumno_updated_at:quickPupil.updated_at,empresa_patrocinadora_id:null},opcionales:[]});
         assert.equal(quick.empresa_patrocinadora_id,null);
         const quickCharges=(await rows('matricula_cargo')).filter(charge=>charge.matricula_id===quick.id&&charge.activo);
-        assert.equal(quickCharges.length,1);assert.equal(Number(quickCharges[0].descuento),0);assert.equal(Number(quickCharges[0].importe_final),650);
+        assert.equal(quickCharges.length,2);assert.equal(quickCharges.reduce((sum,c)=>sum+Number(c.importe_final),0),730);assert.ok(quickCharges.every(c=>Number(c.descuento)===0));
+        const reduced=await rpc(O,'editar_matricula',{p:{...version(quick),expected_ciclo_updated_at:c3.updated_at},opcionales:[]});
+        const remaining=(await rows('matricula_cargo')).filter(c=>c.matricula_id===quick.id&&c.activo);
+        assert.equal(remaining.length,1);assert.equal(remaining[0].tipo,'CARRERA');
+        assert.equal((await rows('matricula_cargo')).filter(c=>c.matricula_id===quick.id&&!c.activo).length,1);
+        const restored=await rpc(O,'editar_matricula',{p:{...version(reduced),expected_ciclo_updated_at:c3.updated_at},opcionales:[option(c3)]});
+        const moved=await rpc(O,'editar_matricula',{p:{...version(restored),ciclo_id:c2.id,expected_ciclo_updated_at:c2.updated_at},opcionales:[]});
+        const destination=(await rows('matricula_cargo')).filter(c=>c.matricula_id===moved.id&&c.activo);
+        assert.equal(destination.length,2);assert.equal(destination.reduce((sum,c)=>sum+Number(c.importe_final),0),780);
+        // Leave no extra active enrollment in c2: later H3 tests isolate its career-change guard.
+        await rpc(O,'anular_matricula',{...version(moved),motivo:'CI_FIXTURE_COMPLETE'});
         const beforeInitial=(await rows('alumno')).length;
         reject(await O.rpc('guardar_alumno',{p:{...payload(),contactos:[{...initialContact,parentesco_id:cat.SEXO}]}}));
         assert.equal((await rows('alumno')).length,beforeInitial);
@@ -244,7 +254,7 @@ try {
         const wins = race.filter(r => !r.error);
         assert.ok(wins.length > 0);
         assert.equal(new Set(wins.map(r => r.data.codigo_matricula)).size, wins.length);
-        assert.ok(race.every(r => !r.error || r.error.code === '40001'));
+        assert.ok(race.every(r => !r.error || ['PT409','40001','40P01'].includes(r.error.code)));
         assert.equal(inspectDatabase("select extract(year from timestamptz '2027-01-01 02:00:00+00' at time zone 'America/Lima');"), '2026');
         const originalDefinition = inspectDatabase("select pg_get_functiondef('public.registrar_matricula(jsonb,uuid[])'::regprocedure);");
         const nextYearDefinition = originalDefinition.replace("y:=extract(year from clock_timestamp() at time zone 'America/Lima')", "y:=extract(year from (clock_timestamp()+interval '1 year') at time zone 'America/Lima')");
@@ -306,8 +316,10 @@ try {
         assert.ok(configRace.some(r => !r.error));
         if (!configRace[0].error) {
             const charge = checked(await D.from('matricula_cargo').select('*').eq('matricula_id', configRace[0].data.id), 'race charge');
-            assert.equal(charge.length, 1);
-            assert.equal(charge[0].importe_original, 650);
+            assert.equal(charge.length, 2);
+            assert.equal(charge.find(c=>c.tipo==='CARRERA').importe_original, 650);
+            assert.equal(charge.find(c=>c.tipo==='OTRO').importe_original, 80);
+            assert.equal(charge.reduce((sum,c)=>sum+Number(c.importe_final),0),730);
         }
         const z = await readyStudent(), terminalCycle = await configure(await cycle(career1, '2048-03-01'));
         const race = await Promise.all([D.rpc('registrar_matricula', { p: { alumno_id: z.id, expected_alumno_updated_at: z.updated_at, ciclo_id: terminalCycle.id, expected_ciclo_updated_at: terminalCycle.updated_at }, opcionales: [] }), D.rpc('cambiar_estado_ciclo', { ...version(terminalCycle), destino: 'ANULADO', motivo: 'CONCURRENT' })]);

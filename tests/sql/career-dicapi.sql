@@ -16,7 +16,7 @@ begin
  p:=jsonb_build_object('id',c.id,'expected_updated_at',c.updated_at::text,'nombre',c.nombre,'sigla',c.sigla);
  c:=public.guardar_carrera(p,array[m.id]);
  if c.url_resolucion_malla<>'https://www.dicapi.mil.pe/ResolucionConMayusculas.pdf' or c.codigo_curso_dicapi<>'MAM-009' or c.fecha_resolucion_malla<>date '2024-12-27' then raise exception 'Legacy caller cleared metadata'; end if;
- begin perform public.guardar_carrera(p,array[m.id]); raise exception 'Stale version accepted'; exception when serialization_failure then null; end;
+ begin perform public.guardar_carrera(p,array[m.id]); raise exception 'Stale version accepted'; exception when sqlstate 'PT409' then null; end;
  p:=p||jsonb_build_object('expected_updated_at',c.updated_at::text);
  begin perform public.guardar_carrera(p||jsonb_build_object('url_resolucion_malla','javascript:alert(1)'),array[m.id]); raise exception 'Unsafe URL accepted'; exception when check_violation then null; end;
  begin perform public.guardar_carrera(p||jsonb_build_object('url_resolucion_malla',repeat('X',2049)),array[m.id]); raise exception 'Oversized URL accepted'; exception when check_violation then null; end;

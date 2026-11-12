@@ -657,21 +657,21 @@ it('enrollment uses freely navigable tabs, preserves data and registers only on 
  fireEvent.change(screen.getByRole('searchbox',{name:'Buscar Alumno'}),{target:{value:'muñoz ana'}});
  fireEvent.click(await screen.findByRole('button',{name:'Seleccionar Alumno'}));await screen.findByText('A-0000001 · MUÑOZ PEREZ, ANA MARIA');
  expect(searches).toHaveBeenCalledWith(studentSearchFilter('MUÑOZ ANA'));
- fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));fireEvent.click(await screen.findByRole('checkbox',{name:/SEGURO/}));
+ fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));expect(await screen.findByRole('checkbox',{name:/SEGURO/})).toBeChecked();expect(screen.getByRole('checkbox',{name:/SEGURO/})).toBeDisabled();
  expect(screen.getByRole('checkbox',{name:/CARRERA/})).toBeDisabled();
  fireEvent.click(screen.getByRole('tab',{name:'Datos de matrícula'}));expect(screen.getByRole('combobox',{name:'Ciclo'})).toHaveValue('c1');
  fireEvent.click(screen.getByRole('tab',{name:'Resumen'}));expect(screen.getByRole('table',{name:'Resumen de cargos'})).toHaveTextContent('SEGURO');expect(client.rpc).not.toHaveBeenCalled();
  client.rpc.mockResolvedValue({data:{id:'m1',codigo_matricula:'2026-NAV-001'},error:null});fireEvent.click(screen.getByRole('button',{name:'Confirmar matrícula'}));
- await waitFor(()=>expect(client.rpc).toHaveBeenCalledExactlyOnceWith('registrar_matricula',{p:{ciclo_id:'c1',expected_ciclo_updated_at:'cv1',alumno_id:pupil.id,expected_alumno_updated_at:'sv1',empresa_patrocinadora_id:null},opcionales:['extra']}));
+ await waitFor(()=>expect(client.rpc).toHaveBeenCalledExactlyOnceWith('registrar_matricula',{p:{ciclo_id:'c1',expected_ciclo_updated_at:'cv1',alumno_id:pupil.id,expected_alumno_updated_at:'sv1',empresa_patrocinadora_id:null},opcionales:[]}));
  expect(await screen.findByRole('heading',{name:'Matrícula registrada'})).toBeVisible();
 });
-it('changing enrollment Cycle resets optional charges and Director discount without dropping the pupil',async()=>{
+it('changing enrollment Cycle includes all charges and resets Director discount without dropping the pupil',async()=>{
  sessionState.roles=['DIRECTOR_ACADEMICO'];enrollmentFixture();render(<MemoryRouter><NewEnrollment/></MemoryRouter>);
  await screen.findByRole('option',{name:/2026-001-NAV/});fireEvent.change(screen.getByRole('combobox',{name:'Ciclo'}),{target:{value:'c1'}});
  fireEvent.change(screen.getByRole('searchbox',{name:'Buscar Alumno'}),{target:{value:'00123456'}});fireEvent.click(await screen.findByRole('button',{name:'Seleccionar Alumno'}));await screen.findByText('A-0000001 · MUÑOZ PEREZ, ANA MARIA');
- fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));fireEvent.click(await screen.findByRole('checkbox',{name:/SEGURO/}));fireEvent.change(screen.getByRole('spinbutton',{name:'Descuento del Curso (S/)'}),{target:{value:'10'}});fireEvent.change(screen.getByLabelText(/^Motivo descuento/),{target:{value:'AUTORIZADO'}});
+ fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));expect(await screen.findByRole('checkbox',{name:/SEGURO/})).toBeChecked();expect(screen.getByRole('checkbox',{name:/SEGURO/})).toBeDisabled();fireEvent.change(screen.getByRole('spinbutton',{name:'Descuento del Curso (S/)'}),{target:{value:'10'}});fireEvent.change(screen.getByLabelText(/^Motivo descuento/),{target:{value:'AUTORIZADO'}});
  fireEvent.click(screen.getByRole('tab',{name:'Datos de matrícula'}));fireEvent.change(screen.getByRole('combobox',{name:'Ciclo'}),{target:{value:'c2'}});
- fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));await waitFor(()=>expect(screen.getByRole('checkbox',{name:/SEGURO/})).not.toBeChecked());expect(screen.getByRole('spinbutton',{name:'Descuento del Curso (S/)'})).toHaveValue(0);expect(screen.getByLabelText(/^Motivo descuento/)).toHaveValue('');
+ fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));await waitFor(()=>expect(screen.getByRole('checkbox',{name:/SEGURO/})).toBeChecked());expect(screen.getByRole('spinbutton',{name:'Descuento del Curso (S/)'})).toHaveValue(0);expect(screen.getByLabelText(/^Motivo descuento/)).toHaveValue('');
  fireEvent.click(screen.getByRole('tab',{name:'Resumen'}));expect(within(screen.getByRole('tabpanel',{name:'Resumen'})).getByText(/MUÑOZ PEREZ, ANA MARIA · 00123456/)).toBeVisible();expect(client.rpc).not.toHaveBeenCalled();
 });
 it('enrollment search is debounced, includes both surnames/name/document and ignores obsolete results',async()=>{
@@ -715,10 +715,10 @@ function showIndividualEnrollment(editing=false, charges:Record<string,unknown>[
  client.from.mockImplementation((table:string)=>{
   let single=false;const q={select:()=>q,eq:()=>q,in:()=>q,order:()=>q,range:()=>q,limit:()=>q,single:()=>{single=true;return q},then:(resolve:(r:unknown)=>unknown)=>{
    const data=table==='matricula'?[row]:table==='alumno'?[{id:'s1',nombres:'ANA',apellido_paterno:'PRUEBA',numero_di:'00123456'}]:table==='ciclo'?[{id:'c1',codigo_ciclo:'2026-001-NAV',estado_codigo:'PROGRAMADO',updated_at:'cv1'}]:table==='matricula_cargo'?charges:table==='ciclo_tarifa'?tariffs:[];
-   return Promise.resolve({data:single?data[0]:data,error:null}).then(resolve)
+   return Promise.resolve({data:structuredClone(single?data[0]:data),error:null}).then(resolve)
   }};return q;
  });
- render(<MemoryRouter initialEntries={['/matriculas/m1'+(editing?'?editar=1':'')]}><Routes><Route path="/matriculas/:id" element={<EnrollmentDetail/>}/></Routes></MemoryRouter>);
+ return render(<MemoryRouter initialEntries={['/matriculas/m1'+(editing?'?editar=1':'')]}><Routes><Route path="/matriculas/:id" element={<EnrollmentDetail/>}/></Routes></MemoryRouter>);
 }
 it('Ver matricula is read-only until the explicit Edit action opens full controls',async()=>{
  showIndividualEnrollment();await screen.findByRole('heading',{name:'2026-NAV-001'});expect(screen.queryByRole('button',{name:'Guardar código'})).not.toBeInTheDocument();
@@ -771,8 +771,8 @@ it('allows adding contacts while editing a clean pupil and refreshes the parent 
  fireEvent.click(screen.getByRole('button',{name:'Guardar cambios'}));await waitFor(()=>expect(client.rpc).toHaveBeenCalledWith('guardar_alumno',{p:expect.objectContaining({expected_updated_at:'student-v2',nombres:'ANA NUEVA'})}));
 });
 
-it('uses one compact charge grid, selected defaults and updates totals when optional charge is unchecked',async()=>{
- showIndividualEnrollment(true,[{id:'existing',ciclo_tarifa_id:'fee',nombre:'CURSO',tipo:'CARRERA',activo:true,importe_original:100,descuento:10,importe_final:90}],[{id:'fee',importe:150,obligatorio:true,tarifa:{nombre:'CURSO',tipo:'CARRERA',activo:true}},{id:'extra',importe:22,obligatorio:false,tarifa:{nombre:'CERTIFICADO',tipo:'OTRO',activo:true}}]);
+it('uses one compact charge grid, saved selections and updates totals when optional charge is unchecked',async()=>{
+ showIndividualEnrollment(true,[{id:'existing',ciclo_tarifa_id:'fee',nombre:'CURSO',tipo:'CARRERA',activo:true,importe_original:100,descuento:10,importe_final:90},{id:'optional',ciclo_tarifa_id:'extra',nombre:'CERTIFICADO',tipo:'OTRO',activo:true,importe_original:22,descuento:0,importe_final:22}],[{id:'fee',importe:150,obligatorio:true,tarifa:{nombre:'CURSO',tipo:'CARRERA',activo:true}},{id:'extra',importe:22,obligatorio:false,tarifa:{nombre:'CERTIFICADO',tipo:'OTRO',activo:true}}]);
  await screen.findByRole('button',{name:'Guardar código'});fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));
  const optional=await screen.findByRole('checkbox',{name:'Incluir CERTIFICADO'});await waitFor(()=>expect(optional).toBeEnabled());
  const grid=screen.getByRole('table',{name:'Tarifas de la matrícula'});expect(screen.getAllByRole('table')).toHaveLength(1);
@@ -794,4 +794,61 @@ it('explains the Career discount limit and prevents an excessive discount before
  const input=within(dialog).getByRole('spinbutton');expect(input).toHaveAttribute('max','130');fireEvent.change(input,{target:{value:'1200'}});fireEvent.change(within(dialog).getByLabelText('Motivo (sin datos personales)'),{target:{value:'AUTORIZADO'}});fireEvent.click(within(dialog).getByRole('button',{name:'Aplicar'}));
  expect(within(dialog).getByRole('alert')).toHaveTextContent('El descuento no puede superar S/130.00 (importe original del cargo del Curso).');expect(client.rpc).not.toHaveBeenCalled();expect(input).toHaveFocus();
  fireEvent.change(input,{target:{value:'130'}});client.rpc.mockResolvedValue({data:{id:'m1'},error:null});fireEvent.click(within(dialog).getByRole('button',{name:'Aplicar'}));await waitFor(()=>expect(client.rpc).toHaveBeenCalledExactlyOnceWith('editar_matricula',{p:{id:'m1',expected_updated_at:'mv1',descuento:'130',motivo_descuento:'AUTORIZADO'}}));
+});
+
+
+it('reopening enrollment editing keeps retired and never-added optional charges unchecked',async()=>{
+ const saved=[{id:'required',ciclo_tarifa_id:'fee',nombre:'CURSO',tipo:'CARRERA',activo:true,importe_original:100,descuento:0,importe_final:100},{id:'retired',ciclo_tarifa_id:'extra',nombre:'CERTIFICADO',tipo:'OTRO',activo:false,importe_original:22,descuento:0,importe_final:22,motivo_inactivacion:'RETIRO_OPCIONAL'}];
+ const tariffs=[{id:'fee',importe:100,obligatorio:true,tarifa:{nombre:'CURSO',tipo:'CARRERA',activo:true}},{id:'extra',importe:22,obligatorio:false,tarifa:{nombre:'CERTIFICADO',tipo:'OTRO',activo:true}},{id:'new',importe:35,obligatorio:false,tarifa:{nombre:'NUEVO CONCEPTO',tipo:'OTRO',activo:true}}];
+ const first=showIndividualEnrollment(true,saved,tariffs);
+ await screen.findByRole('button',{name:'Guardar código'});fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));
+ await waitFor(()=>expect(screen.getByRole('checkbox',{name:'Incluir CERTIFICADO'})).toBeEnabled());
+ expect(screen.getByRole('checkbox',{name:'Incluir CERTIFICADO'})).not.toBeChecked();expect(screen.getByRole('checkbox',{name:'Incluir NUEVO CONCEPTO'})).not.toBeChecked();
+ expect(screen.getByRole('table',{name:'Tarifas de la matrícula'}).querySelector('tfoot')).toHaveTextContent('TotalS/100.00');
+ fireEvent.click(screen.getByRole('tab',{name:'Resumen'}));fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));expect(screen.getByRole('checkbox',{name:'Incluir CERTIFICADO'})).not.toBeChecked();
+ first.unmount();showIndividualEnrollment(true,saved,tariffs);
+ await screen.findByRole('button',{name:'Guardar código'});fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));await waitFor(()=>expect(screen.getByRole('checkbox',{name:'Incluir CERTIFICADO'})).toBeEnabled());
+ expect(screen.getByRole('checkbox',{name:'Incluir CERTIFICADO'})).not.toBeChecked();expect(screen.getByRole('checkbox',{name:'Incluir NUEVO CONCEPTO'})).not.toBeChecked();expect(client.rpc).not.toHaveBeenCalled();
+});
+
+
+it('selects all optional charges with mixed state and keeps mandatory charges included',async()=>{
+ showIndividualEnrollment(true,[{id:'required',ciclo_tarifa_id:'fee',nombre:'CURSO',tipo:'CARRERA',activo:true,importe_original:100,descuento:0,importe_final:100},{id:'optional',ciclo_tarifa_id:'extra',nombre:'CERTIFICADO',tipo:'OTRO',activo:true,importe_original:22,descuento:0,importe_final:22}],[{id:'fee',importe:100,obligatorio:true,tarifa:{nombre:'CURSO',tipo:'CARRERA',activo:true}},{id:'extra',importe:22,obligatorio:false,tarifa:{nombre:'CERTIFICADO',tipo:'OTRO',activo:true}},{id:'new',importe:35,obligatorio:false,tarifa:{nombre:'BANCO',tipo:'OTRO',activo:true}}]);
+ await screen.findByRole('button',{name:'Guardar código'});fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));
+ const all=await screen.findByRole('checkbox',{name:'Seleccionar todos los cargos opcionales'});await waitFor(()=>expect(all).toBeEnabled());
+ const required=screen.getByRole('checkbox',{name:'Incluir CURSO'}),certificate=screen.getByRole('checkbox',{name:'Incluir CERTIFICADO'}),bank=screen.getByRole('checkbox',{name:'Incluir BANCO'}),totals=screen.getByRole('table',{name:'Tarifas de la matrícula'}).querySelector('tfoot');
+ expect(all).toBePartiallyChecked();expect(certificate).toBeChecked();expect(bank).not.toBeChecked();expect(totals).toHaveTextContent('TotalS/122.00');
+ fireEvent.click(all);expect(all).toBeChecked();expect(all).not.toBePartiallyChecked();expect(certificate).toBeChecked();expect(bank).toBeChecked();expect(totals).toHaveTextContent('TotalS/157.00');
+ fireEvent.click(all);expect(all).not.toBeChecked();expect(certificate).not.toBeChecked();expect(bank).not.toBeChecked();expect(required).toBeChecked();expect(required).toBeDisabled();expect(totals).toHaveTextContent('TotalS/100.00');
+ fireEvent.click(certificate);expect(all).toBePartiallyChecked();fireEvent.click(all);expect(all).toBeChecked();expect(client.rpc).not.toHaveBeenCalled();
+ fireEvent.click(screen.getByRole('tab',{name:'Resumen'}));fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));expect(all).toBeChecked();
+ client.rpc.mockResolvedValue({data:{id:'m1'},error:null});fireEvent.click(screen.getByRole('button',{name:'Guardar cargos'}));await waitFor(()=>expect(client.rpc).toHaveBeenCalledExactlyOnceWith('editar_matricula',{p:{id:'m1',expected_updated_at:'mv1',ciclo_id:'c1',expected_ciclo_updated_at:'cv1'},opcionales:['extra','new']}));
+});
+
+it('disables selecting all when enrollment has no optional charges',async()=>{
+ showIndividualEnrollment(true,[{id:'required',ciclo_tarifa_id:'fee',nombre:'CURSO',tipo:'CARRERA',activo:true,importe_original:100,descuento:0,importe_final:100}],[{id:'fee',importe:100,obligatorio:true,tarifa:{nombre:'CURSO',tipo:'CARRERA',activo:true}}]);
+ await screen.findByRole('button',{name:'Guardar código'});fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));await screen.findByRole('checkbox',{name:'Incluir CURSO'});
+ expect(screen.getByRole('checkbox',{name:'Seleccionar todos los cargos opcionales'})).toBeDisabled();expect(screen.getByRole('checkbox',{name:'Incluir CURSO'})).toBeChecked();expect(client.rpc).not.toHaveBeenCalled();
+});
+
+
+it('only saves changed charges and preserves a visible confirmation after reloading saved data',async()=>{
+ const saved=[{id:'required',ciclo_tarifa_id:'fee',nombre:'CURSO',tipo:'CARRERA',activo:true,importe_original:100,descuento:0,importe_final:100},{id:'optional',ciclo_tarifa_id:'extra',nombre:'CERTIFICADO',tipo:'OTRO',activo:true,importe_original:22,descuento:0,importe_final:22}];
+ showIndividualEnrollment(true,saved,[{id:'fee',importe:100,obligatorio:true,tarifa:{nombre:'CURSO',tipo:'CARRERA',activo:true}},{id:'extra',importe:22,obligatorio:false,tarifa:{nombre:'CERTIFICADO',tipo:'OTRO',activo:true}}]);
+ await screen.findByRole('button',{name:'Guardar código'});fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));const optional=await screen.findByRole('checkbox',{name:'Incluir CERTIFICADO'});await waitFor(()=>expect(optional).toBeEnabled());
+ const save=screen.getByRole('button',{name:'Guardar cargos'});expect(save).toBeDisabled();fireEvent.submit(save.closest('form')!);expect(client.rpc).not.toHaveBeenCalled();
+ fireEvent.click(optional);expect(save).toBeEnabled();fireEvent.click(optional);expect(save).toBeDisabled();
+ fireEvent.click(screen.getByRole('checkbox',{name:'Seleccionar todos los cargos opcionales'}));expect(save).toBeEnabled();fireEvent.click(screen.getByRole('checkbox',{name:'Seleccionar todos los cargos opcionales'}));expect(save).toBeDisabled();
+ fireEvent.click(optional);let finish:(r:unknown)=>void=()=>{};client.rpc.mockReturnValue(new Promise(resolve=>{finish=resolve}));fireEvent.click(save);
+ expect(screen.getByRole('button',{name:'Guardando…'})).toBeDisabled();expect(optional).toBeDisabled();expect(screen.queryByText('Cargos guardados correctamente.')).not.toBeInTheDocument();
+ await act(async()=>{saved[1]={...saved[1],activo:false};finish({data:{id:'m1'},error:null})});
+ await waitFor(()=>expect(optional).toBeEnabled());expect(optional).not.toBeChecked();expect(screen.getByRole('button',{name:'Guardar cargos'})).toBeDisabled();expect(screen.getByText('Cargos guardados correctamente.')).toHaveAttribute('role','status');expect(client.rpc).toHaveBeenCalledTimes(1);
+ fireEvent.click(screen.getByRole('tab',{name:'Resumen'}));fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));expect(screen.getByText('Cargos guardados correctamente.')).toBeVisible();
+ fireEvent.click(optional);expect(screen.queryByText('Cargos guardados correctamente.')).not.toBeInTheDocument();expect(screen.getByRole('button',{name:'Guardar cargos'})).toBeEnabled();
+});
+
+it('keeps changed charge selections on conflict without claiming success or retrying',async()=>{
+ showIndividualEnrollment(true,[{id:'required',ciclo_tarifa_id:'fee',nombre:'CURSO',tipo:'CARRERA',activo:true,importe_original:100,descuento:0,importe_final:100},{id:'optional',ciclo_tarifa_id:'extra',nombre:'CERTIFICADO',tipo:'OTRO',activo:true,importe_original:22,descuento:0,importe_final:22}],[{id:'fee',importe:100,obligatorio:true,tarifa:{nombre:'CURSO',tipo:'CARRERA',activo:true}},{id:'extra',importe:22,obligatorio:false,tarifa:{nombre:'CERTIFICADO',tipo:'OTRO',activo:true}}]);
+ await screen.findByRole('button',{name:'Guardar código'});fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));const optional=await screen.findByRole('checkbox',{name:'Incluir CERTIFICADO'});await waitFor(()=>expect(optional).toBeEnabled());fireEvent.click(optional);
+ client.rpc.mockResolvedValue({error:{code:'PT409'}});fireEvent.click(screen.getByRole('button',{name:'Guardar cargos'}));expect(await screen.findByRole('alert')).toHaveTextContent('La información cambió');expect(optional).not.toBeChecked();expect(screen.getByRole('button',{name:'Guardar cargos'})).toBeEnabled();expect(screen.queryByText('Cargos guardados correctamente.')).not.toBeInTheDocument();expect(client.rpc).toHaveBeenCalledTimes(1);
 });

@@ -1,3 +1,4 @@
+import { EnrollmentPayments } from '../payments/EnrollmentPayments'
 import { enrollmentError } from '../lib/enrollmentError'
 export { enrollmentError } from '../lib/enrollmentError'
 export { Tariffs } from './TariffPages'
@@ -386,7 +387,7 @@ export function Companies({ choose }: { choose?: (r: Row | null) => void }) {
 }
 export function NewEnrollment({cycleContext,onComplete,onCancel,onEditorChange}:{cycleContext?:Row;onComplete?:(row:Row)=>void;onCancel?:()=>void;onEditorChange?:(editing:boolean)=>void}={}) {
     const { client, state }=useSession(), navigate=useNavigate();
-    const [cycles,setCycles]=useState<Row[]>([]),[cycle,setCycle]=useState<Row|undefined>(cycleContext),[student,setStudent]=useState<Row>(),[company,setCompany]=useState<Row|null>(null),[charges,setCharges]=useState<Row[]>([]),[options,setOptions]=useState<string[]>([]);
+    const [cycles,setCycles]=useState<Row[]>([]),[cycle,setCycle]=useState<Row|undefined>(cycleContext),[student,setStudent]=useState<Row>(),[company,setCompany]=useState<Row|null>(null),[charges,setCharges]=useState<Row[]>([]);
     const [tab,setTab]=useState(0),[search,setSearch]=useState(''),[found,setFound]=useState<Row[]>([]),[searchStatus,setSearchStatus]=useState<'idle'|'loading'|'ready'|'error'>('idle');
     const [editor,setEditor]=useState(false),[editing,setEditing]=useState(false),[choosingCompany,setChoosingCompany]=useState(false),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[registered,setRegistered]=useState<Row>(),[discount,setDiscount]=useState('0'),[reason,setReason]=useState(''),[code,setCode]=useState('');
     const [tariffsStatus,setTariffsStatus]=useState<'idle'|'loading'|'ready'|'error'>('idle');
@@ -414,20 +415,20 @@ export function NewEnrollment({cycleContext,onComplete,onCancel,onEditorChange}:
     },[client,search]);
     async function chooseStudent(id:string){
         setBusy(true);
-        try{if(cycleContext){const existing=await client.from('matricula').select('id').eq('ciclo_id',cycleContext.id).eq('alumno_id',id).limit(1);if(existing.error){setMessage('No se pudo comprobar la matrícula del Alumno. Vuelve a seleccionarlo.');return}if(existing.data.length){setMessage('El Alumno ya tiene una matrícula en este Ciclo, incluso si está anulada. Consulta la grilla de matriculados.');return}}const r=await client.from('alumno').select('*').eq('id',id).single();if(r.error)setMessage('No se pudo cargar la ficha del Alumno. Vuelve a seleccionarlo.');else{setStudent(r.data as Row);setSearch('');setFound([]);setCompany(null);setOptions([]);setDiscount('0');setReason('');setCode('')}}
+        try{if(cycleContext){const existing=await client.from('matricula').select('id').eq('ciclo_id',cycleContext.id).eq('alumno_id',id).limit(1);if(existing.error){setMessage('No se pudo comprobar la matrícula del Alumno. Vuelve a seleccionarlo.');return}if(existing.data.length){setMessage('El Alumno ya tiene una matrícula en este Ciclo, incluso si está anulada. Consulta la grilla de matriculados.');return}}const r=await client.from('alumno').select('*').eq('id',id).single();if(r.error)setMessage('No se pudo cargar la ficha del Alumno. Vuelve a seleccionarlo.');else{setStudent(r.data as Row);setSearch('');setFound([]);setCompany(null);setDiscount('0');setReason('');setCode('')}}
         catch{setMessage('No se pudo cargar la ficha del Alumno. Vuelve a seleccionarlo.')}
         finally{setBusy(false)}
     }
     function chooseCycle(id:string){
         if(id===cycle?.id)return;
-        setCycle(cycles.find(c=>c.id===id));setCharges([]);setOptions([]);setDiscount('0');setReason('');setTariffsStatus(id?'loading':'idle');
+        setCycle(cycles.find(c=>c.id===id));setCharges([]);setDiscount('0');setReason('');setTariffsStatus(id?'loading':'idle');
         if(cycle)setMessage('Al cambiar de Ciclo se actualizarán los cargos; los opcionales y el descuento se reiniciaron.');
     }
     async function confirm(){
         if(!cycle || !student){setMessage('Selecciona el Ciclo y el Alumno antes de confirmar.');setTab(0);setTimeout(()=>studentSearch.current?.focus(),0);return}
         if(tariffsStatus!=='ready' || !charges.length){setMessage('Revisa los cargos del Ciclo antes de confirmar.');setTab(1);return}
         setBusy(true);const p={ciclo_id:cycle.id,expected_ciclo_updated_at:cycle.updated_at,alumno_id:student.id,expected_alumno_updated_at:student.updated_at,empresa_patrocinadora_id:company?.id??null,...(code?{codigo_matricula:code}:{}),...(director?{descuento:discount,motivo_descuento:reason}:{})};
-        try{const r=await client.rpc('registrar_matricula',{p,opcionales:options});if(r.error)setMessage(enrollmentError(r.error));else{if(onComplete)onComplete(r.data as Row);else{setRegistered(r.data as Row);setMessage('Matrícula registrada correctamente.')}}}
+        try{const r=await client.rpc('registrar_matricula',{p,opcionales:[]});if(r.error)setMessage(enrollmentError(r.error));else{if(onComplete)onComplete(r.data as Row);else{setRegistered(r.data as Row);setMessage('Matrícula registrada correctamente.')}}}
         catch{setMessage('Respuesta no confirmada. Consulta el historial del Alumno antes de reintentar.')}
         finally{setBusy(false)}
     }
@@ -436,10 +437,10 @@ export function NewEnrollment({cycleContext,onComplete,onCancel,onEditorChange}:
         const r=await client.from('ciclo').select('id,codigo_ciclo,carrera_id,estado_codigo,updated_at').eq('id',cycle.id).single();
         if(r.error || !['PROGRAMADO','EN_CURSO'].includes(r.data.estado_codigo)){setMessage('El Ciclo ya no permite matrícula. Selecciona otro.');setCycle(undefined);setCharges([]);setTariffsStatus('idle')}
         else{setCycle(r.data as Row);setCharges([]);setTariffsStatus('loading')}
-        setTab(0);setStudent(undefined);setCompany(null);setOptions([]);setDiscount('0');setReason('');setCode('');setSearch('');setFound([]);setRegistered(undefined);setChoosingCompany(false);
+        setTab(0);setStudent(undefined);setCompany(null);setDiscount('0');setReason('');setCode('');setSearch('');setFound([]);setRegistered(undefined);setChoosingCompany(false);
     }
     const studentName=(a:Row)=>`${value(a,'apellido_paterno')} ${value(a,'apellido_materno')}, ${value(a,'nombres')}`;
-    const chosenCharges=charges.filter(c=>c.obligatorio===true || options.includes(c.id));
+    const chosenCharges=charges;
     if(editor)return <StudentEditor initial={editing?student:undefined} done={r=>{setStudent(r);setEditor(false);setMessage('Alumno guardado; revisa contactos antes de confirmar matrícula.')}} cancel={()=>setEditor(false)}/>;
     if(registered)return <section><h2>Matrícula registrada</h2><p>{value(registered,'codigo_matricula')}</p><button onClick={()=>void another()}>Matricular otro alumno en este Ciclo</button><button onClick={()=>navigate(`/matriculas/${registered.id}`)}>Ver matrícula</button></section>;
     const content=<section className="enrollment-record">{!cycleContext && <EditorHeading>Registrar Matrícula</EditorHeading>}
@@ -456,7 +457,7 @@ export function NewEnrollment({cycleContext,onComplete,onCancel,onEditorChange}:
                         {searchStatus==='ready' && <>{cycleContext ? <ul className="enrollment-pupil-matches" aria-label="Coincidencias de alumnos">{found.map(a=><li key={a.id}><div><strong>{studentName(a)}</strong><small>{value(a,'codigo_alumno')} · {value(a,'numero_di')}</small></div><button type="button" className="secondary" onClick={()=>void chooseStudent(a.id)}>Seleccionar</button></li>)}{!found.length && <li>No hay alumnos que coincidan. Puedes registrar uno nuevo.</li>}</ul> : <div className="table-scroll"><table aria-label="Resultados de alumnos"><thead><tr><th>Alumno</th><th>Documento</th><th>Acción</th></tr></thead><tbody>{found.map(a=><tr key={a.id}><td>{studentName(a)}<small className="secondary-text">{value(a,'codigo_alumno')}</small></td><td>{value(a,'numero_di')}</td><td><button type="button" onClick={()=>void chooseStudent(a.id)}>Seleccionar Alumno</button></td></tr>)}{!found.length && <tr><td colSpan={3}>No hay alumnos que coincidan. Puedes registrar uno nuevo.</td></tr>}</tbody></table></div>}{found.length===20 && <small>Se muestran hasta 20 coincidencias. Escribe más para precisar la búsqueda.</small>}</>}
                     </div>}
                     {(!cycleContext || !student) && <button type="button" className="secondary" onClick={()=>{setEditing(false);setEditor(true)}}><NewStudentLabel/></button>}
-                    {student && <div className="enrollment-selected-student"><strong>{value(student,'codigo_alumno')} · {studentName(student)}</strong><span>{value(student,'numero_di')}</span><div className="record-header-actions">{cycleContext && <button type="button" className="secondary" onClick={()=>{setStudent(undefined);setCompany(null);setOptions([]);setDiscount('0');setReason('');setCode('');setSearch('')}}>Cambiar alumno</button>}<button type="button" className="secondary" onClick={()=>{setEditing(true);setEditor(true)}}>Completar / editar ficha</button><Link to={`/alumnos/${student.id}`}>Ver ficha y contactos</Link></div></div>}
+                    {student && <div className="enrollment-selected-student"><strong>{value(student,'codigo_alumno')} · {studentName(student)}</strong><span>{value(student,'numero_di')}</span><div className="record-header-actions">{cycleContext && <button type="button" className="secondary" onClick={()=>{setStudent(undefined);setCompany(null);setDiscount('0');setReason('');setCode('');setSearch('')}}>Cambiar alumno</button>}<button type="button" className="secondary" onClick={()=>{setEditing(true);setEditor(true)}}>Completar / editar ficha</button><Link to={`/alumnos/${student.id}`}>Ver ficha y contactos</Link></div></div>}
                     {(!cycleContext || student) && <div><h3>Empresa patrocinadora (opcional)</h3><p>{company?value(company,'razon_social'):'Sin patrocinador'}</p><div className="record-header-actions"><button type="button" className="secondary" onClick={()=>setChoosingCompany(true)}>Elegir empresa</button>{company && <button type="button" className="secondary" onClick={()=>setCompany(null)}>Quitar patrocinador</button>}</div></div>}
                 </fieldset>
             </div>
@@ -465,7 +466,7 @@ export function NewEnrollment({cycleContext,onComplete,onCancel,onEditorChange}:
                 {tariffsStatus==='loading' && <p role="status">Cargando cargos del Ciclo…</p>}
                 {tariffsStatus==='error' && <p role="alert">No se pudieron cargar los cargos. Vuelve a seleccionar el Ciclo antes de confirmar.</p>}
                 {cycle && tariffsStatus==='ready' && !charges.length && <p role="alert">El Ciclo no tiene tarifas activas disponibles. Revisa su configuración.</p>}
-                <fieldset disabled={busy || tariffsStatus!=='ready'}><legend>Tarifas del Ciclo</legend>{charges.map(c=><label key={c.id}><input type="checkbox" disabled={c.obligatorio===true} checked={c.obligatorio===true || options.includes(c.id)} onChange={e=>setOptions(e.target.checked?[...options,c.id]:options.filter(id=>id!==c.id))}/>{value(c.tarifa as Record<string,unknown>,'nombre')} — S/{value(c,'importe')} {c.obligatorio?'(Obligatoria)':'(Opcional)'}</label>)}
+                <fieldset disabled={busy || tariffsStatus!=='ready'}><legend>Tarifas del Ciclo</legend><p className="help-text">Se incluyen todas las tarifas activas. Después de matricular puedes retirar los cargos opcionales de este alumno, si no tienen pagos vigentes.</p>{charges.map(c=><label key={c.id}><input type="checkbox" disabled checked/>{value(c.tarifa as Record<string,unknown>,'nombre')} — S/{value(c,'importe')} {c.obligatorio?'(Obligatoria)':'(Opcional)'}</label>)}
                     {director && <><label>Descuento del Curso (S/)<input type="number" min="0" step="0.01" value={discount} onChange={e=>setDiscount(formTextValue(e.currentTarget))}/></label><label>Motivo descuento (sin datos personales)<textarea rows={2} required={Number(discount)>0} maxLength={500} value={reason} onChange={e=>setReason(formTextValue(e.currentTarget))}/></label></>}
                 </fieldset>
             </div>
@@ -484,7 +485,7 @@ export function NewEnrollment({cycleContext,onComplete,onCancel,onEditorChange}:
 export function EnrollmentDetail() {
     const navigate=useNavigate();
     const [discountOpen,setDiscountOpen]=useState(false);
-    const initializedCharges=useRef(false);
+    const [chargeNotice,setChargeNotice]=useState('');
     const { id } = useParams(), { client, state } = useSession(), [row, setRow] = useState<Row>(), [student, setStudent] = useState<Row>(), [cycle, setCycle] = useState<Row>(), [charges, setCharges] = useState<Row[]>([]), [tariffs, setTariffs] = useState<Row[]>([]), [options, setOptions] = useState<string[]>([]), [target, setTarget] = useState(''), [code, setCode] = useState(''), [discount, setDiscount] = useState(''), [reason, setReason] = useState(''), [message, setMessage] = useState('Cargando…'), [revision, setRevision] = useState(0), [busy, setBusy] = useState(false), [tab,setTab]=useState(0),[choosingCompany,setChoosingCompany]=useState(false),[sponsor,setSponsor]=useState<Row|null>(null),[detailsReady,setDetailsReady]=useState(false),[tariffStatus,setTariffStatus]=useState<'idle'|'loading'|'ready'|'error'>('idle');
     const [searchParams,setSearchParams]=useSearchParams(),[editing,setEditing]=useState(searchParams.get('editar')==='1');
     const { ask, dialog } = useConfirmation(busy), director = state.roles?.includes('DIRECTOR_ACADEMICO');
@@ -499,14 +500,15 @@ export function EnrollmentDetail() {
     useEffect(() => { let active = true; if (!target)
         return;setTariffStatus('loading'); void client.from('ciclo_tarifa').select('id,importe,obligatorio,tarifa(nombre,tipo,activo)').eq('ciclo_id', target).eq('activo', true).then(r => { if (active) {
         setTariffStatus(r.error?'error':'ready');setTariffs(r.error ? [] : (r.data as Row[]).filter(x => (x.tarifa as Record<string, unknown>)?.activo));
-        setOptions(!initializedCharges.current || target!==row?.ciclo_id ? (r.error?[]:(r.data as Row[]).filter(x=>(x.tarifa as Record<string,unknown>)?.activo).map(x=>x.id)) : charges.filter(x=>x.activo).map(x=>String(x.ciclo_tarifa_id)));if(!r.error)initializedCharges.current=true;
+        setOptions(target!==row?.ciclo_id ? (r.error?[]:(r.data as Row[]).filter(x=>(x.tarifa as Record<string,unknown>)?.activo).map(x=>x.id)) : charges.filter(x=>x.activo).map(x=>String(x.ciclo_tarifa_id)));
     } }); return () => { active = false; }; }, [client, target, row, charges]);
     const editable = detailsReady && row?.estado_codigo === 'ACTIVO' && ['PROGRAMADO', 'EN_CURSO'].includes(value(cycle, 'estado_codigo'));
-    async function save(extra: Draft = {}, selected?: string[]) { if (!row || !editing || !editable || (selected && tariffStatus!=='ready'))
+    async function save(extra: Draft = {}, selected?: string[]) { if (!row || busy || !editing || !editable || (selected && (tariffStatus!=='ready'||!pendingCharges)))
         return; setBusy(true); const destination = cycle; const p = { id: row.id, expected_updated_at: row.updated_at, ...extra, ...(selected ? { ciclo_id: target, expected_ciclo_updated_at: destination?.updated_at } : {}) }; const r = await client.rpc('editar_matricula', { p, ...(selected ? { opcionales: selected } : {}) }); setBusy(false); if (r.error)
         setMessage(enrollmentError(r.error));
     else {
         if('empresa_patrocinadora_id' in extra)setChoosingCompany(false);if('descuento' in extra)setDiscountOpen(false);setRevision(revision + 1);
+        if(selected){setTariffStatus('loading');setChargeNotice('Cargos guardados correctamente.')}
         setMessage('Matrícula actualizada.');
     } }
     async function annul() { if (!row)
@@ -515,7 +517,7 @@ export function EnrollmentDetail() {
         setMessage(enrollmentError(r.error));
     else
         setRevision(revision + 1); }
-    function leaveEdit(){setDiscountOpen(false);setEditing(false);setChoosingCompany(false);setCode(value(row,'codigo_matricula'));setTarget(value(row,'ciclo_id'));setDiscount('');setReason('');setOptions(charges.filter(c=>c.activo).map(c=>String(c.ciclo_tarifa_id)));const next=new URLSearchParams(searchParams);next.delete('editar');setSearchParams(next,{replace:true})}
+    function leaveEdit(){setChargeNotice('');setDiscountOpen(false);setEditing(false);setChoosingCompany(false);setCode(value(row,'codigo_matricula'));setTarget(value(row,'ciclo_id'));setDiscount('');setReason('');setOptions(charges.filter(c=>c.activo).map(c=>String(c.ciclo_tarifa_id)));const next=new URLSearchParams(searchParams);next.delete('editar');setSearchParams(next,{replace:true})}
     const back=()=>navigate(row?`/academico/ciclos?ciclo=${String(row.ciclo_id)}&seccion=matriculas`:'/academico/ciclos');
     const careerCharge=charges.find(c=>c.activo&&c.tipo==='CARRERA');
     function closeDiscount(){setDiscountOpen(false);setDiscount('');setReason('')}
@@ -524,6 +526,8 @@ export function EnrollmentDetail() {
         const existing=target===row?.ciclo_id?charges.find(c=>c.activo&&c.ciclo_tarifa_id===t.id):undefined;
         return {id:t.id,name:value(existing,'nombre')||value(t.tarifa as Record<string,unknown>,'nombre'),required:t.obligatorio===true,selected:t.obligatorio===true||options.includes(t.id),original:Number(existing?.importe_original??t.importe),discount:Number(existing?.descuento??0)};
     });
+    const optionalChargeRows=chargeRows.filter(c=>!c.required);
+    const allOptionalCharges=optionalChargeRows.length>0&&optionalChargeRows.every(c=>c.selected),someOptionalCharges=optionalChargeRows.some(c=>c.selected);
     const pendingCharges=target!==row?.ciclo_id||tariffs.some(t=>!t.obligatorio&&options.includes(t.id)!==charges.some(c=>c.activo&&c.ciclo_tarifa_id===t.id));
     const extraCharges=target===row?.ciclo_id?charges.filter(c=>c.activo&&!tariffs.some(t=>t.id===c.ciclo_tarifa_id)):[];
     const previewSubtotal=chargeRows.filter(c=>c.selected).reduce((n,c)=>n+Math.round(c.original*100),0)+extraCharges.reduce((n,c)=>n+Math.round(Number(c.importe_original)*100),0);
@@ -533,7 +537,7 @@ export function EnrollmentDetail() {
       <AcademicRecordHeader title="Ficha de matrícula" name={value(row,'codigo_matricula')} status={row&&<StatusBadge value={row.estado_codigo==='ACTIVO'?'Activa':'Anulada'}/>} editing={!!editing&&!!editable} busy={busy} backLabel="Volver a matrículas del Ciclo" editLabel="Editar matrícula" onBack={back} onEdit={editable&&!editing?()=>setEditing(true):undefined}/>
       <Message>{message}</Message>
       {row&&<><div className="enrollment-context"><span><strong>Ciclo:</strong> {value(cycle,'codigo_ciclo')}</span><span><strong>Alumno:</strong> {value(student,'apellido_paterno')} {value(student,'apellido_materno')}, {value(student,'nombres')} · {value(student,'numero_di')}</span></div>
-      <AcademicTabs id="enrollment-detail" names={['Resumen','Cargos','Historial']} active={tab} disabled={busy} onChange={setTab}/>
+      <AcademicTabs id="enrollment-detail" names={['Resumen','Cargos','Historial','Pagos']} active={tab} disabled={busy} onChange={setTab}/>
       <div hidden={tab!==0} role="tabpanel" id="enrollment-detail-panel-0" aria-labelledby="enrollment-detail-tab-0" tabIndex={0} className="student-section-panel">
         <h3>Resumen</h3><dl className="review-fields"><div><dt>Ciclo</dt><dd>{value(cycle,'codigo_ciclo')}</dd></div><div><dt>Alumno</dt><dd>{value(student,'apellido_paterno')} {value(student,'apellido_materno')}, {value(student,'nombres')} <Link to={`/alumnos/${String(row.alumno_id)}`}>Ver Alumno</Link></dd></div><div><dt>Documento</dt><dd>{value(student,'numero_di')}</dd></div><div><dt>Patrocinador</dt><dd>{sponsor?value(sponsor,'razon_social'):row.empresa_patrocinadora_id?'No disponible':'Sin patrocinador'}</dd></div><div><dt>Total vigente</dt><dd>{detailsReady?money(charges.filter(c=>c.activo).reduce((sum,c)=>sum+Number(c.importe_final),0)):'Sin consultar'}</dd></div><div><dt>Estado</dt><dd>{row.estado_codigo==='ACTIVO'?'Activa':'Anulada'}</dd></div></dl>
         {editable&&editing&&<><InlineForm className="enrollment-detail-form" onSubmit={()=>void save({codigo_matricula:code})}><fieldset disabled={busy}><legend>Código de matrícula</legend><label>Código visible<input required value={code} pattern="[0-9]{4}-[A-Za-z0-9]{2,10}-[0-9]{3,}" data-pattern-error="Usa YYYY-SIGLA-CORRELATIVO." onChange={e=>setCode(formTextValue(e.currentTarget))}/></label></fieldset><div className="form-actions"><button disabled={busy}>Guardar código</button></div></InlineForm>
@@ -541,14 +545,15 @@ export function EnrollmentDetail() {
       </div>
       <div hidden={tab!==1} role="tabpanel" id="enrollment-detail-panel-1" aria-labelledby="enrollment-detail-tab-1" tabIndex={0} className="student-section-panel"><h3>Cargos</h3>
         {editable&&editing?<><InlineForm className="enrollment-detail-form enrollment-charge-form" onSubmit={()=>void save({},options.filter(id=>tariffs.find(t=>t.id===id)?.obligatorio===false))}>
-        <div className="table-scroll enrollment-charges-grid"><table aria-label="Tarifas de la matrícula"><thead><tr><th>Incluir</th><th>Concepto</th><th>Subtotal</th><th>Descuento</th><th>Total</th></tr></thead><tbody>
-        {chargeRows.map(c=><tr key={c.id}><td><input type="checkbox" aria-label={`Incluir ${c.name}`} disabled={busy||tariffStatus!=='ready'||c.required} checked={c.selected} onChange={e=>{setDiscountOpen(false);setOptions(e.target.checked?[...options,c.id]:options.filter(id=>id!==c.id))}}/></td><td>{c.name}{c.required&&<small className="help-text"> · Obligatoria</small>}</td><td>{money(c.original)}</td><td>{money(c.selected?c.discount:0)}</td><td>{money(c.selected?c.original-c.discount:0)}</td></tr>)}
+        <div className="table-scroll enrollment-charges-grid"><table aria-label="Tarifas de la matrícula"><thead><tr><th scope="col"><input type="checkbox" aria-label="Seleccionar todos los cargos opcionales" title="Marcar o desmarcar todos los cargos opcionales" ref={element=>{if(element)element.indeterminate=someOptionalCharges&&!allOptionalCharges}} checked={allOptionalCharges} disabled={busy||tariffStatus!=='ready'||!optionalChargeRows.length} onChange={e=>{setChargeNotice('');setDiscountOpen(false);setOptions(e.target.checked?optionalChargeRows.map(c=>c.id):[])}}/></th><th>Concepto</th><th>Subtotal</th><th>Descuento</th><th>Total</th></tr></thead><tbody>
+        {chargeRows.map(c=><tr key={c.id}><td><input type="checkbox" aria-label={`Incluir ${c.name}`} disabled={busy||tariffStatus!=='ready'||c.required} checked={c.selected} onChange={e=>{setChargeNotice('');setDiscountOpen(false);setOptions(e.target.checked?[...options,c.id]:options.filter(id=>id!==c.id))}}/></td><td>{c.name}{c.required&&<small className="help-text"> · Obligatoria</small>}</td><td>{money(c.original)}</td><td>{money(c.selected?c.discount:0)}</td><td>{money(c.selected?c.original-c.discount:0)}</td></tr>)}
         {extraCharges.map(c=><tr key={c.id}><td>Incluido</td><td>{value(c,'nombre')}<small className="help-text"> · Cargo vigente conservado</small></td><td>{money(c.importe_original)}</td><td>{money(c.descuento)}</td><td>{money(c.importe_final)}</td></tr>)}
         </tbody><tfoot><tr><th colSpan={4}>Subtotal</th><td>{money(previewSubtotal/100)}</td></tr><tr><th colSpan={4}>Descuento</th><td>{money(previewDiscount/100)}</td></tr><tr><th colSpan={4}>Total</th><td><strong>{money((previewSubtotal-previewDiscount)/100)}</strong></td></tr></tfoot></table></div>
         <p className="help-text">Desmarca los conceptos opcionales que no correspondan. Los importes son una vista previa; se confirman al guardar.</p>
         {tariffStatus==='loading'&&<p role="status">Cargando conceptos…</p>}{tariffStatus==='error'&&<p role="alert">No se pudieron cargar los conceptos. No se pueden guardar cambios incompletos.</p>}
-        <div className="form-actions enrollment-charge-actions"><button disabled={busy||tariffStatus!=='ready'}>Guardar cargos</button>{director&&<button type="button" className="secondary" disabled={busy||pendingCharges} onClick={()=>{setDiscount(String(careerCharge?.descuento??0));setReason('');setMessage('');setDiscountOpen(true)}}>{Number(careerCharge?.descuento)>0?'Modificar descuento':'Aplicar descuento'}</button>}</div>
+        <div className="form-actions enrollment-charge-actions"><button disabled={busy||tariffStatus!=='ready'||!pendingCharges}>{busy?'Guardando…':'Guardar cargos'}</button>{director&&<button type="button" className="secondary" disabled={busy||pendingCharges} onClick={()=>{setDiscount(String(careerCharge?.descuento??0));setReason('');setMessage('');setDiscountOpen(true)}}>{Number(careerCharge?.descuento)>0?'Modificar descuento':'Aplicar descuento'}</button>}</div>
         </InlineForm>
+        {chargeNotice&&<p role="status" className="success">{chargeNotice}</p>}
         {director&&pendingCharges&&<p className="help-text">Guarda los cargos antes de aplicar o modificar el descuento.</p>}
         {director&&<>
 
@@ -556,8 +561,9 @@ export function EnrollmentDetail() {
         </>:<>{chargeTable(charges.filter(c=>c.activo))}<dl className="enrollment-charge-totals"><div><dt>Subtotal</dt><dd>{money(charges.filter(c=>c.activo).reduce((n,c)=>n+Number(c.importe_original),0))}</dd></div><div><dt>Descuento</dt><dd>{money(charges.filter(c=>c.activo).reduce((n,c)=>n+Number(c.descuento),0))}</dd></div><div><dt>Total</dt><dd>{money(charges.filter(c=>c.activo).reduce((n,c)=>n+Number(c.importe_final),0))}</dd></div></dl></>}
       </div>
       <div hidden={tab!==2} role="tabpanel" id="enrollment-detail-panel-2" aria-labelledby="enrollment-detail-tab-2" tabIndex={0} className="student-section-panel"><h3>Historial</h3><p className="help-text">Datos conservados al matricular y cargos retirados. Los cambios posteriores de la ficha no modifican esta información.</p><details><summary>Datos del alumno al matricular</summary><HistoricalStudent snapshot={row.alumno_snapshot}/></details><h3>Cargos retirados</h3>{chargeTable(charges.filter(c=>!c.activo),true)}{row.estado_codigo==='ANULADO'&&<p>Motivo de anulación: {value(row,'motivo_anulacion')||'No registrado'}</p>}</div>
+      <div hidden={tab!==3} role="tabpanel" id="enrollment-detail-panel-3" aria-labelledby="enrollment-detail-tab-3" tabIndex={0} className="student-section-panel">{tab===3&&<EnrollmentPayments key={`${state.userId}:${row.id}`} enrollment={row.id} version={value(row,'updated_at')} enrollmentState={value(row,'estado_codigo')} cycleState={value(cycle,'estado_codigo')} onChanged={()=>setRevision(x=>x+1)}/>}</div>
       <div className="form-actions enrollment-detail-actions">{editing&&editable&&<button type="button" className="secondary" disabled={busy} onClick={leaveEdit}>Cancelar edición</button>}{row.estado_codigo==='ACTIVO'&&<button type="button" className="sensitive" disabled={busy} onClick={()=>void annul()}>Anular matrícula</button>}</div>
-      {!editable&&<p className="help-text">Solo consulta.{row.estado_codigo==='ACTIVO'?' Puedes anular esta matrícula con motivo.':''}</p>}</>}
+      {!editable&&tab!==3&&<p className="help-text">Solo consulta.{row.estado_codigo==='ACTIVO'?' Puedes anular esta matrícula con motivo.':''}</p>}</>}
     </section>;
 
 }

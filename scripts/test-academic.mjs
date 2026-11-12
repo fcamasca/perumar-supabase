@@ -50,8 +50,8 @@ try {
     for (const source of sources.sources) assert.equal(createHash('sha256').update(readFileSync(`supabase/reference/${source.file}`)).digest('hex'), source.sha256)
     assert.equal(inspectDatabase('select count(*) from public.distrito;'), '1891')
     assert.equal(capitanias.length, 19)
-    assert.equal((await rows(D, 'catalogo')).length, 11)
-    assert.equal(motivos.filter(x=>x.activo).length, 67)
+    assert.equal((await rows(D, 'catalogo')).length, 12)
+    assert.equal(motivos.filter(x=>x.activo).length, 72)
   })
   await scenario('TEST-H2-003/024 normalization-uuid-uniqueness', async () => {
     m1 = await materia('1'); m2 = await materia('2'); m3 = await materia('3'); m4 = await materia('4')
@@ -243,7 +243,7 @@ try {
     const concurrent = await Promise.all(capitanias.slice(4, 10).map(cap => O.rpc('guardar_ciclo', { p: { ...base, carrera_id: carrera.id, capitania_id: cap.id, fecha_inicio: '2039-01-01', fecha_fin: '2039-01-01' } })))
     const successful = concurrent.filter(result => !result.error).map(result => result.data)
     assert.ok(successful.length > 0)
-    assert.ok(concurrent.every(result => !result.error || result.error.code === '40001'))
+    assert.ok(concurrent.every(result => !result.error || ['PT409','40001','40P01'].includes(result.error.code)))
     assert.equal(new Set(successful.map(c => c.correlativo)).size, successful.length)
     inspectDatabase("update private.ciclo_correlativo set ultimo=greatest(ultimo,998) where anio=extract(year from clock_timestamp() at time zone 'America/Lima');")
     for (const cap of capitanias.slice(10, 12)) {

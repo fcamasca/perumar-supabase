@@ -1,7 +1,9 @@
+import { paymentError } from '../payments/paymentError'
 export function enrollmentError(error: {
     code?: string;
     message?: string;
 } | null) {
+    if(error?.message?.startsWith('PAYMENT_')) return paymentError(error);
     const validationMessages: Record<string,string> = {
         'Descuento no válido': 'El descuento debe ser un importe no negativo con un máximo de dos decimales.',
         'Complete la ficha del Alumno': 'Completa los datos obligatorios de la ficha del alumno antes de matricularlo.',
@@ -15,7 +17,7 @@ export function enrollmentError(error: {
         return 'El descuento no puede superar el importe original del cargo del Curso y solo puede aplicarse a ese cargo.';
     if (error?.code === '23514' && error.message && Object.hasOwn(validationMessages,error.message))
         return validationMessages[error.message];
-    if (error?.code === '40001'  || error?.code === '40P01')
+    if (['PT409', '40001', '40P01'].includes(error?.code ?? ''))
         return 'La información cambió. Recarga y revisa antes de volver a guardar.';
     if (error?.code === '23505')
         return 'El documento, RUC, código o par Alumno y Ciclo ya está registrado.';

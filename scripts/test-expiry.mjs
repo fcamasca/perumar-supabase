@@ -33,6 +33,12 @@ try {
   const deadline = (payload.exp + 35) * 1000
   console.log('TEST-H1-005/006: JWT real de 60s, renovación y residual tras logout verificados. Esperando exp + 35s de tolerancia técnica.')
   while (Date.now() < deadline) await delay(Math.min(25_000, deadline - Date.now()))
+  const financialHeaders={apikey:fixture.config.key,Authorization:`Bearer ${session.access_token}`}
+  const financialRead=await fetch(`${fixture.config.url}/rest/v1/pago`,{headers:financialHeaders})
+  assert.ok([401,403].includes(financialRead.status),'Expired JWT read financial history')
+  const financialCommand=await fetch(`${fixture.config.url}/rest/v1/rpc/registrar_pago`,{method:'POST',headers:{...financialHeaders,'Content-Type':'application/json'},body:JSON.stringify({p:{}})})
+  assert.ok([401,403].includes(financialCommand.status),'Expired JWT executed payment command')
+  console.log('TEST-H4-003 real Auth token expiration: PASSED (financial read and command denied)')
   const expired = await fetchToken()
   assert.ok(expired.status === 401 || expired.status === 403, 'JWT realmente expirado fue aceptado.')
   console.log('TEST-H1-005/006 real-expiry: PASSED; token emitido por Auth rechazado después de exp y tolerancia, sin firma fabricada.')

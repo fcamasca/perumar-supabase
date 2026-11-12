@@ -35,11 +35,12 @@ export function inspectDatabase(sql, variables = {}) {
 
 export function securityInventory() {
   return JSON.parse(inspectDatabase(`select json_build_object(
-    'tables', (select json_agg(json_build_object('name',c.relname,'rls',c.relrowsecurity,'forced',c.relforcerowsecurity) order by c.relname) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind in ('r','v','m','p')),
+    'tables', (select json_agg(json_build_object('name',c.relname,'rls',c.relrowsecurity,'forced',c.relforcerowsecurity,'kind',c.relkind,'options',c.reloptions) order by c.relname) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind in ('r','v','m','p')),
     'policies', (select json_agg(json_build_object('table',tablename,'name',policyname,'command',cmd,'roles',roles,'using',qual,'check',with_check) order by policyname) from pg_policies where schemaname='public'),
     'helpers', (select json_agg(json_build_object('name',p.proname,'owner',pg_get_userbyid(p.proowner),'definer',p.prosecdef,'volatility',p.provolatile,'config',p.proconfig,'args',pg_get_function_identity_arguments(p.oid),'definition',pg_get_functiondef(p.oid),'authenticated',has_function_privilege('authenticated',p.oid,'EXECUTE'),'anon',has_function_privilege('anon',p.oid,'EXECUTE')) order by p.proname) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='private'),
     'grants', (select json_agg(json_build_object('table',t.table_name,'role',r.name,'select',has_table_privilege(r.name,'public.'||t.table_name,'SELECT'),'insert',has_table_privilege(r.name,'public.'||t.table_name,'INSERT'),'update',has_table_privilege(r.name,'public.'||t.table_name,'UPDATE'),'delete',has_table_privilege(r.name,'public.'||t.table_name,'DELETE'),'truncate',has_table_privilege(r.name,'public.'||t.table_name,'TRUNCATE')) order by t.table_name,r.name) from information_schema.tables t cross join (values ('authenticated'),('anon')) r(name) where t.table_schema='public'),
     'sequences', (select json_agg(json_build_object('name',c.relname,'authenticated',has_sequence_privilege('authenticated',c.oid,'USAGE,SELECT,UPDATE'),'anon',has_sequence_privilege('anon',c.oid,'USAGE,SELECT,UPDATE')) order by c.relname) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='private' and c.relkind='S'),
+    'paymentCommands', (select json_agg(json_build_object('name',p.proname,'owner',pg_get_userbyid(p.proowner),'definer',p.prosecdef,'config',p.proconfig,'authenticated',has_function_privilege('authenticated',p.oid,'EXECUTE'),'anon',has_function_privilege('anon',p.oid,'EXECUTE'),'definition',pg_get_functiondef(p.oid)) order by p.proname) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname in ('registrar_pago','anular_pago')),
     'publicFunctions', (select count(*) from information_schema.routines where routine_schema='public'),
     'privateCreate', has_schema_privilege('authenticated','private','CREATE'),
     'publicCreate', has_schema_privilege('authenticated','public','CREATE'),
@@ -51,20 +52,22 @@ export function securityInventory() {
 }
 
 export function assertSecurityInventory(info) {
-  const tables = ['alumno', 'alumno_contacto_emergencia', 'app_roles', 'app_user_roles', 'app_users', 'auditoria', 'capitania', 'carrera', 'carrera_materia', 'catalogo', 'catalogo_valor', 'ciclo', 'ciclo_materia', 'ciclo_tarifa', 'departamento', 'distrito', 'empresa_patrocinadora', 'materia', 'matricula', 'matricula_cargo', 'provincia', 'tarifa']
+  const tables = ['alumno', 'alumno_contacto_emergencia', 'app_roles', 'app_user_roles', 'app_users', 'auditoria', 'capitania', 'carrera', 'carrera_materia', 'catalogo', 'catalogo_valor', 'ciclo', 'ciclo_materia', 'ciclo_tarifa', 'departamento', 'distrito', 'empresa_patrocinadora', 'materia', 'matricula', 'matricula_cargo', 'matricula_cargo_saldo', 'matricula_pago_listado', 'matricula_saldo', 'pago', 'pago_aplicacion', 'provincia', 'tarifa']
   if (JSON.stringify(info.tables?.map(t => t.name)) !== JSON.stringify(tables)
-    || info.tables.some(t => !t.rls || t.forced) || info.publicFunctions !== 17
+    || info.tables.some(t => t.kind === 'v' ? !['matricula_cargo_saldo','matricula_pago_listado','matricula_saldo'].includes(t.name) || !t.options?.includes('security_invoker=true') : !t.rls || t.forced) || info.publicFunctions !== 19
     || info.privateCreate || info.publicCreate || info.publicExecute !== 0 || info.authenticatedBypass || info.buckets !== 0
-    || JSON.stringify(info.migrations) !== JSON.stringify(['20261022041000', '20261022150000', '20261022160000', '20261023010000', '20261023020000', '20261023030000', '20261028190000', '20261028200000', '20261102010000', '20261102020000', '20261104010000', '20261104020000', '20261104030000', '20261104040000', '20261109010000'])) throw new Error('Inventario H3 inesperado.')
+    || JSON.stringify(info.migrations) !== JSON.stringify(['20261022041000', '20261022150000', '20261022160000', '20261023010000', '20261023020000', '20261023030000', '20261028190000', '20261028200000', '20261102010000', '20261102020000', '20261104010000', '20261104020000', '20261104030000', '20261104040000', '20261109010000', '20261109020000', '20261109030000', '20261109040000', '20261109050000', '20261109060000', '20261110010000'])) throw new Error('Inventario H4 inesperado.')
   if (JSON.stringify(info.sequences) !== JSON.stringify([{name:'alumno_codigo_seq',authenticated:false,anon:false}])) throw new Error('Secuencia Alumno expuesta o inesperada.')
-  const expected = ['app_roles_active_read', 'app_roles_admin_read', 'app_user_roles_admin_read', 'app_user_roles_self_read', 'app_users_admin_read', 'app_users_self_read', ...Array(18).fill('academic_read'), 'audit_read'].sort()
+  const expected = ['app_roles_active_read', 'app_roles_admin_read', 'app_user_roles_admin_read', 'app_user_roles_self_read', 'app_users_admin_read', 'app_users_self_read', ...Array(18).fill('academic_read'), 'audit_read', 'payment_read', 'payment_read'].sort()
   if (JSON.stringify(info.policies?.map(p => p.name)) !== JSON.stringify(expected)
     || info.policies.some(p => p.command !== 'SELECT' || JSON.stringify(p.roles) !== '["authenticated"]' || p.check !== null)) throw new Error('Policies H2 inesperadas.')
-  if (info.grants?.length !== 44 || info.grants.some(g => g.select !== (g.role === 'authenticated') || g.insert || g.update || g.delete || g.truncate)) throw new Error('Grants H2 inesperados.')
-  const names = ['academic_user', 'apply_enrollment_charges', 'assert_fields', 'audit_change', 'audit_enrollment', 'authorize', 'carrera_minimum', 'enrollment_snapshot', 'functional_user', 'guard_enrollment_history', 'has_active_role', 'require_catalog', 'require_version', 'stamp_update', 'sync_missing', 'validate_alumno']
+  if (info.grants?.length !== 54 || info.grants.some(g => g.select !== (g.role === 'authenticated') || g.insert || g.update || g.delete || g.truncate)) throw new Error('Grants H2 inesperados.')
+  const names = ['academic_user', 'apply_enrollment_charges', 'assert_fields', 'audit_change', 'audit_enrollment', 'authorize', 'carrera_minimum', 'enrollment_snapshot', 'functional_user', 'guard_enrollment_history', 'guard_payment_history', 'has_active_role', 'require_catalog', 'require_version', 'stamp_update', 'sync_missing', 'validate_alumno', 'validate_payment_applications']
   if (JSON.stringify(info.helpers?.map(h => h.name)) !== JSON.stringify(names)
     || info.helpers.some(h => h.owner !== 'postgres' || !h.config?.includes('search_path=""') || h.anon
       || h.authenticated !== ['has_active_role', 'academic_user', 'functional_user'].includes(h.name))) throw new Error('Helpers H2 inesperados.')
+  if(JSON.stringify(info.paymentCommands?.map(f=>f.name))!==JSON.stringify(['anular_pago','registrar_pago'])
+    ||info.paymentCommands.some(f=>f.owner!=='postgres'||!f.definer||!f.authenticated||f.anon||!f.config?.includes('search_path=""')||!f.config?.includes('default_transaction_isolation=serializable')||/\bexecute\s+/i.test(f.definition)))throw new Error('Unsafe H4 payment command inventory.')
   const helper = info.helpers.find(h => h.name === 'has_active_role')
   if (!helper.definer || helper.volatility !== 's' || !helper.definition.includes('auth.uid()')
     || /\b(insert|update|delete|execute)\b/i.test(helper.definition)) throw new Error('Identidad de helper insegura.')

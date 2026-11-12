@@ -26,7 +26,10 @@
     "test:security": "node scripts/test-security.mjs",
     "test:expiry": "node scripts/test-expiry.mjs",
     "test:enrollment": "node scripts/test-enrollment.mjs",
-    "test:academic": "node scripts/test-academic.mjs"
+    "test:academic": "node scripts/test-academic.mjs",
+    "test:payments": "node scripts/test-payments.mjs",
+    "test:payments:rollback": "node scripts/test-payments-rollback.mjs",
+    "test:payments:isolated": "node scripts/test-payments-isolated.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.118.0",

@@ -33,7 +33,7 @@ export function ChangeEnrollmentCycle({id,source,close,changed}:{id:string;sourc
   <p><strong>{enrollment?.codigo_matricula}</strong></p><p>Ciclo actual: <strong>{source.codigo_ciclo}</strong></p>
   {message&&<p role="alert">{message}</p>}{enrollment&&!cycles.length&&<p>No hay otros Ciclos Programados o En curso disponibles.</p>}
   <InlineForm onSubmit={()=>void confirm()}><fieldset disabled={busy||!enrollment}><label>Ciclo destino<select required value={destination} onChange={e=>setDestination(e.currentTarget.value)}><option value="">Seleccionar</option>{cycles.map(c=><option key={c.id} value={c.id}>{c.codigo_ciclo}</option>)}</select></label>
-  <p>Se crearán los cargos obligatorios del Ciclo destino y se reiniciará el descuento. Los cargos anteriores quedarán en el historial. El código de matrícula se conserva.</p><p className="help-text">Los conceptos opcionales se pueden seleccionar después desde Editar matrícula, en Cargos.</p></fieldset>
+  <p>Se crearán todos los cargos activos del Ciclo destino y se reiniciará el descuento. Los cargos anteriores quedarán en el historial. El código de matrícula se conserva.</p><p className="help-text">Los cargos obligatorios no se pueden retirar. Los opcionales se pueden retirar por alumno desde Editar matrícula, en Cargos, si no tienen pagos vigentes.</p></fieldset>
   <div className="form-actions"><button type="button" className="secondary" disabled={busy} onClick={close}>Cancelar</button><button disabled={busy||!enrollment||!destination}>{busy?'Cambiando…':'Confirmar cambio de Ciclo'}</button></div></InlineForm>
  </EnrollmentDrawer>
 }

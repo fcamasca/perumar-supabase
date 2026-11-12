@@ -17,7 +17,7 @@ do $$ declare actor uuid; m public.materia; c public.carrera; a public.alumno; b
  p:=p||jsonb_build_object('id',c.id,'expected_updated_at',c.updated_at::text,'con_experiencia',true,'modalidad_id',mode);
  c:=public.guardar_carrera(p,array[m.id]);
  if not c.con_experiencia or c.codigo<>'LEGACY'||token then raise exception 'Flag or legacy Career lost'; end if;
- begin perform public.guardar_carrera(p,array[m.id]); raise exception 'Stale Career accepted'; exception when serialization_failure then null; end;
+ begin perform public.guardar_carrera(p,array[m.id]); raise exception 'Stale Career accepted'; exception when sqlstate 'PT409' then null; end;
  p:=p||jsonb_build_object('expected_updated_at',c.updated_at::text);
  begin perform public.guardar_carrera(p||jsonb_build_object('con_experiencia','S'),array[m.id]); raise exception 'String flag accepted'; exception when invalid_parameter_value then null; end;
  begin perform public.guardar_carrera(p||jsonb_build_object('con_experiencia',null),array[m.id]); raise exception 'Null flag accepted'; exception when invalid_parameter_value then null; end;

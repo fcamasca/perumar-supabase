@@ -65,3 +65,10 @@ it('top navigation identifies the current section and keeps security links role-
   expect(screen.queryByRole('link', { name: 'Directorio de seguridad' })).not.toBeInTheDocument()
   expect(screen.queryByText(/PostgreSQL|RLS/)).not.toBeInTheDocument()
 })
+
+it.each(['DIRECTOR_ACADEMICO','COORDINADOR_ACADEMICO'])('Pagos navigation is available for %s with Por Alumno as default',role=>{
+ show({phase:'authorized',userId:'financial',roles:[role]},'/pagos');expect(screen.getByRole('link',{name:'Pagos'})).toHaveAttribute('aria-current','page');expect(screen.getByRole('tab',{name:'Por Alumno'})).toHaveAttribute('aria-selected','true');expect(client.from).not.toHaveBeenCalled()
+})
+it.each(['/pagos','/pagos/manipulated-id'])('Admin alone cannot access or enumerate financial route %s',path=>{
+ show({phase:'authorized',userId:'admin',roles:['ADMIN_SISTEMA']},path);expect(screen.getByRole('alert')).toHaveTextContent('no autorizado');expect(screen.queryByRole('link',{name:'Pagos'})).not.toBeInTheDocument();expect(client.from).not.toHaveBeenCalled()
+})

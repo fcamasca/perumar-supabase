@@ -17,7 +17,7 @@ begin
  p:=p||jsonb_build_object('id',c.id,'expected_updated_at',c.updated_at::text,'modalidad_id',mode_id);
  c:=public.guardar_carrera(p,array[m.id]);
  if c.modalidad_id is distinct from mode_id then raise exception 'Valid modality rejected'; end if;
- begin perform public.guardar_carrera(p,array[m.id]); raise exception 'Stale version accepted'; exception when serialization_failure then null; end;
+ begin perform public.guardar_carrera(p,array[m.id]); raise exception 'Stale version accepted'; exception when sqlstate 'PT409' then null; end;
  p:=p||jsonb_build_object('expected_updated_at',c.updated_at::text,'modalidad_id',null);
  c:=public.guardar_carrera(p,array[m.id]);
  if c.modalidad_id is not null then raise exception 'Null modality rejected'; end if;

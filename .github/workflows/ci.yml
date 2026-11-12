@@ -1,4 +1,4 @@
-name: H3 enrollment academic and security verification
+name: H4 payments academic and security verification
 
 on:
   push:
@@ -53,6 +53,11 @@ jobs:
         run: npm run test:academic
       - name: Enrollment invariants, rollback and concurrency
         run: npm run test:enrollment
+      - name: Payments invariants, real concurrency and ordinary JWT matrix
+        run: |
+          npm run test:payments:rollback
+          npm run test:payments:isolated
+          npm run test:payments
       - name: Frontend build
         run: npm run build
       - name: Privileged configuration rejected safely
@@ -68,6 +73,9 @@ jobs:
           npm run test:security
           npm run test:academic
           npm run test:enrollment
+          npm run test:payments:rollback
+          npm run test:payments:isolated
+          npm run test:payments
       - name: Stop local platform
         if: always()
         run: npm run supabase:stop
