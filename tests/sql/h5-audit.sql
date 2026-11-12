@@ -22,5 +22,3 @@
  set constraints all immediate;
 end $$;
 rollback;
-
-

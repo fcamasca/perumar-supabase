@@ -60,6 +60,8 @@ jobs:
           npm run test:payments
       - name: Enrollment PDF real Edge, private Storage and actor matrix
         run: |
+          sudo apt-get update -qq
+          sudo apt-get install --yes poppler-utils
           npm run test:pdf:rollback
           npm run test:pdf
       - name: Synthetic PDF evidence

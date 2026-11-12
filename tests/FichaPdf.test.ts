@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { PDFDocument } from 'pdf-lib'
+import { PDFDocument, PDFName } from 'pdf-lib'
 import { ageAtEnrollment, parseRequest, projectFicha, requireEligible } from '../supabase/functions/_shared/ficha/contract'
 import { renderFicha } from '../supabase/functions/_shared/ficha/render'
 import { fichaFixture } from './ficha-fixture'
@@ -52,5 +52,23 @@ describe('H5 portable renderer', () => {
   })
   it('rejects contacts beyond budget', async () => {
     await expect(renderFicha(fichaFixture(101), new Date())).rejects.toThrow('LIMIT')
+  })
+  it('renders HTML and remote URLs literally without fetch or PDF actions', async () => {
+    const s = fichaFixture(); s.alumno_snapshot.alumno.senas_particulares = '<script>alert(1)</script> http://169.254.169.254/ <img src="https://evil.invalid">'
+    const original = globalThis.fetch
+    let fetched = false
+    globalThis.fetch = async () => { fetched = true; throw new Error('Unexpected external resource') }
+    try {
+      const pdf = await PDFDocument.load(await renderFicha(s, new Date()))
+      expect(fetched).toBe(false)
+      expect(pdf.catalog.get(PDFName.of('OpenAction'))).toBeUndefined()
+      expect(pdf.catalog.get(PDFName.of('AA'))).toBeUndefined()
+      expect(pdf.catalog.get(PDFName.of('Names'))).toBeUndefined()
+    } finally { globalThis.fetch = original }
+  })
+  it('rejects an over-budget document rather than dropping long contact rows', async () => {
+    const s = fichaFixture(100)
+    s.alumno_snapshot.contactos.forEach(c => { c.direccion = 'D'.repeat(500) })
+    await expect(renderFicha(s, new Date())).rejects.toThrow('LIMIT')
   })
 })

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { randomUUID, createHash } from 'node:crypto'
 import { mkdirSync, writeFileSync } from 'node:fs'
+import { spawnSync } from 'node:child_process'
 import { createFixtures, publicClient, checked } from './h2-fixtures.mjs'
 import { assertSecurityInventory, securityInventory } from './local-platform.mjs'
 
@@ -28,6 +29,7 @@ try {
   const tariff=await rpc(D,'guardar_tarifa',{p:{codigo:'PDF'+tag,nombre:'H5 SINTÉTICO',tipo:'CARRERA',monto_por_defecto:'100'}})
   cycle=await rpc(D,'guardar_ciclo_tarifas',{ciclo_id:cycle.id,expected_updated_at:cycle.updated_at,configuracion:[{tarifa_id:tariff.id,importe:'100',obligatorio:'true'}]})
   const initial={apellido_paterno:'MUÑOZ',apellido_materno:'QUIÑONES',nombres:'ÁNGELA',tipo_di_id:value('TIPO_DI','CARNET_EXTRANJERIA'),numero_di:randomUUID().replaceAll('-','').slice(0,30),fecha_nacimiento:'2000-01-01',sexo_id:value('SEXO','F'),celular:'999111222',domicilio:'SINTÉTICO',...Object.fromEntries(Object.entries(geo).map(([k,v])=>['nacimiento_'+k,v])),...Object.fromEntries(Object.entries(geo).map(([k,v])=>['domicilio_'+k,v])),contactos:[{apellido:'CONTACTO',nombre:'SINTÉTICO',parentesco_id:value('PARENTESCO','PADRE'),celular:'999111222'}]}
+  initial.contactos=Array.from({length:100},(_,i)=>({...initial.contactos[0],nombre:'SINTÉTICO '+String(i+1).padStart(3,'0')}))
   let student=await rpc(O,'guardar_alumno',{p:initial})
   let enrollment=await rpc(O,'registrar_matricula',{p:{alumno_id:student.id,expected_alumno_updated_at:student.updated_at,ciclo_id:cycle.id,expected_ciclo_updated_at:cycle.updated_at}})
   const body=()=>({matricula_id:enrollment.id,expected_updated_at:enrollment.updated_at})
@@ -59,9 +61,13 @@ try {
   }
   // Current personal edits never replace the snapshot in the source projection.
   student=await rpc(O,'guardar_alumno',{p:{...initial,contactos:[],id:student.id,expected_updated_at:student.updated_at,nombres:'ACTUAL DIFERENTE'}})
-  const download=await invoke({...body(),artefacto_id:manifest.artefacto_id},'O');assert.equal(download.status,200);assert.equal(download.headers.get('content-type'),'application/pdf');assert.equal(download.headers.get('cache-control'),'private, no-store');assert.match(download.headers.get('content-disposition'),/ficha-matricula.pdf/)
+  const afterPersonalEdit=await generate()
+  const download=await invoke({...body(),artefacto_id:afterPersonalEdit.artefacto_id},'O');assert.equal(download.status,200);assert.equal(download.headers.get('content-type'),'application/pdf');assert.equal(download.headers.get('cache-control'),'private, no-store');assert.match(download.headers.get('content-disposition'),/ficha-matricula.pdf/)
   const bytes=Buffer.from(await download.arrayBuffer());assert.equal(bytes.subarray(0,5).toString(),'%PDF-');mkdirSync('.cache/h5-results',{recursive:true});writeFileSync('.cache/h5-results/real-edge.pdf',bytes)
-  const auditRows=await events();assert.equal(auditRows.filter(e=>e.accion==='FICHA_PDF_GENERADA').length,2);assert.equal(auditRows.at(-1).actor,fixture.entries.O.id)
+  const extracted=spawnSync('pdftotext',['-enc','UTF-8','.cache/h5-results/real-edge.pdf','-'],{encoding:'utf8',windowsHide:true})
+  assert.equal(extracted.status,0,'independent PDF parsing');assert.ok(extracted.stdout.includes('MUÑOZ')&&extracted.stdout.includes('ÁNGELA')&&!extracted.stdout.includes('ACTUAL DIFERENTE'),'historical Spanish data, never current student fallback');assert.ok(extracted.stdout.includes('SINTÉTICO 100'),'all 100 historic contacts rendered')
+  const visual=spawnSync('pdftoppm',['-scale-to','1100','-png','.cache/h5-results/real-edge.pdf','.cache/h5-results/page'],{encoding:'utf8',windowsHide:true});assert.equal(visual.status,0,'independent PDF rendering')
+  const auditRows=await events();assert.equal(auditRows.filter(e=>e.accion==='FICHA_PDF_GENERADA').length,3);assert.equal(auditRows.at(-1).actor,fixture.entries.O.id)
   assert.ok(auditRows.every(e=>!JSON.stringify(e.new_values).includes('MUÑOZ')&&!JSON.stringify(e.new_values).includes(initial.numero_di)))
   // True expiry of a synthetic privileged URL, never exposed by the product. Do not delete to fake expiry.
   const signed=checked(await fixture.admin.storage.from('fichas-matricula').createSignedUrl(path,1),'signed URL fixture')
@@ -84,7 +90,7 @@ try {
   assert.equal((await invoke({...body(),artefacto_id:manifest.artefacto_id})).status,409)
   assert.equal((await invoke(body())).status,409)
   console.log('H5 real Edge, RLS/role/IDOR matrix, private Storage, true signed URL TTL, logical retention, snapshot, audit, no business mutation and concurrent generation: PASSED technical; hosted/human pending')
-} catch(error){console.error('H5 FAILED '+(error instanceof assert.AssertionError?error.message:'technical operation; sensitive details omitted'));process.exitCode=1}
+} catch(error){console.error('H5 FAILED '+(error instanceof assert.AssertionError||/^Falló /.test(error.message)?error.message:'technical operation; sensitive details omitted'));console.error('H5 LOCATION '+(error.stack?.split('\n').find(line=>line.includes('test-pdf.mjs:'))??error.name));process.exitCode=1}
 finally {
   if(fixture){if(artifacts.length)checked(await fixture.admin.storage.from('fichas-matricula').remove(artifacts),'cleanup derived synthetic PDFs');await fixture.cleanup()}
 }
