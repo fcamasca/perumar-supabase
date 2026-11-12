@@ -1,4 +1,4 @@
-name: H4 payments academic and security verification
+name: H5 PDF payments academic and security verification
 
 on:
   push:
@@ -58,6 +58,18 @@ jobs:
           npm run test:payments:rollback
           npm run test:payments:isolated
           npm run test:payments
+      - name: Enrollment PDF real Edge, private Storage and actor matrix
+        run: |
+          npm run test:pdf:rollback
+          npm run test:pdf
+      - name: Synthetic PDF evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: h5-synthetic-pdf-evidence
+          path: .cache/h5-results/
+          if-no-files-found: ignore
+          retention-days: 3
       - name: Frontend build
         run: npm run build
       - name: Privileged configuration rejected safely
@@ -76,6 +88,8 @@ jobs:
           npm run test:payments:rollback
           npm run test:payments:isolated
           npm run test:payments
+          npm run test:pdf:rollback
+          npm run test:pdf
       - name: Stop local platform
         if: always()
         run: npm run supabase:stop

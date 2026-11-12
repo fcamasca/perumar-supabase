@@ -41,7 +41,7 @@ enabled = true
 enabled = false
 
 [edge_runtime]
-enabled = false
+enabled = true
 
 [auth]
 enabled = true

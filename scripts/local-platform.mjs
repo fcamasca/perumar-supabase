@@ -47,6 +47,9 @@ export function securityInventory() {
     'publicExecute', (select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace cross join lateral aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a where n.nspname='private' and a.grantee=0 and a.privilege_type='EXECUTE'),
     'authenticatedBypass', (select rolbypassrls from pg_roles where rolname='authenticated'),
     'buckets', (select count(*) from storage.buckets),
+    'pdfBucket', (select json_build_object('id',id,'public',public,'limit',file_size_limit,'types',allowed_mime_types) from storage.buckets where id='fichas-matricula'),
+    'storagePolicies', (select count(*) from pg_policies where schemaname='storage' and tablename='objects'),
+    'pdfAudit', (select json_build_object('authenticated',has_function_privilege('authenticated',p.oid,'EXECUTE'),'anon',has_function_privilege('anon',p.oid,'EXECUTE'),'server',has_function_privilege('service_role',p.oid,'EXECUTE'),'owner',pg_get_userbyid(p.proowner),'definer',p.prosecdef,'config',p.proconfig) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='registrar_evento_ficha_pdf'),
     'migrations', (select json_agg(version order by version) from supabase_migrations.schema_migrations)
   );`))
 }
@@ -54,9 +57,10 @@ export function securityInventory() {
 export function assertSecurityInventory(info) {
   const tables = ['alumno', 'alumno_contacto_emergencia', 'app_roles', 'app_user_roles', 'app_users', 'auditoria', 'capitania', 'carrera', 'carrera_materia', 'catalogo', 'catalogo_valor', 'ciclo', 'ciclo_materia', 'ciclo_tarifa', 'departamento', 'distrito', 'empresa_patrocinadora', 'materia', 'matricula', 'matricula_cargo', 'matricula_cargo_saldo', 'matricula_pago_listado', 'matricula_saldo', 'pago', 'pago_aplicacion', 'provincia', 'tarifa']
   if (JSON.stringify(info.tables?.map(t => t.name)) !== JSON.stringify(tables)
-    || info.tables.some(t => t.kind === 'v' ? !['matricula_cargo_saldo','matricula_pago_listado','matricula_saldo'].includes(t.name) || !t.options?.includes('security_invoker=true') : !t.rls || t.forced) || info.publicFunctions !== 19
-    || info.privateCreate || info.publicCreate || info.publicExecute !== 0 || info.authenticatedBypass || info.buckets !== 0
-    || JSON.stringify(info.migrations) !== JSON.stringify(['20261022041000', '20261022150000', '20261022160000', '20261023010000', '20261023020000', '20261023030000', '20261028190000', '20261028200000', '20261102010000', '20261102020000', '20261104010000', '20261104020000', '20261104030000', '20261104040000', '20261109010000', '20261109020000', '20261109030000', '20261109040000', '20261109050000', '20261109060000', '20261110010000'])) throw new Error('Inventario H4 inesperado.')
+    || info.tables.some(t => t.kind === 'v' ? !['matricula_cargo_saldo','matricula_pago_listado','matricula_saldo'].includes(t.name) || !t.options?.includes('security_invoker=true') : !t.rls || t.forced) || info.publicFunctions !== 20
+    || info.privateCreate || info.publicCreate || info.publicExecute !== 0 || info.authenticatedBypass || info.buckets !== 1
+    || JSON.stringify(info.migrations) !== JSON.stringify(['20261022041000', '20261022150000', '20261022160000', '20261023010000', '20261023020000', '20261023030000', '20261028190000', '20261028200000', '20261102010000', '20261102020000', '20261104010000', '20261104020000', '20261104030000', '20261104040000', '20261109010000', '20261109020000', '20261109030000', '20261109040000', '20261109050000', '20261109060000', '20261110010000', '20261112010000'])) throw new Error('Inventario H5 inesperado.')
+  if(JSON.stringify(info.pdfBucket)!==JSON.stringify({id:'fichas-matricula',public:false,limit:2097152,types:['application/pdf']}) || info.storagePolicies!==0 || !info.pdfAudit || info.pdfAudit.authenticated || info.pdfAudit.anon || !info.pdfAudit.server || info.pdfAudit.owner!=='postgres' || !info.pdfAudit.definer || !info.pdfAudit.config?.includes('search_path=""')) throw new Error('Storage/auditoría H5 expuestos o inesperados.')
   if (JSON.stringify(info.sequences) !== JSON.stringify([{name:'alumno_codigo_seq',authenticated:false,anon:false}])) throw new Error('Secuencia Alumno expuesta o inesperada.')
   const expected = ['app_roles_active_read', 'app_roles_admin_read', 'app_user_roles_admin_read', 'app_user_roles_self_read', 'app_users_admin_read', 'app_users_self_read', ...Array(18).fill('academic_read'), 'audit_read', 'payment_read', 'payment_read'].sort()
   if (JSON.stringify(info.policies?.map(p => p.name)) !== JSON.stringify(expected)
