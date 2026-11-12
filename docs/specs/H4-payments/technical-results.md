@@ -1,6 +1,8 @@
 # H4 — Evidencia técnica del candidato
 
-**Construcción técnica; Gate 2 PENDIENTE. No acceptance, merge a main ni H5 autorizados.**
+**Gate 2 APROBADO HUMANAMENTE el 12/11/2026. Cierre formal H4, acceptance, merge a main e H5 NO AUTORIZADOS.**
+
+Estado vigente y límites: [gate-2.md](gate-2.md). Las secciones cronológicas conservan sus estados históricos.
 
 Gate 1 humano: `15f5e80492c4ba95a70f9fe56e068f7ba946510d`, 09/11/2026, 17 OQ y C-H4-001 resueltas. Rama `feature/h4-payments` creada desde ese SHA; registro incorporado por cherry-pick en `bf2c8ce`. Los cuatro archivos del Spec permanecen idénticos; sus estados históricos no se reescriben. [Registro](implementation-log.md), [Gate 1](gate-1.md), [pruebas humanas](human-test-guide.md).
 
@@ -92,7 +94,7 @@ El ensayo API descarta deliberadamente el cuerpo HTTP después de un commit real
 | 017 | IMPLEMENTADA / validacion tecnica: UI manual y anulacion |
 | 018 | IMPLEMENTADA / validacion tecnica: Errores y sesion |
 | 019 | Parte técnica ejecutada; revisión humana PENDIENTE |
-| 020 | Candidato/evidencia publicados al entregar; revisión humana de arquitectura y Gate 2 PENDIENTES |
+| 020 | Candidato/evidencia publicados; Gate 2 APROBADO HUMANAMENTE con reporte humano global, sin inventar subcasos de arquitectura; cierre formal NO AUTORIZADO |
 
 La agrupación 002–018 incluye individualmente permisos, saldo, modelo, dinero, estados, H3, timestamps/notas, medios, comandos, idempotencia, recuperación, locks, rollback, auditoría, lecturas, UI y errores/sesión. No convierte finalización técnica en aprobación humana de 019/020.
 
@@ -162,7 +164,7 @@ La agrupación 002–018 incluye individualmente permisos, saldo, modelo, dinero
 
 No se identificó una desviación funcional intencionada respecto del Spec aprobado. Se conservan sus cuatro documentos byte-idénticos. No API adicional, infraestructura, deuda materializada, ledger, proveedores, facturación, PDF/Storage, devoluciones ni H5.
 
-- Revisión humana H4 completa PENDIENTE; **forced-colors real NO VERIFICADO**. No se presenta como PASSED ni como residual aceptado de H4.
+- Revisión humana: OK global reportado, sin desglose de subcasos. **Forced-colors real: NO VERIFICADO — residual aceptado** expresamente para Gate 2 de H4; no PASSED ni heredado de H3. Véase [gate-2.md](gate-2.md).
 - Bundle >500 kB: advertencia de build; no se añadió infraestructura ni una optimización ajena a H4.
 - Sin ensayo de carga masiva: evidencia de concurrencia acotada y reproducible, no promesa de throughput.
 - Si se pierde el borrador y DB aún no devuelve fila, queda una resolución pendiente con la misma referencia. No se inventan aplicaciones ni se emite otra clave automáticamente; límite previsto de continuidad mínima sin payload persistido.
@@ -338,3 +340,10 @@ Validación local de mensajes/importe: lint/typecheck, EnrollmentPayments 19/19 
 ## 12/11/2026 — Confirmación global de pruebas humanas
 
 El usuario reportó «listo ok las pruebas». Se registra **OK global reportado**, sin atribuir pasos, TEST o subcasos individuales no desglosados. Candidato de referencia de sesión: `0091190f0cf353d744d6b2d9a6447916d9c882d6`, con 372/372 y CI `42938230861` SUCCESS. El usuario confirmó expresamente Chrome / Windows 11 Pro y forced-colors real NO VERIFICADO. Versión de Chrome, roles y SHA ejecutado no fueron nuevamente indicados; no se inventan. No se presume residual aceptado. Detalle: [human-results.md](human-results.md). **Gate 2 continúa PENDIENTE**; no acceptance, merge, cierre ni H5.
+
+
+## 12/11/2026 — Gate 2 APROBADO HUMANAMENTE, sin cierre autorizado
+
+Decisión humana explícita sobre `0091190f0cf353d744d6b2d9a6447916d9c882d6`: **Gate 2 APROBADO HUMANAMENTE**. [Registro](gate-2.md). CI funcional `42938230861` y CI documental `43267712701` de `6943d5416dcf24ea81b6f3b30867090c2d3d83df`: COMPLETED / SUCCESS, verificadas. Solo documentación después del candidato; 372/372 pruebas automáticas. Reporte humano OK global en Chrome / Windows 11 Pro; no se inventan versión, roles ni subcasos individuales.
+
+**Forced-colors / contraste alto real de Windows: NO VERIFICADO — residual aceptado** expresamente para Gate 2 de H4, sin declararlo ejecutado, PASSED, validado ni heredado de H3. Se conservan advertencia de bundle >500 kB y Data API hospedada / PostgREST 14 no probada directamente, así como los demás límites técnicos documentados. Este estado vigente prevalece sobre menciones históricas de Gate 2 pendiente; los cuatro documentos aprobados no se modifican. **No acceptance.md, merge a main, cierre formal H4 ni H5 autorizados. H5 NO INICIADO.** SHA documental final y CI propia en entrega.

@@ -1,5 +1,7 @@
 # H4 — Registro de construcción
 
+**Estado vigente al 12/11/2026: Gate 2 APROBADO HUMANAMENTE; cierre/acceptance/merge/H5 NO AUTORIZADOS.** [Registro](gate-2.md). Las entradas anteriores conservan sus estados históricos.
+
 Gate 1 aprobado humanamente el 09/11/2026 sobre `15f5e80492c4ba95a70f9fe56e068f7ba946510d`.
 Rama de construcción: `feature/h4-payments`, creada desde ese SHA. Registro incorporado mediante cherry-pick: `bf2c8ce` (SHA de inicio de construcción).
 Los cuatro documentos aprobados se conservan idénticos. Las 17 OQ y C-H4-001 están resueltas; [Gate 1](gate-1.md).
@@ -206,3 +208,10 @@ Validación local de mensajes/importe: lint/typecheck, EnrollmentPayments 19/19 
 ## 12/11/2026 — Confirmación global de pruebas humanas
 
 El usuario reportó «listo ok las pruebas». Se registra **OK global reportado**, sin atribuir pasos, TEST o subcasos individuales no desglosados. Candidato de referencia de sesión: `0091190f0cf353d744d6b2d9a6447916d9c882d6`, con 372/372 y CI `42938230861` SUCCESS. El usuario confirmó expresamente Chrome / Windows 11 Pro y forced-colors real NO VERIFICADO. Versión de Chrome, roles y SHA ejecutado no fueron nuevamente indicados; no se inventan. No se presume residual aceptado. Detalle: [human-results.md](human-results.md). **Gate 2 continúa PENDIENTE**; no acceptance, merge, cierre ni H5.
+
+
+## 12/11/2026 — Gate 2 APROBADO HUMANAMENTE, sin cierre autorizado
+
+Decisión humana explícita sobre `0091190f0cf353d744d6b2d9a6447916d9c882d6`: **Gate 2 APROBADO HUMANAMENTE**. [Registro](gate-2.md). CI funcional `42938230861` y CI documental `43267712701` de `6943d5416dcf24ea81b6f3b30867090c2d3d83df`: COMPLETED / SUCCESS, verificadas. Solo documentación después del candidato; 372/372 pruebas automáticas. Reporte humano OK global en Chrome / Windows 11 Pro; no se inventan versión, roles ni subcasos individuales.
+
+**Forced-colors / contraste alto real de Windows: NO VERIFICADO — residual aceptado** expresamente para Gate 2 de H4, sin declararlo ejecutado, PASSED, validado ni heredado de H3. Se conservan advertencia de bundle >500 kB y Data API hospedada / PostgREST 14 no probada directamente, así como los demás límites técnicos documentados. Este estado vigente prevalece sobre menciones históricas de Gate 2 pendiente; los cuatro documentos aprobados no se modifican. **No acceptance.md, merge a main, cierre formal H4 ni H5 autorizados. H5 NO INICIADO.** SHA documental final y CI propia en entrega.
