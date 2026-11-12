@@ -3,7 +3,7 @@ import { randomUUID, createHash } from 'node:crypto'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { createFixtures, publicClient, checked } from './h2-fixtures.mjs'
-import { inspectDatabase, assertSecurityInventory, securityInventory } from './local-platform.mjs'
+import { inspectDatabase, runLocal, assertSecurityInventory, securityInventory } from './local-platform.mjs'
 
 // Committed Auth/API fixtures belong only to the disposable CI stack.
 if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true')throw new Error('H5 API tests require the disposable GitHub Actions stack; never run against the human database.')
@@ -32,6 +32,8 @@ try {
   initial.contactos=Array.from({length:100},(_,i)=>({...initial.contactos[0],nombre:'SINTÉTICO '+String(i+1).padStart(3,'0')}))
   let student=await rpc(O,'guardar_alumno',{p:initial})
   let enrollment=await rpc(O,'registrar_matricula',{p:{alumno_id:student.id,expected_alumno_updated_at:student.updated_at,ciclo_id:cycle.id,expected_ciclo_updated_at:cycle.updated_at}})
+  const otherStudent=await rpc(O,'guardar_alumno',{p:{...initial,nombres:'OTRA FICHA',numero_di:randomUUID().replaceAll('-','').slice(0,30),contactos:[initial.contactos[0]]}})
+  const otherEnrollment=await rpc(O,'registrar_matricula',{p:{alumno_id:otherStudent.id,expected_alumno_updated_at:otherStudent.updated_at,ciclo_id:cycle.id,expected_ciclo_updated_at:cycle.updated_at}})
   const body=()=>({matricula_id:enrollment.id,expected_updated_at:enrollment.updated_at})
   const tokens={};for(const [name,c] of Object.entries(clients))tokens[name]=(await c.auth.getSession()).data.session.access_token
   const invoke=async(payload,actor='D',origin)=>fetch(fixture.config.url+'/functions/v1/ficha-matricula',{method:'POST',headers:{apikey:fixture.config.key,'Content-Type':'application/json',...(actor?{Authorization:'Bearer '+tokens[actor]}:{}),...(origin?{Origin:origin}:{})},body:JSON.stringify(payload)})
@@ -48,10 +50,35 @@ try {
   for(const actor of ['A','B','N','F','I'])assert.equal((await invoke(body(),actor)).status,403,'non-academic/inactive rejected')
   assert.equal((await invoke(body(),null)).status,401)
   for(const extra of [{path:'../outside.pdf'},{html:'<script>alert(1)</script>'},{actor:fixture.entries.D.id},{url:'http://169.254.169.254'}])assert.equal((await invoke({...body(),...extra})).status,422)
+  assert.equal((await invoke({...body(),html:'x'.repeat(5000)})).status,413)
   assert.equal((await invoke(body(),'D','https://evil.invalid')).status,403)
   assert.equal((await invoke({matricula_id:randomUUID(),expected_updated_at:enrollment.updated_at})).status,404)
   assert.equal((await invoke({...body(),artefacto_id:randomUUID()})).status,404)
+  const otherBody={matricula_id:otherEnrollment.id,expected_updated_at:otherEnrollment.updated_at}
+  assert.equal((await invoke({...otherBody,artefacto_id:manifest.artefacto_id})).status,404,'real artifact cannot cross enrollment prefix/manifest')
+  const otherResponse=await invoke(otherBody,'O');assert.equal(otherResponse.status,200,'academic role may read another authorized enrollment without invented student ownership');const otherManifest=await otherResponse.json();artifacts.push(`${otherEnrollment.id}/${otherManifest.artefacto_id}.pdf`)
   const path=artifacts[0]
+  const objectNames=async()=>checked(await fixture.admin.storage.from('fichas-matricula').list(enrollment.id,{limit:100}),'synthetic object listing').map(f=>f.name).sort()
+  const beforeFaultObjects=await objectNames(),beforeFaultEvents=(await events()).length
+  // Real Storage rejection: no successful audit or retained object.
+  checked(await fixture.admin.storage.updateBucket('fichas-matricula',{allowedMimeTypes:['image/png']}),'inject Storage MIME rejection')
+  try { assert.equal((await invoke(body())).status,503,'real upload failure') }
+  finally { checked(await fixture.admin.storage.updateBucket('fichas-matricula',{allowedMimeTypes:['application/pdf']}),'restore private PDF bucket') }
+  assert.deepEqual(await objectNames(),beforeFaultObjects);assert.equal((await events()).length,beforeFaultEvents)
+  // Real post-upload DB audit failure, restricted to this disposable synthetic enrollment.
+  inspectDatabase("create function private.h5_test_failure() returns trigger language plpgsql set search_path='' as $$ begin raise exception using errcode='P0001',message='H5_SYNTHETIC_AUDIT_FAILURE'; end; $$; revoke all on function private.h5_test_failure() from public,anon,authenticated; create trigger z_h5_test_failure before insert on public.auditoria for each row when (new.entidad='ficha_pdf' and new.registro_id=:'enrollment_id'::uuid) execute function private.h5_test_failure();",{enrollment_id:enrollment.id})
+  try { assert.equal((await invoke(body())).status,503,'real audit failure must compensate and withhold artifact') }
+  finally { inspectDatabase('drop trigger z_h5_test_failure on public.auditoria; drop function private.h5_test_failure();') }
+  assert.deepEqual(await objectNames(),beforeFaultObjects,'real Storage compensation');assert.equal((await events()).length,beforeFaultEvents)
+  // Real dependency timeout, not a fake delayed Promise. Only the disposable CI Storage container is paused.
+  const timeoutStart=performance.now();runLocal('docker',['pause','supabase_storage_perumar-supabase'])
+  try { assert.equal((await invoke(body())).status,503,'real Storage timeout') }
+  finally { runLocal('docker',['unpause','supabase_storage_perumar-supabase']) }
+  const timeoutMs=performance.now()-timeoutStart;assert.ok(timeoutMs>=10000&&timeoutMs<23000,'bounded real timeout');assert.equal((await events()).length,beforeFaultEvents)
+  await new Promise(r=>setTimeout(r,500))
+  for(const name of (await objectNames()).filter(n=>!beforeFaultObjects.includes(n)))artifacts.push(`${enrollment.id}/${name}`) // Possible private orphan after unknown upload outcome.
+  assertSecurityInventory(securityInventory())
+  console.log('H5 real upload rejection, post-upload audit compensation and paused-Storage timeout: PASSED')
   for(const c of [D,O,A,publicClient(fixture.config)]){
     assert.ok((await c.storage.from('fichas-matricula').download(path)).error)
     const listed=await c.storage.from('fichas-matricula').list(enrollment.id);assert.ok(listed.error||listed.data.length===0)

@@ -37,6 +37,7 @@ jobs:
         run: |
           npm run lint
           npm run typecheck
+          npm run typecheck:edge
           npm test
       - name: Start isolated local platform
         run: npm run supabase:start

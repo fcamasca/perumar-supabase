@@ -12,6 +12,7 @@
     "dev": "vite --host 127.0.0.1",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "typecheck:edge": "npx --yes deno@2.1.4 check --config=supabase/functions/ficha-matricula/deno.json --node-modules-dir=none --frozen supabase/functions/ficha-matricula/index.ts",
     "test": "vitest run",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 127.0.0.1",
