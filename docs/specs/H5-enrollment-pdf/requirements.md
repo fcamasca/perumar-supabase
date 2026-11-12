@@ -13,15 +13,15 @@ La instrucción humana autoriza solo estos cuatro documentos: requirements.md, d
 
 ### REQ-H5-001 — Alcance y gates
 
-Evaluar si una Supabase Edge Function puede producir la ficha requerida con calidad, seguridad y esfuerzo razonables. Esta entrega es SOLO SPEC. Resolver OQ-H5-001 a OQ-H5-004 y obtener Gate 1 antes de cualquier construcción/spike ejecutable. Un resultado negativo o inconcluso va a GATE-A01; nunca autoriza otro backend.
+Evaluar si una Supabase Edge Function puede producir la ficha requerida con calidad, seguridad y esfuerzo razonables. Esta entrega es SOLO SPEC. OQ-H5-001 a OQ-H5-004 RESUELTAS HUMANAMENTE el 12/11/2026; obtener Gate 1 sobre el Spec actualizado antes de cualquier construcción/spike ejecutable. Un resultado negativo o inconcluso va a GATE-A01; nunca autoriza otro backend.
 
 ### REQ-H5-002 — Referencia funcional autorizada
 
-Adaptar la ficha institucional existente sin copiar sus datos personales, declaraciones antiguas ni implementación Jasper. Aprobar en OQ-H5-002 la plantilla, textos, marca y tratamiento de campos sin fuente. No agregar Libro, Folio, Registro legal, fotografía, firma capturada o huellas digitales al modelo para rellenar el documento.
+Adaptar la ficha institucional existente sin copiar sus datos personales, declaraciones antiguas ni implementación Jasper. Según OQ-H5-002 resuelta, mantener Libro/Folio/Registro visibles y en blanco, espacio para foto y espacios de firma/huellas. No inferir vigencia de textos/resoluciones de la muestra. No agregar Libro, Folio, Registro legal, fotografía, firma capturada o huellas digitales al modelo para rellenar el documento.
 
 ### REQ-H5-003 — Procedencia y fecha de los datos
 
-Definir en OQ-H5-001 la semántica temporal. Propuesta: datos personales/contactos/etiquetas desde alumno_snapshot; contexto vigente de Matrícula/Ciclo/Curso y patrocinador identificado como actual al emitir. No presentar como históricos datos que el modelo no fotografía. Calcular edad con fecha de referencia explícita, sin almacenar una edad nueva.
+OQ-H5-001 resuelta: datos personales, domicilio, contactos y etiquetas desde alumno_snapshot; Ciclo/Curso/promoción/patrocinador actuales al emitir, identificados como tales. Edad calculada desde fecha_nacimiento del snapshot a la fecha de matrícula (matricula.created_at, día calendario en Lima), nunca a la fecha de emisión ni updated_at. Fecha de emisión real del servidor en America/Lima. No presentar contexto actual como histórico ni almacenar una edad nueva.
 
 ### REQ-H5-004 — Lectura controlada del modelo existente
 
@@ -45,11 +45,11 @@ Soportar identificación, datos adicionales/domicilio, contactos y patrocinador 
 
 ### REQ-H5-009 — Identidad institucional
 
-Usar marca PERÚ MAR y plantilla aprobadas en OQ-H5-002; conservar legibilidad, bordes, márgenes y jerarquía coherentes. No asumir vigentes resoluciones/textos de la muestra ni sustituir una resolución institucional por un dato del Curso. Firmas/huellas solo como espacios impresos si se aprueba, sin captura biométrica ni firma digital.
+Usar marca PERÚ MAR y la plantilla de referencia con los espacios definidos en OQ-H5-002 resuelta; conservar legibilidad, bordes, márgenes y jerarquía coherentes. No asumir vigentes resoluciones/textos de la muestra ni sustituir una resolución institucional por un dato del Curso. Mantener foto, firmas y huellas como espacios impresos vacíos, sin captura, almacenamiento de imagen personal, biometría ni firma digital H5. Libro/Folio/Registro permanecen visibles sin valores inventados.
 
 ### REQ-H5-010 — Experiencia de generación y estados
 
-Acceso contextual desde la matrícula, generación explícita y descarga con estado ocupado, éxito o error seguro, sin perder contexto ni alterar la matrícula. Definir en OQ-H5-004 el tratamiento de matrículas/Ciclos anulados o terminales. Nunca omitir una anulación para emitir un documento engañoso; no derivar esta regla de la elegibilidad de pagos.
+Acceso contextual desde la matrícula, generación explícita y descarga con estado ocupado, éxito o error seguro, sin perder contexto ni alterar la matrícula. OQ-H5-004 resuelta: generar y descargar solo con matrícula ACTIVA (estado DB ACTIVO) y Ciclo PROGRAMADO, EN_CURSO o CERRADO. Bloquear matrícula ANULADA (estado DB ANULADO) y Ciclo DESIERTO/ANULADO, incluso si el PDF se generó antes. Revalidar estado actual del servidor antes de entregar bytes; no basta el estado del artefacto o de React.
 
 ### REQ-H5-011 — Storage privado y propietario lógico
 
@@ -65,7 +65,7 @@ Propuesta: descargar mediante Edge autenticada en cada petición, con respuesta 
 
 ### REQ-H5-014 — Repetición, regeneración y retención
 
-Dos generaciones explícitas producen artefactos distintos sin sobreescribir ni modificar datos de negocio. No crear historial documental/versionador genérico; conservar versión técnica de plantilla y procedencia por artefacto. OQ-H5-003 debe fijar conservación y eliminación: propuesta temporal 24 h con rechazo de descarga expirada y limpieza acotada por Storage API, sin borrar historia H1–H4.
+Dos generaciones explícitas producen artefactos distintos sin sobreescribir ni modificar datos de negocio. No crear historial documental/versionador genérico; conservar versión técnica de plantilla y procedencia por artefacto. OQ-H5-003 resuelta: PDF privado temporal por 24 horas desde generación (tiempo servidor); después expira y requiere regeneración explícita si hace falta. Rechazar descarga desde el instante de expiración aunque el objeto siga físicamente pendiente de limpieza. Limpieza acotada por Storage API, sin borrar historia H1–H4. Almacenamiento permanente de fotos/documentos queda para H6.
 
 ### REQ-H5-015 — Errores y límites
 
@@ -91,16 +91,18 @@ Ensayar fallos entre lectura, render, upload, auditoría y respuesta, además de
 
 Entregar evidencia visual, seguridad, latencia/CPU/memoria/tamaño, costo estimado con supuestos y esfuerzo/mantenibilidad reales. Evaluar Seguridad, Fiabilidad, Rendimiento, Costos y Excelencia operacional usando AWS Well-Architected como referencia, sin servicios AWS. Concluir suficiente/no suficiente/inconcluso con limitaciones; la continuidad de arquitectura corresponde a decisión humana GATE-A01.
 
-## Open Questions humanas — todas ABIERTAS / BLOQUEANTES de Gate 1
+## Decisiones humanas — cuatro OQ RESUELTAS
 
-| ID | Tipo | Decisión necesaria y propuesta para revisar | Afecta |
+Fecha: **12/11/2026 (America/Lima)**. Decisor: usuario de esta conversación. Esta resolución **NO es Gate 1** y no autoriza construcción. Se conserva la identidad de las OQ para trazar las decisiones.
+
+| ID | Tipo | Decisión humana vinculante | Estado / afecta |
 | --- | --- | --- | --- |
-| OQ-H5-001 | Negocio | ¿Datos personales históricos del snapshot o vigentes al emitir? Propuesta: snapshot personal/contactos y contexto actual de Ciclo/Curso/patrocinador claramente rotulado. No existe snapshot histórico de esos últimos datos; no prometer reconstruirlo. Aprobar fecha usada para edad. | REQ-H5-003, REQ-H5-004 |
-| OQ-H5-002 | Negocio / UX | Aprobar adaptación institucional, logo y texto vigente de declaraciones/resoluciones. Propuesta: layout A4 adaptable, omitir Libro/Folio/Registro sin fuente o dejarlos explícitamente en blanco; código de matrícula con su propio rótulo. Firmas/huellas solo espacios impresos; sin fotografía almacenada. No copiar automáticamente textos legales de la muestra. | REQ-H5-002, REQ-H5-005 a REQ-H5-009 |
-| OQ-H5-003 | Negocio / privacidad | ¿Artefacto temporal o documento que debe conservarse? Propuesta H5: privado, 24 h, regeneración explícita sin historial funcional y limpieza acotada. Aprobar retención/eliminación antes de construir; si se requiere conservación documental, revisar frontera H6 en vez de añadir un gestor. | REQ-H5-011, REQ-H5-013, REQ-H5-014 |
-| OQ-H5-004 | Negocio | ¿Emitir/descargar ficha de matrícula anulada o de Ciclo terminal? Propuesta: no nueva emisión para matrícula anulada; nunca descargar silenciosamente un artefacto que aparenta vigencia tras anulación. Decidir entre bloqueo o copia histórica rotulada, y tratamiento de Ciclo anulado/desierto. Cerrado no implica por sí solo una prohibición documental. | REQ-H5-010, REQ-H5-012, REQ-H5-019 |
+| OQ-H5-001 | Negocio | Datos personales, domicilio, contactos y etiquetas desde alumno_snapshot. Ciclo/Curso/promoción/patrocinador actuales al emitir. Edad calculada a la fecha de matrícula; emisión real en Lima. Fecha de matrícula = matricula.created_at, no updated_at ni fecha del snapshot. | RESUELTA HUMANAMENTE; REQ-H5-003, REQ-H5-004 |
+| OQ-H5-002 | Negocio / UX | Libro/Folio/Registro visibles pero en blanco; mantener espacio para foto y espacios de firma/huellas. No inventar valores ni crear campos de negocio para rellenarlos. No captura de fotos/firmas/huellas en H5. | RESUELTA HUMANAMENTE; REQ-H5-002, REQ-H5-005 a REQ-H5-009 |
+| OQ-H5-003 | Negocio / privacidad | PDF privado temporal de 24 horas; después expira y se regenera si hace falta. Retención permanente de fotos/documentos queda para H6. La expiración se controla del lado servidor y no depende de haber completado aún la limpieza física. | RESUELTA HUMANAMENTE; REQ-H5-011, REQ-H5-013, REQ-H5-014 |
+| OQ-H5-004 | Negocio | Generación/descarga solo con matrícula ACTIVA y Ciclo PROGRAMADO, EN_CURSO o CERRADO. Bloquear matrícula ANULADA y Ciclo DESIERTO/ANULADO. Si se anula después de generar, bloquear también la descarga del PDF existente, aunque no haya expirado. | RESUELTA HUMANAMENTE; REQ-H5-010, REQ-H5-012, REQ-H5-019 |
 
-No son OQ humanas iniciales: biblioteca/versión, fuente técnica, medición de CPU, adaptación a Runtime, necesidad exacta de un permiso o RPC. Se resuelven por lectura y spike controlado DES-H5-018 tras Gate 1, registrando lo que no pueda probarse. La pregunta arquitectónica central se evalúa en H5 y se decide en GATE-A01, no se presume resuelta al aprobar el Spec.
+No se infiere certificación de vigencia legal de las declaraciones/resoluciones de la muestra ni se añaden textos o datos de negocio no suministrados. La referencia visual se adapta conservando expresamente los espacios solicitados; una foto en blanco no significa funcionalidad de foto implementada. No quedan OQ de negocio abiertas en esta versión. Biblioteca, métricas y compatibilidad Runtime se evaluarán en el spike autorizado tras Gate 1; la suficiencia de Edge y GATE-A01 siguen sin resolverse de antemano.
 
 ## Trazabilidad completa
 
@@ -127,4 +129,4 @@ No son OQ humanas iniciales: biblioteca/versión, fuente técnica, medición de 
 | REQ-H5-019 | DES-H5-019 | TASK-H5-019 | TEST-H5-037, TEST-H5-038 |
 | REQ-H5-020 | DES-H5-020 | TASK-H5-020 | TEST-H5-039, TEST-H5-040 |
 
-Inventario del Spec: **20 REQ / 20 DES / 20 TASK / 40 TEST / 4 OQ**. Ningún test H5 ejecutado ni decisión OQ/Gate 1 aprobada por Codex.
+Inventario del Spec: **20 REQ / 20 DES / 20 TASK / 40 TEST / 4 OQ resueltas humanamente**. Ningún test H5 ejecutado. Gate 1 sigue PENDIENTE; Codex no aprueba gates.

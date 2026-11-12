@@ -2,29 +2,29 @@
 
 **SOLO PLAN / Gate 1 PENDIENTE. Todas las tareas: NO INICIADAS.** [Requisitos y OQ](requirements.md), [diseño candidato](design.md), [tests planificados](test-plan.md).
 
-Dependencias mandan sobre el orden numérico. TASK-H5-001 bloquea toda construcción, incluido el spike. La entrega actual no ejecuta ninguna de estas tareas técnicas ni crea recursos. No se necesita otra autorización para redactar este Spec, pero sí Gate 1 y resolución de las cuatro OQ para construir.
+Dependencias mandan sobre el orden numérico. TASK-H5-001 bloquea toda construcción, incluido el spike. La entrega actual no ejecuta ninguna de estas tareas técnicas ni crea recursos. No se necesita otra autorización para redactar este Spec, pero sí Gate 1 sobre este Spec actualizado para construir. Las cuatro OQ están RESUELTAS HUMANAMENTE (12/11/2026); esa resolución no concede Gate 1.
 
 El spike mínimo TASK-H5-005 ocurre antes de Storage/UI e impide invertir en una solución no viable. TASK-H5-018 consolida su medición y evidencia hospedada; falta de acceso/métricas se reporta como limitación, no se simula ni se autoriza producción. Si el prototipo exige otra arquitectura, detener expansión y elevar el resultado a GATE-A01.
 
-## TASK-H5-001 — Registrar Gate 1 y resolver OQ
+## TASK-H5-001 — Registrar Gate 1 sobre el Spec con OQ resueltas
 
 - Estado: **NO INICIADA**. Dependencias: Ninguna.
 - Trazabilidad: REQ-H5-001 → DES-H5-001 → TEST-H5-001, TEST-H5-002.
-- Trabajo futuro: Obtener decisión humana sobre el SHA exacto del Spec y OQ-H5-001…004. Fijar contrato antes de programar. Esta autorización actual solo permitió redactar Spec; no cuenta como Gate 1.
+- Trabajo futuro: Obtener aprobación humana Gate 1 sobre el SHA exacto del Spec actualizado. Conservar las decisiones OQ-H5-001…004 ya resueltas humanamente y fijar el contrato antes de programar. Resolver OQ no cuenta como Gate 1.
 - Salida/criterio: Registro de decisiones y baseline; nada construido antes de aprobación.
 
 ## TASK-H5-002 — Consolidar referencia aprobada y campos sin fuente
 
 - Estado: **NO INICIADA**. Dependencias: TASK-H5-001.
 - Trazabilidad: REQ-H5-002 → DES-H5-002 → TEST-H5-003, TEST-H5-004.
-- Trabajo futuro: Revisar plantilla institucional, textos/fechas, marca y espacios impresos; contrastar muestra privada con modelo H1–H4. No copiar PII, importar Jasper ni agregar campos vacíos al negocio.
-- Salida/criterio: Plantilla funcional aprobada y matriz de omisiones; OQ-H5-002 resuelta.
+- Trabajo futuro: Consolidar referencia: Libro/Folio/Registro visibles en blanco, espacio de foto y espacios de firma/huellas vacíos. Contrastar con H1–H4 sin copiar PII, importar Jasper, certificar textos legales ni agregar columnas/upload para rellenarlos.
+- Salida/criterio: Referencia y matriz de espacios visibles vacíos conformes a OQ-H5-002 resuelta; ninguna omisión de esos espacios ni dato inventado.
 
 ## TASK-H5-003 — Fijar procedencia temporal
 
 - Estado: **NO INICIADA**. Dependencias: TASK-H5-001, TASK-H5-002.
 - Trazabilidad: REQ-H5-003 → DES-H5-003 → TEST-H5-005, TEST-H5-006.
-- Trabajo futuro: Cerrar matriz snapshot/actual/calculado/no aplicable y referencias de edad/fechas. Probar cambios de Alumno/Ciclo/Curso/patrocinador sin fabricar historia inexistente.
+- Trabajo futuro: Aplicar OQ-H5-001 resuelta: personal/domicilio/contactos/etiquetas del snapshot; Ciclo/Curso/promoción/patrocinador actuales al emitir; edad a matricula.created_at en Lima y fecha de emisión real en Lima. Probar cambios y paso del tiempo sin fabricar historia ni cambiar edad por updated_at.
 - Salida/criterio: Contrato de datos explícito y fixtures válidas mínima/extensa.
 
 ## TASK-H5-004 — Lectura autorizada y versión
@@ -73,7 +73,7 @@ El spike mínimo TASK-H5-005 ocurre antes de Storage/UI e impide invertir en una
 
 - Estado: **NO INICIADA**. Dependencias: TASK-H5-009, TASK-H5-013, TASK-H5-015.
 - Trazabilidad: REQ-H5-010 → DES-H5-010 → TEST-H5-019, TEST-H5-020.
-- Trabajo futuro: Integrar únicamente la acción Ficha PDF de matrícula con estados, foco y mensajes claros. Respetar OQ-H5-004 y conservar contexto; sin editor documental ni permisos en React.
+- Trabajo futuro: Integrar únicamente la acción Ficha PDF de matrícula con estados, foco y mensajes claros. Permitir generar/descargar solo ACTIVO + Ciclo PROGRAMADO/EN_CURSO/CERRADO, y bloquear matrícula ANULADA o Ciclo DESIERTO/ANULADO incluso para PDF existente. Conservar contexto; sin editor documental ni permisos en React.
 - Salida/criterio: Recorrido accesible y errores seguros, sin cambios financieros.
 
 ## TASK-H5-011 — Storage privado y rutas
@@ -101,7 +101,7 @@ El spike mínimo TASK-H5-005 ocurre antes de Storage/UI e impide invertir en una
 
 - Estado: **NO INICIADA**. Dependencias: TASK-H5-011.
 - Trazabilidad: REQ-H5-014 → DES-H5-014 → TEST-H5-027, TEST-H5-028.
-- Trabajo futuro: Aplicar OQ-H5-003; nueva generación con UUID distinto y sin overwrite de negocio. Establecer expiración/limpieza acotada de derivados con Storage API y documentar costo operativo, sin expediente genérico.
+- Trabajo futuro: Aplicar OQ-H5-003; nueva generación con UUID distinto y sin overwrite de negocio. Aplicar expiración estricta de 24 horas desde generación con reloj servidor, aunque el objeto siga físicamente; regenerar explícitamente tras vencer si sigue elegible. Limpieza acotada con Storage API y costo operativo documentado. Fotos/documentos permanentes quedan para H6, sin expediente genérico H5.
 - Salida/criterio: Dos generaciones seguras, descarga expirada rechazada y limpieza sin tocar H1–H4.
 
 ## TASK-H5-015 — Errores y presupuesto
@@ -154,4 +154,4 @@ No crear helpers/RPC/policies sin requisito y prueba concretos. El inventario ca
 
 ## Entrega actual
 
-Solo requirements.md, design.md, tasks.md y test-plan.md. Revisión documental y trazabilidad del Spec no cuentan como ejecución de TEST-H5 ni como cumplimiento de TASK-H5-001. Detenerse para OQ/Gate 1; no generar PDF de demostración en esta ejecución.
+Solo requirements.md, design.md, tasks.md y test-plan.md. Revisión documental y trazabilidad del Spec no cuentan como ejecución de TEST-H5 ni como cumplimiento de TASK-H5-001. OQ-H5-001…004 resueltas humanamente; detenerse para Gate 1 sobre el Spec actualizado. No generar PDF de demostración en esta ejecución.

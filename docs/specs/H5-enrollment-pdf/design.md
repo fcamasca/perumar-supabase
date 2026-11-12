@@ -1,13 +1,13 @@
 # H5 — Ficha de matrícula PDF: design
 
-**DRAFT / hipótesis a evaluar. Gate 1 PENDIENTE; sin implementación H5.** Base, alcance y OQ bloqueantes: [requirements.md](requirements.md). Los identificadores DES corresponden uno a uno a REQ/TASK; [test-plan.md](test-plan.md) define evidencia futura, toda NO EJECUTADA.
+**DRAFT / hipótesis a evaluar. Gate 1 PENDIENTE; sin implementación H5.** Base, alcance y cuatro OQ resueltas humanamente (Gate 1 aún pendiente): [requirements.md](requirements.md). Los identificadores DES corresponden uno a uno a REQ/TASK; [test-plan.md](test-plan.md) define evidencia futura, toda NO EJECUTADA.
 
 ## Referencias examinadas y modelo aceptado
 
 - Fuente funcional/visual local: `D:/FRANKZ/aplicaciones/PERUMAR/DocumentosPM/Usuarios/ficha-perumar.pdf`, una página A4 vertical; imagen existente `ficha-perumar_page-0001.jpg`. SHA256 PDF: `B9B4FB2D6D8CA5F875D4040B3A5C42FA63AD2A4E80FC3D488C6AB2617655FD98`. Contiene datos personales de muestra: no se copian a Spec, fixtures, bundle ni Storage. No usarla como fondo con datos incrustados.
 - Referencia legada revisada: `../perumar-React-WebFlux-DynamoDB-Cognito/perumar/src/main/resources/reports/ficha-matricula.jrxml` y su `MatriculaFichaPdfFieldPolicy.java`, fuera de este repositorio. Solo orientan etiquetas/maquetación; no se adopta Jasper, su DTO ni sus mínimos de validación.
 - Fuentes de verdad actuales: migraciones H3 del modelo y comandos, `20261028200000_h3_occupation_catalog.sql` (snapshot vigente), `20261102020000_career_flags_student_code.sql`, auditoria de `20261022150000_h2_academic_model.sql`, seguridad H1–H4. Los datos reales se leerán de la matrícula, no de la muestra.
-- Marca disponible: `src/assets/brand/perumar-isotipo.svg` y `perumar-logo.svg`; OQ-H5-002 aprueba el uso visual. Si hace falta un derivado estático compatible con PDF se prepara después de Gate 1, sin conversión remota/runtime genérica.
+- Marca disponible: `src/assets/brand/perumar-isotipo.svg` y `perumar-logo.svg`; OQ-H5-002 fija los espacios visibles en blanco; no se infiere vigencia legal adicional de la referencia. Si hace falta un derivado estático compatible con PDF se prepara después de Gate 1, sin conversión remota/runtime genérica.
 
 ### DES-H5-001 — Frontera de evaluación
 
@@ -24,31 +24,31 @@ flowchart LR
 
 ### DES-H5-002 — Plantilla y ausencias
 
-La muestra contiene cabecera Curso/Promoción/Patrocinador, identificación, rasgos físicos/instrucción, nacimiento/domicilio, contactos, patrocinador y notas/espacios de firma/huellas. Su validez institucional actual no se presume. OQ-H5-002 debe aprobar texto y adaptación. Libro/Folio/Registro legal no tienen columnas H1–H4: omitir o dejar en blanco según esa decisión, nunca inventar ni usar el correlativo como registro oficial. Tampoco existe fotografía, firma o huella capturada. Ninguna tabla adicional para simular estos campos.
+La muestra contiene cabecera Curso/Promoción/Patrocinador, identificación, rasgos físicos/instrucción, nacimiento/domicilio, contactos, patrocinador y notas/espacios de firma/huellas. Según OQ-H5-002 **RESUELTA**, mantener **Libro, Folio y Registro visibles pero en blanco**, junto con **espacio para foto** y **espacios de firma/huellas**. No hay valores fuente para rellenarlos: no sustituir el Registro por el correlativo ni generar firmas/fotos/huellas. No nuevas columnas/tablas ni captura/upload personal en H5; la conservación permanente de fotos/documentos corresponde a H6. No se certifica vigencia de declaraciones/resoluciones antiguas por usar la muestra; no inventar valores o textos institucionales nuevos.
 
-### DES-H5-003 — Contrato de procedencia propuesto (OQ-H5-001)
+### DES-H5-003 — Contrato de procedencia resuelto (OQ-H5-001)
 
-| Contenido | Fuente existente | Clase / regla |
+| Contenido | Fuente existente | Clase / regla vinculante |
 | --- | --- | --- |
-| Apellidos, nombres, DI, nacimiento, sexo, estado civil, teléfonos, domicilio y rasgos | `matricula.alumno_snapshot.alumno` | Históricos del snapshot; no sustituirlos silenciosamente por Alumno actual |
-| Etiquetas de catálogos y geografía, incluida ocupación/OTROS | `alumno_snapshot.catalogos`, `.geografia` y texto `.alumno.ocupacion` | ID/etiqueta histórica; opcional ausente = Sin dato, no etiqueta actual inventada |
-| Contactos | `alumno_snapshot.contactos` con su parentesco histórico | Todos los aplicables al momento de matrícula, incluso si hoy fueron retirados; no designar principal |
-| Código Alumno | Snapshot si existe; `alumno.codigo_alumno` como identificador actual inmutable si falta en snapshots antiguos | Rotular procedencia; no inventar que ya existía en el snapshot |
-| Código de matrícula, estado, fecha de inscripción | `matricula.codigo_matricula`, `.estado_codigo`, `.created_at` | Código/estado vigentes y fecha DB de inscripción; no regenerar código ni equivalerlo a Registro legal |
-| Ciclo, Curso, promoción y ubicación contextual | `matricula.ciclo_id` → `ciclo` → `carrera` | Datos actuales al emitir; no hay snapshot de Curso/Ciclo histórico. Declarar esa diferencia tras traslados/ediciones |
-| Patrocinador y datos de contacto | `matricula.empresa_patrocinadora_id` → `empresa_patrocinadora` | Actual, opcional y requerido por la referencia; teléfono no se convierte en celular por suponerlo. Sin facturación H7 |
-| Edad | Fecha de nacimiento de fuente elegida y fecha explícita aprobada; propuesta: fecha del snapshot en Lima | Calculada en años calendarios, no almacenada; probar cumpleaños/bisiestos y frontera de día |
-| Fecha de emisión / páginas | Reloj servidor, America/Lima / renderer | Calculadas, distintas de fecha de firma o matrícula; no completar una firma no realizada |
-| Libro/Folio/Registro, fotografía, firma/huella digital | No existen | No aplicables como datos del modelo; decidir espacios impresos en OQ-H5-002 |
-| Cargos/saldo/pagos / asignaturas | Existen `matricula_cargo`, H4 y `ciclo_materia`, pero no los exige la ficha fuente | No consultar ni imprimir por defecto; no añadirlos solo porque existen |
+| Apellidos, nombres, DI, nacimiento, sexo, estado civil, teléfonos, domicilio y rasgos | matricula.alumno_snapshot.alumno | Históricos; domicilio incluido. No sustituir por Alumno actual |
+| Etiquetas de catálogos y geografía, incluida ocupación/OTROS | alumno_snapshot.catalogos, .geografia y .alumno.ocupacion | ID/etiqueta histórica; opcional ausente = Sin dato, no etiqueta vigente inventada |
+| Contactos | alumno_snapshot.contactos con parentesco histórico | Todos los del snapshot, incluso si se retiraron/editaron hoy; no principal inventado |
+| Código Alumno | alumno_snapshot.alumno.codigo_alumno si existe | Histórico; si falta en un snapshot antiguo, Sin dato. No completar datos personales desde Alumno actual |
+| Código/estado de matrícula y fecha de matrícula | matricula.codigo_matricula, .estado_codigo, .created_at | Código/estado vigentes; fecha de matrícula es created_at, conservada aunque cambie updated_at |
+| Ciclo, Curso y promoción | matricula.ciclo_id → ciclo → carrera; ciclo.nombre_promocion | Actuales al emitir, no contexto histórico reconstruido |
+| Patrocinador y datos de contacto | matricula.empresa_patrocinadora_id → empresa_patrocinadora | Actual al emitir, opcional; teléfono no se supone celular. Sin facturación H7 |
+| Edad | Fecha de nacimiento del snapshot y día de matricula.created_at convertido a America/Lima | Calculada a fecha de matrícula en años calendarios; nunca a fecha de emisión, updated_at o alumno_snapshot.fecha |
+| Emisión y páginas | Instante real del servidor en America/Lima / renderer | Fecha de emisión real, distinta de matrícula y de una firma no realizada |
+| Libro/Folio/Registro, foto, firma/huellas | No existen como valores aplicables | Espacios VISIBLES y EN BLANCO; no ocultar ni rellenar; no nuevas propiedades de negocio |
+| Cargos/saldo/pagos / asignaturas | Existen pero no los exige la ficha fuente | No consultar/imprimir por defecto |
 
-Esta mezcla propuesta se rotula, no se llama reproducción íntegramente histórica. Si se pide contexto histórico de Curso/Ciclo que no existe, registrar la brecha y resolver alcance; no crear historia retroactiva. Un dato esencial faltante produce error seguro; un opcional NULL se representa sin fabricación. Si se eligen datos actuales, actualizar y aprobar esta matriz antes de Gate 1, incluyendo fecha de edad/contactos.
+Decisión humana del 12/11/2026: esta mezcla se rotula y no se denomina reproducción íntegramente histórica. Un cambio de Alumno, domicilio/contactos o etiquetas no cambia el contenido del snapshot usado en PDF; Ciclo/Curso/promoción/patrocinador reflejan lo vigente al emitir. La edad no cambia al generar otro día ni por un pago que actualice updated_at. Si falta un dato esencial histórico, error seguro sin fallback silencioso al actual; opcionales NULL se muestran sin fabricación. No se agregan snapshots de Curso/Ciclo ni historia retroactiva.
 
 ### DES-H5-004 — Lectura y contrato de petición
 
 Dos operaciones concretas de la misma ficha, no un motor documental: generar y descargar un artefacto. Peticiones POST con JWT en Authorization; IDs/versión en cuerpo, no PII ni tokens en URL. Generar admite únicamente matrícula UUID y expected_updated_at; descargar agrega UUID del artefacto. Rechazar campos extra (actor, permisos, bucket, path, HTML, PDF, importes, URLs). Actor y reloj son de servidor.
 
-Propuesta de lectura: una consulta PostgREST con relaciones embebidas de Matrícula/Alumno/Ciclo/Curso/empresa bajo el JWT del usuario y RLS existente, proyectando campos cerrados. No usar service role para leer ficha ni resolver una denegación con una lectura privilegiada. La consulta debe ser coherente en una lectura DB; si el spike no puede lograrlo, justificar una única lectura concreta antes de ampliar inventario. expected_updated_at obsoleto devuelve 409 explícito, nunca RAISE 40001 lógico ni retry. Una relación inaccesible no se confunde con un FK NULL legítimo.
+Propuesta de lectura: una consulta PostgREST con relaciones embebidas de Matrícula/Ciclo/Curso/empresa y el alumno_snapshot de Matrícula bajo el JWT del usuario y RLS existente, proyectando campos cerrados. No usar service role para leer ficha ni resolver una denegación con una lectura privilegiada. La consulta debe ser coherente en una lectura DB; si el spike no puede lograrlo, justificar una única lectura concreta antes de ampliar inventario. expected_updated_at obsoleto devuelve 409 explícito, nunca RAISE 40001 lógico ni retry. Una relación inaccesible no se confunde con un FK NULL legítimo.
 
 ### DES-H5-005 — Renderer y fuente
 
@@ -64,15 +64,15 @@ Tabla de contactos con columnas de nombre, parentesco, celular y dirección, tod
 
 ### DES-H5-008 — Flujo de páginas
 
-A4 vertical, márgenes propuestos de 12 mm, texto de datos al menos 9 pt y contraste de impresión legible. Reservar áreas de cabecera/pie; calcular saltos antes de cada bloque. Permitir páginas de continuación con rótulo de sección y página X de Y. No partir título de su primer contenido ni superponer footer. Si los datos exceden el presupuesto, rechazar con causa segura en vez de truncarlos. OQ-H5-002 aprueba adaptación institucional, no obliga a encajar todo en la página original.
+A4 vertical, márgenes propuestos de 12 mm, texto de datos al menos 9 pt y contraste de impresión legible. Reservar áreas de cabecera/pie; calcular saltos antes de cada bloque. Permitir páginas de continuación con rótulo de sección y página X de Y. No partir título de su primer contenido ni superponer footer. Si los datos exceden el presupuesto, rechazar con causa segura en vez de truncarlos. OQ-H5-002 resuelta exige conservar los espacios visibles indicados; no obliga a encajar todo en una página con texto ilegible.
 
 ### DES-H5-009 — Marca y elementos institucionales
 
-Assets locales de versión conocida, tamaño acotado y licencia comprobada; sin logos/fuentes descargados desde URLs del usuario o del Curso. Fecha de emisión en Lima y encabezado PERÚ MAR. Resoluciones/declaraciones son texto institucional aprobado y versionado con la plantilla, no campos de negocio nuevos ni interpretación legal automática. Espacios impresos de firma/huellas no implican captura, prueba de consentimiento ni firma realizada.
+Assets locales de versión conocida, tamaño acotado y licencia comprobada; sin logos/fuentes descargados desde URLs del usuario o del Curso. Fecha de emisión en Lima y encabezado PERÚ MAR. Resoluciones/declaraciones son texto institucional aprobado y versionado con la plantilla, no campos de negocio nuevos ni interpretación legal automática. Espacios impresos de foto/firma/huellas y Libro/Folio/Registro siempre visibles y vacíos; no implican captura, consentimiento o firma realizada. La decisión no agrega almacenamiento permanente H6.
 
 ### DES-H5-010 — UX y estado
 
-Propuesta contextual: acción Ficha PDF de la matrícula, Generar explícito y Descargar autorizado. Mostrar ocupado y confirmar solo cuando haya archivo completo disponible; error conserva contexto. No agregar otro módulo de documentos H6, campos editables para la ficha ni edición de montos. OQ-H5-004 fija elegibilidad; denegar sin ocultar estado actual. Archivo generado antes de un cambio relevante no se entrega aparentando vigencia: revalidar fuente/estado y pedir regeneración explícita o copia histórica rotulada según decisión humana. Sin retry automático tras versión cambiada/timeout.
+Propuesta contextual: acción Ficha PDF de la matrícula, Generar explícito y Descargar autorizado. Mostrar ocupado y confirmar solo cuando haya archivo completo disponible; error conserva contexto. No agregar otro módulo de documentos H6, campos editables para la ficha ni edición de montos. OQ-H5-004 resuelta: solo matrícula ACTIVA (DB ACTIVO) y Ciclo PROGRAMADO/EN_CURSO/CERRADO permiten generar o descargar. Matrícula ANULADA (DB ANULADO) o Ciclo DESIERTO/ANULADO bloquean ambas operaciones, también para un archivo preexistente y no expirado. Revalidar estado actual antes de entregar bytes; ninguna copia histórica rotulada es una excepción autorizada al bloqueo. Un cambio relevante de fuente puede exigir regeneración explícita, sin eludir los estados permitidos. Sin retry automático tras versión cambiada/timeout.
 
 ### DES-H5-011 — Objetos privados y propiedad
 
@@ -82,11 +82,11 @@ Sin tablas de negocio nuevas por defecto. No emitir INSERT/SELECT/UPDATE/DELETE 
 
 ### DES-H5-012 — Matriz de acceso
 
-Director y Coordinador activos: generación/descarga si la matrícula es visible por RLS y elegible por OQ-H5-004. Admin sin rol académico, usuario sin rol, inactivo, JWT inválido o anónimo: denegados. Un académico autorizado puede consultar distintas matrículas conforme al alcance H1–H4; no se limita al creador ni se inventa relación auth.users→alumno. Validar perfil/roles actuales en DB, no confiar únicamente en claims antiguos ni en botones. Matrícula ajena/no accesible e ID inexistente deben tener respuesta segura equivalente sin enumeración útil.
+Director y Coordinador activos: generación/descarga si la matrícula es visible por RLS y con estado DB ACTIVO y Ciclo PROGRAMADO/EN_CURSO/CERRADO. Revalidar en cada petición; un PDF generado antes de anular matrícula/Ciclo no concede acceso posterior. Admin sin rol académico, usuario sin rol, inactivo, JWT inválido o anónimo: denegados. Un académico autorizado puede consultar distintas matrículas conforme al alcance H1–H4; no se limita al creador ni se inventa relación auth.users→alumno. Validar perfil/roles actuales en DB, no confiar únicamente en claims antiguos ni en botones. Matrícula ajena/no accesible e ID inexistente deben tener respuesta segura equivalente sin enumeración útil.
 
 ### DES-H5-013 — Descarga autenticada y URLs
 
-Propuesta primaria: Edge revalida JWT/rol/acceso/estado y sirve bytes desde Storage privado con application/pdf, Content-Disposition attachment (nombre genérico), Cache-Control private,no-store y CORS de orígenes explícitos. React recibe Blob en memoria y revoca su object URL local; no guarda PII/PDF/URL en storage web ni history.
+Propuesta primaria: Edge revalida JWT/rol/acceso, estado actual permitido y vigencia de 24 h del artefacto antes de servir bytes; sirve bytes desde Storage privado con application/pdf, Content-Disposition attachment (nombre genérico), Cache-Control private,no-store y CORS de orígenes explícitos. React recibe Blob en memoria y revoca su object URL local; no guarda PII/PDF/URL en storage web ni history.
 
 No se emiten URLs firmadas en producto (TTL de emisión: no aplica); autenticación se valida por petición y token expirado se rechaza. La [documentación de Storage](https://supabase.com/docs/guides/storage/serving/downloads) distingue descargas autenticadas y URLs temporales, y advierte que una URL firmada individual no se revoca directamente. Se evita esa capacidad bearer como valor por defecto. TEST-H5-026 comprobará expiración real de una URL firmada creada solo por fixture privilegiada contra el bucket de ensayo; no añade una función de firma al producto. Si se cambia la decisión a URLs firmadas, se debe aprobar explícitamente TTL y exposición/revocación antes de incorporarlas; no asumir revocación inmediata al cambiar rol. Los bytes ya descargados no pueden recuperarse remotamente.
 
@@ -94,7 +94,7 @@ No se emiten URLs firmadas en producto (TTL de emisión: no aplica); autenticaci
 
 Cada petición explícita nueva usa UUID aleatorio distinto, sin overwrite y sin reciclar clave de pago H4. Versión de plantilla y procedencia describen cada artefacto; no hay gestor de versiones ni historial funcional. Doble clic se bloquea en UI; dos solicitudes reales pueden crear dos artefactos válidos, no dos matrículas/cobros. Ante respuesta perdida no afirmar éxito ni reenviar automáticamente; una regeneración explícita puede dejar el artefacto anterior privado hasta su retención.
 
-OQ-H5-003 bloquea construcción del ciclo de vida. Propuesta: artefacto temporal 24 h, descarga expirada rechazada aunque aún esté físicamente, limpieza acotada vía Storage API en entorno/operación autorizados. No DELETE SQL de storage.objects, ni borrar historia de Alumno/Matrícula/pagos/auditoría. No cron, cola o servicio nuevo por defecto; si limpieza manual no es operable, medir el costo y reportar la brecha para decisión antes de añadir infraestructura. Retención permanente puede invadir H6 y no se presume.
+OQ-H5-003 RESUELTA: artefacto PDF privado temporal por 24 horas desde generated_at del servidor. expires_at = instante de generación + 24 horas de duración; no medianoche del día siguiente. A partir de expires_at (incluido) se rechaza la descarga aunque el objeto aún exista físicamente; antes del vencimiento también se rechaza si la matrícula o el Ciclo dejan de cumplir OQ-H5-004. Tras expirar, regeneración solo explícita y si los estados actuales la permiten; no renovar la fecha ni reutilizar el artefacto vencido. Limpieza acotada vía Storage API en entorno/operación autorizados. No DELETE SQL de storage.objects, ni borrar historia de Alumno/Matrícula/pagos/auditoría. No cron, cola o servicio nuevo por defecto; si limpieza manual no es operable, medir el costo y reportar la brecha para decisión antes de añadir infraestructura. La decisión excluye de H5 el almacenamiento permanente de fotos/documentos: corresponde a H6. No se agrega un sistema de expedientes.
 
 ### DES-H5-015 — Errores y presupuesto inicial a medir
 
