@@ -26,6 +26,16 @@ TASK-H5-015/010: endpoint único generar/descargar con whitelist de entrada, COR
 
 TASK-H5-017…020: pruebas adversariales/fallos, matriz Edge/Storage y medición en CI desechable; regresión y resultados se consolidan en [technical-results.md](technical-results.md). No atribuir a casos humanos pruebas no ejecutadas. Suficiencia hospedada/CPU/memoria y veredicto humano GATE-A01 pendientes; sin infraestructura alternativa automática.
 
+## Consolidación técnica
+
+El módulo reutilizable del spike incluía flujo básico de texto/paginación; se refinó tras la evidencia Edge con cortes por palabra, encabezado unido a primera fila y QA extensa. Storage/UI se incorporaron después de la prueba Edge real. No se añadieron campos de negocio ni arquitectura alternativa.
+
+406 pruebas locales PASSED; tsc, lint, build, build-safety, Deno 2.1.4 check y lockfile congelado. El inventario efectivo coincide con el máximo justificado. CI integral `43303520498` sobre `62d399980e8062b3d5ab05a89c151a532669521a` terminó SUCCESS, incluida expiración JWT H5 y reconstrucción desechable. Candidato técnico de código/pruebas/lock: `35d4b17a9fa63c011c5de9d44a72a78215b60980`, CI [43304950382](https://github.com/fcamasca/perumar-supabase/actions/runs/43304950382) **COMPLETED / SUCCESS**, incluidas las dos pasadas reales de fallo/compensación/timeout y reconstrucción completa. Esta consolidación posterior modifica solo documentación; no se reabre el Spec ni se aprueba Gate 2/GATE-A01.
+
+El fallo inicial de CI fue un fixture que intentaba UPDATE general de auditoría mediante service_role. Se preservaron grants restrictivos y se acotó la inyección a SQL estático sobre el evento sintético de CI. Posteriormente se añadieron fallos reales de MIME en Storage, auditoría tras upload y Storage pausado para probar el deadline, además de casos unitarios de compensación fallida. Ningún comando de caos ni suite API con fixtures persistidos se ejecutó sobre la base humana.
+
+Revisión de dependencias: pdf-lib y standard-fonts MIT; npm audit no reportó avisos para los cinco paquetes añadidos por pdf-lib. Se conservaron diez avisos moderados de la cadena de herramientas ESLint/minimatch preexistente; no se ejecutó audit fix ni se actualizaron dependencias fuera de alcance.
+
 ## Operación temporal
 
 `npm run pdf:cleanup -- [offset]` usa solo Storage API sobre PDFs derivados locales con más de 24 h desde creación de objeto. Máximo 20 carpetas × 100 objetos por invocación. Tras eliminar, reiniciar offset 0; sin eliminaciones, continuar el offset reportado. Cubre también huérfanos sin auditoría. La descarga expira por el manifiesto a las 24 h aunque aún no se haya realizado esta limpieza conservadora. No cron/colas ni SQL DELETE de storage.objects. Despliegue y operación hospedada no ejecutados ni supuestos.

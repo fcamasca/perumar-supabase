@@ -705,7 +705,7 @@ El PLAN vigente debe reflejar el estado real del proyecto.
 | H2 Base académica | CLOSED / ACEPTADO / INTEGRADO — Gate 2 aprobado 22/10/2026; riesgo forced-colors aceptado |
 | H3 Alumno y Matrícula | CLOSED / ACEPTADO / INTEGRADO en main con el merge de este cierre — Gate 2 aprobado 09/11/2026; [aceptación](specs/H3-enrollment/acceptance.md), residual forced-colors aceptado |
 | H4 Pagos | CLOSED / ACEPTADO; listo para integración en rama; INTEGRADO en main al incorporar este cierre. [Acceptance](specs/H4-payments/acceptance.md), Gate 2 humano 12/11/2026; forced-colors NO VERIFICADO — residual aceptado |
-| H5 Ficha PDF | SPEC autorizado desde main posterior a H4 integrado y verde; construcción NO AUTORIZADA / Gate 1 pendiente |
+| H5 Ficha PDF | CANDIDATO TÉCNICO para revisión humana; Gate 1 APROBADO sobre `9804bb07063590e8917fc86d07995c474b84e718`. [Gate 1](specs/H5-enrollment-pdf/gate-1.md), [construcción](specs/H5-enrollment-pdf/implementation-log.md), [evidencia](specs/H5-enrollment-pdf/technical-results.md). CI técnica `43304950382` SUCCESS; Gate 2 / GATE-A01 pendientes, suficiencia hospedada inconclusa; sin merge. H6 NO INICIADO |
 | Gate A01 | BLOQUEADO |
 | H6 Expediente | BLOQUEADO |
 | H7 Patrocinadores y facturación | BLOQUEADO |
@@ -721,3 +721,5 @@ H3 está CLOSED / ACEPTADO humanamente; su integración en main se hace efectiva
 **H4 — CLOSED / ACEPTADO / listo para integración**; **INTEGRADO** al incorporar este cierre a main mediante PR/merge commit y verificar CI SUCCESS. Candidato funcional `0091190f0cf353d744d6b2d9a6447916d9c882d6`; [acceptance](specs/H4-payments/acceptance.md) y [Gate 2](specs/H4-payments/gate-2.md). Forced-colors: **NO VERIFICADO — residual aceptado**; bundle >500 kB y Data API hospedada / PostgREST 14 no probada directamente se conservan.
 
 La instrucción humana del 12/11/2026 autoriza, inmediatamente después de H4 integrado y main verde, crear `feature/h5-enrollment-pdf-spec` desde ese main exacto y preparar **solo el Spec H5 — Ficha de matrícula PDF** (sección 5). Sin permiso intermedio. No cambia su alcance ni autoriza implementación, Edge Function, PDF, Storage, dependencias o backend alternativo. Resolver OQ y obtener Gate 1 H5 antes de construir. GATE-A01 sigue reservado a decisión humana tras evaluar H5.
+
+Posteriormente el usuario aprobó Gate 1 H5 sobre `9804bb07063590e8917fc86d07995c474b84e718` y autorizó su construcción exacta en `feature/h5-enrollment-pdf`. Esta autorización posterior habilita el spike real Edge, PDF, Storage privado y UI del Spec; no autoriza Gate 2, acceptance, integración, cierre H5, GATE-A01 ni H6. Los cuatro documentos del Spec aprobado conservan sus estados históricos.

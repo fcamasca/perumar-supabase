@@ -1,16 +1,34 @@
 # H5 — Evidencia técnica de construcción
 
-Estado: **EN CONSTRUCCIÓN / Gate 2 PENDIENTE / GATE-A01 PENDIENTE**. Gate 1: `9804bb07063590e8917fc86d07995c474b84e718`. Los estados históricos del Spec aprobado no se reescriben.
+Estado: **CANDIDATO TÉCNICO / Gate 2 PENDIENTE / GATE-A01 PENDIENTE**. Código/pruebas/lock: `35d4b17a9fa63c011c5de9d44a72a78215b60980`, CI `43304950382` **COMPLETED / SUCCESS**. Gate 1: `9804bb07063590e8917fc86d07995c474b84e718`. Los estados históricos del Spec aprobado no se reescriben. No acceptance, cierre, merge ni H6.
 
 ## Evidencia local inicial (12/11/2026)
 
 - Lint y typecheck: PASSED tras el primer bloque.
-- Unit/component: **404/404 PASSED**, incluye 32 nuevas pruebas H5 de procedencia, estados, versión, render, fallos/compensación y UX.
+- Unit/component: **406/406 PASSED**, incluye 34 nuevas pruebas H5 de procedencia, estados, versión, render, fallos/compensación, límites, contenido adversarial y UX.
 - Spike real Edge: HTTP 200, PDF español de 5.060 bytes, dos páginas, render 149,15 ms; parseo pypdf y render Poppler. No dato CPU ni resultado hosted.
 - `test:pdf:rollback`: PASSED; actor, whitelist de eventos, versión, duplicado, expiración, anulación y denegaciones sin auditoría de éxito. Fingerprint de filas de negocio/auditoría idéntico antes/después.
 - Regresión `test:payments:rollback`: PASSED; sin fixtures persistidos.
-- Regresión `test:payments:isolated`: en ejecución al redactar este registro; base desechable, nunca reset humano.
-- Build/build-safety/diff-check y CI integral: en curso; completar con resultados exactos, sin anticipar SUCCESS.
+- Regresión `test:payments:isolated`: PASSED; base desechable, nunca reset humano. Incluye 70 + 60 sobre saldo 100, una confirmación sin sobrepago/retry, idempotencia, anulación, cruces con edición/descuento/cargos/Ciclo y conflictos nativos 40001/40P01 conservados.
+- Build y build-safety: PASSED; bundle 678,31 kB, advertencia >500 kB conservada. Renderer solo Edge; pdf-lib no se importa en React.
+- Inventario efectivo local: 24 tablas, 3 vistas, 20 funciones públicas (19 previas + auditoría H5), 18 helpers privados, 27 policies de negocio, un bucket privado y cero policies Storage para clientes. Comprobación exacta PASSED.
+- Deno 2.1.4 / TypeScript 5.6.2 `check`: PASSED; lockfile v4 y comprobación congelada. Esto complementa tsc frontend, no sustituye la prueba real Edge.
+
+## CI y artefactos
+
+CI [43303520498](https://github.com/fcamasca/perumar-supabase/actions/runs/43303520498), SHA `62d399980e8062b3d5ab05a89c151a532669521a`: **COMPLETED / SUCCESS**. Incluye 406 pruebas, lint/types, seguridad Auth/RLS, invariantes H2/H3/H4, pagos/rollback/concurrencia, Edge/Storage reales, expiración JWT real con rechazo H5 y reconstrucción desde cero con repetición de suites. La reconstrucción ocurrió exclusivamente en CI desechable.
+
+El ensayo inicial [43302006199](https://github.com/fcamasca/perumar-supabase/actions/runs/43302006199) falló en el fixture de expiración: service_role no tiene UPDATE/SELECT general de auditoría. No se ampliaron esos grants; se corrigió la inyección con SQL estático restringido a un UUID sintético en CI. El endpoint utiliza únicamente la RPC cerrada para escribir eventos. El ensayo posterior `43303081029` también terminó SUCCESS.
+
+Artefacto sintético del run `43303520498`: `13983895240`, ZIP SHA-256 `8f489cc6e1f31a5e43bdde7a899abe64a583d7bc1c61a99602521c626611dde2`, retención CI tres días. PDF real Edge de **20.621 bytes / seis páginas / 100 contactos**, extraído por Poppler y pypdf; los 100 presentes. Conserva ÁNGELA después de cambiar el alumno vigente a otro nombre; sin fallback de PII actual. Revisión visual técnica de primera, intermedia y última página, cabeceras/pies y espacios vacíos. No equivale a aceptación humana de la plantilla.
+
+Medición real de ese runner local: primera invocación observada 253,07 ms; 20 muestras posteriores, p95 115,57 ms, máximo 491,35 ms. Son tiempos completos observados de generación a través de gateway/DB/Storage/auditoría. No se ha aislado un cold-start hospedado ni CPU/peak memory. PDF mínimo del spike y casos máximos locales (nombres 150, domicilio/señas/dirección 500, tokens continuos y saltos) también renderizados. Documento de campos máximos: cuatro páginas; 100 contactos del fixture unitario: siete páginas; exceso de presupuesto rechazado sin truncar.
+
+Candidato consolidado `35d4b17a9fa63c011c5de9d44a72a78215b60980`: lock Deno congelado, tipos Edge en CI, cruce de artefacto entre dos matrículas reales, rechazo real de MIME en Storage, fallo DB posterior al upload y compensación, dependencia Storage pausada para timeout real. CI [43304950382](https://github.com/fcamasca/perumar-supabase/actions/runs/43304950382): **COMPLETED / SUCCESS**. Los ensayos nuevos PASSED antes y después de reconstruir. Logs verifican 406/406, JWT real H5 expirado, fallos reales de frontera, concurrencia H4 nativa y cierre protegido del stack.
+
+Artefacto de ese candidato: `13982544543`, ZIP SHA-256 `006d0123a2ec5ded70f0777ede29cfe14dff0f3b5cf149abb11fde777fbbea2f`, retención CI tres días. Primera pasada: PDF 20.616 bytes, primera invocación 240,60 ms, primera muestra caliente 113,98 ms, 20 muestras p95 427,37 ms / máximo 456,41 ms. Tras reconstrucción: PDF 20.632 bytes, primera invocación 257,70 ms, 20 muestras p95 119,01 ms / máximo 441,47 ms. Variación del contenido sintético/contexto explica diferencias de bytes; no se infiere costo/CPU hospedados ni cold-start puro. Los 100 contactos y la procedencia histórica se verificaron mediante extracción independiente en ambas pasadas.
+
+Estado de las métricas no demostradas: **CPU: NOT MEASURED**; **Memory: NOT MEASURED**; **Hosted: NOT EXECUTED**. Las 20 muestras anteriores corresponden a Edge Runtime local real en CI, no al servicio hospedado.
 
 ## Inventario previsto implementado
 
@@ -31,4 +49,44 @@ Inventario automatizado se amplió con comprobaciones exactas de bucket, ausenci
 
 No pruebas humanas H5 reportadas. Comparación institucional final mínima/extensa, teclado, accesibilidad y dictamen GATE-A01 requieren revisión humana. Forced-colors real H5 **NO VERIFICADO**; no se hereda un PASSED de H3/H4.
 
-No existe entorno hospedado autorizado para este ensayo. Data API hospedada/PostgREST 14 y Edge hospedado **NO PROBADOS DIRECTAMENTE**. CPU/peak memory aisladas aún sin medición fiable; tiempo wall-clock no las sustituye. No afirmar aptitud hospedada a partir de local. Bundle >500 kB y operación manual de limpieza deben mantenerse como residuales si subsisten. Costos/mediciones finales se consolidarán tras CI; sin Gate 2 ni suficiencia arquitectónica automáticos.
+No existe entorno hospedado autorizado para este ensayo. Data API hospedada/PostgREST 14 y Edge hospedado **NO PROBADOS DIRECTAMENTE**. CPU/peak memory aisladas sin medición fiable; tiempo wall-clock no las sustituye. No afirmar aptitud hospedada a partir de local. No prueba de kill/504 real de la plataforma hospedada ni observabilidad integral de sus logs. Bundle >500 kB conservado. Sin desviaciones funcionales deliberadas del Spec; los límites de evidencia se declaran, no se convierten en PASSED.
+
+En respuesta desconocida no hay retry automático. Puede quedar un artefacto privado hasta limpieza; si no llegó su UUID al navegador, una nueva generación es una decisión explícita. No se agregó un índice/listado documental ni idempotencia financiera para recuperar ese resultado. Los diez avisos npm moderados observados pertenecen a ESLint/minimatch preexistentes; no se amplió su alcance mediante actualizaciones ajenas a H5.
+
+## Costos y mantenimiento (estimación, no factura)
+
+Supuesto: 10.000 fichas/mes, una generación + una descarga cada una, flujo uniforme y limpieza diaria. Aproximadamente 20.000 invocaciones, 0,206 GB/mes por copia entregada con el PDF medido de 20.621 bytes y unos 6,9 MB de artefactos vivos al día. El máximo de 2 MiB por PDF elevaría una copia a unos 20,97 GB/mes y el almacenamiento vivo a 0,70 GB. Regeneraciones, errores, múltiples descargas y retrasos de limpieza aumentan uso; no se certifica facturación de los trayectos internos Storage/Edge ni disponibilidad de las cuotas compartidas.
+
+Fuentes oficiales consultadas el 12/11/2026: [invocaciones Edge](https://supabase.com/docs/guides/platform/manage-your-usage/edge-function-invocations), 500.000 Free / 2 millones Pro incluidos y USD 2 por paquete adicional de un millón; [precios](https://supabase.com/pricing), Pro desde USD 25/mes, Storage Pro adicional USD 0,0213/GB y egress adicional USD 0,09/GB. Bajo el supuesto de cuotas disponibles, este volumen medido no añade overage; no representa el costo total del sistema ni una cotización. Costos DB de auditoría e índices y tráfico interno requieren observar el proyecto real.
+
+[Límites Edge hospedados](https://supabase.com/docs/guides/functions/limits): 256 MB y 2 s CPU por petición; no se deduce cumplimiento de las mediciones locales. Objetivos del Spec CPU 1,5 s / memoria 128 MiB permanecen sin evidencia suficiente.
+
+Mantenimiento: una función, una RPC cerrada, un bucket, sin servicio adicional. Limpieza manual local acotada a 20 carpetas × 100 objetos por comando; puede exigir decenas de comandos/día con el volumen supuesto. La descarga expira independientemente. Operabilidad manual diaria y costo de atención **no medidos**; requieren decisión humana antes de introducir scheduler/infraestructura o declarar operación hospedada suficiente. No se añadieron cron, colas, AWS ni motor documental.
+
+## Dictamen para revisión
+
+**Viabilidad técnica local demostrada; suficiencia hospedada INCONCLUSA. GATE-A01 PENDIENTE DE DECISIÓN HUMANA.** Se entrega evidencia para revisión, sin convertir el resultado local en continuidad de arquitectura aprobada ni iniciar H6.
+
+## Trazabilidad de evidencia y revisión humana pendiente
+
+| TEST planificados | Evidencia técnica / límite |
+| --- | --- |
+| 001–002 | Gate 1 exacto, árbol/base/CI verificados; regresión H1–H4 |
+| 003–004, 017–018 | Espacios institucionales en blanco, adaptación sintética, parseo y render visual técnico; aprobación visual humana pendiente |
+| 005–008 | Snapshot/contexto, edad/fecha Lima, RLS, IDs y conflicto de microsegundos; sin fallback actual ni auditoría de éxito al denegar |
+| 009–012 | Español real Edge y extracción independiente, glifo no representable rechazado, campos máximos y tokens continuos |
+| 013–016 | 100 contactos del snapshot presentes; tablas multipágina, cabeceras/pies y numeración; límites sin truncamiento |
+| 019–020 | Componentes busy/foco/error, contexto preservado, estados controlados servidor; anulación posterior bloquea artefacto existente. Recorrido humano y estados EN_CURSO/CERRADO en UX pendientes |
+| 021–024 | Matriz JWT/roles/Storage e IDOR real; ensayos de frontera y compensación, cruce de dos matrículas en último fortalecimiento |
+| 025–028 | JWT auténtico expirado rechazado; URL firmada de fixture realmente expirada; duplicados explícitos, TTL matemático de 24 h e inyección controlada de manifest vencido (no se esperaron 24 h reales) |
+| 029–034 | PDF parseable, presupuestos, fallos y deadline, auditoría mínima/actor/permisos, HTML/SSRF literal, paths/campos extra y origen hostil rechazados; logs hospedados no observados |
+| 035–038 | Runtime real, tiempos medidos, dos generaciones concurrentes, regresión/reconstrucción/rollback. Hosted, CPU/memoria y kill/504 de plataforma no demostrados |
+| 039–040 | Estimaciones y mantenibilidad documentadas; evaluación humana Gate 2/GATE-A01 pendiente, no PASSED automático |
+
+No es una declaración de que cada subcaso de los 40 TEST fue ejecutado humanamente. Pruebas humanas H5 **NO REPORTADAS**. Antes de Gate 2 revisar ficha mínima/extensa contra referencia adaptada, campos vacíos, trazabilidad histórica/contexto vigente/edad, generación/descarga sin perder contexto, teclado/foco, roles y estados, vencimiento/regeneración y bloqueo tras anulación. Registrar navegador/versión/SO reales, sin completar datos ausentes por inferencia. Forced-colors H5 NO VERIFICADO y aún sin aceptación humana de residual.
+
+## Preparación local para revisión (sin reset)
+
+Usar Node 24.19.0 / npm 10.9.0 del proyecto. `npm ci`, `npm run supabase:start`, `npm run supabase:env`, `npm run dev`. La migración H5 ya se aplicó aditivamente en este checkout; en otra copia con datos usar `node node_modules/supabase/dist/supabase.js migration up --local`, nunca reset para actualizar. Si el stack ya estaba arrancado sin Edge, un stop/start protegido conserva datos y toma la configuración nueva; también puede servirse la función con `node node_modules/supabase/dist/supabase.js functions serve --network-id perumar-h0-local` en otra terminal. Mantener verificación JWT activa.
+
+`npm run fixtures:human` crea solo identidades de ensayo con contraseña introducida por la persona y las retira al terminar. Para pruebas seguras locales: `npm run typecheck:edge`, `npm run test:pdf:rollback`, `npm run test:payments:rollback` y `npm run test:payments:isolated`. `test:pdf` y los ensayos de fallo persistidos están restringidos a CI desechable. No resetear la base humana ni ejecutar allí esas inyecciones.
