@@ -3,7 +3,7 @@ import { randomUUID, createHash } from 'node:crypto'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { createFixtures, publicClient, checked } from './h2-fixtures.mjs'
-import { assertSecurityInventory, securityInventory } from './local-platform.mjs'
+import { inspectDatabase, assertSecurityInventory, securityInventory } from './local-platform.mjs'
 
 // Committed Auth/API fixtures belong only to the disposable CI stack.
 if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true')throw new Error('H5 API tests require the disposable GitHub Actions stack; never run against the human database.')
@@ -75,9 +75,9 @@ try {
   await new Promise(r=>setTimeout(r,2200));assert.ok((await fetch(signed.signedUrl,{cache:'no-store'})).status>=400,'real signed URL TTL')
   // Derived manifest fault injection only in disposable CI; expiry enforced although bytes remain private.
   const generatedEvent=auditRows.find(e=>e.new_values.artefacto_id===manifest.artefacto_id&&e.accion==='FICHA_PDF_GENERADA')
-  checked(await fixture.admin.from('auditoria').update({new_values:{...manifest,expires_at:new Date(Date.now()-1).toISOString()}}).eq('id',generatedEvent.id),'expired synthetic manifest')
+  inspectDatabase("update public.auditoria set new_values=jsonb_set(new_values,'{expires_at}',to_jsonb(clock_timestamp()-interval '1 second')) where id=:'event_id'::uuid and entidad='ficha_pdf';",{event_id:generatedEvent.id})
   assert.equal((await invoke({...body(),artefacto_id:manifest.artefacto_id})).status,409)
-  checked(await fixture.admin.from('auditoria').update({new_values:manifest}).eq('id',generatedEvent.id),'restore synthetic manifest')
+  inspectDatabase("update public.auditoria set new_values=jsonb_set(new_values,'{expires_at}',to_jsonb((new_values->>'generated_at')::timestamptz+interval '24 hours')) where id=:'event_id'::uuid and entidad='ficha_pdf';",{event_id:generatedEvent.id})
   checked(await fixture.admin.from('app_user_roles').delete().eq('user_id',fixture.entries.O.id),'revoke synthetic coordinator')
   assert.equal((await invoke({...body(),artefacto_id:manifest.artefacto_id},'O')).status,403)
   // Explicit concurrent generations remain distinct, and each download is authorized anew.
