@@ -61,7 +61,7 @@ for(const [name,source] of [['layout-normal',normal],['layout-extensive',extensi
     assert.ok(pages>1,'Extensive data must continue instead of truncating/shrinking')
     for(let i=1;i<=100;i++)assert.ok(text.includes(`MUÑOZ ${i},`),`Missing historical contact ${i}`)
     for(const marker of ['FIN DOMICILIO','FIN SEÑAS','PATROCINADOR SINTÉTICO','20000000001','PEÑA','sponsor@example.invalid'])assert.ok(readable.includes(marker),`Missing complete value ${marker}`)
-    assert.equal((text.match(/X/g)??[]).length,470,'Long unbroken contact address must remain complete')
+    assert.ok(text.replace(/\s+/g,'').includes('X'.repeat(470)),'Long unbroken contact address must remain complete')
   }
   run('pdftoppm',['-scale-to','1300','-png',file,`${directory}/${name}`])
   results.push({name,pages,bytes:bytes.length,visualAcceptance:'HUMAN PENDING'})
