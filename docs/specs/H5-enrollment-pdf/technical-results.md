@@ -2,11 +2,11 @@
 
 ## Corrección de maquetación en revisión humana
 
-**Bloque 1 H5 inicialmente NO OK** sobre `8c0bfb355c9162aebcee3fab2d368a40aaf5cc0f` (CI `43327651731` SUCCESS). Se corrige exclusivamente la presentación institucional; [registro de corrección visual](human-review-layout.md). Suite local actual: **413/413 PASSED** (406 previas + 7 nuevas), lint/tsc/Deno check/build/build-safety PASSED. Caso normal de un contacto sin patrocinador en 1 página A4; caso de 100 contactos cortos en 5. La nueva CI debe confirmar integración real y evidencia independiente completa. La aceptación visual sigue siendo humana y está pendiente.
+**Bloque 1 H5 inicialmente NO OK** sobre `8c0bfb355c9162aebcee3fab2d368a40aaf5cc0f` (CI `43327651731` SUCCESS). Se corrige exclusivamente la presentación institucional; [registro de corrección visual](human-review-layout.md). Código/pruebas: `ded34ebafb1d77933f467147aeda8ee06f06a964`, CI [43336489960](https://github.com/fcamasca/perumar-supabase/actions/runs/43336489960) **COMPLETED / SUCCESS**, **413/413 PASSED** (406 previas + 7 nuevas). Lint/tsc/Deno check/build/build-safety, integración real Edge/Storage, H1–H4, rollback/concurrencia, expiración y reconstrucción PASSED. Caso normal de un contacto sin patrocinador en **1 página A4**; caso ampliado de **100 contactos, textos largos y patrocinador en 5**. Extracción independiente y render de CI confirmados en ambas pasadas. La aceptación visual sigue siendo humana y está pendiente.
 
 Las cifras de tamaño/rendimiento y CI que siguen describen el candidato anterior y se conservan como historia técnica; no prueban aceptación visual del nuevo layout. El nuevo logo embebido aumenta el tamaño del PDF. Gate 1/Spec/OQ, límites, contratos y controles de seguridad intactos. Gate 2 y GATE-A01 PENDIENTES; hosted inconcluso, sin aceptación/cierre/PR/merge/H6.
 
-Estado: **CANDIDATO TÉCNICO / Gate 2 PENDIENTE / GATE-A01 PENDIENTE**. Código/pruebas/lock: `35d4b17a9fa63c011c5de9d44a72a78215b60980`, CI `43304950382` **COMPLETED / SUCCESS**. Gate 1: `9804bb07063590e8917fc86d07995c474b84e718`. Los estados históricos del Spec aprobado no se reescriben. No acceptance, cierre, merge ni H6.
+Baseline anterior: código/pruebas/lock `35d4b17a9fa63c011c5de9d44a72a78215b60980`, CI `43304950382` **COMPLETED / SUCCESS**. Estado actual: **CANDIDATO TÉCNICO CORREGIDO / Gate 2 PENDIENTE / GATE-A01 PENDIENTE**. Gate 1: `9804bb07063590e8917fc86d07995c474b84e718`. Los estados históricos del Spec aprobado no se reescriben. No acceptance, cierre, PR, merge ni H6.
 
 ## Evidencia local inicial (12/11/2026)
 
@@ -53,7 +53,7 @@ Inventario automatizado se amplió con comprobaciones exactas de bucket, ausenci
 
 ## Pendientes y límites explícitos
 
-No pruebas humanas H5 reportadas. Comparación institucional final mínima/extensa, teclado, accesibilidad y dictamen GATE-A01 requieren revisión humana. Forced-colors real H5 **NO VERIFICADO**; no se hereda un PASSED de H3/H4.
+La evidencia técnica inicial no tenía pruebas humanas H5 reportadas. Posteriormente el usuario reportó **Bloque 1 NO OK** por maquetación; la corrección documentada arriba requiere nueva revisión humana. Los demás subcasos no se dan por reportados ni aprobados. Comparación institucional final mínima/extensa, teclado, accesibilidad y dictamen GATE-A01 requieren revisión humana. Forced-colors real H5 **NO VERIFICADO**; no se hereda un PASSED de H3/H4.
 
 No existe entorno hospedado autorizado para este ensayo. Data API hospedada/PostgREST 14 y Edge hospedado **NO PROBADOS DIRECTAMENTE**. CPU/peak memory aisladas sin medición fiable; tiempo wall-clock no las sustituye. No afirmar aptitud hospedada a partir de local. No prueba de kill/504 real de la plataforma hospedada ni observabilidad integral de sus logs. Bundle >500 kB conservado. Sin desviaciones funcionales deliberadas del Spec; los límites de evidencia se declaran, no se convierten en PASSED.
 
@@ -89,7 +89,7 @@ Mantenimiento: una función, una RPC cerrada, un bucket, sin servicio adicional.
 | 035–038 | Runtime real, tiempos medidos, dos generaciones concurrentes, regresión/reconstrucción/rollback. Hosted, CPU/memoria y kill/504 de plataforma no demostrados |
 | 039–040 | Estimaciones y mantenibilidad documentadas; evaluación humana Gate 2/GATE-A01 pendiente, no PASSED automático |
 
-No es una declaración de que cada subcaso de los 40 TEST fue ejecutado humanamente. Pruebas humanas H5 **NO REPORTADAS**. Antes de Gate 2 revisar ficha mínima/extensa contra referencia adaptada, campos vacíos, trazabilidad histórica/contexto vigente/edad, generación/descarga sin perder contexto, teclado/foco, roles y estados, vencimiento/regeneración y bloqueo tras anulación. Registrar navegador/versión/SO reales, sin completar datos ausentes por inferencia. Forced-colors H5 NO VERIFICADO y aún sin aceptación humana de residual.
+No es una declaración de que cada subcaso de los 40 TEST fue ejecutado humanamente. Estado humano actual: **Bloque 1 inicialmente NO OK; corrección pendiente de revisión; restantes subcasos NO REPORTADOS**. Antes de Gate 2 revisar ficha mínima/extensa contra referencia adaptada, campos vacíos, trazabilidad histórica/contexto vigente/edad, generación/descarga sin perder contexto, teclado/foco, roles y estados, vencimiento/regeneración y bloqueo tras anulación. Registrar navegador/versión/SO reales, sin completar datos ausentes por inferencia. Forced-colors H5 NO VERIFICADO y aún sin aceptación humana de residual.
 
 ## Preparación local para revisión (sin reset)
 

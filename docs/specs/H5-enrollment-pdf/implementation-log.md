@@ -4,6 +4,8 @@
 
 Bloque 1 reportado **NO OK** sobre `8c0bfb355c9162aebcee3fab2d368a40aaf5cc0f` por desviación visual respecto a la ficha institucional. Se aplica corrección limitada al renderer y al recurso de marca proporcionado por el usuario; [hallazgo, adaptación y evidencia](human-review-layout.md). Las 406 pruebas anteriores se conservan y se agregan siete (413/413 locales). Ningún cambio a decisiones aprobadas, seguridad, procedencia, contratos Edge/RPC, migraciones, límites, auditoría o retención. Nueva aceptación visual humana pendiente; no Gate 2/GATE-A01/acceptance/merge/H6.
 
+Corrección de código/pruebas `ded34ebafb1d77933f467147aeda8ee06f06a964`: CI [43336489960](https://github.com/fcamasca/perumar-supabase/actions/runs/43336489960) COMPLETED / SUCCESS, **413/413**. La evidencia independiente confirmó normal 1 página y extenso 5; se repitieron integración, seguridad, H4, fallos y QA tras reconstrucción desechable. Esta consolidación posterior solo modifica evidencia documental. El Bloque 1 no se convierte automáticamente en OK humano.
+
 ## Autorización y base (12/11/2026)
 
 Gate 1 aprobado humanamente sobre `9804bb07063590e8917fc86d07995c474b84e718`; [registro](gate-1.md). Rama `feature/h5-enrollment-pdf` creada desde ese SHA; registro documental incorporado mediante cherry-pick `0ce58c3`. Los cuatro documentos del Spec permanecen inalterados. No existe aprobación de Gate 2, cierre, acceptance, merge ni inicio H6.
