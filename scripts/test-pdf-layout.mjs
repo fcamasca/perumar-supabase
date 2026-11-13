@@ -14,15 +14,15 @@ const run=(program,args)=>{
   return result.stdout
 }
 const normal=fichaFixture()
-Object.assign(normal.alumno_snapshot.alumno,{nacimiento_departamento_id:'d',nacimiento_provincia_id:'p',nacimiento_distrito_id:'r',domicilio_departamento_id:'d',domicilio_provincia_id:'p',domicilio_distrito_id:'r'})
-normal.alumno_snapshot.geografia={d:'ICA',p:'PISCO',r:'SAN ANDRÉS'}
+Object.assign(normal.datos_ficha.alumno,{nacimiento_departamento_id:'d',nacimiento_provincia_id:'p',nacimiento_distrito_id:'r',domicilio_departamento_id:'d',domicilio_provincia_id:'p',domicilio_distrito_id:'r'})
+normal.datos_ficha.geografia={d:'ICA',p:'PISCO',r:'SAN ANDRÉS'}
 const extensive=fichaFixture(100)
-Object.assign(extensive.alumno_snapshot.alumno,{
+Object.assign(extensive.datos_ficha.alumno,{
   nombres:'NOMBRE SINTÉTICO '+ 'Á'.repeat(120),
   domicilio:('DIRECCIÓN SINTÉTICA CON REFERENCIA DE PRUEBA. ').repeat(12).slice(0,480)+' FIN DOMICILIO',
   senas_particulares:('SEÑAS SINTÉTICAS SIN DATOS REALES. ').repeat(16).slice(0,480)+' FIN SEÑAS',
 })
-extensive.alumno_snapshot.contactos[0].direccion='DIRECCIÓN EXTENSA '+ 'X'.repeat(470)
+extensive.datos_ficha.contactos[0].direccion='DIRECCIÓN EXTENSA '+ 'X'.repeat(470)
 extensive.empresa_patrocinadora_id='22222222-2222-4222-8222-222222222222'
 extensive.empresa_patrocinadora={razon_social:'PATROCINADOR SINTÉTICO',ruc:'20000000001',persona_contacto:'PEÑA',telefono:'010000001',email:'sponsor@example.invalid'}
 const results=[]

@@ -111,6 +111,8 @@ do $$ declare actor uuid:=gen_random_uuid(); coordinator uuid:=gen_random_uuid()
  begin perform public.cambiar_estado_ciclo(c.id,c.updated_at,'DESIERTO','SYNTHETIC',(select v.id from public.catalogo_valor v join public.catalogo cat on cat.id=v.catalogo_id where cat.codigo='MOTIVO_CICLO_DESIERTO' and v.activo limit 1));raise exception 'Cycle with annulled payments deserted';exception when check_violation then if sqlerrm<>'PAYMENT_PREVENTS_CYCLE_STATE' then raise;end if;end;
  c:=public.cambiar_estado_ciclo(c.id,c.updated_at,'EN_CURSO');
  c:=public.cambiar_estado_ciclo(c.id,c.updated_at,'CERRADO');
+ -- CHG-H5-002 capture advances enrollment version; H4 still accepts payments after an explicit reload.
+ select * into e from public.matricula where id=e.id;
  response:=public.registrar_pago(jsonb_build_object('matricula_id',e.id,'expected_matricula_updated_at',e.updated_at,'idempotency_key',gen_random_uuid(),'importe','1','medio_pago_id',medium,'aplicaciones',jsonb_build_array(jsonb_build_object('matricula_cargo_id',cargo_id,'importe','1'))));
  select * into second_pay from jsonb_populate_record(null::public.pago,response);
  select * into e from public.matricula where id=e.id;

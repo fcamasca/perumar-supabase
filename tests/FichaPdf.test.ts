@@ -12,11 +12,11 @@ describe('H5 provenance and closed request', () => {
     expect(model.emitted).toContain('2029')
   })
   it('does not fill missing snapshot code and preserves historic contacts', () => {
-    const source = fichaFixture(); delete source.alumno_snapshot.alumno.codigo_alumno
+    const source = fichaFixture(); delete source.datos_ficha.alumno.codigo_alumno
     expect(projectFicha(source, new Date()).sections[1].fields[0][1]).toBe('Sin dato')
     expect(projectFicha(source, new Date()).contacts[0][2]).toBe('Madre')
   })
-  it.each(['actor', 'path', 'bucket', 'html', 'url', 'importe'])('rejects extra %s', key => {
+  it.each(['actor', 'path', 'bucket', 'html', 'url', 'importe', 'source_fingerprint'])('rejects extra %s', key => {
     expect(() => parseRequest({ matricula_id: fichaFixture().id, expected_updated_at: fichaFixture().updated_at, [key]: 'x' })).toThrow('INPUT')
   })
   it('rejects stale microsecond version explicitly', () => {
@@ -47,14 +47,14 @@ describe('H5 portable renderer', () => {
     expect(pdf.getPageCount()).toBeLessThanOrEqual(20)
   })
   it('rejects unsupported glyphs without silent substitution', async () => {
-    const s = fichaFixture(); s.alumno_snapshot.alumno.nombres = '😀'
+    const s = fichaFixture(); s.datos_ficha.alumno.nombres = '😀'
     await expect(renderFicha(s, new Date())).rejects.toThrow('GLYPH')
   })
   it('rejects contacts beyond budget', async () => {
     await expect(renderFicha(fichaFixture(101), new Date())).rejects.toThrow('LIMIT')
   })
   it('renders HTML and remote URLs literally without fetch or PDF actions', async () => {
-    const s = fichaFixture(); s.alumno_snapshot.alumno.senas_particulares = '<script>alert(1)</script> http://169.254.169.254/ <img src="https://evil.invalid">'
+    const s = fichaFixture(); s.datos_ficha.alumno.senas_particulares = '<script>alert(1)</script> http://169.254.169.254/ <img src="https://evil.invalid">'
     const original = globalThis.fetch
     let fetched = false
     globalThis.fetch = async () => { fetched = true; throw new Error('Unexpected external resource') }
@@ -68,7 +68,16 @@ describe('H5 portable renderer', () => {
   })
   it('rejects an over-budget document rather than dropping long contact rows', async () => {
     const s = fichaFixture(100)
-    s.alumno_snapshot.contactos.forEach(c => { c.direccion = 'D'.repeat(500) })
+    s.datos_ficha.contactos.forEach(c => { c.direccion = 'D'.repeat(500) })
     await expect(renderFicha(s, new Date())).rejects.toThrow('LIMIT')
   })
+})
+
+it('requires the explicit final source for a closed Cycle without falling back', () => {
+  const s = fichaFixture(); s.ciclo!.estado_codigo = 'CERRADO'
+  expect(() => projectFicha(s, new Date())).toThrow('SOURCE_CHANGED')
+  s.fuente = 'cierre'
+  expect(projectFicha(s, new Date()).sections[1].fields).toContainEqual(['Nombres', 'ÁNGELA LUCÍA'])
+  const missing = { ...s, datos_ficha: null } as unknown as typeof s
+  expect(() => projectFicha(missing, new Date())).toThrow('SNAPSHOT')
 })

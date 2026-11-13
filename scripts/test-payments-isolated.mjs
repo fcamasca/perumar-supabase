@@ -156,6 +156,45 @@ try {
     const f=fixture();await race(f,register(payload(f,'70')),`select (public.anular_matricula('${f.enrollment}','${f.version}','SYNTHETIC')).id`)
     assert.ok(balance(f).pendiente>=0);console.log('H4 payment vs enrollment annulment: PASSED')
   }
+  // Current personal/contact edits serialize on the Student, including a close already holding the Cycle.
+  for(const contact of [false,true]){
+    const f=fixture()
+    sql(asActor(f,`select (public.cambiar_estado_ciclo('${f.cycle}','${f.cycleVersion}','EN_CURSO')).id`))
+    f.cycleVersion=sql(`select updated_at from public.ciclo where id='${f.cycle}'`)
+    const editor=spawn('docker',['exec','-i',container,'psql','-U','postgres','-d',database,'-At','-v','ON_ERROR_STOP=1'],{windowsHide:true})
+    let ready=false;editor.stdout.on('data',chunk=>{if(String(chunk).includes('H5_STUDENT_LOCKED'))ready=true});editor.stderr.on('data',()=>{})
+    const ended=new Promise((resolve,reject)=>{editor.on('error',reject);editor.on('close',code=>code===0?resolve():reject(new Error('Synthetic editor failed')))})
+    editor.stdin.write(`begin;select set_config('request.jwt.claim.sub','${f.actor}',true);select id from public.alumno where id='${f.student}' for update;select 'H5_STUDENT_LOCKED';\n`)
+    const deadline=Date.now()+15000
+    try{
+      while(!ready&&Date.now()<deadline)await new Promise(r=>setTimeout(r,25))
+      assert.ok(ready)
+      const closing=run(`set application_name='H5_CLOSE';${asActor(f,`select (public.cambiar_estado_ciclo('${f.cycle}','${f.cycleVersion}','CERRADO')).id`)}`)
+      let waiting=false
+      while(Date.now()<deadline){waiting=sql("select exists(select 1 from pg_stat_activity where datname=current_database() and application_name='H5_CLOSE' and wait_event_type='Lock')")==='t';if(waiting)break;await new Promise(r=>setTimeout(r,25))}
+      assert.ok(waiting,'Close must wait for the Student while retaining its Cycle lock')
+      // Synthetic equivalent of the existing contact command: its parent version participates in serialization.
+      editor.stdin.end((contact?`update public.alumno_contacto_emergencia set direccion='H5 CONCURRENT CONTACT' where alumno_id='${f.student}';update public.alumno set updated_at=clock_timestamp() where id='${f.student}';`:`update public.alumno set domicilio='H5 CONCURRENT STUDENT' where id='${f.student}';`)+`commit;\n`)
+      await ended
+      const result=await closing;assert.equal(result.ok,false);assert.equal(result.sqlstate,'40001','Native serialization conflict must be explicit, never retried')
+      assert.equal(sql(`select estado_codigo from public.ciclo where id='${f.cycle}'`),'EN_CURSO')
+      assert.equal(sql(`select alumno_snapshot_cierre is null from public.matricula where id='${f.enrollment}'`),'t')
+      console.log('CHG-H5-002 closure vs '+(contact?'contact':'student')+': PASSED (real lock wait, explicit 40001, complete rollback, no retry)')
+    }finally{if(!editor.stdin.writableEnded)editor.stdin.end('rollback;\n')}
+  }
+  // Additional closure regressions; existing H4 concurrency cases remain unchanged.
+  for(const action of ['payment','edit','annul']){
+    const f=fixture()
+    sql(asActor(f,`select (public.cambiar_estado_ciclo('${f.cycle}','${f.cycleVersion}','EN_CURSO')).id`))
+    f.cycleVersion=sql(`select updated_at from public.ciclo where id='${f.cycle}'`)
+    const close=`select (public.cambiar_estado_ciclo('${f.cycle}','${f.cycleVersion}','CERRADO')).id`
+    const other=action==='payment'?register(payload(f,'20')):action==='annul'?`select (public.anular_matricula('${f.enrollment}','${f.version}','SYNTHETIC')).id`:`select (public.editar_matricula('${JSON.stringify({id:f.enrollment,expected_updated_at:f.version,descuento:'10',motivo_descuento:'SYNTHETIC'})}'::jsonb)).id`
+    const outcome=await race(f,close,other)
+    assert.notEqual(outcome.find(r=>!r.ok).sqlstate,'40P01','Stable lock protocol must avoid deadlock')
+    assert.equal(sql(`select count(*) from public.matricula m join public.ciclo c on c.id=m.ciclo_id where m.id='${f.enrollment}' and ((c.estado_codigo='CERRADO' and m.estado_codigo='ACTIVO' and m.alumno_snapshot_cierre is null) or (c.estado_codigo<>'CERRADO' and m.alumno_snapshot_cierre is not null))`),'0')
+    assert.ok(balance(f).pendiente>=0)
+    console.log('CHG-H5-002 closure vs '+action+': PASSED (Cycle -> Student -> Enrollment, one commit, no retry)')
+  }
   {
     // Engine-produced deadlock, isolated SQL harness only. Product lock ordering is NOT changed.
     const first=fixture(),second=fixture()

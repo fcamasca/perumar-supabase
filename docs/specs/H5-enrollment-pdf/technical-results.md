@@ -1,5 +1,9 @@
 # H5 — Evidencia técnica de construcción
 
+## CHG-H5-002 — fuente vigente y cierre final aprobado humanamente
+
+[Enmienda H2-H3-H5](approved-current-final-source-amendment.md), 13/11/2026, base `0b9081cc505bcbd7bfe503503eb3300adc7dec9e`. Snapshot original intacto; nuevo snapshot de cierre nullable capturado atómicamente solo en EN_CURSO -> CERRADO para matrículas ACTIVAS. Fuente vigente en PROGRAMADO/EN_CURSO y final exclusiva en CERRADO; sin fallback. Vista específica security_invoker/RLS con hash canónico server-side, revalidación de generación/descarga y conflicto explícito. Auditoría excluye ambos snapshots. Local **425/425**, lint/tipos/Deno/build/build-safety, rollback/carreras/inventario PASSED; CI del candidato se verifica antes de entrega. Inventario 24 tablas/4 vistas/20 funciones públicas/19 helpers/27 policies, sin nuevos grants de escritura. Historial de resultados anterior se conserva debajo; Gate 2/GATE-A01 y revisión humana siguen pendientes, residuales preservados, sin acceptance/PR/merge/H6.
+
 ## Ajustes humanos de cabecera y lugar/fecha sobre Firma
 
 Sobre `908c3586d2dd126368859aeb9630def153b0c480` se aplican los [ajustes humanos registrados](approved-institutional-note-amendment.md#ajustes-visuales-humanos-posteriores--12112026): solo Curso centrado, FECHA/Estatura/Peso simplificados y distrito actual del Ciclo + fecha de matrícula en Lima sobre Firma. Emisión real solo en el pie. Se amplía únicamente la lectura JWT de Ciclo con distrito(nombre); sin cambios al contrato público, permisos, DB, seguridad o inventario. **417/417 locales PASSED**, lint/tipos/Deno/build/build-safety/diff-check PASSED; CI del nuevo SHA se verifica antes de entregar. Evidencia sintética 1/5 páginas, QA visual técnico y extracción independiente PASSED. Las secciones siguientes describen candidatos anteriores. Gate 2/GATE-A01 y nueva revisión humana siguen pendientes; residuales preservados, sin acceptance/PR/merge/H6.

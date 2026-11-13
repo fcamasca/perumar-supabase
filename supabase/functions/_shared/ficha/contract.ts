@@ -1,4 +1,4 @@
-// H5: closed input and provenance contract. No current Alumno lookup is permitted.
+// CHG-H5-002: explicit current/final provenance; original enrollment history is never a fallback.
 export class FichaError extends Error {
   status: number
   code: string
@@ -18,7 +18,8 @@ export function parseRequest(value: unknown): FichaRequest {
 export type RecordData = Record<string, unknown>
 export type Source = {
   id: string; updated_at: string; created_at: string; estado_codigo: string; codigo_matricula: string;
-  alumno_snapshot: { alumno: RecordData; catalogos: Record<string, { etiqueta?: string }>; geografia: Record<string, string>; contactos: RecordData[] };
+  fuente: 'vigente' | 'cierre'; source_fingerprint: string;
+  datos_ficha: { alumno: RecordData; catalogos: Record<string, { etiqueta?: string }>; geografia: Record<string, string>; contactos: RecordData[] };
   ciclo: { codigo_ciclo: string; nombre_promocion: string | null; estado_codigo: string; carrera: { nombre: string } | null; distrito?: { nombre: string } | null } | null;
   empresa_patrocinadora_id: string | null;
   empresa_patrocinadora: RecordData | null;
@@ -43,7 +44,8 @@ export function ageAtEnrollment(birth: string, createdAt: string) {
 }
 export type FichaSection = { title: string; fields: [string, string][] }
 export function projectFicha(source: Source, now: Date): { sections: FichaSection[]; contacts: string[][]; code: string; emitted: string } {
-  const snap = source.alumno_snapshot
+  if (source.fuente !== (source.ciclo?.estado_codigo === 'CERRADO' ? 'cierre' : 'vigente')) throw new FichaError(409, 'SOURCE_CHANGED')
+  const snap = source.datos_ficha
   if (!snap?.alumno || !snap.catalogos || !snap.geografia || !Array.isArray(snap.contactos)) throw new FichaError(422, 'SNAPSHOT')
   if (snap.contactos.length > 100) throw new FichaError(413, 'LIMIT')
   const a = snap.alumno, text = (v: unknown) => v === null || v === undefined || v === '' ? 'Sin dato' : String(v)

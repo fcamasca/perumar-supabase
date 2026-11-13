@@ -3,8 +3,8 @@ import { FichaError, projectFicha, type Source } from './contract.ts'
 import { perumarLogoPng } from './brand.ts'
 import { institutionalNote } from './note.ts'
 
-export const TEMPLATE_VERSION = 'h5-1'
-// CHG-H5-001 changes only photo/Note presentation; provenance, audit ID and budgets are unchanged.
+export const TEMPLATE_VERSION = 'h5-2'
+// Institutional layout retained; CHG-H5-002 selects explicit current/final data before rendering.
 export async function renderFicha(source: Source, now: Date): Promise<Uint8Array> {
   const model = projectFicha(source, now)
   const document = await PDFDocument.create()
@@ -121,9 +121,9 @@ export async function renderFicha(source: Source, now: Date): Promise<Uint8Array
   }
   const section = (index: number) => Object.fromEntries(model.sections[index].fields)
   const context = section(0), identity = section(1), address = section(2), extra = section(3), sponsor = section(4)
-  const a = source.alumno_snapshot.alumno
+  const a = source.datos_ficha.alumno
   const historical = (key: string) => a[key] === null || a[key] === undefined || a[key] === '' ? 'Sin dato' : String(a[key])
-  const geo = (prefix: string, part: string) => source.alumno_snapshot.geografia[String(a[`${prefix}_${part}_id`])] || 'Sin dato'
+  const geo = (prefix: string, part: string) => source.datos_ficha.geografia[String(a[`${prefix}_${part}_id`])] || 'Sin dato'
 
   newPage(true)
   const top = y, headerX = margin + 99, headerWidth = available - 99
@@ -144,7 +144,7 @@ export async function renderFicha(source: Source, now: Date): Promise<Uint8Array
   table(['Domicilio Actual', 'N.º / Mz / Lt', 'Distrito', 'Provincia', 'Departamento'], [[address.Domicilio, address['N° / Mz / Lt'], geo('domicilio', 'distrito'), geo('domicilio', 'provincia'), geo('domicilio', 'departamento')]], [236, 66, 73, 73, available - 448])
   inlineField('Email', address['Correo electrónico'])
   const contacts = model.contacts.map(c => [`${c[0]}, ${c[1]}`, c[2], c[3], c[4]])
-  table(['Persona a Notificar en caso de Emergencia', 'Parentesco', 'Celular', 'Dirección'], contacts.length ? contacts : [['Sin contactos en la fotografía histórica.', '', '', '']], [236, 74, 80, available - 390])
+  table(['Persona a Notificar en caso de Emergencia', 'Parentesco', 'Celular', 'Dirección'], contacts.length ? contacts : [['Sin contactos registrados.', '', '', '']], [236, 74, 80, available - 390])
   table(['Patrocinador', 'Contacto', 'Celular/Teléfono', 'Email'], [source.empresa_patrocinadora ? [sponsor['Razón social'] + (sponsor.RUC === 'Sin dato' ? '' : `\nRUC: ${sponsor.RUC}`), sponsor['Persona de contacto'], sponsor.Teléfono, sponsor['Correo electrónico']] : ['', '', '', '']], [165, 115, 106, available - 386])
 
   // Wording is human-supplied, fixed and literal. Keep each ordinary paragraph together.

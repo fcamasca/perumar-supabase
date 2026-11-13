@@ -229,6 +229,7 @@ try {
             reject(await D.rpc('editar_matricula', { p: { ...version(enrolled), ...change } }));
         reject(await D.rpc('guardar_ciclo_tarifas', { ciclo_id: terminal.id, expected_updated_at: terminal.updated_at, configuracion: [] }));
         reject(await D.rpc('registrar_matricula', { p: { alumno_id: x.id, expected_alumno_updated_at: x.updated_at, ciclo_id: terminal.id, expected_ciclo_updated_at: terminal.updated_at }, opcionales: [] }));
+        enrolled = checked(await D.from('matricula').select('*').eq('id', enrolled.id).single(), 'reload version after final capture');
         enrolled = await rpc(O, 'anular_matricula', { ...version(enrolled), motivo: 'TERMINAL' });
         assert.equal(enrolled.estado_codigo, 'ANULADO');
         assert.deepEqual(checked(await D.from('matricula_cargo').select('*').eq('matricula_id', enrolled.id), 'charges'), previousCharges);

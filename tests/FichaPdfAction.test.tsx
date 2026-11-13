@@ -36,3 +36,16 @@ it('does not regenerate automatically after failure', async () => {
   render(<FichaPdfAction {...props}/>); fireEvent.click(screen.getByRole('button'))
   await screen.findByRole('alert'); await waitFor(() => expect(screen.getByRole('button')).toBeEnabled()); expect(mock.invoke).toHaveBeenCalledOnce()
 })
+
+it('requires explicit regeneration after changed source without retry or losing enrollment context', async () => {
+  mock.invoke.mockResolvedValueOnce({ data: { artefacto_id: 'artifact' }, error: null })
+  render(<FichaPdfAction {...props}/>); fireEvent.click(screen.getByRole('button', { name: 'Generar ficha PDF' }))
+  const download = await screen.findByRole('button', { name: 'Descargar ficha PDF' })
+  mock.invoke.mockResolvedValue({ error: { context: new Response(JSON.stringify({ code: 'SOURCE_CHANGED' })) } })
+  fireEvent.click(download)
+  expect(await screen.findByRole('alert')).toHaveTextContent('Los datos de la ficha cambiaron')
+  expect(screen.queryByRole('button', { name: 'Descargar ficha PDF' })).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Generar ficha PDF' })).toBeEnabled()
+  expect(mock.invoke).toHaveBeenCalledTimes(2)
+  expect(mock.invoke.mock.calls[1][1].body.matricula_id).toBe('m1')
+})

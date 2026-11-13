@@ -4,10 +4,10 @@ import { fichaFixture } from './ficha-fixture'
 import { operateFicha } from '../supabase/functions/_shared/ficha/operation'
 const mocks = vi.hoisted(() => ({ read: vi.fn(), render: vi.fn() }))
 vi.mock('../supabase/functions/_shared/ficha/read.ts', () => ({ readFicha: mocks.read }))
-vi.mock('../supabase/functions/_shared/ficha/render.ts', () => ({ renderFicha: mocks.render, TEMPLATE_VERSION: 'h5-1' }))
+vi.mock('../supabase/functions/_shared/ficha/render.ts', () => ({ renderFicha: mocks.render, TEMPLATE_VERSION: 'h5-2' }))
 const upload = vi.fn(), remove = vi.fn(), download = vi.fn(), audit = vi.fn()
 const source = fichaFixture(), request = { matricula_id: source.id, expected_updated_at: source.updated_at }
-const manifest = () => ({ artefacto_id: source.id, generated_at: new Date().toISOString(), expires_at: new Date(Date.now() + 86400000).toISOString(), source_version: source.updated_at, template_version: 'h5-1' })
+const manifest = () => ({ artefacto_id: source.id, generated_at: new Date().toISOString(), expires_at: new Date(Date.now() + 86400000).toISOString(), source_version: source.updated_at, template_version: 'h5-2', source_fingerprint: source.source_fingerprint })
 let record = manifest()
 const user = { from: vi.fn(() => { const q = { select: () => q, eq: () => q, contains: () => q, single: async () => ({ data: { new_values: record }, error: null }) }; return q }) } as unknown as SupabaseClient
 const server = { rpc: audit, storage: { from: vi.fn(() => ({ upload, remove, download })) } } as unknown as SupabaseClient
@@ -33,7 +33,7 @@ it('does not record success or retry a failed upload', async () => {
 })
 it('compensates after audit failure and never returns an artifact', async () => {
   audit.mockResolvedValue({ error: { code: 'PT409' } })
-  await expect(operateFicha(user, server, request)).rejects.toThrow('AUDIT')
+  await expect(operateFicha(user, server, request)).rejects.toThrow('SOURCE_CHANGED')
   expect(remove).toHaveBeenCalledOnce(); expect(audit).toHaveBeenCalledOnce()
 })
 it('compensates if authorization is revoked after upload', async () => {
@@ -64,4 +64,25 @@ it('records download initiated only after complete bytes and repeated authorizat
   expect(result.bytes).toBeInstanceOf(Uint8Array)
   expect(mocks.read).toHaveBeenCalledTimes(2)
   expect(audit.mock.calls[0][1].p_evento).toBe('FICHA_PDF_DESCARGA_INICIADA')
+})
+
+it.each(['legacy', 'changed'])('rejects %s artifact provenance before reading Storage', async kind => {
+  record.source_fingerprint = kind === 'legacy' ? '' : 'b'.repeat(64)
+  await expect(operateFicha(user, server, { ...request, artefacto_id: source.id })).rejects.toThrow('SOURCE_CHANGED')
+  expect(download).not.toHaveBeenCalled(); expect(audit).not.toHaveBeenCalled()
+})
+it('rejects a source change during rendering without upload or automatic retry', async () => {
+  mocks.read.mockResolvedValueOnce({ source, actor: 'actor' }).mockResolvedValueOnce({ source: { ...source, source_fingerprint: 'b'.repeat(64) }, actor: 'actor' })
+  await expect(operateFicha(user, server, request)).rejects.toThrow('SOURCE_CHANGED')
+  expect(upload).not.toHaveBeenCalled(); expect(audit).not.toHaveBeenCalled(); expect(mocks.render).toHaveBeenCalledOnce()
+})
+it('compensates a changed source after upload without recording success', async () => {
+  mocks.read.mockResolvedValueOnce({ source, actor: 'actor' }).mockResolvedValueOnce({ source, actor: 'actor' }).mockResolvedValueOnce({ source: { ...source, source_fingerprint: 'b'.repeat(64) }, actor: 'actor' })
+  await expect(operateFicha(user, server, request)).rejects.toThrow('SOURCE_CHANGED')
+  expect(upload).toHaveBeenCalledOnce(); expect(remove).toHaveBeenCalledOnce(); expect(audit).not.toHaveBeenCalled()
+})
+it('withholds already-read bytes if source changes before delivery', async () => {
+  mocks.read.mockResolvedValueOnce({ source, actor: 'actor' }).mockResolvedValueOnce({ source: { ...source, source_fingerprint: 'b'.repeat(64) }, actor: 'actor' })
+  await expect(operateFicha(user, server, { ...request, artefacto_id: source.id })).rejects.toThrow('SOURCE_CHANGED')
+  expect(download).toHaveBeenCalledOnce(); expect(audit).not.toHaveBeenCalled()
 })

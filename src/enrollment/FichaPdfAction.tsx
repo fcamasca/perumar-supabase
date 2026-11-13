@@ -4,6 +4,7 @@ import { useSession } from '../security/SessionProvider'
 const errors: Record<string, string> = {
   SESSION: 'La sesión venció. Inicia sesión nuevamente.', ACCESS: 'Tu acceso no permite generar esta ficha.',
   SOURCE: 'No se pudo consultar la ficha. Recarga y verifica la matrícula.',
+  SOURCE_CHANGED: 'Los datos de la ficha cambiaron. Genera una nueva ficha PDF antes de descargar.',
   VERSION: 'La matrícula cambió. Recarga y decide nuevamente.', STATE: 'La matrícula o el Ciclo ya no permiten generar o descargar la ficha.',
   EXPIRED: 'La ficha venció. Puedes generar una nueva.', ARTIFACT: 'La ficha no está disponible. Puedes generar una nueva.',
   GLYPH: 'La ficha contiene un carácter que no puede representarse. Revisa los datos.',
@@ -26,7 +27,7 @@ export function FichaPdfAction({ enrollment, version, enrollmentState, cycleStat
       if (current !== epoch.current) return
       if (error) {
         let code = ''
-        try { if (error.context instanceof Response) code = (await error.context.json()).code ?? '' } catch { /* safe fallback; no raw platform message */ }
+        try { if (error.context instanceof Response) code = (await error.context.json()).code ?? ''; if (code === 'SOURCE_CHANGED') setArtifact(undefined) } catch { /* safe fallback; no raw platform message */ }
         throw new Error(errors[code] ?? 'No se pudo completar la operación. Consulta el estado y decide nuevamente; no se reintentó automáticamente.')
       }
       if (download) {
@@ -37,7 +38,7 @@ export function FichaPdfAction({ enrollment, version, enrollmentState, cycleStat
         setMessage('Descarga iniciada.')
       } else {
         if (typeof data?.artefacto_id !== 'string') throw new Error('No se pudo confirmar la generación. Consulta antes de generar nuevamente.')
-        setArtifact(data.artefacto_id); setMessage('Ficha generada. Disponible durante 24 horas, mientras la matrícula y el Ciclo lo permitan.')
+        setArtifact(data.artefacto_id); setMessage('Ficha generada. Disponible durante 24 horas, mientras la matrícula, el Ciclo y los datos de origen lo permitan. Regenera si cambian los datos.')
       }
     } catch (failure) {
       if (current === epoch.current) { setError(true); setMessage(failure instanceof Error ? failure.message : 'No se pudo completar la operación.') }

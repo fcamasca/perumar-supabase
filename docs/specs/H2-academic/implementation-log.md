@@ -1,5 +1,9 @@
 # H2 — Evidencia de construcción
 
+## Enmienda posterior CHG-H5-002 — 13/11/2026
+
+Autorización humana y alcance en [CHG-H5-002](../H5-enrollment-pdf/approved-current-final-source-amendment.md): cierre transaccional con fotografía final de Alumno/contactos para H5, sin reescribir snapshot inicial, reglas financieras ni aprobaciones históricas de este hito. Protocolo Ciclo -> Alumnos por UUID -> Matrículas por UUID; auditoría sin ambos snapshots. Las matrículas avanzan versión al capturar: recarga explícita antes de posteriores operaciones.
+
 Estado vigente: **H2 CLOSED / ACEPTADO — Gate 2 APROBADO HUMANAMENTE** sobre `796a47aa4c1ce21c6cf8c81e9c631a22202bb709`. TASK-H2-001 a 010 completadas con la evidencia técnica, revisión humana y cierre autorizado. TEST-H2-018/020 PASSED humanos; TEST-H2-019 completado con forced-colors real del SO NO VERIFICADO y riesgo aceptado. [Aceptación y cierre](acceptance.md). H3 NO INICIADO.
 
 Los bloques siguientes conservan estados históricos de cada etapa; sus pendientes intermedios no son el estado vigente.

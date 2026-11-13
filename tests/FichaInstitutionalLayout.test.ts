@@ -76,7 +76,7 @@ it('keeps Note above the two physical fingerprint spaces/signature and out of th
   expect(words.some(w => w.value.startsWith('Matrícula:') || w.value.startsWith('Alumno:'))).toBe(false)
 })
 it('centers only the course name in the header and simplifies labels without converting measurements', async () => {
-  const source = fichaFixture(); source.alumno_snapshot.alumno.estatura_cm = 164; source.alumno_snapshot.alumno.peso_kg = 80
+  const source = fichaFixture(); source.datos_ficha.alumno.estatura_cm = 164; source.datos_ficha.alumno.peso_kg = 80
   const { pdf, pages, text } = await inspect(await renderFicha(source, now))
   const font = await pdf.embedFont(StandardFonts.Helvetica), course = pages[0].words.find(w => w.value === source.ciclo!.carrera!.nombre)!
   expect(course.x + font.widthOfTextAtSize(course.value, course.size) / 2).toBeCloseTo(135 + (595.28 - 72 - 99 - 193) / 2)
@@ -84,7 +84,7 @@ it('centers only the course name in the header and simplifies labels without con
   for (const label of ['FECHA DE', 'Estatura (cm)', 'Peso (kg)', 'A-0000001', 'Ciclo:']) expect(text).not.toContain(label)
 })
 it('prints current Cycle district and historical enrollment day in Lima above the physical signature', async () => {
-  const source = fichaFixture(); source.alumno_snapshot.geografia = { elsewhere: 'OTRO DISTRITO' }
+  const source = fichaFixture(); source.datos_ficha.geografia = { elsewhere: 'OTRO DISTRITO' }
   source.created_at = '2026-01-18T02:00:00Z'
   const { pages, text } = await inspect(await renderFicha(source, now))
   const words = pages.at(-1)!.words, date = words.find(w => w.value === 'Pisco, 17 de enero de 2026')!, signature = words.find(w => w.value === 'FIRMA')!
@@ -123,10 +123,10 @@ it('does not shrink fonts or overlap running header/footer when 100 contacts con
 })
 it('wraps maximum personal fields and unbroken contact addresses without losing text', async () => {
   const source = fichaFixture(3)
-  source.alumno_snapshot.alumno.nombres = 'Á'.repeat(150)
-  source.alumno_snapshot.alumno.domicilio = 'D'.repeat(500)
-  source.alumno_snapshot.alumno.senas_particulares = 'Ñ'.repeat(500)
-  source.alumno_snapshot.contactos.forEach(c => { c.direccion = 'W'.repeat(500) })
+  source.datos_ficha.alumno.nombres = 'Á'.repeat(150)
+  source.datos_ficha.alumno.domicilio = 'D'.repeat(500)
+  source.datos_ficha.alumno.senas_particulares = 'Ñ'.repeat(500)
+  source.datos_ficha.contactos.forEach(c => { c.direccion = 'W'.repeat(500) })
   const result = await inspect(await renderFicha(source, now)), text = result.text.replaceAll('\n', '')
   expect(result.pages.length).toBeGreaterThan(1)
   expect(text).toContain('Á'.repeat(150)); expect(text).toContain('D'.repeat(500)); expect(text).toContain('Ñ'.repeat(500))

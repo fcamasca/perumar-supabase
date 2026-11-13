@@ -48,6 +48,10 @@ try {
   assert.equal(Date.parse(manifest.expires_at)-Date.parse(manifest.generated_at),86400000)
   assert.equal(await fingerprint(),before,'PDF generation must not mutate H1-H4 business state')
   for(const actor of ['A','B','N','F','I'])assert.equal((await invoke(body(),actor)).status,403,'non-academic/inactive rejected')
+  for(const [actor,c] of Object.entries(clients)){
+    const visible=checked(await c.from('matricula_ficha_fuente').select('id,source').eq('id',enrollment.id),'source view JWT/RLS matrix')
+    assert.equal(visible.length,['D','O','M'].includes(actor)?1:0,'Source view must inherit academic RLS without leaking PII')
+  }
   assert.equal((await invoke(body(),null)).status,401)
   for(const extra of [{path:'../outside.pdf'},{html:'<script>alert(1)</script>'},{actor:fixture.entries.D.id},{url:'http://169.254.169.254'}])assert.equal((await invoke({...body(),...extra})).status,422)
   assert.equal((await invoke({...body(),html:'x'.repeat(5000)})).status,413)
@@ -84,15 +88,17 @@ try {
     const listed=await c.storage.from('fichas-matricula').list(enrollment.id);assert.ok(listed.error||listed.data.length===0)
     assert.ok((await c.storage.from('fichas-matricula').createSignedUrl(path,1)).error)
     assert.ok((await c.storage.from('fichas-matricula').upload(enrollment.id+'/'+randomUUID()+'.pdf',new Blob(['%PDF-test']),{contentType:'application/pdf'})).error)
-    assert.ok((await c.rpc('registrar_evento_ficha_pdf',{p_actor:fixture.entries.D.id,p_matricula_id:enrollment.id,p_artefacto_id:manifest.artefacto_id,p_evento:'FICHA_PDF_GENERADA',p_source_version:enrollment.updated_at,p_generated_at:manifest.generated_at})).error)
+    assert.ok((await c.rpc('registrar_evento_ficha_pdf',{p_actor:fixture.entries.D.id,p_matricula_id:enrollment.id,p_artefacto_id:manifest.artefacto_id,p_evento:'FICHA_PDF_GENERADA',p_source_version:enrollment.updated_at,p_generated_at:manifest.generated_at,p_source_fingerprint:manifest.source_fingerprint})).error)
   }
-  // Current personal edits never replace the snapshot in the source projection.
+  // CHG-H5-002: current edits invalidate the existing artifact; original snapshot stays unchanged.
   student=await rpc(O,'guardar_alumno',{p:{...initial,contactos:[],id:student.id,expected_updated_at:student.updated_at,nombres:'ACTUAL DIFERENTE'}})
+  const staleBefore=await events()
+  const staleArtifact=await invoke({...body(),artefacto_id:manifest.artefacto_id},'O');assert.equal(staleArtifact.status,409);assert.equal((await staleArtifact.json()).code,'SOURCE_CHANGED');assert.equal((await events()).length,staleBefore.length)
   const afterPersonalEdit=await generate()
   const download=await invoke({...body(),artefacto_id:afterPersonalEdit.artefacto_id},'O');assert.equal(download.status,200);assert.equal(download.headers.get('content-type'),'application/pdf');assert.equal(download.headers.get('cache-control'),'private, no-store');assert.match(download.headers.get('content-disposition'),/ficha-matricula.pdf/)
   const bytes=Buffer.from(await download.arrayBuffer());assert.equal(bytes.subarray(0,5).toString(),'%PDF-');mkdirSync('.cache/h5-results',{recursive:true});writeFileSync('.cache/h5-results/real-edge.pdf',bytes)
   const extracted=spawnSync('pdftotext',['-enc','UTF-8','.cache/h5-results/real-edge.pdf','-'],{encoding:'utf8',windowsHide:true})
-  assert.equal(extracted.status,0,'independent PDF parsing');assert.ok(extracted.stdout.includes('MUÑOZ')&&extracted.stdout.includes('ÁNGELA')&&!extracted.stdout.includes('ACTUAL DIFERENTE'),'historical Spanish data, never current student fallback');assert.ok(extracted.stdout.includes('SINTÉTICO 100'),'all 100 historic contacts rendered')
+  assert.equal(extracted.status,0,'independent PDF parsing');assert.ok(extracted.stdout.includes('MUÑOZ')&&extracted.stdout.includes('ACTUAL DIFERENTE')&&!extracted.stdout.includes('ÁNGELA'),'current data while Cycle is open; historical original snapshot remains separate');assert.ok(extracted.stdout.includes('SINTÉTICO 100'),'all 100 historic contacts rendered')
   const cycleDistrict=(await byId('distrito',cycle.distrito_id)).nombre.toLocaleLowerCase('es-PE').replace(/(^|\s)\p{L}/gu,part=>part.toLocaleUpperCase('es-PE'))
   const enrollmentDate=new Intl.DateTimeFormat('es-PE',{timeZone:'America/Lima',day:'numeric',month:'long',year:'numeric'}).format(new Date(enrollment.created_at))
   assert.ok(extracted.stdout.replace(/\s+/g,' ').includes(`${cycleDistrict}, ${enrollmentDate}`),'Real JWT/RLS read must supply the Cycle district and historical enrollment date above the signature')
@@ -116,6 +122,23 @@ try {
   const pair=await Promise.all([generate(),generate()]);assert.notEqual(pair[0].artefacto_id,pair[1].artefacto_id)
   const sorted=[...times].sort((a,b)=>a-b),metrics={runtime:'supabase-edge-runtime-1.77.4 / Deno 2.1.4',samples:20,firstInvocationMs,firstWarmMs:times[0],p95Ms:sorted[Math.ceil(sorted.length*.95)-1],maxMs:sorted.at(-1),pdfBytes:bytes.length,cpu:'NOT MEASURED',memory:'NOT MEASURED',hosted:'NOT EXECUTED'}
   writeFileSync('.cache/h5-results/metrics.json',JSON.stringify(metrics,null,2));console.log(JSON.stringify(metrics))
+  // Final capture is part of Cycle closure, not PDF generation.
+  const originalSnapshot=(await byId('matricula',enrollment.id)).alumno_snapshot
+  cycle=await rpc(D,'cambiar_estado_ciclo',{id:cycle.id,expected_updated_at:cycle.updated_at,destino:'EN_CURSO'})
+  cycle=await rpc(D,'cambiar_estado_ciclo',{id:cycle.id,expected_updated_at:cycle.updated_at,destino:'CERRADO'})
+  enrollment=await byId('matricula',enrollment.id)
+  assert.deepEqual(enrollment.alumno_snapshot,originalSnapshot,'Original enrollment history remains immutable')
+  assert.equal(enrollment.alumno_snapshot_cierre.alumno.nombres,'ACTUAL DIFERENTE')
+  assert.equal((await invoke({...body(),artefacto_id:pair[0].artefacto_id})).status,409,'Open-Cycle PDF cannot be downloaded as final')
+  const finalManifest=await generate()
+  student=await rpc(D,'guardar_alumno',{p:{...initial,contactos:[],id:student.id,expected_updated_at:student.updated_at,nombres:'POSTERIOR AL CIERRE'}})
+  const finalRegenerated=await generate()
+  assert.equal(finalRegenerated.source_fingerprint,finalManifest.source_fingerprint,'Post-close student edits cannot change the frozen source')
+  const finalDownload=await invoke({...body(),artefacto_id:finalRegenerated.artefacto_id});assert.equal(finalDownload.status,200)
+  writeFileSync('.cache/h5-results/final-edge.pdf',Buffer.from(await finalDownload.arrayBuffer()))
+  const finalText=spawnSync('pdftotext',['-enc','UTF-8','.cache/h5-results/final-edge.pdf','-'],{encoding:'utf8',windowsHide:true})
+  assert.equal(finalText.status,0);assert.ok(finalText.stdout.includes('ACTUAL DIFERENTE')&&!finalText.stdout.includes('POSTERIOR AL CIERRE'),'Closed regeneration uses only final capture')
+  console.log('CHG-H5-002 real JWT/Edge current edits, stale fingerprint HTTP409, final capture and post-close regeneration: PASSED')
   enrollment=await rpc(D,'anular_matricula',{id:enrollment.id,expected_updated_at:enrollment.updated_at,motivo:'H5 SINTÉTICO'})
   assert.equal((await invoke({...body(),artefacto_id:manifest.artefacto_id})).status,409)
   assert.equal((await invoke(body())).status,409)
