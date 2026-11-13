@@ -1,6 +1,6 @@
 # CHG-H5-001 — Nota institucional y retiro de FOTO
 
-12/11/2026, America/Lima. **APROBADO HUMANAMENTE**, posterior a Gate 1, en `feature/h5-enrollment-pdf`. Base anterior exacta: `a303b679877aa4a9bcebcfb0c3564382edddeb15`, CI `43337996757` SUCCESS, 413/413 pruebas. El SHA posterior y su CI se registrarán en technical-results.md después de publicar y verificar el candidato.
+12/11/2026, America/Lima. **APROBADO HUMANAMENTE**, posterior a Gate 1, en `feature/h5-enrollment-pdf`. Base anterior exacta: `a303b679877aa4a9bcebcfb0c3564382edddeb15`, CI `43337996757` SUCCESS, 413/413 pruebas. Candidato técnico posterior exacto **`2196348fec188880c8853d1cb80fac3b229eeea4`**; CI [43346943904](https://github.com/fcamasca/perumar-supabase/actions/runs/43346943904) **COMPLETED / SUCCESS**, **415/415 PASSED**. Lint/typecheck/Deno check/build/build-safety, H1–H4, rollback/concurrencia (70 + 60 sobre saldo 100, sin retry), Edge/Storage reales, expiración y reconstrucción con repetición de suites PASSED. `git diff --check` PASSED. No cambió el inventario ni hubo migraciones/datos humanos modificados. Esta consolidación solo modifica documentación; el candidato técnico permanece intacto.
 
 ## Hallazgo y autorización
 
@@ -43,7 +43,7 @@ PII/domicilio/contactos/etiquetas desde alumno_snapshot; edad a matrícula.creat
 
 ## Evidencia técnica y límites de aceptación
 
-Suite local **415/415 PASSED** (413 previas + dos regresiones), lint/typecheck/Deno check/build/build-safety PASSED. QA local mediante pypdf y render Poppler: Nota completa, ausencia FOTO, índices/firma separados del texto/pie, español, blancos y paginación. Comparación técnica lado a lado del caso normal con la referencia y revisión de las cinco páginas extensas. La extracción Poppler/bbox y las suites completas Edge/Storage/H1–H4 se ejecutan nuevamente en CI; resultado exacto posterior en technical-results.md.
+Suite local **415/415 PASSED** (413 previas + dos regresiones), lint/typecheck/Deno check/build/build-safety PASSED. QA local mediante pypdf y render Poppler: Nota completa, ausencia FOTO, índices/firma separados del texto/pie, español, blancos y paginación. Comparación técnica lado a lado del caso normal con la referencia y revisión de las cinco páginas extensas. La extracción Poppler/bbox y las suites completas Edge/Storage/H1–H4 PASSED en CI, antes y después de reconstruir el entorno desechable.
 
 Evidencia sintética local: `output/pdf/h5-chg001-normal.pdf` (**1 página**) y `output/pdf/h5-chg001-extensa.pdf` (**5 páginas**, 100 contactos, campos largos y patrocinador). Los PDFs/PNG locales no se versionan. CI publica solo evidencia sintética, nunca la referencia personal.
 
