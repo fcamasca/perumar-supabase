@@ -148,7 +148,7 @@ create function public.registrar_evento_ficha_pdf(
  p_actor uuid,p_matricula_id uuid,p_artefacto_id uuid,p_evento text,
  p_source_version timestamptz,p_generated_at timestamptz,p_source_fingerprint text
 ) returns jsonb language plpgsql security definer set search_path='' as $$
-declare m public.matricula; cycle_state text; fingerprint text; cycle_id uuid; student_id uuid; event_time timestamptz:=clock_timestamp(); manifest jsonb;
+declare m public.matricula; cycle_state text; fingerprint text; cycle_id uuid; student_id uuid; event_time timestamptz; manifest jsonb;
 begin
  if not exists(select 1 from public.app_users u join public.app_user_roles ur on ur.user_id=u.id
    join public.app_roles r on r.code=ur.role_code
@@ -165,13 +165,20 @@ begin
    or m.updated_at is distinct from p_source_version then
    raise exception using errcode='PT409',message='Contexto de ficha cambiado';
  end if;
- select source_fingerprint into fingerprint from public.matricula_ficha_fuente where id=m.id;
+ -- Recheck actor and source together after any lock wait.
+ select f.source_fingerprint into fingerprint from public.matricula_ficha_fuente f where f.id=m.id
+ and exists(select 1 from public.app_users u join public.app_user_roles ur on ur.user_id=u.id
+ join public.app_roles r on r.code=ur.role_code where u.id=p_actor and u.active and r.active
+ and r.code in ('DIRECTOR_ACADEMICO','COORDINADOR_ACADEMICO'));
+ if fingerprint is null then raise exception using errcode='42501',message='Acceso denegado'; end if;
  if p_source_fingerprint is null or fingerprint is distinct from p_source_fingerprint then
   raise exception using errcode='PT409',message='Fuente de ficha modificada; regenere explicitamente';
  end if;
  if cycle_state='CERRADO' and m.alumno_snapshot_cierre is null then
   raise exception using errcode='PT409',message='Fotografia de cierre no disponible';
  end if;
+ -- Retention is checked at validation time, never at the beginning of a lock wait.
+ event_time:=clock_timestamp();
  if p_artefacto_id is null or p_generated_at is null or p_generated_at>event_time
    or p_generated_at<event_time-interval '24 hours' then
    raise exception using errcode='22023',message='Artefacto no válido o vencido';

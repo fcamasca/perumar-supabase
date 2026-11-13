@@ -156,6 +156,29 @@ try {
     const f=fixture();await race(f,register(payload(f,'70')),`select (public.anular_matricula('${f.enrollment}','${f.version}','SYNTHETIC')).id`)
     assert.ok(balance(f).pendiente>=0);console.log('H4 payment vs enrollment annulment: PASSED')
   }
+  // A lock wait must not extend the 24-hour artifact lifetime.
+  {
+    const f=fixture(),artifact=randomUUID()
+    const provenance=sql(`select source_fingerprint from public.matricula_ficha_fuente where id='${f.enrollment}'`)
+    const generated=JSON.parse(sql(`select public.registrar_evento_ficha_pdf('${f.actor}','${f.enrollment}','${artifact}','FICHA_PDF_GENERADA','${f.version}',clock_timestamp()-interval '24 hours'+interval '6 seconds','${provenance}')`))
+    const gate=spawn('docker',['exec','-i',container,'psql','-U','postgres','-d',database,'-At','-v','ON_ERROR_STOP=1'],{windowsHide:true})
+    let ready=false;gate.stdout.on('data',chunk=>{if(String(chunk).includes('H5_EXPIRY_LOCK'))ready=true});gate.stderr.on('data',()=>{})
+    const ended=new Promise((resolve,reject)=>{gate.on('error',reject);gate.on('close',code=>code===0?resolve():reject(new Error('Expiry barrier failed')))})
+    gate.stdin.write(`begin;select id from public.ciclo where id='${f.cycle}' for update;select 'H5_EXPIRY_LOCK';\n`)
+    const deadline=Date.now()+15000
+    try{
+      while(!ready&&Date.now()<deadline)await new Promise(r=>setTimeout(r,25));assert.ok(ready)
+      const delivery=run(`set application_name='H5_EXPIRY';${asActor(f,`select public.registrar_evento_ficha_pdf('${f.actor}','${f.enrollment}','${artifact}','FICHA_PDF_DESCARGA_INICIADA','${f.version}','${generated.generated_at}','${provenance}')`)}`)
+      let waiting=false
+      while(Date.now()<deadline){waiting=sql("select exists(select 1 from pg_stat_activity where datname=current_database() and application_name='H5_EXPIRY' and wait_event_type='Lock')")==='t';if(waiting)break;await new Promise(r=>setTimeout(r,25))}
+      assert.ok(waiting);assert.ok(Date.now()<Date.parse(generated.expires_at),'Download must begin before logical expiry')
+      await new Promise(r=>setTimeout(r,Math.max(0,Date.parse(generated.expires_at)-Date.now()+150)))
+      gate.stdin.end('commit;\n');await ended
+      assert.equal((await delivery).ok,false,'Expiry reached while waiting must reject delivery without retry')
+      assert.equal(sql(`select count(*) from public.auditoria where entidad='ficha_pdf' and registro_id='${f.enrollment}' and accion='FICHA_PDF_DESCARGA_INICIADA'`),'0')
+      console.log('CHG-H5-002 expiry during real lock wait: PASSED (no extension, no successful download event)')
+    }finally{if(!gate.stdin.writableEnded)gate.stdin.end('rollback;\n')}
+  }
   // Current personal/contact edits serialize on the Student, including a close already holding the Cycle.
   for(const contact of [false,true]){
     const f=fixture()
