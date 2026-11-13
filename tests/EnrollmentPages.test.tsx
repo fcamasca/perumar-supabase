@@ -23,7 +23,7 @@ describe('H3 student flow and safe feedback', () => {
 import { Routes, Route, MemoryRouter } from 'react-router-dom';
 import { StudentDetail, NewEnrollment, EnrollmentDetail } from '../src/enrollment/EnrollmentPages';
 function resultQuery(data: unknown) {
-    const q = { select: () => q, or: () => q, eq: () => q, in: () => q, order: () => q, range: () => q, limit: () => q, single: () => q,
+    const q = { select: () => q, or: () => q, eq: () => q, in: () => q, order: () => q, range: () => q, limit: () => q, single: () => q, maybeSingle: () => q,
         then: (resolve: (r: {
             data: unknown;
             error: null;
@@ -713,7 +713,7 @@ it('late responses never replace more recent pupil search results',async()=>{
 function showIndividualEnrollment(editing=false, charges:Record<string,unknown>[]=[], tariffs:Record<string,unknown>[]=[]){
  const row={id:'m1',alumno_id:'s1',ciclo_id:'c1',codigo_matricula:'2026-NAV-001',estado_codigo:'ACTIVO',updated_at:'mv1'};
  client.from.mockImplementation((table:string)=>{
-  let single=false;const q={select:()=>q,eq:()=>q,in:()=>q,order:()=>q,range:()=>q,limit:()=>q,single:()=>{single=true;return q},then:(resolve:(r:unknown)=>unknown)=>{
+  let single=false;const q={select:()=>q,eq:()=>q,in:()=>q,order:()=>q,range:()=>q,limit:()=>q,single:()=>{single=true;return q},maybeSingle:()=>{single=true;return q},then:(resolve:(r:unknown)=>unknown)=>{
    const data=table==='matricula'?[row]:table==='alumno'?[{id:'s1',nombres:'ANA',apellido_paterno:'PRUEBA',numero_di:'00123456'}]:table==='ciclo'?[{id:'c1',codigo_ciclo:'2026-001-NAV',estado_codigo:'PROGRAMADO',updated_at:'cv1'}]:table==='matricula_cargo'?charges:table==='ciclo_tarifa'?tariffs:[];
    return Promise.resolve({data:structuredClone(single?data[0]:data),error:null}).then(resolve)
   }};return q;
