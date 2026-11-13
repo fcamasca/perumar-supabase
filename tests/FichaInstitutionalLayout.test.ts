@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { PDFArray, PDFDocument, PDFName, PDFRawStream, decodePDFRawStream } from 'pdf-lib'
+import { PDFArray, PDFDocument, PDFName, PDFRawStream, StandardFonts, decodePDFRawStream } from 'pdf-lib'
 import { renderFicha } from '../supabase/functions/_shared/ficha/render'
 import { fichaFixture } from './ficha-fixture'
 
@@ -42,7 +42,7 @@ it('keeps Libro Folio Registro visible with no text in their value cells', async
     expect(header).toBeDefined()
     expect(words.filter(w => w.y < header.y && w.y >= date.y - 1 && w.x >= header.x - 3 && w.x <= header.x + 25)).toEqual([])
   }
-  expect(words.find(w => w.value === 'FECHA DE')).toBeDefined()
+  expect(words.find(w => w.value === 'FECHA')).toBeDefined()
 })
 it('prints the institutional title, horizontal groups and signature/fingerprints without a photo space (CHG-H5-001)', async () => {
   const result = await inspect(await renderFicha(fichaFixture(), now))
@@ -73,9 +73,26 @@ it('keeps Note above the two physical fingerprint spaces/signature and out of th
     expect(end.y - mark.y).toBeGreaterThanOrEqual(91)
     expect(mark.y).toBeGreaterThan(49)
   }
-  const title = words.find(w => w.value === 'FICHA DE MATRÍCULA')!, code = words.find(w => w.value.startsWith('Matrícula:'))!
-  expect(code.y).toBeGreaterThan(title.y)
-  expect(code.x).toBeGreaterThan(130) // Metadata is inside the existing Course header cell, not a separate full-width row.
+  expect(words.some(w => w.value.startsWith('Matrícula:') || w.value.startsWith('Alumno:'))).toBe(false)
+})
+it('centers only the course name in the header and simplifies labels without converting measurements', async () => {
+  const source = fichaFixture(); source.alumno_snapshot.alumno.estatura_cm = 164; source.alumno_snapshot.alumno.peso_kg = 80
+  const { pdf, pages, text } = await inspect(await renderFicha(source, now))
+  const font = await pdf.embedFont(StandardFonts.Helvetica), course = pages[0].words.find(w => w.value === source.ciclo!.carrera!.nombre)!
+  expect(course.x + font.widthOfTextAtSize(course.value, course.size) / 2).toBeCloseTo(135 + (595.28 - 72 - 99 - 193) / 2)
+  for (const label of ['FECHA', 'Estatura', 'Peso', '164', '80']) expect(text).toContain(label)
+  for (const label of ['FECHA DE', 'Estatura (cm)', 'Peso (kg)', 'A-0000001', 'Ciclo:']) expect(text).not.toContain(label)
+})
+it('prints current Cycle district and historical enrollment day in Lima above the physical signature', async () => {
+  const source = fichaFixture(); source.alumno_snapshot.geografia = { elsewhere: 'OTRO DISTRITO' }
+  source.created_at = '2026-01-18T02:00:00Z'
+  const { pages, text } = await inspect(await renderFicha(source, now))
+  const words = pages.at(-1)!.words, date = words.find(w => w.value === 'Pisco, 17 de enero de 2026')!, signature = words.find(w => w.value === 'FIRMA')!
+  expect(date).toBeDefined(); expect(date.y).toBeGreaterThan(signature.y + 20)
+  expect(text).toContain('2026-01-17')
+  expect(text).toContain('Emisión Lima: 12/11/2026')
+  delete source.ciclo!.distrito
+  expect((await inspect(await renderFicha(source, now))).text).toContain('Sin dato, 17 de enero de 2026')
 })
 it('embeds the institutional logo locally and preserves Spanish historical values and emergency contact', async () => {
   const result = await inspect(await renderFicha(fichaFixture(), now))

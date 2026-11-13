@@ -63,13 +63,14 @@ export async function renderFicha(source: Source, now: Date): Promise<Uint8Array
     }
   }
   const rowHeight = (lines: string[][]) => Math.max(17, Math.max(...lines.map(c => c.length)) * leading + padding * 2)
-  const drawRow = (lines: string[][], widths: number[], rowSize: number, header: boolean, x = margin, labelColumn = false) => {
+  const drawRow = (lines: string[][], widths: number[], rowSize: number, header: boolean, x = margin, labelColumn = false, centerFirstValue = false) => {
     for (let column = 0; column < widths.length; column++) {
       const cellHeader = header || (labelColumn && column === 0)
       page.drawRectangle({ x, y: y - rowSize, width: widths[column], height: rowSize, borderColor: border, borderWidth: .5, ...(cellHeader ? { color: paper } : {}) })
       lines[column].forEach((part, i) => {
         const baseline = y - padding - size - i * leading
         if (cellHeader) center(part, x, widths[column], baseline, true)
+        else if (centerFirstValue && column === 0) center(part, x, widths[column], baseline)
         else text(part, x + padding, baseline)
       })
       x += widths[column]
@@ -78,7 +79,7 @@ export async function renderFicha(source: Source, now: Date): Promise<Uint8Array
   }
   // Concrete form tables; repeat headers, move ordinary rows and split truly oversized rows.
   // No font shrinking, omitted values or user-controlled templates/resources.
-  const table = (labels: string[], values: string[][], widths: number[], x = margin) => {
+  const table = (labels: string[], values: string[][], widths: number[], x = margin, centerFirstValue = false) => {
     const headers = labels.map((label, i) => wrap(label, widths[i] - padding * 2, bold))
     const headerSize = rowHeight(headers)
     const measured = values.map(cells => cells.map((cell, i) => wrap(cell, widths[i] - padding * 2)))
@@ -96,7 +97,7 @@ export async function renderFicha(source: Source, now: Date): Promise<Uint8Array
         let room = Math.floor((y - bottom - padding * 2) / leading)
         if (room < 1 || y - 17 < bottom) { newPage(); drawRow(headers, widths, headerSize, true, x); room = Math.floor((y - bottom - padding * 2) / leading) }
         const take = Math.min(count - offset, room)
-        drawRow(lines.map(cell => cell.slice(offset, offset + take)), widths, Math.max(17, take * leading + padding * 2), false, x)
+        drawRow(lines.map(cell => cell.slice(offset, offset + take)), widths, Math.max(17, take * leading + padding * 2), false, x, false, centerFirstValue)
         offset += take
         if (offset < count) { newPage(); drawRow(headers, widths, headerSize, true, x) }
       }
@@ -127,8 +128,7 @@ export async function renderFicha(source: Source, now: Date): Promise<Uint8Array
   newPage(true)
   const top = y, headerX = margin + 99, headerWidth = available - 99
   page.drawImage(logo, { x: margin + 5, y: top - 80, width: 80, height: 80 })
-  const courseHeader = `${context.Curso}\nMatrícula: ${model.code}\nAlumno: ${identity['Código de alumno']} | Ciclo: ${context.Ciclo}`
-  table(['CURSO', 'LIBRO', 'FOLIO', 'REGISTRO', 'FECHA DE MATRÍCULA'], [[courseHeader, '', '', '', context['Fecha de matrícula']]], [headerWidth - 193, 36, 36, 60, 61], headerX)
+  table(['CURSO', 'LIBRO', 'FOLIO', 'REGISTRO', 'FECHA'], [[context.Curso, '', '', '', context['Fecha de matrícula']]], [headerWidth - 193, 36, 36, 60, 61], headerX, true)
   y += 4
   table(['PROMOCIÓN', 'PATROCINADOR'], [[context.Promoción, source.empresa_patrocinadora ? sponsor['Razón social'] : '']], [headerWidth * .5, headerWidth * .5], headerX)
   y = Math.min(y, top - 80)
@@ -138,7 +138,7 @@ export async function renderFicha(source: Source, now: Date): Promise<Uint8Array
 
   table(['Apellido Paterno', 'Apellido Materno', 'Nombres Completos'], [[historical('apellido_paterno'), historical('apellido_materno'), identity.Nombres]], [available * .30, available * .27, available * .43])
   table(['Estado Civil', 'Tipo Doc. Id.', 'N.º Doc. Id.', 'Edad', 'Sexo', 'Teléfono Fijo', 'Celular'], [[identity['Estado civil'], identity['Tipo de documento'], identity['Número de documento'], identity['Edad a la matrícula'], identity.Sexo, address['Teléfono fijo'], address.Celular]], [66, 71, 87, 44, 68, 94, available - 430])
-  table(['Estatura (cm)', 'Peso (kg)', 'Grupo Sanguíneo/RH', 'Ojos', 'Cabello', 'Ocupación', 'Grado de Instrucción'], [[extra['Estatura (cm)'], extra['Peso (kg)'], extra['Grupo sanguíneo'], extra['Color de ojos'], extra['Color de cabello'], extra.Ocupación, extra['Grado de instrucción']]], [54, 47, 84, 56, 56, 110, available - 407])
+  table(['Estatura', 'Peso', 'Grupo Sanguíneo/RH', 'Ojos', 'Cabello', 'Ocupación', 'Grado de Instrucción'], [[extra['Estatura (cm)'], extra['Peso (kg)'], extra['Grupo sanguíneo'], extra['Color de ojos'], extra['Color de cabello'], extra.Ocupación, extra['Grado de instrucción']]], [54, 47, 84, 56, 56, 110, available - 407])
   table(['Fecha de Nacimiento', 'Lugar de Nacimiento', 'Provincia', 'Departamento'], [[identity['Fecha de nacimiento'], geo('nacimiento', 'distrito'), geo('nacimiento', 'provincia'), geo('nacimiento', 'departamento')]], [103, 164, 125, available - 392])
   inlineField('Señas Particulares', extra['Señas particulares'])
   table(['Domicilio Actual', 'N.º / Mz / Lt', 'Distrito', 'Provincia', 'Departamento'], [[address.Domicilio, address['N° / Mz / Lt'], geo('domicilio', 'distrito'), geo('domicilio', 'provincia'), geo('domicilio', 'departamento')]], [236, 66, 73, 73, available - 448])
@@ -166,6 +166,11 @@ export async function renderFicha(source: Source, now: Date): Promise<Uint8Array
   emptyBox(margin + 24, 60, 'Índice Izquierdo')
   emptyBox(margin + 150, 60, 'Índice Derecho')
   const signatureX = margin + 280, signatureWidth = available - 280
+  const district = source.ciclo?.distrito?.nombre?.trim()
+  const place = district ? district.toLocaleLowerCase('es-PE').replace(/(^|\s)\p{L}/gu, part => part.toLocaleUpperCase('es-PE')) : 'Sin dato'
+  const signatureDate = new Intl.DateTimeFormat('es-PE', { timeZone: 'America/Lima', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(source.created_at))
+  const signatureLines = wrap(`${place}, ${signatureDate}`, signatureWidth, bold)
+  signatureLines.forEach((line, index) => center(line, signatureX, signatureWidth, spacesTop - 12 - index * leading, true))
   page.drawLine({ start: { x: signatureX, y: spacesTop - 77 }, end: { x: signatureX + signatureWidth, y: spacesTop - 77 }, thickness: .7, color: border })
   center('FIRMA', signatureX, signatureWidth, spacesTop - 91)
   const total = document.getPageCount()

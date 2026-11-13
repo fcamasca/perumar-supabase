@@ -36,6 +36,8 @@ for(const [name,source] of [['layout-normal',normal],['layout-extensive',extensi
   const readable=text.replace(/\s+/g,' ')
   for(const label of ['CURSO','LIBRO','FOLIO','REGISTRO','FICHA DE MATRÍCULA','CURSO MODELO DE LA AUTORIDAD MARÍTIMA','Apellido Paterno','Apellido Materno','Nombres Completos','Nota:','FIRMA','Índice Izquierdo','Índice Derecho'])assert.ok(readable.includes(label),`Missing printed institutional label ${label}`)
   assert.ok(!/\bFOTO\b/.test(text),'CHG-H5-001 removes photography from H5')
+  assert.ok(readable.includes('Pisco, 1 de enero de 2026'),'Signature place is current Cycle district; date is enrollment day in Lima')
+  assert.ok(!readable.includes('Matrícula:')&&!readable.includes('Alumno:')&&!readable.includes('Estatura (cm)')&&!readable.includes('Peso (kg)'))
   const suppliedNote=readFileSync('tests/fixtures/h5-note-chg001.txt','utf8').trim().replace(/\s+/g,' ')
   if(name==='layout-normal')assert.ok(readable.includes(suppliedNote),'Complete Note must match the human wording verbatim')
   else for(const paragraph of suppliedNote.replace(/^Nota: /,'').split(/ (?=(?:1\.-|2\.-|[a-e]\.))/))assert.ok(readable.includes(paragraph),'Every institutional paragraph must be complete on continuation pages')

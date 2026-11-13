@@ -19,7 +19,7 @@ export type RecordData = Record<string, unknown>
 export type Source = {
   id: string; updated_at: string; created_at: string; estado_codigo: string; codigo_matricula: string;
   alumno_snapshot: { alumno: RecordData; catalogos: Record<string, { etiqueta?: string }>; geografia: Record<string, string>; contactos: RecordData[] };
-  ciclo: { codigo_ciclo: string; nombre_promocion: string | null; estado_codigo: string; carrera: { nombre: string } | null } | null;
+  ciclo: { codigo_ciclo: string; nombre_promocion: string | null; estado_codigo: string; carrera: { nombre: string } | null; distrito?: { nombre: string } | null } | null;
   empresa_patrocinadora_id: string | null;
   empresa_patrocinadora: RecordData | null;
 }

@@ -1,5 +1,19 @@
 # CHG-H5-001 — Nota institucional y retiro de FOTO
 
+## Ajustes visuales humanos posteriores — 12/11/2026
+
+Base previa: `908c3586d2dd126368859aeb9630def153b0c480`, CI `43347960753` SUCCESS (415/415). El usuario pide dejar solo el nombre del Curso centrado y retirar las dos líneas de identificadores; renombrar FECHA DE MATRÍCULA a FECHA, Estatura (cm) a Estatura y Peso (kg) a Peso. No cambia ningún valor, unidad almacenada o regla de negocio.
+
+Sobre la Firma se incorpora distrito actual del Ciclo y fecha histórica de registro de matrícula, en español y calendario America/Lima. Confirmación humana literal: «el distrito del ciclo y la fecha de registro de la matricula». Ejemplo: «Pisco, 17 de enero de 2026». No representa una firma realizada ni añade fecha de firma de negocio. La emisión real sigue únicamente en el pie técnico. Se añade solo `distrito(nombre)` a la relación Ciclo de la consulta JWT existente, más el campo interno de Source; sin fallback al domicilio/nacimiento del alumno, nueva RPC o privilegios. Si no está disponible el distrito se imprime Sin dato, nunca un lugar inventado. La petición pública Edge y sus controles permanecen iguales.
+
+Esto sustituye las referencias anteriores de esta evidencia a identificadores dentro de Curso y a ausencia de fecha sobre Firma; el registro histórico anterior se conserva. Nota literal, ausencia FOTO, blancos, índices, procedencia restante, límites, retención, auditoría, arquitectura y Spec/Gate 1 siguen intactos.
+
+Validación local: **417/417 PASSED**, lint/typecheck/Deno check/build/build-safety y diff-check PASSED. Dos regresiones nuevas verifican centrado real, rótulos, valores de estatura/peso intactos, distrito del Ciclo, día de matrícula en Lima (cruce de medianoche UTC), independencia de emisión y ausencia de distrito inventado. Integración real agrega aserción del lugar/fecha extraídos del PDF para comprobar la lectura JWT/RLS; se valida en la CI del nuevo SHA y su resultado exacto se informa en la entrega.
+
+Evidencia sintética nueva: `output/pdf/h5-adjustments-normal.pdf` (1 página A4) y `output/pdf/h5-adjustments-extensa.pdf` (5 páginas / 100 contactos). Revisión visual técnica de todas las páginas y extracción independiente pypdf: fuentes >=9 pt, sin cortes ni superposición, Nota/contactos completos, dos índices y Firma. No equivale a OK humano del Bloque 1.
+
+Residuales preservados: CPU/Memory NOT MEASURED; Hosted NOT EXECUTED; Data API hospedada/PostgREST 14 no probados directamente; forced-colors real H5 NO VERIFICADO; bundle 678,31 kB (>500); limpieza física manual. Gate 2 y GATE-A01 pendientes; sin acceptance/PR/merge/main/H6.
+
 12/11/2026, America/Lima. **APROBADO HUMANAMENTE**, posterior a Gate 1, en `feature/h5-enrollment-pdf`. Base anterior exacta: `a303b679877aa4a9bcebcfb0c3564382edddeb15`, CI `43337996757` SUCCESS, 413/413 pruebas. Candidato técnico posterior exacto **`2196348fec188880c8853d1cb80fac3b229eeea4`**; CI [43346943904](https://github.com/fcamasca/perumar-supabase/actions/runs/43346943904) **COMPLETED / SUCCESS**, **415/415 PASSED**. Lint/typecheck/Deno check/build/build-safety, H1–H4, rollback/concurrencia (70 + 60 sobre saldo 100, sin retry), Edge/Storage reales, expiración y reconstrucción con repetición de suites PASSED. `git diff --check` PASSED. No cambió el inventario ni hubo migraciones/datos humanos modificados. Esta consolidación solo modifica documentación; el candidato técnico permanece intacto.
 
 ## Hallazgo y autorización
