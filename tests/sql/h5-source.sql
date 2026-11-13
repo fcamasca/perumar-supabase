@@ -40,7 +40,7 @@
  begin perform public.editar_matricula(jsonb_build_object('id',e.id,'expected_updated_at',e.updated_at,'alumno_snapshot_cierre','{}'::jsonb));raise exception 'Client final snapshot payload accepted';exception when invalid_parameter_value then null;end;
  begin update public.matricula set alumno_snapshot_cierre='{}' where id=e.id;raise exception 'Manual snapshot write accepted';exception when check_violation then null;end;
  c:=public.cambiar_estado_ciclo(c.id,c.updated_at,'EN_CURSO');
- -- Add a second enrollment to prove whole-Cycle rollback after an earlier row was captured.
+ -- Multiple enrollments prove that a row capture fault leaves no partial Cycle closure.
  a:=public.guardar_alumno(p||jsonb_build_object('numero_di',left(replace(gen_random_uuid()::text,'-',''),30)));
  payload:=to_jsonb(public.registrar_matricula(jsonb_build_object('alumno_id',a.id,'expected_alumno_updated_at',a.updated_at,'ciclo_id',c.id,'expected_ciclo_updated_at',c.updated_at)));
  update public.alumno_contacto_emergencia set activo=false where alumno_id=a.id;

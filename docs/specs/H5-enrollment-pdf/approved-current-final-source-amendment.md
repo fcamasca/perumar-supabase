@@ -27,7 +27,7 @@ Inventario comprobado local: **24 tablas, 4 vistas, 20 funciones públicas, 19 h
 
 ## Transacción, locks y privacidad
 
-Orden estricto: **Ciclo -> Alumno(s) por UUID -> Matrícula(s) por UUID**. La transición ya posee el lock del Ciclo; el trigger bloquea todos los alumnos y luego todas las matrículas ACTIVAS en orden estable. Captura y estado/versiones/auditoría confirman juntos. Una captura fallida revierte todo, incluso capturas anteriores del lote. Matrículas ANULADAS quedan excluidas. Contactos vigentes son los activos; cero contactos no introduce un nuevo bloqueo al cierre.
+Orden estricto: **Ciclo -> Alumno(s) por UUID -> Matrícula(s) por UUID**. La transición ya posee el lock del Ciclo; el trigger bloquea todos los alumnos y luego todas las matrículas ACTIVAS en orden estable. La captura del lote usa una sola sentencia UPDATE desde la vista: todos sus alumnos observan la misma lectura MVCC de etiquetas/geografía/contexto. Captura y estado/versiones/auditoría confirman juntos. Una captura fallida revierte todo, incluso capturas anteriores del lote. Matrículas ANULADAS quedan excluidas. Contactos vigentes son los activos; cero contactos no introduce un nuevo bloqueo al cierre.
 
 La extracción no invoca validaciones exclusivas de alta ni exige referencias activas. Incluye etiquetas/geografía existentes aunque se hayan desactivado. Los permisos existentes de edición del Alumno y finanzas se conservan. Capturar avanza updated_at de las matrículas: un borrador con versión anterior obtiene conflicto y requiere recarga/decisión explícita. H4 mantiene reglas, montos, aplicaciones y pago permitido en Ciclo CERRADO con versión vigente.
 

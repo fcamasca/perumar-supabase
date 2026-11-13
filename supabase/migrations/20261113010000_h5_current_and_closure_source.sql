@@ -46,7 +46,7 @@ grant select on public.matricula_ficha_fuente to authenticated;
 -- The Cycle row is already locked by its transition. Stable lock protocol: Cycle -> Students -> Enrollments.
 create function private.freeze_cycle_students() returns trigger
 language plpgsql security definer set search_path='' as $$
-declare entry record; prior text;
+declare prior text; captured_at timestamptz;
 begin
  if old.estado_codigo<>'EN_CURSO' or new.estado_codigo<>'CERRADO' then return new; end if;
  perform private.authorize(true);
@@ -55,10 +55,15 @@ begin
  perform 1 from public.matricula m where m.ciclo_id=new.id and m.estado_codigo='ACTIVO' order by m.id for update;
  prior:=current_setting('perumar.closing_cycle',true);
  perform set_config('perumar.closing_cycle',new.id::text,true);
- for entry in select m.id from public.matricula m where m.ciclo_id=new.id and m.estado_codigo='ACTIVO' order by m.id loop
-  update public.matricula m set alumno_snapshot_cierre=(select f.datos_vigentes || jsonb_build_object('fecha',new.updated_at)
-  from public.matricula_ficha_fuente f where f.id=m.id) where m.id=entry.id;
- end loop;
+ captured_at:=clock_timestamp();
+ -- One statement gives every capture the same MVCC view of labels/geography/context.
+ -- All row locks have already been acquired in UUID order above.
+ update public.matricula m set alumno_snapshot_cierre=f.datos_vigentes || jsonb_build_object('fecha',captured_at)
+ from public.matricula_ficha_fuente f
+ where f.id=m.id and m.ciclo_id=new.id and m.estado_codigo='ACTIVO';
+ if exists(select 1 from public.matricula m where m.ciclo_id=new.id and m.estado_codigo='ACTIVO' and m.alumno_snapshot_cierre is null) then
+  raise exception using errcode='23514',message='Captura final de Ciclo incompleta';
+ end if;
  perform set_config('perumar.closing_cycle',coalesce(prior,''),true);
  return new;
 end; $$;
