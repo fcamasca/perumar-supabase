@@ -1,5 +1,11 @@
 # H5 — Registro de construcción
 
+## CHG-H5-001 — corrección humana aprobada posterior a Gate 1
+
+Base `a303b679877aa4a9bcebcfb0c3564382edddeb15` (CI `43337996757` SUCCESS). [Enmienda aprobada](approved-institutional-note-amendment.md): FOTO eliminada, Nota literal incorporada, Libro/Folio/Registro vacíos, dos índices y Firma; normal 1 página A4 a 9 pt mínimo, extenso 5 páginas/100 contactos. Solo renderer, tests afectados y evidencia documental. **415/415 pruebas locales PASSED**, lint/typecheck/Deno check/build/build-safety PASSED; CI del nuevo candidato pendiente de publicación/verificación. SHA posterior y CI exacta se consolidan tras verificar el run.
+
+Bloque 1 humano continúa NO OK / pendiente de nueva revisión; no se declara aceptación visual. Gate 1 y los cuatro documentos aprobados no cambian. Los apartados siguientes conservan historia anterior (incluidas referencias entonces válidas a FOTO/ausencia de Nota), sustituida únicamente en presentación por CHG-H5-001. Gate 2/GATE-A01 pendientes, hosted inconcluso; sin acceptance/PR/merge/H6. Residuales preservados en la enmienda.
+
 ## Revisión humana posterior al candidato documental
 
 Bloque 1 reportado **NO OK** sobre `8c0bfb355c9162aebcee3fab2d368a40aaf5cc0f` por desviación visual respecto a la ficha institucional. Se aplica corrección limitada al renderer y al recurso de marca proporcionado por el usuario; [hallazgo, adaptación y evidencia](human-review-layout.md). Las 406 pruebas anteriores se conservan y se agregan siete (413/413 locales). Ningún cambio a decisiones aprobadas, seguridad, procedencia, contratos Edge/RPC, migraciones, límites, auditoría o retención. Nueva aceptación visual humana pendiente; no Gate 2/GATE-A01/acceptance/merge/H6.

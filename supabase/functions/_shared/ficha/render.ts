@@ -1,21 +1,22 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf-lib'
 import { FichaError, projectFicha, type Source } from './contract.ts'
 import { perumarLogoPng } from './brand.ts'
+import { institutionalNote } from './note.ts'
 
 export const TEMPLATE_VERSION = 'h5-1'
-// Visual correction only: provenance, audit template ID, contracts and budgets remain unchanged.
+// CHG-H5-001 changes only photo/Note presentation; provenance, audit ID and budgets are unchanged.
 export async function renderFicha(source: Source, now: Date): Promise<Uint8Array> {
   const model = projectFicha(source, now)
   const document = await PDFDocument.create()
   document.setTitle('Ficha de matrícula - PERÚ MAR')
-  document.setProducer(`PERÚ MAR / ${TEMPLATE_VERSION} / institucional-2`)
+  document.setProducer(`PERÚ MAR / ${TEMPLATE_VERSION} / CHG-H5-001`)
   document.setCreationDate(now)
   const normal = await document.embedFont(StandardFonts.Helvetica)
   const bold = await document.embedFont(StandardFonts.HelveticaBold)
   const logo = await document.embedPng(Uint8Array.from(atob(perumarLogoPng), c => c.charCodeAt(0)))
   const ink = rgb(.09, .17, .21), border = rgb(.35, .39, .41), paper = rgb(.96, .97, .97)
   const width = 595.28, height = 841.89, margin = 36, available = width - margin * 2
-  const bottom = 49, size = 9, leading = 11.5, padding = 4
+  const bottom = 49, size = 9, leading = 11, padding = 3
   let page!: PDFPage, y = 0
   const text = (value: string, x: number, baseline: number, strong = false, fontSize = size) => {
     try { page.drawText(value.normalize('NFC'), { x, y: baseline, font: strong ? bold : normal, size: fontSize, color: ink }) }
@@ -61,13 +62,14 @@ export async function renderFicha(source: Source, now: Date): Promise<Uint8Array
       y -= 8
     }
   }
-  const rowHeight = (lines: string[][], header = false) => Math.max(header ? 17 : 21, Math.max(...lines.map(c => c.length)) * leading + padding * 2)
-  const drawRow = (lines: string[][], widths: number[], rowSize: number, header: boolean, x = margin) => {
+  const rowHeight = (lines: string[][]) => Math.max(17, Math.max(...lines.map(c => c.length)) * leading + padding * 2)
+  const drawRow = (lines: string[][], widths: number[], rowSize: number, header: boolean, x = margin, labelColumn = false) => {
     for (let column = 0; column < widths.length; column++) {
-      page.drawRectangle({ x, y: y - rowSize, width: widths[column], height: rowSize, borderColor: border, borderWidth: .5, ...(header ? { color: paper } : {}) })
+      const cellHeader = header || (labelColumn && column === 0)
+      page.drawRectangle({ x, y: y - rowSize, width: widths[column], height: rowSize, borderColor: border, borderWidth: .5, ...(cellHeader ? { color: paper } : {}) })
       lines[column].forEach((part, i) => {
         const baseline = y - padding - size - i * leading
-        if (header) center(part, x, widths[column], baseline, true)
+        if (cellHeader) center(part, x, widths[column], baseline, true)
         else text(part, x + padding, baseline)
       })
       x += widths[column]
@@ -78,10 +80,10 @@ export async function renderFicha(source: Source, now: Date): Promise<Uint8Array
   // No font shrinking, omitted values or user-controlled templates/resources.
   const table = (labels: string[], values: string[][], widths: number[], x = margin) => {
     const headers = labels.map((label, i) => wrap(label, widths[i] - padding * 2, bold))
-    const headerSize = rowHeight(headers, true)
+    const headerSize = rowHeight(headers)
     const measured = values.map(cells => cells.map((cell, i) => wrap(cell, widths[i] - padding * 2)))
     const maxRow = height - margin - 47 - bottom - headerSize
-    const firstRow = measured[0] ? Math.min(rowHeight(measured[0]), maxRow) : 21
+    const firstRow = measured[0] ? Math.min(rowHeight(measured[0]), maxRow) : 17
     if (y - headerSize - firstRow < bottom) newPage()
     drawRow(headers, widths, headerSize, true, x)
     for (const lines of measured) {
@@ -92,14 +94,29 @@ export async function renderFicha(source: Source, now: Date): Promise<Uint8Array
       }
       while (offset < count) {
         let room = Math.floor((y - bottom - padding * 2) / leading)
-        if (room < 1 || y - 21 < bottom) { newPage(); drawRow(headers, widths, headerSize, true, x); room = Math.floor((y - bottom - padding * 2) / leading) }
+        if (room < 1 || y - 17 < bottom) { newPage(); drawRow(headers, widths, headerSize, true, x); room = Math.floor((y - bottom - padding * 2) / leading) }
         const take = Math.min(count - offset, room)
-        drawRow(lines.map(cell => cell.slice(offset, offset + take)), widths, Math.max(21, take * leading + padding * 2), false, x)
+        drawRow(lines.map(cell => cell.slice(offset, offset + take)), widths, Math.max(17, take * leading + padding * 2), false, x)
         offset += take
         if (offset < count) { newPage(); drawRow(headers, widths, headerSize, true, x) }
       }
     }
-    y -= 7
+    y -= 4
+  }
+  const inlineField = (label: string, value: string, labelWidth = 103) => {
+    const labelLines = wrap(label, labelWidth - padding * 2, bold), valueLines = wrap(value, available - labelWidth - padding * 2)
+    const count = Math.max(labelLines.length, valueLines.length)
+    if (y - (count * leading + padding * 2) < bottom) newPage()
+    let offset = 0
+    while (offset < count) {
+      const room = Math.floor((y - bottom - padding * 2) / leading)
+      if (room < 1 || y - 17 < bottom) { newPage(); continue }
+      const take = Math.min(count - offset, room)
+      drawRow([labelLines, valueLines.slice(offset, offset + take)], [labelWidth, available - labelWidth], Math.max(17, take * leading + padding * 2), false, margin, true)
+      offset += take
+      if (offset < count) newPage()
+    }
+    y -= 4
   }
   const section = (index: number) => Object.fromEntries(model.sections[index].fields)
   const context = section(0), identity = section(1), address = section(2), extra = section(3), sponsor = section(4)
@@ -108,41 +125,49 @@ export async function renderFicha(source: Source, now: Date): Promise<Uint8Array
   const geo = (prefix: string, part: string) => source.alumno_snapshot.geografia[String(a[`${prefix}_${part}_id`])] || 'Sin dato'
 
   newPage(true)
-  const top = y, headerX = margin + 111, headerWidth = available - 111
-  page.drawImage(logo, { x: margin, y: top - 103, width: 103, height: 103 })
-  table(['CURSO', 'LIBRO', 'FOLIO', 'REGISTRO', 'FECHA DE MATRÍCULA'], [[context.Curso, '', '', '', context['Fecha de matrícula']]], [headerWidth - 193, 36, 36, 60, 61], headerX)
-  y += 7
+  const top = y, headerX = margin + 99, headerWidth = available - 99
+  page.drawImage(logo, { x: margin + 5, y: top - 80, width: 80, height: 80 })
+  const courseHeader = `${context.Curso}\nMatrícula: ${model.code}\nAlumno: ${identity['Código de alumno']} | Ciclo: ${context.Ciclo}`
+  table(['CURSO', 'LIBRO', 'FOLIO', 'REGISTRO', 'FECHA DE MATRÍCULA'], [[courseHeader, '', '', '', context['Fecha de matrícula']]], [headerWidth - 193, 36, 36, 60, 61], headerX)
+  y += 4
   table(['PROMOCIÓN', 'PATROCINADOR'], [[context.Promoción, source.empresa_patrocinadora ? sponsor['Razón social'] : '']], [headerWidth * .5, headerWidth * .5], headerX)
-  y = Math.min(y, top - 103)
-  center('FICHA DE MATRÍCULA', margin, available, y - 14, true, 16)
-  center('CURSO MODELO DE LA AUTORIDAD MARÍTIMA', margin, available, y - 31, true, 12)
-  y -= 47
-  for (const part of wrap(`Matrícula: ${model.code}   |   Alumno: ${identity['Código de alumno']}   |   Ciclo: ${context.Ciclo}`, available)) { text(part, margin, y); y -= leading }
-  y -= 4
+  y = Math.min(y, top - 80)
+  center('FICHA DE MATRÍCULA', margin, available, y - 13, true, 15)
+  center('CURSO MODELO DE LA AUTORIDAD MARÍTIMA', margin, available, y - 28, true, 11)
+  y -= 36
 
   table(['Apellido Paterno', 'Apellido Materno', 'Nombres Completos'], [[historical('apellido_paterno'), historical('apellido_materno'), identity.Nombres]], [available * .30, available * .27, available * .43])
   table(['Estado Civil', 'Tipo Doc. Id.', 'N.º Doc. Id.', 'Edad', 'Sexo', 'Teléfono Fijo', 'Celular'], [[identity['Estado civil'], identity['Tipo de documento'], identity['Número de documento'], identity['Edad a la matrícula'], identity.Sexo, address['Teléfono fijo'], address.Celular]], [66, 71, 87, 44, 68, 94, available - 430])
   table(['Estatura (cm)', 'Peso (kg)', 'Grupo Sanguíneo/RH', 'Ojos', 'Cabello', 'Ocupación', 'Grado de Instrucción'], [[extra['Estatura (cm)'], extra['Peso (kg)'], extra['Grupo sanguíneo'], extra['Color de ojos'], extra['Color de cabello'], extra.Ocupación, extra['Grado de instrucción']]], [54, 47, 84, 56, 56, 110, available - 407])
   table(['Fecha de Nacimiento', 'Lugar de Nacimiento', 'Provincia', 'Departamento'], [[identity['Fecha de nacimiento'], geo('nacimiento', 'distrito'), geo('nacimiento', 'provincia'), geo('nacimiento', 'departamento')]], [103, 164, 125, available - 392])
-  table(['Señas Particulares'], [[extra['Señas particulares']]], [available])
+  inlineField('Señas Particulares', extra['Señas particulares'])
   table(['Domicilio Actual', 'N.º / Mz / Lt', 'Distrito', 'Provincia', 'Departamento'], [[address.Domicilio, address['N° / Mz / Lt'], geo('domicilio', 'distrito'), geo('domicilio', 'provincia'), geo('domicilio', 'departamento')]], [236, 66, 73, 73, available - 448])
-  table(['Email'], [[address['Correo electrónico']]], [available])
+  inlineField('Email', address['Correo electrónico'])
   const contacts = model.contacts.map(c => [`${c[0]}, ${c[1]}`, c[2], c[3], c[4]])
   table(['Persona a Notificar en caso de Emergencia', 'Parentesco', 'Celular', 'Dirección'], contacts.length ? contacts : [['Sin contactos en la fotografía histórica.', '', '', '']], [236, 74, 80, available - 390])
   table(['Patrocinador', 'Contacto', 'Celular/Teléfono', 'Email'], [source.empresa_patrocinadora ? [sponsor['Razón social'] + (sponsor.RUC === 'Sin dato' ? '' : `\nRUC: ${sponsor.RUC}`), sponsor['Persona de contacto'], sponsor.Teléfono, sponsor['Correo electrónico']] : ['', '', '', '']], [165, 115, 106, available - 386])
 
-  if (y - 104 < bottom) newPage()
+  // Wording is human-supplied, fixed and literal. Keep each ordinary paragraph together.
+  const noteLines = institutionalNote.map(paragraph => wrap(paragraph, available - 12))
+  if (y - (14 + noteLines[0].length * leading) < bottom) newPage()
+  text('Nota:', margin, y - 9, true); y -= 14
+  for (const lines of noteLines) {
+    if (y - lines.length * leading < bottom) { newPage(); text('Nota: (continuación)', margin, y - 9, true); y -= 14 }
+    for (let index = 0; index < lines.length; index++) { text(lines[index], margin + (index ? 12 : 0), y - 9); y -= leading }
+    y -= 2
+  }
+  y -= 4
+  if (y - 96 < bottom) newPage()
   const spacesTop = y - 3
   const emptyBox = (x: number, boxWidth: number, label: string) => {
     page.drawRectangle({ x, y: spacesTop - 77, width: boxWidth, height: 77, borderColor: border, borderWidth: .6 })
     center(label, x - 8, boxWidth + 16, spacesTop - 91)
   }
-  emptyBox(margin + 4, 64, 'FOTO')
-  const signatureX = margin + 88, signatureWidth = 214
+  emptyBox(margin + 24, 60, 'Índice Izquierdo')
+  emptyBox(margin + 150, 60, 'Índice Derecho')
+  const signatureX = margin + 280, signatureWidth = available - 280
   page.drawLine({ start: { x: signatureX, y: spacesTop - 77 }, end: { x: signatureX + signatureWidth, y: spacesTop - 77 }, thickness: .7, color: border })
   center('FIRMA', signatureX, signatureWidth, spacesTop - 91)
-  emptyBox(margin + 329, 67, 'Índice Izquierdo')
-  emptyBox(margin + 438, 67, 'Índice Derecho')
   const total = document.getPageCount()
   document.getPages().forEach((p, i) => {
     page = p

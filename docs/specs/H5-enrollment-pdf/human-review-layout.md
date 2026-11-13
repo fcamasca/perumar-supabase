@@ -1,5 +1,7 @@
 # H5 — Corrección visual durante revisión humana de Gate 2
 
+**Registro histórico de la corrección anterior.** La decisión humana posterior [CHG-H5-001](approved-institutional-note-amendment.md) elimina FOTO e incorpora la Nota literal. Las referencias siguientes a FOTO y ausencia de Nota describen la revisión anterior, no la plantilla vigente. Bloque 1 sigue pendiente de nueva revisión humana.
+
 ## Hallazgo humano
 
 **Bloque 1 H5: NO OK — defecto de maquetación/identidad institucional.** Reportado sobre candidato `8c0bfb355c9162aebcee3fab2d368a40aaf5cc0f`, CI `43327651731` SUCCESS y 406 pruebas PASSED. El resultado técnico anterior no constituía aceptación visual: la ficha se había convertido en un reporte vertical de dos páginas, alejado del modelo.

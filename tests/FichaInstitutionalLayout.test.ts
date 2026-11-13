@@ -1,4 +1,5 @@
 import { expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
 import { PDFArray, PDFDocument, PDFName, PDFRawStream, decodePDFRawStream } from 'pdf-lib'
 import { renderFicha } from '../supabase/functions/_shared/ficha/render'
 import { fichaFixture } from './ficha-fixture'
@@ -43,14 +44,38 @@ it('keeps Libro Folio Registro visible with no text in their value cells', async
   }
   expect(words.find(w => w.value === 'FECHA DE')).toBeDefined()
 })
-it('prints the institutional title, horizontal personal groups and distinct empty photo/signature/fingerprint spaces', async () => {
+it('prints the institutional title, horizontal groups and signature/fingerprints without a photo space (CHG-H5-001)', async () => {
   const result = await inspect(await renderFicha(fichaFixture(), now))
-  for (const label of ['FICHA DE MATRÍCULA', 'CURSO MODELO DE LA AUTORIDAD MARÍTIMA', 'Apellido Paterno', 'Apellido Materno', 'Nombres Completos', 'FOTO', 'FIRMA', 'Índice Izquierdo', 'Índice Derecho']) expect(result.text).toContain(label)
+  for (const label of ['FICHA DE MATRÍCULA', 'CURSO MODELO DE LA AUTORIDAD MARÍTIMA', 'Apellido Paterno', 'Apellido Materno', 'Nombres Completos', 'FIRMA', 'Índice Izquierdo', 'Índice Derecho']) expect(result.text).toContain(label)
   const words = result.pages[0].words
   const personal = ['Apellido Paterno', 'Apellido Materno', 'Nombres Completos'].map(label => words.find(w => w.value === label)!)
   expect(new Set(personal.map(w => w.y)).size).toBe(1)
-  expect(result.text).not.toContain('DECLARO BAJO JURAMENTO')
-  expect(result.text).not.toContain('Nota:')
+  expect(result.text).not.toContain('FOTO')
+  expect(result.text).toContain('DECLARA BAJO JURAMENTO')
+  expect(result.text).toContain('Nota:')
+})
+
+it('preserves the complete human-supplied Note literally, including apparent spelling errors', async () => {
+  const expected = readFileSync('tests/fixtures/h5-note-chg001.txt', 'utf8').trim().replace(/\s+/g, ' ')
+  const { text } = await inspect(await renderFicha(fichaFixture(), now))
+  expect(text.replace(/\s+/g, ' ')).toContain(expected)
+  for (const marker of ['1.-', '2.-', 'a.', 'b.', 'c.', 'd.', 'e.']) expect(text).toContain(marker)
+  for (const literal of ['especficas', 'luga,', 'continuation stamp mis hulas deciares y firm correspondiente.', '42° de la Ley 27444.']) expect(text.replace(/\s+/g, ' ')).toContain(literal)
+})
+
+it('keeps Note above the two physical fingerprint spaces/signature and out of the footer', async () => {
+  const { pages } = await inspect(await renderFicha(fichaFixture(), now))
+  expect(pages).toHaveLength(1)
+  const words = pages[0].words, end = words.find(w => w.value.startsWith('e. Para mayor veracidad'))!
+  expect(end).toBeDefined()
+  for (const label of ['Índice Izquierdo', 'Índice Derecho', 'FIRMA']) {
+    const mark = words.find(w => w.value === label)!
+    expect(end.y - mark.y).toBeGreaterThanOrEqual(91)
+    expect(mark.y).toBeGreaterThan(49)
+  }
+  const title = words.find(w => w.value === 'FICHA DE MATRÍCULA')!, code = words.find(w => w.value.startsWith('Matrícula:'))!
+  expect(code.y).toBeGreaterThan(title.y)
+  expect(code.x).toBeGreaterThan(130) // Metadata is inside the existing Course header cell, not a separate full-width row.
 })
 it('embeds the institutional logo locally and preserves Spanish historical values and emergency contact', async () => {
   const result = await inspect(await renderFicha(fichaFixture(), now))

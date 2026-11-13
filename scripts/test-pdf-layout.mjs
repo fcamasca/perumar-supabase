@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync, writeFileSync, readFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { PDFDocument } from 'pdf-lib'
 import { renderFicha } from '../supabase/functions/_shared/ficha/render.ts'
@@ -34,8 +34,11 @@ for(const [name,source] of [['layout-normal',normal],['layout-extensive',extensi
   assert.ok(pages<=20&&bytes.length<=2097152)
   const text=run('pdftotext',['-enc','UTF-8',file,'-'])
   const readable=text.replace(/\s+/g,' ')
-  for(const label of ['CURSO','LIBRO','FOLIO','REGISTRO','FICHA DE MATRÍCULA','CURSO MODELO DE LA AUTORIDAD MARÍTIMA','Apellido Paterno','Apellido Materno','Nombres Completos','FOTO','FIRMA','Índice Izquierdo','Índice Derecho'])assert.ok(readable.includes(label),`Missing printed institutional label ${label}`)
-  assert.ok(!text.includes('DECLARO BAJO JURAMENTO')&&!text.includes('Nota:'),'Unapproved legal block must not be copied')
+  for(const label of ['CURSO','LIBRO','FOLIO','REGISTRO','FICHA DE MATRÍCULA','CURSO MODELO DE LA AUTORIDAD MARÍTIMA','Apellido Paterno','Apellido Materno','Nombres Completos','Nota:','FIRMA','Índice Izquierdo','Índice Derecho'])assert.ok(readable.includes(label),`Missing printed institutional label ${label}`)
+  assert.ok(!/\bFOTO\b/.test(text),'CHG-H5-001 removes photography from H5')
+  const suppliedNote=readFileSync('tests/fixtures/h5-note-chg001.txt','utf8').trim().replace(/\s+/g,' ')
+  if(name==='layout-normal')assert.ok(readable.includes(suppliedNote),'Complete Note must match the human wording verbatim')
+  else for(const paragraph of suppliedNote.replace(/^Nota: /,'').split(/ (?=(?:1\.-|2\.-|[a-e]\.))/))assert.ok(readable.includes(paragraph),'Every institutional paragraph must be complete on continuation pages')
   const bbox=run('pdftotext',['-bbox','-enc','UTF-8',file,'-'])
   const decoded=s=>s.replaceAll('&amp;','&').replaceAll('&lt;','<').replaceAll('&gt;','>').replaceAll('&quot;','"').replaceAll('&#39;',"'")
   const layouts=[...bbox.matchAll(/<page width="([\d.]+)" height="([\d.]+)">([\s\S]*?)<\/page>/g)].map(([,width,height,body])=>({width:Number(width),height:Number(height),words:[...body.matchAll(/<word xMin="([\d.]+)" yMin="([\d.]+)" xMax="([\d.]+)" yMax="([\d.]+)">([\s\S]*?)<\/word>/g)].map(([,x1,y1,x2,y2,word])=>({x1:Number(x1),y1:Number(y1),x2:Number(x2),y2:Number(y2),word:decoded(word)}))}))
