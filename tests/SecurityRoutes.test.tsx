@@ -59,6 +59,7 @@ describe('rutas de seguridad (UX; RLS se prueba por API real aparte)', () => {
 it('top navigation identifies the current section and keeps security links role-bound', () => {
   show({ phase: 'authorized', userId: 'director', roles: ['DIRECTOR_ACADEMICO'] })
   expect(screen.getByRole('navigation', { name: 'Académico' })).toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: /Mi cuenta:/ }))
   expect(screen.getByRole('link', { name: 'Mi acceso' })).toHaveAttribute('aria-current', 'page')
   expect(screen.getByRole('link', { name: 'Asignaturas' })).not.toHaveAttribute('aria-current')
   expect(screen.queryByRole('link',{name:'Matrícula'})).not.toBeInTheDocument()

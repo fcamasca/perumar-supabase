@@ -1,5 +1,19 @@
 # H5 — Evidencia técnica de construcción
 
+## UX compartida — identidad y perfiles sin abandonar formularios (13/11/2026)
+
+Autorización humana: «ok haz el cambio» sobre la propuesta de avatar circular, nombre/perfil visibles y panel flotante. Base previa `439a4448b6266e3c48c9b4db17ce0523c36be238`, CI `43492127178` SUCCESS (431/431). Se sustituye Mi acceso/Cerrar sesión de la barra por AccountMenu; Mi acceso y el directorio de seguridad autorizado quedan como enlaces secundarios dentro del panel.
+
+Avatar de iniciales, nombre disponible o correo como fallback, perfiles asignados con etiquetas legibles. El panel muestra identidad y todos los perfiles; se cierra con botón, Escape, clic fuera o foco fuera. Abrir/cerrar solo cambia estado local del componente: conserva ruta, formulario montado y borrador. Cerrar sesión continúa siendo una acción explícita del mecanismo existente. El cambio de identidad remonta únicamente el control de cuenta para retirar el panel anterior.
+
+SessionProvider añade email/displayName de presentación exclusivamente desde Auth getUser confirmado; no usa identidad de getSession como autoridad ni roles de user_metadata. Los permisos siguen procediendo de app_users/app_user_roles/app_roles y de los controles DB/RLS existentes. Campos opcionales, limpiados con los estados de cierre/bloqueo/error. No nuevas consultas de identidad al abrir el panel, almacenamiento de imágenes, perfil editable, persistencia adicional de PII, tablas, migraciones, RPC o policies. La procedencia de PDF y CHG-H5-002 permanecen intactas.
+
+Pruebas locales: **438/438 PASSED** (431 previas + siete), lint/typecheck/build/build-safety/diff-check PASSED. Se comprueban borrador y ruta intactos, foco/Escape/clic fuera, roles múltiples, directorio limitado a administrador, logout explícito, fallback de correo sin duplicación y limpieza al cambiar identidad. La nueva prueba de sesión diferencia identidad Auth confirmada de datos cacheados y verifica que user_metadata.roles no otorgue ADMIN_SISTEMA. Reejecución dirigida de menú/sesión/rutas: 29/29 PASSED.
+
+Se generó una vista sintética con el DOM real del componente y CSS compartido para revisión visual, sin Auth ni datos reales; el navegador de pruebas no pudo acceder al loopback y rechazó navegación file:// por su política. **Revisión visual real en escritorio/móvil: NO EJECUTADA**. No se cambiaron firewall ni protecciones; servidores temporales de la vista detenidos. CSS usa variables de tema y reglas responsive/forced-colors, pero contraste alto real sigue NO VERIFICADO, sin inventar validación visual/humana.
+
+CI del nuevo SHA se verifica antes de entrega. Bundle >500 kB continúa (682,46 kB); se preservan hosted/PostgREST 14 no probados directamente, CPU/memoria no medidos y limpieza manual. Gate 2/GATE-A01 pendientes; sin acceptance, PR, merge/main ni H6. No se modifican los cuatro documentos del Spec aprobado ni sus gates históricos.
+
 ## Corrección UX — recuperar la ficha al volver a Matrícula (13/11/2026)
 
 Hallazgo humano posterior a CHG-H5-002: al salir y volver, el componente perdía la referencia en memoria y mostraba Generar aunque existiera una ficha. Base `f9fbc4ddbf0eae36786d2296d045900aa9ea818a`, CI `43474034111` SUCCESS (425/425). Esta corrección cambia únicamente React y pruebas/evidencia; no modifica la procedencia vigente/cierre ni el Spec aprobado.

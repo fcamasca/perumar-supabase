@@ -161,3 +161,20 @@ it('sigue retirando formularios si se revoca el acceso al revalidar', async () =
   await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('blocked'));
   expect(screen.queryByLabelText('Borrador')).not.toBeInTheDocument();
 });
+function IdentityProbe() {
+ const { state }=useSession()
+ return <p data-testid="identity">{state.phase}|{state.displayName}|{state.email}|{state.roles?.join(',')}</p>
+}
+it('displays identity only from verified Auth and never grants roles from display metadata', async () => {
+ const f=fixture()
+ f.auth.getSession.mockImplementation(async()=>({data:{session:{user:{id:'operator-id',email:'cached@example.invalid',user_metadata:{full_name:'CACHED NAME'}}}},error:null}))
+ f.auth.getUser.mockImplementation(async()=>({data:{user:{id:'operator-id',email:'verified@example.invalid',user_metadata:{full_name:'VERIFIED NAME',roles:['ADMIN_SISTEMA']}}},error:null}))
+ render(<SessionProvider client={f.client}><Probe/><IdentityProbe/></SessionProvider>)
+ await waitFor(()=>expect(screen.getByTestId('identity')).toHaveTextContent('authorized|VERIFIED NAME|verified@example.invalid|OPERADOR'))
+ expect(screen.getByTestId('identity')).not.toHaveTextContent('ADMIN_SISTEMA')
+ expect(screen.queryByText(/CACHED NAME|cached@example.invalid/)).not.toBeInTheDocument()
+ fireEvent.click(screen.getByText('Salir'))
+ await waitFor(()=>expect(screen.getByTestId('identity')).toHaveTextContent('anonymous|||'))
+ expect(screen.getByTestId('identity')).not.toHaveTextContent('VERIFIED NAME')
+ expect(screen.getByTestId('identity')).not.toHaveTextContent('verified@example.invalid')
+})

@@ -5,6 +5,8 @@ import { getSupabase } from '../lib/supabase'
 export type AccessState = {
   phase: 'loading' | 'anonymous' | 'authorized' | 'blocked' | 'error'
   userId?: string
+  email?: string
+  displayName?: string
   roles?: string[]
   message?: string
 }
@@ -59,7 +61,10 @@ export function SessionProvider({ children, client = getSupabase() }: { children
         setState({ phase: 'blocked', userId }); return
       }
       authorizedUser.current = userId
-      setState({ phase: 'authorized', userId, roles })
+      // Display metadata is never used to authorize: profiles/roles above remain DB-verified.
+      const metadata = identity.data.user.user_metadata
+      const displayName = [metadata?.full_name, metadata?.name, metadata?.display_name].find(value => typeof value === 'string' && value.trim())
+      setState({ phase: 'authorized', userId, roles, email: identity.data.user.email, displayName: typeof displayName === 'string' ? displayName.trim().slice(0, 150) : undefined })
     } catch {
       if (current()) {
         authorizedUser.current = null
