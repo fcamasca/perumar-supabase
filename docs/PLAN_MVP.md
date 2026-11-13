@@ -705,7 +705,7 @@ El PLAN vigente debe reflejar el estado real del proyecto.
 | H2 Base académica | CLOSED / ACEPTADO / INTEGRADO — Gate 2 aprobado 22/10/2026; riesgo forced-colors aceptado |
 | H3 Alumno y Matrícula | CLOSED / ACEPTADO / INTEGRADO en main con el merge de este cierre — Gate 2 aprobado 09/11/2026; [aceptación](specs/H3-enrollment/acceptance.md), residual forced-colors aceptado |
 | H4 Pagos | CLOSED / ACEPTADO; listo para integración en rama; INTEGRADO en main al incorporar este cierre. [Acceptance](specs/H4-payments/acceptance.md), Gate 2 humano 12/11/2026; forced-colors NO VERIFICADO — residual aceptado |
-| H5 Ficha PDF | CANDIDATO TÉCNICO para revisión humana; Gate 1 APROBADO sobre `9804bb07063590e8917fc86d07995c474b84e718`. [Gate 1](specs/H5-enrollment-pdf/gate-1.md), [construcción](specs/H5-enrollment-pdf/implementation-log.md), [evidencia](specs/H5-enrollment-pdf/technical-results.md). CI técnica `43304950382` SUCCESS; Gate 2 / GATE-A01 pendientes, suficiencia hospedada inconclusa; sin merge. H6 NO INICIADO |
+| H5 Ficha PDF | En revisión humana: Bloque 1 inicialmente NO OK; [corrección visual](specs/H5-enrollment-pdf/human-review-layout.md) pendiente de nueva aceptación humana. Gate 1 APROBADO sobre `9804bb07063590e8917fc86d07995c474b84e718`; [evidencia](specs/H5-enrollment-pdf/technical-results.md). Gate 2 / GATE-A01 pendientes, suficiencia hospedada inconclusa; sin merge. H6 NO INICIADO |
 | Gate A01 | BLOQUEADO |
 | H6 Expediente | BLOQUEADO |
 | H7 Patrocinadores y facturación | BLOQUEADO |

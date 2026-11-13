@@ -1,117 +1,152 @@
-import { PDFDocument, StandardFonts, rgb, type PDFPage } from 'pdf-lib'
+import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf-lib'
 import { FichaError, projectFicha, type Source } from './contract.ts'
+import { perumarLogoPng } from './brand.ts'
 
 export const TEMPLATE_VERSION = 'h5-1'
-// Standard PDF fonts use WinAnsi: Spanish is supported, unsupported glyphs fail explicitly.
-// No HTML, external resources, dynamic URLs, scripts, fonts or user-controlled templates.
+// Visual correction only: provenance, audit template ID, contracts and budgets remain unchanged.
 export async function renderFicha(source: Source, now: Date): Promise<Uint8Array> {
   const model = projectFicha(source, now)
   const document = await PDFDocument.create()
   document.setTitle('Ficha de matrícula - PERÚ MAR')
-  document.setProducer(`PERÚ MAR / ${TEMPLATE_VERSION}`)
+  document.setProducer(`PERÚ MAR / ${TEMPLATE_VERSION} / institucional-2`)
   document.setCreationDate(now)
   const normal = await document.embedFont(StandardFonts.Helvetica)
   const bold = await document.embedFont(StandardFonts.HelveticaBold)
-  const ink = rgb(.09, .22, .29), pale = rgb(.92, .95, .96), line = rgb(.72, .78, .81)
+  const logo = await document.embedPng(Uint8Array.from(atob(perumarLogoPng), c => c.charCodeAt(0)))
+  const ink = rgb(.09, .17, .21), border = rgb(.35, .39, .41), paper = rgb(.96, .97, .97)
   const width = 595.28, height = 841.89, margin = 36, available = width - margin * 2
+  const bottom = 49, size = 9, leading = 11.5, padding = 4
   let page!: PDFPage, y = 0
-  const text = (value: string, x: number, baseline: number, strong = false, size = 9) => {
-    try { page.drawText(value.normalize('NFC'), { x, y: baseline, font: strong ? bold : normal, size, color: ink }) }
+  const text = (value: string, x: number, baseline: number, strong = false, fontSize = size) => {
+    try { page.drawText(value.normalize('NFC'), { x, y: baseline, font: strong ? bold : normal, size: fontSize, color: ink }) }
     catch { throw new FichaError(422, 'GLYPH') }
   }
-  const wrap = (value: string, max: number) => {
-    // A measured character flow also handles unbroken tokens and explicit line breaks.
-    const result: string[] = []
+  const wrap = (value: string, max: number, font: PDFFont = normal, fontSize = size) => {
+    const lines: string[] = []
     for (const paragraph of value.replace(/\r\n?/g, '\n').split('\n')) {
       let current = ''
       for (const character of paragraph.normalize('NFC')) {
         if (character < ' ' && character !== '\t') throw new FichaError(422, 'GLYPH')
+        const next = character.replace('\t', ' ')
         let measured: number
-        try { measured = normal.widthOfTextAtSize(current + character.replace('\t', ' '), 9) }
+        try { measured = font.widthOfTextAtSize(current + next, fontSize) }
         catch { throw new FichaError(422, 'GLYPH') }
         if (measured > max && current) {
           const space = current.lastIndexOf(' ')
-          if (space > 0) { result.push(current.slice(0, space)); current = current.slice(space + 1) }
-          else { result.push(current); current = '' }
+          if (space > 0) { lines.push(current.slice(0, space)); current = current.slice(space + 1) }
+          else { lines.push(current); current = '' }
         }
-        current += character.replace('\t', ' ')
+        current += next
       }
-      result.push(current)
+      lines.push(current)
     }
-    return result
+    return lines
   }
-  const newPage = () => {
+  const center = (value: string, x: number, cellWidth: number, baseline: number, strong = false, fontSize = size) => {
+    let measured: number
+    try { measured = (strong ? bold : normal).widthOfTextAtSize(value.normalize('NFC'), fontSize) }
+    catch { throw new FichaError(422, 'GLYPH') }
+    text(value, x + Math.max(padding, (cellWidth - measured) / 2), baseline, strong, fontSize)
+  }
+  const newPage = (first = false) => {
     if (document.getPageCount() >= 20) throw new FichaError(413, 'LIMIT')
     page = document.addPage([width, height]); y = height - margin
-    text('PERÚ MAR', margin, y - 4, true, 17)
-    text('FICHA DE MATRÍCULA', width - margin - 157, y - 3, true, 11)
-    text(model.code, width - margin - 157, y - 18)
-    y -= 34
-    page.drawLine({ start: { x: margin, y }, end: { x: width - margin, y }, thickness: 1, color: ink })
-    y -= 16
+    if (!first) {
+      page.drawImage(logo, { x: margin, y: y - 32, width: 32, height: 32 })
+      text('PERÚ MAR', margin + 38, y - 12, true, 11)
+      text('FICHA DE MATRÍCULA (continuación)', margin + 175, y - 11, true, 10)
+      text(model.code, margin + 175, y - 25)
+      y -= 39
+      page.drawLine({ start: { x: margin, y }, end: { x: width - margin, y }, thickness: .6, color: border })
+      y -= 8
+    }
   }
-  const ensure = (space: number) => { if (y - space < 49) newPage() }
-  const heading = (title: string) => {
-    ensure(48)
-    page.drawRectangle({ x: margin, y: y - 20, width: available, height: 22, color: pale })
-    text(title, margin + 7, y - 13, true, 10); y -= 29
+  const rowHeight = (lines: string[][], header = false) => Math.max(header ? 17 : 21, Math.max(...lines.map(c => c.length)) * leading + padding * 2)
+  const drawRow = (lines: string[][], widths: number[], rowSize: number, header: boolean, x = margin) => {
+    for (let column = 0; column < widths.length; column++) {
+      page.drawRectangle({ x, y: y - rowSize, width: widths[column], height: rowSize, borderColor: border, borderWidth: .5, ...(header ? { color: paper } : {}) })
+      lines[column].forEach((part, i) => {
+        const baseline = y - padding - size - i * leading
+        if (header) center(part, x, widths[column], baseline, true)
+        else text(part, x + padding, baseline)
+      })
+      x += widths[column]
+    }
+    y -= rowSize
   }
-  newPage()
-  for (const section of model.sections) {
-    heading(section.title)
-    for (const [label, value] of section.fields) {
-      const lines = wrap(value, available - 151)
+  // Concrete form tables; repeat headers, move ordinary rows and split truly oversized rows.
+  // No font shrinking, omitted values or user-controlled templates/resources.
+  const table = (labels: string[], values: string[][], widths: number[], x = margin) => {
+    const headers = labels.map((label, i) => wrap(label, widths[i] - padding * 2, bold))
+    const headerSize = rowHeight(headers, true)
+    const measured = values.map(cells => cells.map((cell, i) => wrap(cell, widths[i] - padding * 2)))
+    const maxRow = height - margin - 47 - bottom - headerSize
+    const firstRow = measured[0] ? Math.min(rowHeight(measured[0]), maxRow) : 21
+    if (y - headerSize - firstRow < bottom) newPage()
+    drawRow(headers, widths, headerSize, true, x)
+    for (const lines of measured) {
       let offset = 0
-      while (offset < lines.length) {
-        ensure(26)
-        const take = Math.min(lines.length - offset, Math.floor((y - 55) / 12))
-        text(offset === 0 ? label : `${label} (cont.)`, margin + 4, y - 9, true)
-        for (let i = 0; i < take; i++) text(lines[offset + i], margin + 151, y - 9 - i * 12)
-        y -= Math.max(21, take * 12 + 6); offset += take
-        page.drawLine({ start: { x: margin, y: y + 3 }, end: { x: width - margin, y: y + 3 }, thickness: .3, color: line })
+      const count = Math.max(...lines.map(c => c.length))
+      if (y - rowHeight(lines) < bottom && rowHeight(lines) <= height - margin - 47 - bottom - headerSize) {
+        newPage(); drawRow(headers, widths, headerSize, true, x)
+      }
+      while (offset < count) {
+        let room = Math.floor((y - bottom - padding * 2) / leading)
+        if (room < 1 || y - 21 < bottom) { newPage(); drawRow(headers, widths, headerSize, true, x); room = Math.floor((y - bottom - padding * 2) / leading) }
+        const take = Math.min(count - offset, room)
+        drawRow(lines.map(cell => cell.slice(offset, offset + take)), widths, Math.max(21, take * leading + padding * 2), false, x)
+        offset += take
+        if (offset < count) { newPage(); drawRow(headers, widths, headerSize, true, x) }
       }
     }
-    y -= 8
+    y -= 7
   }
-  const columns = [104, 104, 82, 80, available - 370]
-  const firstContactHeight = model.contacts.length ? Math.max(...model.contacts[0].map((cell, i) => wrap(cell, columns[i] - 10).length)) * 12 + 10 : 24
-  ensure(firstContactHeight + 57) // Keep section title/header with its first row.
-  heading('Contactos de emergencia históricos')
-  const row = (cells: string[], header = false) => {
-    const lines = cells.map((cell, i) => wrap(cell, columns[i] - 10))
-    const count = Math.max(...lines.map(l => l.length)), rowHeight = count * 12 + 10
-    if (rowHeight > height - 140) throw new FichaError(413, 'LIMIT')
-    if (y - rowHeight < 49) {
-      newPage(); heading('Contactos de emergencia históricos (continuación)')
-      if (!header) drawRow(['Apellidos', 'Nombres', 'Parentesco', 'Celular', 'Dirección'], true)
-    }
-    drawRow(cells, header)
+  const section = (index: number) => Object.fromEntries(model.sections[index].fields)
+  const context = section(0), identity = section(1), address = section(2), extra = section(3), sponsor = section(4)
+  const a = source.alumno_snapshot.alumno
+  const historical = (key: string) => a[key] === null || a[key] === undefined || a[key] === '' ? 'Sin dato' : String(a[key])
+  const geo = (prefix: string, part: string) => source.alumno_snapshot.geografia[String(a[`${prefix}_${part}_id`])] || 'Sin dato'
+
+  newPage(true)
+  const top = y, headerX = margin + 111, headerWidth = available - 111
+  page.drawImage(logo, { x: margin, y: top - 103, width: 103, height: 103 })
+  table(['CURSO', 'LIBRO', 'FOLIO', 'REGISTRO', 'FECHA DE MATRÍCULA'], [[context.Curso, '', '', '', context['Fecha de matrícula']]], [headerWidth - 193, 36, 36, 60, 61], headerX)
+  y += 7
+  table(['PROMOCIÓN', 'PATROCINADOR'], [[context.Promoción, source.empresa_patrocinadora ? sponsor['Razón social'] : '']], [headerWidth * .5, headerWidth * .5], headerX)
+  y = Math.min(y, top - 103)
+  center('FICHA DE MATRÍCULA', margin, available, y - 14, true, 16)
+  center('CURSO MODELO DE LA AUTORIDAD MARÍTIMA', margin, available, y - 31, true, 12)
+  y -= 47
+  for (const part of wrap(`Matrícula: ${model.code}   |   Alumno: ${identity['Código de alumno']}   |   Ciclo: ${context.Ciclo}`, available)) { text(part, margin, y); y -= leading }
+  y -= 4
+
+  table(['Apellido Paterno', 'Apellido Materno', 'Nombres Completos'], [[historical('apellido_paterno'), historical('apellido_materno'), identity.Nombres]], [available * .30, available * .27, available * .43])
+  table(['Estado Civil', 'Tipo Doc. Id.', 'N.º Doc. Id.', 'Edad', 'Sexo', 'Teléfono Fijo', 'Celular'], [[identity['Estado civil'], identity['Tipo de documento'], identity['Número de documento'], identity['Edad a la matrícula'], identity.Sexo, address['Teléfono fijo'], address.Celular]], [66, 71, 87, 44, 68, 94, available - 430])
+  table(['Estatura (cm)', 'Peso (kg)', 'Grupo Sanguíneo/RH', 'Ojos', 'Cabello', 'Ocupación', 'Grado de Instrucción'], [[extra['Estatura (cm)'], extra['Peso (kg)'], extra['Grupo sanguíneo'], extra['Color de ojos'], extra['Color de cabello'], extra.Ocupación, extra['Grado de instrucción']]], [54, 47, 84, 56, 56, 110, available - 407])
+  table(['Fecha de Nacimiento', 'Lugar de Nacimiento', 'Provincia', 'Departamento'], [[identity['Fecha de nacimiento'], geo('nacimiento', 'distrito'), geo('nacimiento', 'provincia'), geo('nacimiento', 'departamento')]], [103, 164, 125, available - 392])
+  table(['Señas Particulares'], [[extra['Señas particulares']]], [available])
+  table(['Domicilio Actual', 'N.º / Mz / Lt', 'Distrito', 'Provincia', 'Departamento'], [[address.Domicilio, address['N° / Mz / Lt'], geo('domicilio', 'distrito'), geo('domicilio', 'provincia'), geo('domicilio', 'departamento')]], [236, 66, 73, 73, available - 448])
+  table(['Email'], [[address['Correo electrónico']]], [available])
+  const contacts = model.contacts.map(c => [`${c[0]}, ${c[1]}`, c[2], c[3], c[4]])
+  table(['Persona a Notificar en caso de Emergencia', 'Parentesco', 'Celular', 'Dirección'], contacts.length ? contacts : [['Sin contactos en la fotografía histórica.', '', '', '']], [236, 74, 80, available - 390])
+  table(['Patrocinador', 'Contacto', 'Celular/Teléfono', 'Email'], [source.empresa_patrocinadora ? [sponsor['Razón social'] + (sponsor.RUC === 'Sin dato' ? '' : `\nRUC: ${sponsor.RUC}`), sponsor['Persona de contacto'], sponsor.Teléfono, sponsor['Correo electrónico']] : ['', '', '', '']], [165, 115, 106, available - 386])
+
+  if (y - 104 < bottom) newPage()
+  const spacesTop = y - 3
+  const emptyBox = (x: number, boxWidth: number, label: string) => {
+    page.drawRectangle({ x, y: spacesTop - 77, width: boxWidth, height: 77, borderColor: border, borderWidth: .6 })
+    center(label, x - 8, boxWidth + 16, spacesTop - 91)
   }
-  const drawRow = (cells: string[], header: boolean) => {
-    const lines = cells.map((cell, i) => wrap(cell, columns[i] - 10))
-    const rowHeight = Math.max(...lines.map(l => l.length)) * 12 + 10
-    let x = margin
-    for (let i = 0; i < cells.length; i++) {
-      page.drawRectangle({ x, y: y - rowHeight, width: columns[i], height: rowHeight, borderColor: line, borderWidth: .4, ...(header ? { color: pale } : {}) })
-      lines[i].forEach((part, j) => text(part, x + 5, y - 13 - j * 12, header))
-      x += columns[i]
-    }
-    y -= rowHeight
-  }
-  row(['Apellidos', 'Nombres', 'Parentesco', 'Celular', 'Dirección'], true)
-  if (!model.contacts.length) { ensure(24); text('Sin contactos en la fotografía histórica.', margin + 5, y - 14); y -= 25 }
-  for (const contact of model.contacts) row(contact)
-  y -= 14; ensure(144); heading('Espacios de fotografía, firma y huellas')
-  const boxes = [['Foto', 92], ['Firma del alumno', 227], ['Huellas', available - 319]] as const
-  let x = margin
-  for (const [label, boxWidth] of boxes) {
-    page.drawRectangle({ x, y: y - 92, width: boxWidth, height: 92, borderColor: line, borderWidth: .6 })
-    text(label, x + 7, y - 84); x += boxWidth
-  }
+  emptyBox(margin + 4, 64, 'FOTO')
+  const signatureX = margin + 88, signatureWidth = 214
+  page.drawLine({ start: { x: signatureX, y: spacesTop - 77 }, end: { x: signatureX + signatureWidth, y: spacesTop - 77 }, thickness: .7, color: border })
+  center('FIRMA', signatureX, signatureWidth, spacesTop - 91)
+  emptyBox(margin + 329, 67, 'Índice Izquierdo')
+  emptyBox(margin + 438, 67, 'Índice Derecho')
   const total = document.getPageCount()
   document.getPages().forEach((p, i) => {
     page = p
-    page.drawLine({ start: { x: margin, y: 38 }, end: { x: width - margin, y: 38 }, thickness: .5, color: line })
+    page.drawLine({ start: { x: margin, y: 38 }, end: { x: width - margin, y: 38 }, thickness: .5, color: border })
     text(`Emisión Lima: ${model.emitted}`, margin, 25)
     text(`Página ${i + 1} de ${total}`, width - margin - 76, 25)
   })

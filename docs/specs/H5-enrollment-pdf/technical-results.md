@@ -1,5 +1,11 @@
 # H5 — Evidencia técnica de construcción
 
+## Corrección de maquetación en revisión humana
+
+**Bloque 1 H5 inicialmente NO OK** sobre `8c0bfb355c9162aebcee3fab2d368a40aaf5cc0f` (CI `43327651731` SUCCESS). Se corrige exclusivamente la presentación institucional; [registro de corrección visual](human-review-layout.md). Suite local actual: **413/413 PASSED** (406 previas + 7 nuevas), lint/tsc/Deno check/build/build-safety PASSED. Caso normal de un contacto sin patrocinador en 1 página A4; caso de 100 contactos cortos en 5. La nueva CI debe confirmar integración real y evidencia independiente completa. La aceptación visual sigue siendo humana y está pendiente.
+
+Las cifras de tamaño/rendimiento y CI que siguen describen el candidato anterior y se conservan como historia técnica; no prueban aceptación visual del nuevo layout. El nuevo logo embebido aumenta el tamaño del PDF. Gate 1/Spec/OQ, límites, contratos y controles de seguridad intactos. Gate 2 y GATE-A01 PENDIENTES; hosted inconcluso, sin aceptación/cierre/PR/merge/H6.
+
 Estado: **CANDIDATO TÉCNICO / Gate 2 PENDIENTE / GATE-A01 PENDIENTE**. Código/pruebas/lock: `35d4b17a9fa63c011c5de9d44a72a78215b60980`, CI `43304950382` **COMPLETED / SUCCESS**. Gate 1: `9804bb07063590e8917fc86d07995c474b84e718`. Los estados históricos del Spec aprobado no se reescriben. No acceptance, cierre, merge ni H6.
 
 ## Evidencia local inicial (12/11/2026)
