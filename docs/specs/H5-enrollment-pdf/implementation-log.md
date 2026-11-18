@@ -1,5 +1,11 @@
 # H5 — Registro de construcción
 
+## Registro humano de Gate 2 — 18/11/2026
+
+**Gate 2 APROBADO HUMANAMENTE** exclusivamente sobre `f9fbc4ddbf0eae36786d2296d045900aa9ea818a`, CI [43474034111](https://github.com/fcamasca/perumar-supabase/actions/runs/43474034111) **COMPLETED / SUCCESS**, evidencia automática de ese candidato 425/425. El usuario reportó OK de los ocho bloques humanos. [gate-2.md](gate-2.md) registra el alcance exacto, las enmiendas y los cambios de interfaz posteriores, que no se atribuyen a esta aprobación. El commit actual es exclusivamente documental; preserva los cinco archivos de código/tests locales sin incorporarlos. Las menciones anteriores a Gate 2 pendiente se conservan como historia.
+
+Residuales preservados: Hosted Edge/PostgREST 14 no probados directamente; CPU y memoria no medidas; forced-colors H5 NO VERIFICADO; bundle >500 kB; limpieza física manual. **GATE-A01 PENDIENTE / NO APROBADO, suficiencia hospedada inconclusa.** Sin acceptance, cierre formal, PR/merge a main ni H6. No se reescriben Gate 1 ni los cuatro documentos aprobados.
+
 ## UX compartida — identidad y perfiles sin abandonar formularios (13/11/2026)
 
 Autorización humana: «ok haz el cambio» sobre la propuesta de avatar circular, nombre/perfil visibles y panel flotante. Base previa `439a4448b6266e3c48c9b4db17ce0523c36be238`, CI `43492127178` SUCCESS (431/431). Se sustituye Mi acceso/Cerrar sesión de la barra por AccountMenu; Mi acceso y el directorio de seguridad autorizado quedan como enlaces secundarios dentro del panel.
