@@ -442,6 +442,12 @@ Después de H5 se realizará una evaluación humana explícita.
 
 ## GATE-A01 — Continuidad de Supabase
 
+**Decisión humana del 18/11/2026: APROBADO CON AJUSTES.** [Registro formal, evaluación de cada criterio y condiciones](architecture/GATE-A01-continuidad-supabase.md). Continuar con React/TypeScript + Supabase Auth/PostgreSQL/RLS/RPC + Edge acotadas + Storage privado. H6 autorizado solo para preparar Spec; implementación requiere Gate 1 H6. S3 NO AUTORIZADO / NO NECESARIO POR AHORA. No se introducen servicios adicionales por defecto.
+
+Residuales aceptados para continuar, sin declararlos resueltos/PASSED: Hosted Edge/PostgREST 14 no probados directamente; CPU y memoria de Edge no medidas; forced-colors H5 NO VERIFICADO; bundle >500 kB; limpieza física de PDFs manual. La suficiencia hospedada sigue técnicamente inconclusa. Mantenerlos visibles y resolver o aceptar explícitamente los relevantes para producción antes de H9/release. H5 continúa con Gate 2 aprobado y sin merge autorizado.
+
+Criterios definidos para la evaluación (se preservan):
+
 Responder:
 
 ### Seguridad
@@ -503,6 +509,10 @@ Su alcance exacto será revisado antes de generar cada Spec.
 ---
 
 ## H6 — Expediente
+
+**AUTORIZADO SOLO PARA PREPARACIÓN DE SPEC** por GATE-A01 (18/11/2026); Spec aún no iniciado en este registro. **Implementación NO AUTORIZADA** sin revisión humana y Gate 1 H6. [Decisión y entradas mínimas para el Spec](architecture/GATE-A01-continuidad-supabase.md#autorización-siguiente-y-límites).
+
+Evaluar expediente por matrícula, documentos subidos/generados (solicitud, declaración jurada, carta poder y ficha de datos personales), tamaño/MIME/contenido, hash, retención y Storage privado persistente. Usar claves de objeto y metadatos de dominio como identidad documental, no URLs del proveedor. Supabase Storage privado es opción inicial cuya suficiencia deberá validarse; no S3 ni StorageProvider genérico anticipado.
 
 Previsto:
 
@@ -705,9 +715,9 @@ El PLAN vigente debe reflejar el estado real del proyecto.
 | H2 Base académica | CLOSED / ACEPTADO / INTEGRADO — Gate 2 aprobado 22/10/2026; riesgo forced-colors aceptado |
 | H3 Alumno y Matrícula | CLOSED / ACEPTADO / INTEGRADO en main con el merge de este cierre — Gate 2 aprobado 09/11/2026; [aceptación](specs/H3-enrollment/acceptance.md), residual forced-colors aceptado |
 | H4 Pagos | CLOSED / ACEPTADO; listo para integración en rama; INTEGRADO en main al incorporar este cierre. [Acceptance](specs/H4-payments/acceptance.md), Gate 2 humano 12/11/2026; forced-colors NO VERIFICADO — residual aceptado |
-| H5 Ficha PDF | Gate 1 APROBADO sobre `9804bb07063590e8917fc86d07995c474b84e718`; **Gate 2 APROBADO HUMANAMENTE** sobre `f9fbc4ddbf0eae36786d2296d045900aa9ea818a`, CI `43474034111` SUCCESS, ocho bloques humanos OK. [Registro y alcance exacto](specs/H5-enrollment-pdf/gate-2.md): no extiende aprobación a cambios posteriores. **GATE-A01 PENDIENTE / NO APROBADO**, suficiencia hospedada inconclusa. Residuales: Hosted Edge/PostgREST 14 no probados directamente, CPU/memoria no medidas, forced-colors H5 NO VERIFICADO, bundle >500 kB y limpieza física manual. Sin acceptance, cierre formal ni merge; H6 NO INICIADO |
-| Gate A01 | BLOQUEADO |
-| H6 Expediente | BLOQUEADO |
+| H5 Ficha PDF | Gate 1 APROBADO sobre `9804bb07063590e8917fc86d07995c474b84e718`; **Gate 2 APROBADO HUMANAMENTE** sobre `f9fbc4ddbf0eae36786d2296d045900aa9ea818a`, CI `43474034111` SUCCESS, ocho bloques humanos OK. [Registro y alcance exacto](specs/H5-enrollment-pdf/gate-2.md): no extiende aprobación a cambios posteriores. **GATE-A01 APROBADO CON AJUSTES** ([decisión](architecture/GATE-A01-continuidad-supabase.md)); suficiencia técnica hospedada todavía inconclusa. Residuales: Hosted Edge/PostgREST 14 no probados directamente, CPU/memoria no medidas, forced-colors H5 NO VERIFICADO, bundle >500 kB y limpieza física manual. Sin acceptance, cierre formal ni merge autorizado. H6 autorizado solo para preparar Spec; implementación NO AUTORIZADA |
+| Gate A01 | **APROBADO CON AJUSTES** humanamente el 18/11/2026; [registro](architecture/GATE-A01-continuidad-supabase.md). Continuidad de Supabase, residuales aceptados para continuar el MVP y visibles hasta H9/release; sin infraestructura adicional por defecto |
+| H6 Expediente | **AUTORIZADO SOLO PARA PREPARACIÓN DE SPEC**; aún no iniciado en este registro. Implementación NO AUTORIZADA: requiere Spec, revisión humana y Gate 1 H6. Storage privado como opción inicial; S3 NO AUTORIZADO / NO NECESARIO POR AHORA |
 | H7 Patrocinadores y facturación | BLOQUEADO |
 | H8 Reportes y operación | BLOQUEADO |
 | H9 Cierre MVP | BLOQUEADO |
@@ -723,3 +733,7 @@ H3 está CLOSED / ACEPTADO humanamente; su integración en main se hace efectiva
 La instrucción humana del 12/11/2026 autoriza, inmediatamente después de H4 integrado y main verde, crear `feature/h5-enrollment-pdf-spec` desde ese main exacto y preparar **solo el Spec H5 — Ficha de matrícula PDF** (sección 5). Sin permiso intermedio. No cambia su alcance ni autoriza implementación, Edge Function, PDF, Storage, dependencias o backend alternativo. Resolver OQ y obtener Gate 1 H5 antes de construir. GATE-A01 sigue reservado a decisión humana tras evaluar H5.
 
 Posteriormente el usuario aprobó Gate 1 H5 sobre `9804bb07063590e8917fc86d07995c474b84e718` y autorizó su construcción exacta en `feature/h5-enrollment-pdf`. Esta autorización posterior habilita el spike real Edge, PDF, Storage privado y UI del Spec; no autoriza Gate 2, acceptance, integración, cierre H5, GATE-A01 ni H6. Los cuatro documentos del Spec aprobado conservan sus estados históricos.
+
+## Decisión posterior vigente — GATE-A01 (18/11/2026)
+
+[APROBADO CON AJUSTES](architecture/GATE-A01-continuidad-supabase.md): continuidad de Supabase autorizada sobre evidencia H1–H5, con ajustes de alcance/operación y seis residuales explícitos. Esta decisión posterior sustituye las referencias históricas a GATE-A01 pendiente, sin reescribir los Specs ni sus gates históricos. H5 conserva el [Gate 2 sobre el candidato exacto](specs/H5-enrollment-pdf/gate-2.md), sin cierre/acceptance/merge adicional autorizado. H6 queda autorizado solo para preparar requirements/design/tasks/test-plan y someterlos a revisión y Gate 1; no se inicia Spec ni implementación H6 en este registro. S3 no autorizado por ahora.
