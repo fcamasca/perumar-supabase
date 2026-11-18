@@ -8,4 +8,5 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   { files: ['src/**/*.{ts,tsx}', 'tests/**/*.{ts,tsx}'], languageOptions: { globals: globals.browser } },
   { files: ['*.{js,ts}', 'scripts/**/*.mjs'], languageOptions: { globals: globals.node } },
+  { files: ['supabase/functions/**/*.ts'], languageOptions: { globals: { ...globals.browser, Deno: 'readonly' } } },
 )

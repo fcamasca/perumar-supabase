@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link, NavLink, Navigate, Outlet, Route, Routes, useLocation, useSearchParams } from 'react-router-dom'
 import { useSession } from './SessionProvider'
 import { BrandMark } from '../BrandMark'
+import { AccountMenu, roleNames } from './AccountMenu'
 import { InlineForm, StatusBadge } from '../academic/AcademicUi'
 import { AcademicOnly, Materias, Carreras, Ciclos, Auditoria } from '../academic/AcademicPages'
 
@@ -50,16 +51,15 @@ function ProtectedArea() {
   </section>
   return <>
     <div className="navigation-shell"><nav aria-label="Académico" className="main-nav">{state.roles?.some(r => r === 'DIRECTOR_ACADEMICO' || r === 'COORDINADOR_ACADEMICO') && <><NavLink to="/academico/materias">Asignaturas</NavLink><NavLink to="/academico/carreras">Cursos</NavLink><NavLink to="/academico/ciclos">Ciclos</NavLink><NavLink to="/alumnos">Alumnos</NavLink><NavLink to="/pagos">Pagos</NavLink><NavLink to="/tarifas">Tarifas</NavLink><NavLink to="/empresas">Empresas</NavLink></>}<NavLink to="/academico/auditoria">Auditoría</NavLink></nav>
-    <nav aria-label="Seguridad" className="account-nav"><NavLink end to="/seguridad">Mi acceso</NavLink>{state.roles?.includes('ADMIN_SISTEMA') && <NavLink to="/seguridad/usuarios">Directorio de seguridad</NavLink>}<button className="secondary" onClick={() => void logout()}>Cerrar sesión</button></nav></div>
+    <nav aria-label="Seguridad" className="account-nav"><AccountMenu key={state.userId}/></nav></div>
     <Outlet />
   </>
 }
 
 function OwnAccess() {
   const { state } = useSession()
-  const names: Record<string, string> = { ADMIN_SISTEMA: 'Administrador del sistema', DIRECTOR_ACADEMICO: 'Director académico', COORDINADOR_ACADEMICO: 'Coordinador académico' }
   return <section className="account-panel"><h2>Mi acceso</h2><p>Estas son las funciones habilitadas para tu cuenta. Elige una sección en la navegación superior para comenzar.</p>
-    <h3>Roles habilitados</h3><ul className="role-list">{state.roles?.map(role => <li key={role}>{names[role] ?? role}</li>)}</ul>
+    <h3>Roles habilitados</h3><ul className="role-list">{state.roles?.map(role => <li key={role}>{roleNames[role] ?? role}</li>)}</ul>
     <details><summary>Identificador de mi cuenta</summary><code className="identifier">{state.userId}</code></details></section>
 }
 

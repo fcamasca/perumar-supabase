@@ -1,5 +1,9 @@
 # H3 — Registro de construcción
 
+## Enmienda posterior CHG-H5-002 — 13/11/2026
+
+Autorización humana y alcance en [CHG-H5-002](../H5-enrollment-pdf/approved-current-final-source-amendment.md): cierre transaccional con fotografía final de Alumno/contactos para H5, sin reescribir snapshot inicial, reglas financieras ni aprobaciones históricas de este hito. Protocolo Ciclo -> Alumnos por UUID -> Matrículas por UUID; auditoría sin ambos snapshots. Las matrículas avanzan versión al capturar: recarga explícita antes de posteriores operaciones.
+
 ## TASK-H3-001 — Gate 1 humano registrado
 
 Spec exacto aprobado: `551cd00ed2957178400dca8fe9d945cf3f9e8d20`. Working tree limpio y commit existente verificados. Registro documental `55038c6` en rama Spec; rama `feature/h3-enrollment` creada desde el SHA aprobado y registro incorporado por cherry-pick `55a5b95`, siguiendo H2. Los cuatro archivos aprobados se mantienen idénticos al SHA humano.

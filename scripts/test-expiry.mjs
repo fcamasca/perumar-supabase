@@ -27,7 +27,9 @@ try {
   const payload = JSON.parse(Buffer.from(session.access_token.split('.')[1], 'base64url').toString())
   assert.equal(payload.exp - payload.iat, 60, 'Auth no emitió un JWT de 60 segundos.')
   const fetchToken = () => fetch(`${fixture.config.url}/rest/v1/app_users`, { signal: AbortSignal.timeout(5000), headers: { apikey: fixture.config.key, Authorization: `Bearer ${session.access_token}` } })
+  const fetchPdf = () => fetch(`${fixture.config.url}/functions/v1/ficha-matricula`, { method:'POST', signal:AbortSignal.timeout(15000), headers:{apikey:fixture.config.key,Authorization:`Bearer ${session.access_token}`,'Content-Type':'application/json'},body:JSON.stringify({matricula_id:'11111111-1111-4111-8111-111111111111',expected_updated_at:'2026-11-12T00:00:00Z'}) })
   assert.equal((await fetchToken()).status, 200)
+  assert.equal((await fetchPdf()).status,404,'Live academic JWT should reach the PDF source lookup')
   checked(await client.auth.signOut({ scope: 'local' }), 'logout de expiración')
   assert.equal((await fetchToken()).status, 200, 'No se observó JWT residual anterior a expiración.')
   const deadline = (payload.exp + 35) * 1000
@@ -39,6 +41,8 @@ try {
   const financialCommand=await fetch(`${fixture.config.url}/rest/v1/rpc/registrar_pago`,{method:'POST',headers:{...financialHeaders,'Content-Type':'application/json'},body:JSON.stringify({p:{}})})
   assert.ok([401,403].includes(financialCommand.status),'Expired JWT executed payment command')
   console.log('TEST-H4-003 real Auth token expiration: PASSED (financial read and command denied)')
+  assert.equal((await fetchPdf()).status,401,'Expired JWT reached the PDF operation')
+  console.log('TEST-H5-025 real Auth token expiration: PASSED (same authentic JWT reached PDF before expiry and was denied after expiry)')
   const expired = await fetchToken()
   assert.ok(expired.status === 401 || expired.status === 403, 'JWT realmente expirado fue aceptado.')
   console.log('TEST-H1-005/006 real-expiry: PASSED; token emitido por Auth rechazado después de exp y tolerancia, sin firma fabricada.')

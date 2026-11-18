@@ -1,4 +1,5 @@
 import { EnrollmentPayments } from '../payments/EnrollmentPayments'
+import { FichaPdfAction } from './FichaPdfAction'
 import { enrollmentError } from '../lib/enrollmentError'
 export { enrollmentError } from '../lib/enrollmentError'
 export { Tariffs } from './TariffPages'
@@ -535,6 +536,7 @@ export function EnrollmentDetail() {
     const chargeTable=(items:Row[],historical=false)=><div className="table-scroll enrollment-saved-charges"><table aria-label={historical?'Cargos retirados':'Cargos vigentes'}><thead><tr><th>Concepto</th><th>Original</th><th>Descuento</th><th>Total</th><th>{historical?'Motivo de retiro':'Estado'}</th></tr></thead><tbody>{items.map(c=><tr key={c.id}><td>{value(c,'nombre')}</td><td>{money(c.importe_original)}</td><td>{money(c.descuento)}</td><td>{money(c.importe_final)}</td><td>{historical?value(c,'motivo_inactivacion').replaceAll('_',' '):'Activo'}</td></tr>)}{!items.length&&<tr><td colSpan={5}>{historical?'No hay cargos retirados.':'No hay cargos vigentes.'}</td></tr>}</tbody></table></div>;
     return <section className="academic-record enrollment-detail">{dialog}
       <AcademicRecordHeader title="Ficha de matrícula" name={value(row,'codigo_matricula')} status={row&&<StatusBadge value={row.estado_codigo==='ACTIVO'?'Activa':'Anulada'}/>} editing={!!editing&&!!editable} busy={busy} backLabel="Volver a matrículas del Ciclo" editLabel="Editar matrícula" onBack={back} onEdit={editable&&!editing?()=>setEditing(true):undefined}/>
+      {row && <FichaPdfAction key={`${state.userId}:${row.id}`} enrollment={row.id} version={value(row,'updated_at')} enrollmentState={value(row,'estado_codigo')} cycleState={value(cycle,'estado_codigo')} disabled={busy || !!editing}/>}
       <Message>{message}</Message>
       {row&&<><div className="enrollment-context"><span><strong>Ciclo:</strong> {value(cycle,'codigo_ciclo')}</span><span><strong>Alumno:</strong> {value(student,'apellido_paterno')} {value(student,'apellido_materno')}, {value(student,'nombres')} · {value(student,'numero_di')}</span></div>
       <AcademicTabs id="enrollment-detail" names={['Resumen','Cargos','Historial','Pagos']} active={tab} disabled={busy} onChange={setTab}/>
