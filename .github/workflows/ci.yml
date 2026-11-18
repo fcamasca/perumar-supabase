@@ -59,6 +59,8 @@ jobs:
           npm run test:payments:rollback
           npm run test:payments:isolated
           npm run test:payments
+      - name: Expediente isolated DB API locks and history
+        run: npm run test:expediente:isolated
       - name: Enrollment PDF real Edge, private Storage and actor matrix
         run: |
           sudo apt-get update -qq
