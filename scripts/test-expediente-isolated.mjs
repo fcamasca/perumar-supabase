@@ -16,13 +16,19 @@ const sql=(statement,db=database)=>{
 const actorSql=(actor,text)=>`begin;select set_config('request.jwt.claim.sub','${actor}',true);${text};commit;`
 try{
  docker(['exec',container,'createdb','-U','postgres',database]);created=true
- const schema=docker(['exec',container,'pg_dump','-U','postgres','-d','postgres','--schema-only','--schema=public','--schema=private','--schema=auth','--no-owner','--no-publications','--no-subscriptions'])
+ const schema=docker(['exec',container,'pg_dump','-U','postgres','-d','postgres','--schema-only','--schema=public','--schema=private','--schema=auth','--schema=storage','--no-owner','--no-publications','--no-subscriptions'])
  sql('drop schema public cascade;create schema extensions;create extension btree_gist with schema extensions;')
  // Restore object ACLs; foreign-role default privileges cannot be changed by local postgres.
  sql(schema.replace(/^ALTER DEFAULT PRIVILEGES[\s\S]*?;/gm,''))
  const refs=['app_roles','catalogo','catalogo_valor','departamento','provincia','distrito','capitania']
  sql(docker(['exec',container,'pg_dump','-U','postgres','-d','postgres','--data-only',...refs.flatMap(t=>['--table',`public.${t}`])]))
- for(const file of readdirSync('supabase/migrations').filter(n=>/^20261118.*\.sql$/.test(n)).sort())sql(readFileSync('supabase/migrations/'+file,'utf8'))
+ for(const file of readdirSync('supabase/migrations').filter(n=>/^20261118.*\.sql$/.test(n)).sort()){
+  const marker=file.includes('010000') ? "select to_regclass('public.tipo_documento') is not null" : file.includes('020000') ? "select to_regproc('public.guardar_documentos_ciclo') is not null" : "select to_regproc('public.preparar_archivo_expediente') is not null"
+  if(sql(marker)!=='t')sql(readFileSync('supabase/migrations/'+file,'utf8'))
+ }
+ // Exercise the same empty-reference state produced by CI schema-only cloning.
+ // This TRUNCATE is exclusively in the random disposable DB, before fixture creation.
+ sql('truncate public.tipo_documento cascade');
  console.log('H6 additive model/commands: loaded into disposable schema/reference-only database (no human rows)')
  const base=readFileSync('tests/sql/h4-payments.sql','utf8'),start=base.indexOf('do $$'),end=base.indexOf(' select v.id into medium')
  const setup=base.slice(start,end)
@@ -30,6 +36,10 @@ try{
  insert into h6_fixture_result values(jsonb_build_object('actor',actor,'coordinator',coordinator,'student',a.id,'cycle',c.id,'cycleVersion',c.updated_at,'enrollment',e.id,'version',e.updated_at));end $$;select value from h6_fixture_result;`).split('\n').find(l=>l.startsWith('{')))
  const f=fixture()
  const snapshot=()=>JSON.parse(sql(`select coalesce(jsonb_agg(jsonb_build_object('id',id,'updated_at',updated_at) order by id),'[]') from public.ciclo_documento where ciclo_id='${f.cycle}'`))
+ if(sql('select count(*) from public.tipo_documento')==='0'){
+  const seed=readFileSync('supabase/migrations/20261118010000_h6_document_model.sql','utf8').match(/insert into public.tipo_documento[\s\S]*?;/)[0]
+  sql(actorSql(f.actor,"select set_config('perumar.document_command','TYPE',true);"+seed))
+ }
  const types=JSON.parse(sql('select json_object_agg(codigo,id) from public.tipo_documento'))
  const config=(items,expected=snapshot())=>`select public.guardar_documentos_ciclo('${f.cycle}','${f.cycleVersion}','${JSON.stringify(expected)}','${JSON.stringify(items)}')`
  const items=[{tipo_documento_id:types.DOCUMENTO_IDENTIDAD,obligatorio:'true',activo:'true'},{tipo_documento_id:types.CARTA_PODER,obligatorio:'false',activo:'true'}]
