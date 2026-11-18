@@ -16,6 +16,7 @@ export function AccountMenu() {
   const name = state.displayName || state.email || 'Mi cuenta'
   const initials = (state.displayName || state.email?.split('@')[0] || 'U').split(/[\s._-]+/).filter(Boolean).slice(0, 2).map(part => [...part][0]).join('').toLocaleUpperCase('es-PE')
   const roles = state.roles?.map(role => roleNames[role] ?? role) ?? []
+  const tooltip = [name, state.email !== name ? state.email : undefined, ...roles].filter(Boolean).join('\n')
   useEffect(() => {
     if (!open) return
     close.current?.focus()
@@ -30,10 +31,8 @@ export function AccountMenu() {
   return <div ref={root} className="account-menu" onBlur={event => {
     if (event.relatedTarget instanceof Node && !event.currentTarget.contains(event.relatedTarget)) setOpen(false)
   }}>
-    <button ref={trigger} type="button" className="account-trigger secondary" aria-label={`Mi cuenta: ${name}`} aria-haspopup="dialog" aria-expanded={open} aria-controls={id} onClick={() => setOpen(value => !value)}>
+    <button ref={trigger} type="button" className="account-trigger secondary" title={tooltip} aria-label={`Mi cuenta: ${name}`} aria-haspopup="dialog" aria-expanded={open} aria-controls={id} onClick={() => setOpen(value => !value)}>
       <span className="account-avatar" aria-hidden="true">{initials}</span>
-      <span className="account-summary"><strong>{name}</strong><small>{roles.join(' · ')}</small></span>
-      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6"/></svg>
     </button>
     {open && <section id={id} role="dialog" aria-modal="false" aria-label="Mi cuenta" className="account-popover">
       <div className="account-popover-heading"><h2>Mi cuenta</h2><button ref={close} type="button" className="secondary account-close" aria-label="Cerrar panel de cuenta" onClick={() => { setOpen(false); trigger.current?.focus() }}>×</button></div>

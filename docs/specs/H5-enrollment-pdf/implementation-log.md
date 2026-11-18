@@ -1,5 +1,15 @@
 # H5 — Registro de construcción
 
+## Consolidación de ajustes UX pendientes — 18/11/2026
+
+Se publican en un commit separado los cinco archivos de interfaz/tests que se preservaron fuera de los registros documentales de Gate 2 y GATE-A01. Autorizaciones humanas previas: solo círculo en la barra con nombre/correo/perfiles en tooltip y panel al pulsar; distinguir PDF vencido de fuente modificada. La solicitud posterior «hay cambios q aun no estan commiteados» motiva esta consolidación.
+
+AccountMenu elimina texto/flecha junto al avatar y conserva identidad/perfiles dentro del panel, tooltip nativo y nombre accesible. FichaPdfAction distingue vencimiento, datos cambiados y metadatos insuficientes; una fuente actual ausente se informa como fallo de consulta, sin inferir que cambió. No se habilita descarga obsoleta, generación automática ni retry; la autorización server-side y CHG-H5-002 siguen intactas. Se actualizan las pruebas existentes de presentación/diagnóstico. Sin migraciones, dependencias, RPC, RLS, Storage ni cambios de inventario.
+
+Este commit de interfaz es posterior al candidato `f9fbc4ddbf0eae36786d2296d045900aa9ea818a`; no se atribuye a él ni se amplía su [Gate 2](gate-2.md). [GATE-A01 aprobado con ajustes](../../architecture/GATE-A01-continuidad-supabase.md) sigue vigente; H5 sin cierre/acceptance/merge y H6 solo autorizado para preparación de Spec, sin iniciar preparación ni implementación en este cambio. Residuales conservados: Hosted Edge/PostgREST 14 no probados directamente, CPU/memoria no medidas, forced-colors H5 NO VERIFICADO, bundle >500 kB y limpieza física manual.
+
+Validación local de esta consolidación: **440/440 PASSED** (26 archivos), lint/typecheck/build/build-safety/diff-check PASSED. Primera pasada: 437/438, con un fallo porque el mock de EnrollmentPages devolvía fuente ausente y su alerta interfería con la prueba de conflicto de cargos. Se completó el mock con una huella sintética, sin debilitar aserciones de conflictos, borrador o ausencia de retry; se añadieron dos regresiones de fuente ausente/sin huella. Segunda pasada completa: 440/440. Bundle JS 682,53 kB (>500 kB), residual conservado. CI del SHA publicado se verifica antes de entrega; no equivale a nueva aprobación humana del candidato.
+
 ## Registro humano de Gate 2 — 18/11/2026
 
 **Gate 2 APROBADO HUMANAMENTE** exclusivamente sobre `f9fbc4ddbf0eae36786d2296d045900aa9ea818a`, CI [43474034111](https://github.com/fcamasca/perumar-supabase/actions/runs/43474034111) **COMPLETED / SUCCESS**, evidencia automática de ese candidato 425/425. El usuario reportó OK de los ocho bloques humanos. [gate-2.md](gate-2.md) registra el alcance exacto, las enmiendas y los cambios de interfaz posteriores, que no se atribuyen a esta aprobación. El commit actual es exclusivamente documental; preserva los cinco archivos de código/tests locales sin incorporarlos. Las menciones anteriores a Gate 2 pendiente se conservan como historia.

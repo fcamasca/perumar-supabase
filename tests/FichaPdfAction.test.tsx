@@ -93,6 +93,9 @@ it.each(['expired', 'changed', 'legacy'])('keeps Regenerate for %s previous PDF 
   expect(await screen.findByRole('button', { name: 'Regenerar ficha PDF' })).toBeEnabled()
   expect(screen.queryByRole('button', { name: 'Descargar ficha PDF' })).not.toBeInTheDocument()
   expect(mock.invoke).not.toHaveBeenCalled()
+  const message = screen.getByRole('status')
+  expect(message).toHaveTextContent(kind === 'expired' ? 'La ficha venció' : kind === 'changed' ? 'Los datos de la ficha cambiaron' : 'No se pudo verificar la vigencia')
+  if (kind === 'changed') expect(message).not.toHaveTextContent('venció')
 })
 it('does not mistake a lookup failure for a first generation or retry automatically', async () => {
   mock.query.mockRejectedValue(new Error('unavailable'))
@@ -110,6 +113,15 @@ it('ignores recovered metadata arriving after changing enrollment and identity',
   await screen.findByRole('button', { name: 'Generar ficha PDF' })
   finish({ data: { new_values: recoverable() }, error: null })
   await waitFor(() => expect(screen.getByRole('button', { name: 'Generar ficha PDF' })).toBeEnabled())
+  expect(screen.queryByRole('button', { name: 'Descargar ficha PDF' })).not.toBeInTheDocument()
+  expect(mock.invoke).not.toHaveBeenCalled()
+})
+
+it.each([null, {}])('reports an unavailable current source without claiming changed data or offering a download: %s', async source => {
+  mock.query.mockImplementation((table: string) => Promise.resolve({ data: table === 'auditoria' ? { new_values: recoverable() } : source, error: null }))
+  render(<FichaPdfAction {...props}/>)
+  expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo consultar la ficha anterior')
+  expect(screen.queryByText(/Los datos de la ficha cambiaron/)).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Descargar ficha PDF' })).not.toBeInTheDocument()
   expect(mock.invoke).not.toHaveBeenCalled()
 })

@@ -34,11 +34,15 @@ export function FichaPdfAction({ enrollment, version, enrollmentState, cycleStat
         const manifest = history.data?.new_values as { artefacto_id?: string; source_fingerprint?: string; expires_at?: string } | undefined
         const exists = typeof manifest?.artefacto_id === 'string'
         setHasGenerated(exists)
-        if (source.error) throw new Error('lookup')
+        if (source.error || !source.data?.source_fingerprint) throw new Error('lookup')
         if (exists && manifest.source_fingerprint && manifest.source_fingerprint === source.data?.source_fingerprint && Date.parse(manifest.expires_at ?? '') > Date.now()) {
           setArtifact(manifest.artefacto_id)
           setMessage('Ficha anterior recuperada. Su disponibilidad se verificará al descargar.')
-        } else if (exists) setMessage('La ficha anterior venció o cambió su fuente. Regenera la ficha para descargarla.')
+        } else if (exists) {
+          if (Date.parse(manifest.expires_at ?? '') <= Date.now()) setMessage('La ficha venció. Regenera para descargar una nueva ficha.')
+          else if (!manifest.source_fingerprint || !Number.isFinite(Date.parse(manifest.expires_at ?? ''))) setMessage('No se pudo verificar la vigencia de la ficha anterior. Regenera para descargar una nueva ficha.')
+          else setMessage('Los datos de la ficha cambiaron. Regenera para descargar la versión actual.')
+        }
       } catch {
         if (active && current === epoch.current) { setError(true); setMessage('No se pudo consultar la ficha anterior. Puedes solicitar una nueva generación explícitamente.') }
       } finally { if (active && current === epoch.current) setChecking(false) }

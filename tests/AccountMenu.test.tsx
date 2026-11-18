@@ -12,10 +12,11 @@ function Form() {
  return <><AccountMenu key={mock.state.userId}/><input aria-label="Borrador" value={text} onChange={e=>setText(e.target.value)}/><output>{location.pathname}</output><button>Otra acción</button></>
 }
 function show() { return render(<MemoryRouter initialEntries={['/academico/ciclos']}><Form/></MemoryRouter>) }
-it('keeps the signed-in name and DB role visible and shows initials', () => {
+it('shows only the avatar and exposes identity and profiles in its tooltip', () => {
  show()
  const button=screen.getByRole('button',{name:'Mi cuenta: Frankz Camasca'})
- expect(button).toHaveTextContent('FC'); expect(button).toHaveTextContent('Director académico')
+ expect(button).toHaveTextContent(/^FC$/); expect(button).toHaveAttribute('title','Frankz Camasca\nsynthetic@example.invalid\nDirector académico')
+ expect(screen.queryByText('Frankz Camasca')).not.toBeInTheDocument(); expect(screen.queryByText('Director académico')).not.toBeInTheDocument()
  expect(button).toHaveAttribute('aria-expanded','false');expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 })
 it('opens identity and profiles without navigating, remounting or losing the form draft', () => {
