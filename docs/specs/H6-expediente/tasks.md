@@ -3,13 +3,13 @@
 Fecha: 18/11/2026 (America/Lima). **DRAFT / Gate 1 H6 PENDIENTE. Construcción NO AUTORIZADA.**
 Rama: `feature/h6-expediente-spec`. Base exacta de main: `1228a028fc203e0319340b5b55d7d9aa99802760`, merge [PR #3 H5](https://github.com/fcamasca/perumar-supabase/pull/3). CI main [44381503820](https://github.com/fcamasca/perumar-supabase/actions/runs/44381503820) SUCCESS antes de crear la rama. H5 [CLOSED / ACEPTADO / INTEGRADO](../H5-enrollment-pdf/acceptance.md), candidato final `a19520a1733dca53b38bfe1463d0473304c88d86`, 440/440; cierre `1551538f1fdd190a4a70da402883734c40ff30f1`, CI `44379188039` SUCCESS. [GATE-A01 APROBADO CON AJUSTES](../../architecture/GATE-A01-continuidad-supabase.md).
 
-Esta entrega contiene exclusivamente requirements.md, design.md, tasks.md y test-plan.md. No implementa código/SQL/React/Edge, tablas, buckets, Storage, migraciones ni dependencias H6. Todos los TEST-H6 están **NO EJECUTADOS**. Las propuestas técnicas se someten a Gate 1; las OQ no equivalen a decisiones aprobadas. No se crea acceptance ni Gate 1 automático.
+Esta entrega contiene exclusivamente requirements.md, design.md, tasks.md y test-plan.md. No implementa código/SQL/React/Edge, tablas, buckets, Storage, migraciones ni dependencias H6. Todos los TEST-H6 están **NO EJECUTADOS**. Las decisiones humanas OQ-H6-001 a 006 quedan RESUELTAS en esta revisión sobre la base `cff11ab339ca9dc4ec32283631c7fb68f57d59a3`. El diseño técnico aún se somete a Gate 1, que sigue PENDIENTE; resolver OQ no autoriza construcción. No se crea acceptance ni Gate 1 automático.
 
 ## Regla de ejecución
 
-**Todas las tareas están PLANIFICADAS / NO INICIADAS.** TASK-001 cierra OQ y obtiene Gate 1 humano. Las demás son instrucciones de construcción futura, no permiso actual. Orden por dependencias, no por número. RLS/grants/constraints/auditoría se incluyen desde cada bloque; TASK-017/020 consolidan la matriz, no posponen seguridad para el final. No ejecutar TASK-002+ antes del Gate 1 exacto ni comandos de reset sobre datos humanos.
+**Todas las tareas están PLANIFICADAS / NO INICIADAS.** OQ-H6-001 a 006 ya están RESUELTAS; TASK-001 verifica su incorporación coherente y obtiene Gate 1 humano, todavía PENDIENTE. Las demás son instrucciones de construcción futura, no permiso actual. Orden por dependencias, no por número. RLS/grants/constraints/auditoría se incluyen desde cada bloque; TASK-017/020 consolidan la matriz, no posponen seguridad para el final. No ejecutar TASK-002+ antes del Gate 1 exacto ni comandos de reset sobre datos humanos.
 
-Las dependencias de OQ por requisito están en requirements.md. Cualquier task dependiente de OQ sin respuesta permanece bloqueada aunque compile una solución provisional. Crear solo el helper/comando necesario para un requisito, reutilizar patrones existentes y reportar si se convierte en una API oculta o nueva arquitectura.
+Las seis decisiones humanas son ya vinculantes en requisitos/diseño/pruebas. No quedan OQ H6 abiertas; todas las tareas de construcción siguen bloqueadas únicamente por Gate 1 pendiente, y después por sus dependencias técnicas. Crear solo el helper/comando necesario para un requisito, reutilizar patrones existentes y reportar si se convierte en una API oculta o nueva arquitectura.
 
 ## Tareas trazables
 
@@ -17,9 +17,9 @@ Las dependencias de OQ por requisito están en requirements.md. Cualquier task d
 
 Estado: **PLANIFICADA / NO INICIADA**. Trazabilidad: REQ-H6-001 / DES-H6-001. Dependencias: Ninguna; revisión humana del Spec.
 
-Trabajo: Resolver OQ-H6-001 a 006; aprobar límites técnicos, matriz de estados/roles, fuente/fechas/textos y retención. Obtener Gate 1 humano sobre SHA exacto. No iniciar ninguna tarea de construcción antes.
+Trabajo: Verificar OQ-H6-001 a 006 RESUELTAS y coherentes en cuatro documentos; revisar diseño técnico/límites y obtener Gate 1 humano sobre SHA exacto. No volver a pedir decisión sobre las seis reglas ni registrar Gate 1 automáticamente.
 
-Salida verificable: Cuatro documentos coherentes, OQ resueltas, SHA/Gate 1 registrados sin aceptación automática.
+Salida verificable: Cuatro documentos revisados, seis OQ resueltas y Gate 1 humano exacto antes de construir; política definitiva de eliminación solo pendiente para H9/release.
 
 ### TASK-H6-002 — Maestro tipo_documento
 
@@ -33,41 +33,41 @@ Salida verificable: Unicidad, origen inválido y cambios históricos rechazados;
 
 Estado: **PLANIFICADA / NO INICIADA**. Trazabilidad: REQ-H6-003 / DES-H6-003. Dependencias: TASK-H6-002, TASK-H6-018.
 
-Trabajo: ciclo_documento, comando guardar_documentos_ciclo y versiones. Unicidad, validación de tipo activo y efecto sobre existentes exactamente según OQ-001, sin propagación tácita.
+Trabajo: Implementar guardar_documentos_ciclo con configuración efectiva y sincronización explícita/transaccional de TODAS las matrículas ACTIVO actuales: altas/reactivación/desactivación/obligatoriedad, incluida reactivación de opcional retirado que pasa a obligatorio. Detectar versión/conjunto de configuración obsoleto; locks ordenados, historia y auditoría atómicas.
 
-Salida verificable: Configuración de dos Ciclos del mismo Curso independiente; guardado/carrera de matrícula coherente y auditado.
+Salida verificable: Tipos activos/unicidad, independencia por Ciclo, preservación de estado/bytes, exclusión de ANULADO/contextos históricos y rollback total si falla cualquier aplicación o auditoría; sin background ni commits por sublotes.
 
 ### TASK-H6-004 — Aplicación documental al registrar matrícula
 
 Estado: **PLANIFICADA / NO INICIADA**. Trazabilidad: REQ-H6-004 / DES-H6-004. Dependencias: TASK-H6-003, TASK-H6-018.
 
-Trabajo: matricula_documento y aplicación específica en la misma transacción de registrar_matricula; incluir TODOS los activos. Conservar firma/finanzas/cargos/código/snapshot H3/H4.
+Trabajo: Crear aplicaciones con contexto_id/contexto_vigente y unicidad por contexto/configuración. Al registrar matrícula, TODOS los activos nacen activos/PENDIENTE en la misma transacción de cargos/código/snapshot. Reutilizar aplicación/sincronización para altas y regularización sin duplicar reglas.
 
-Salida verificable: Obligatorios y opcionales activos PENDIENTE; error inyectado deja cero matrícula/cargos/documentos parciales y auditoría de éxito ausente.
+Salida verificable: Rollback completo de matrícula/cargos/documentos; estados de aplicaciones existentes conservados al sincronizar; contexto nuevo al trasladar/regresar, sin reutilizar histórico.
 
 ### TASK-H6-005 — Historia y obligatoriedad
 
 Estado: **PLANIFICADA / NO INICIADA**. Trazabilidad: REQ-H6-005 / DES-H6-005. Dependencias: TASK-H6-004.
 
-Trabajo: Protecciones de condiciones aplicadas, estado por origen, retiro con actor/fecha/motivo y vínculo de archivo; no DML cliente ni DELETE de historia. Reutilizar guard específico si basta.
+Trabajo: Proteger historia, origen/identidad/contexto y archivos; obligatorio efectivo/activo modificables solo por sincronización autorizada o retiro/traslado específico. Bloquear retiro individual obligatorio, permitir inactivación por configuración/traslado y reactivación al pasar a obligatorio.
 
-Salida verificable: Obligatorio no retirable individualmente ni por Director; condiciones/estado imposibles rechazados y referencias históricas válidas.
+Salida verificable: Documento/estado/bytes no se pierden al cambiar obligatoriedad o aplicabilidad; guard no confunde condición efectiva con snapshot inmutable ni bloquea configuración autorizada.
 
 ### TASK-H6-006 — Retiro de opcionales individual y por selección
 
 Estado: **PLANIFICADA / NO INICIADA**. Trazabilidad: REQ-H6-006 / DES-H6-006. Dependencias: TASK-H6-005, TASK-H6-017, TASK-H6-018.
 
-Trabajo: RPC acotada para un Ciclo y hasta 50 seleccionados con versiones; rollback total y auditoría por afectado sin borrar archivos ni alterar configuración.
+Trabajo: RPC de retiro opcional para Director/Coordinador, hasta50 seleccionados del mismo Ciclo/contexto vigente con versiones y motivo; matriz ACTIVO+PROGRAMADO/EN_CURSO/CERRADO, rollback total y auditoría sin borrar estado/bytes ni cambiar configuración.
 
-Salida verificable: Opcional PENDIENTE/CARGADO/GENERADO se retira conservando estado/versiones; lote mixto o versión obsoleta falla completamente, sin retry.
+Salida verificable: PENDIENTE/CARGADO/GENERADO conservados tras retiro; obligatorio/ajeno/obsoleto falla sin parcialidad; carrera con configuración que lo hace obligatorio se reevalúa, sin retry.
 
 ### TASK-H6-007 — Resumen derivado y faltantes
 
 Estado: **PLANIFICADA / NO INICIADA**. Trazabilidad: REQ-H6-007 / DES-H6-007. Dependencias: TASK-H6-004, TASK-H6-017.
 
-Trabajo: Consulta/vista invoker específica que derive aplicables/completados/pendientes y nombres faltantes; paginación estable, sin persistir COMPLETO.
+Trabajo: Resumen derivado solo del contexto vigente y aplicaciones activas; faltantes=activo+PENDIENTE, incluso opcionales. GENERADO desactualizado conserva conteos y se identifica por diagnóstico derivado separado, no OBSOLETO persistido.
 
-Salida verificable: Cuenta también opcional activo PENDIENTE, excluye retirados y muestra cero aplicables sin división engañosa.
+Salida verificable: Cambios transaccionales de configuración/retirada/traslado actualizan conteos correctamente; retirados/históricos fuera del resumen y accesibles en Historia.
 
 ### TASK-H6-008 — Grillas y lectura de expediente
 
@@ -97,97 +97,97 @@ Salida verificable: Casos frontera PDF/JPEG/PNG válidos e inválidos, bombas/ac
 
 Estado: **PLANIFICADA / NO INICIADA**. Trazabilidad: REQ-H6-011 / DES-H6-011. Dependencias: TASK-H6-004, TASK-H6-009, TASK-H6-017, TASK-H6-018.
 
-Trabajo: Tabla de versiones/reservas y RPC preparar/confirmar/abortar con grants cerrados y validación actor/contexto tras locks. No IO bajo transacción ni falsa atomicidad Storage/DB.
+Trabajo: Reserva/confirmación/aborto y cuarta tabla de versiones: actor/contexto/configuración/versiones revalidados, parámetros por generación de lista cerrada y apoderado/fecha protegidos e inmutables cuando se confirmen. No IO bajo lock DB ni falsa atomicidad Storage/DB.
 
-Salida verificable: Fallo antes/después de upload/confirmación preserva estado previo; huérfanos privados localizables, replay explícito sin segundo éxito.
+Salida verificable: Sin CARGADO/GENERADO falso, huérfano privado conciliable; sincronización/traslado concurrentes impiden confirmación desactualizada, replay explícito sin segundo éxito.
 
 ### TASK-H6-012 — Versionado y reemplazos
 
 Estado: **PLANIFICADA / NO INICIADA**. Trazabilidad: REQ-H6-012 / DES-H6-012. Dependencias: TASK-H6-010, TASK-H6-011.
 
-Trabajo: Puntero de versión confirmada y propiedad documento/archivo; reemplazar sin upsert, UUID técnico único y confirmación idempotente del mismo resultado.
+Trabajo: ultimo_archivo_confirmado_id y metadatos inmutables de versión con vínculo exacto; reemplazo sin upsert. Derivar actual/histórica/desactualizada desde contexto/fuente/plantilla, manteniendo GENERADO y acceso histórico autorizado.
 
-Salida verificable: Dos confirmaciones concurrentes no sobrescriben ni duplican eventos; fila vieja y bytes históricos conservados.
+Salida verificable: Dos confirmaciones no sobrescriben; versiones reemplazadas/retiradas/anuladas conservadas, un puntero confirmado no se interpreta automáticamente como actual.
 
 ### TASK-H6-013 — Descarga autorizada
 
 Estado: **PLANIFICADA / NO INICIADA**. Trazabilidad: REQ-H6-013 / DES-H6-013. Dependencias: TASK-H6-012, TASK-H6-017, TASK-H6-018, TASK-H6-021.
 
-Trabajo: Edge expediente-descargar, lectura JWT/RLS, vínculo exacto, revalidación, entrega bytes no-store y auditoría de inicio; reglas OQ-002/004/006 resueltas.
+Trabajo: Edge descarga de archivo CONFIRMADO actual o histórico con JWT/RLS/vínculo/rol, bytes no-store y auditoría mínima. Permitir historia retirada/reemplazada/desactualizada/contexto anterior/matrícula anulada, incluso DESIERTO/ANULADO; no reutilizar bloqueo temporal H5.
 
-Salida verificable: IDOR, revocación/estado cambiado durante espera, versión ajena y object_key cliente rechazados; no URL reutilizable como autoridad.
+Salida verificable: Revocar rol deniega; anular matrícula bloquea confirmación nueva pero permite historia autorizada; cambio de actual a histórico se comunica sin presentar viejo como actual ni borrar bytes.
 
 ### TASK-H6-014 — Cuatro renderers institucionales
 
 Estado: **PLANIFICADA / NO INICIADA**. Trazabilidad: REQ-H6-014 / DES-H6-014. Dependencias: TASK-H6-010, TASK-H6-012, TASK-H6-015.
 
-Trabajo: Renderers fijos/versionados para solicitud, declaración, carta poder y ficha personal; textos/campos reales según OQ-005 y referencia adaptada, no editor.
+Trabajo: Cuatro renderers fijos/versionados con textos institucionales aprobados/referenciales, fecha/edad de generación H6 y apoderado explícito para cada Carta Poder. Todos admiten ACTIVO+PROGRAMADO/EN_CURSO/CERRADO; Solicitud sin requisito CERRADO/nota/aprobación.
 
-Salida verificable: PDF institucional legible con tildes/ñ y extremos/multipágina, sin PII de muestra ni afirmación académica inventada.
+Salida verificable: Formato legible/español/extremos/multipágina, sin personas de muestra, resultados académicos, afirmaciones inventadas ni contacto convertido en apoderado; no editor genérico.
 
 ### TASK-H6-015 — Fuente de datos y fingerprint
 
 Estado: **PLANIFICADA / NO INICIADA**. Trazabilidad: REQ-H6-015 / DES-H6-015. Dependencias: TASK-H6-001, TASK-H6-004, TASK-H6-018.
 
-Trabajo: Reutilizar proyección CHG-H5-002 y validación servidor; datos específicos solo tras OQ-005. No cambiar snapshot inicial/final, sin fallback ni hash React.
+Trabajo: Reutilizar selección de fuente CHG-H5-002. Calcular fecha real servidor Lima y edad a generación, separar campos de matrícula y usar datos de apoderado explícitos por versión. Huella canónica de datos/contexto/plantilla/perfil, sin fecha de emisión como invalidación diaria.
 
-Salida verificable: Vigente/cierre correctos y cambio de alumno/contactos/contexto/plantilla entre reserva y confirmación produce PT409 sin éxito ni documento parcial.
+Salida verificable: Snapshot inicial/final intactos y sin fallback; fuente cambia durante generación da PT409, fecha/edad impresas quedan fijas al descargar versión histórica; no valores del reloj React.
 
 ### TASK-H6-016 — Integración persistente Ficha H5
 
 Estado: **PLANIFICADA / NO INICIADA**. Trazabilidad: REQ-H6-016 / DES-H6-016. Dependencias: TASK-H6-012, TASK-H6-014, TASK-H6-015.
 
-Trabajo: Compartir renderer/fuente institucional H5 y confirmar copia persistente propia; distinguir acción temporal/persistente conforme OQ-006.
+Trabajo: Compartir renderer/fuente/CHG-H5-002 y producir objeto persistente H6 propio. Parametrizar proyección/perfil fijo H6 de fecha/edad sin modificar defaults ni contrato temporal H5, sin copiar temporal ni depender de su TTL/bucket.
 
-Salida verificable: H5 sigue expirando a 24h y bloqueando obsoletos; H6 no depende del temporal ni copia archivo vencido a ciegas.
+Salida verificable: H5 temporal sigue igual y bloquea obsoletos; H6 conserva generaciones como Historia descargable y exige regeneración explícita para actual, sin OBSOLETO persistido ni lógica duplicada.
 
 ### TASK-H6-017 — RLS, grants y autorización
 
 Estado: **PLANIFICADA / NO INICIADA**. Trazabilidad: REQ-H6-017 / DES-H6-017. Dependencias: TASK-H6-002, TASK-H6-003, TASK-H6-004, TASK-H6-005.
 
-Trabajo: Matriz JWT/RLS sobre cada tabla y lectura relacionada; permisos DB en comandos; service_role limitado a Storage/confirmación/auditoría cerradas.
+Trabajo: RLS/grants y matriz resuelta: Director/Coordinador; mutaciones con ACTIVO y PROGRAMADO/EN_CURSO/CERRADO. ANULADO/DESIERTO bloquean mutar, no consultar/descargar historia. ADMIN solo/anon/bloqueado/revocado denegados; RLS SELECT no filtra fuera los archivos históricos autorizados.
 
-Salida verificable: Director/Coordinador permitidos según matriz, ADMIN solo/anon/bloqueado/revocado denegados; sin DML/Storage sensible desde React.
+Salida verificable: Matriz uniforme por tipo, solo operación adecuada al origen; sin DML/Storage cliente ni service_role bundle, roles vigentes revalidados tras locks.
 
 ### TASK-H6-018 — Concurrencia y contratos de conflicto
 
 Estado: **PLANIFICADA / NO INICIADA**. Trazabilidad: REQ-H6-018 / DES-H6-018. Dependencias: TASK-H6-001.
 
-Trabajo: Fijar protocolo de locks, expected_updated_at y PT409 sin RAISE deliberado 40001; diseñar barreras de carreras específicas antes de comandos.
+Trabajo: Consolidar Ciclo→Alumnos→Matrículas→config/documentos/archivos, expected_updated_at y conjunto de configuración esperado; PT409 lógico, 40001/40P01 reales sin retry. Diseñar carreras config/matrícula/retiro/confirmación/traslado antes de comandos.
 
-Salida verificable: Prueba de orden estable y fallos reales 40001/40P01 preservados; sin reintentos automáticos en React/SDK/Edge.
+Salida verificable: Guardar configuración sincroniza todo una sola transacción, sin deadlocks por orden inverso ni partir en sublotes; revalidación conserva matriz de lectura histórica distinta de mutación.
 
 ### TASK-H6-019 — Traslado y regularización de existentes
 
 Estado: **PLANIFICADA / NO INICIADA**. Trazabilidad: REQ-H6-019 / DES-H6-019. Dependencias: TASK-H6-001, TASK-H6-003, TASK-H6-004, TASK-H6-018.
 
-Trabajo: Solo conforme OQ-001/003 cerradas, adaptar transición de matrícula preservando relaciones/archivos/contexto anterior, nuevos pendientes y rollback. Sin tocar reglas de pagos ni cargos.
+Trabajo: Traslado H4 crea contexto nuevo: anterior inactivo/histórico TRASLADO y destino TODOS activos/PENDIENTE; regreso también nuevo contexto, sin reactivar/copy/reusar bytes. Añadir RPC regularizar_expedientes_ciclo para existentes ACTIVO, explícita, auditada y transaccional.
 
-Salida verificable: Cambio de Ciclo no pierde historia ni reutiliza archivos sin decisión; existentes tratados explícitamente sin reset humano.
+Salida verificable: Historia/pagos/restricciones financieras intactos; regularización no duplica al repetir ni altera ANULADO, no backfill/reset/background; fallo revierte todo.
 
 ### TASK-H6-020 — Auditoría mínima
 
 Estado: **PLANIFICADA / NO INICIADA**. Trazabilidad: REQ-H6-020 / DES-H6-020. Dependencias: TASK-H6-002, TASK-H6-003, TASK-H6-004, TASK-H6-006, TASK-H6-011, TASK-H6-013, TASK-H6-014.
 
-Trabajo: Eventos específicos de operaciones confirmadas/intentos de descarga; excluir contenido/PII/keys/URLs/hashes de auditoría general.
+Trabajo: Auditoría mínima de configuración+sincronización, cambio de flags/causas, regularización, aplicación, retiro, traslado y versiones/descarga. Conservar cambios estructurales append-only, sin PII/contenido/apoderado/keys/URLs en auditoría general.
 
-Salida verificable: Sin auditoría de éxito en fallos; actor/IDs/correlación correctos y ningún trigger genérico de PII.
+Salida verificable: Sin éxito auditado ante fallo; configurar/sincronizar/regularizar y auditoría atómicos, historia de reactivación/obligatoriedad disponible sin copias genéricas de PII.
 
 ### TASK-H6-021 — Retención y operación manual
 
 Estado: **PLANIFICADA / NO INICIADA**. Trazabilidad: REQ-H6-021 / DES-H6-021. Dependencias: TASK-H6-001, TASK-H6-011, TASK-H6-012.
 
-Trabajo: Aplicar decisión OQ-004; documentar conciliación acotada de huérfanos, dry-run y referencias protegidas. No scheduler ni eliminación de confirmados por TTL H5.
+Trabajo: Confirmados persistentes, sin TTL/purga funcional ni eliminación por retiro/anulación/cierre. Acceso histórico autorizado. Solo limpieza manual acotada/dry-run de reservas/objetos nunca confirmados; registrar política definitiva como pendiente H9/release.
 
-Salida verificable: Retiro/anulación no borra bytes; cleanup nunca toca confirmado/referenciado y soporta repetición manual segura.
+Salida verificable: Ningún CONFIRMADO se borra aunque esté retirado/reemplazado/desactualizado/anulado; limpieza no adopta TTL H5 ni toca referencias históricas; sin scheduler/S3.
 
 ### TASK-H6-022 — UX de acciones y accesibilidad
 
 Estado: **PLANIFICADA / NO INICIADA**. Trazabilidad: REQ-H6-022 / DES-H6-022. Dependencias: TASK-H6-006, TASK-H6-008, TASK-H6-010, TASK-H6-013, TASK-H6-014, TASK-H6-016.
 
-Trabajo: Integrar carga/generación/descarga/retiro/historia, confirmaciones, errores precisos, estados busy, selección preservada, foco y temas existentes.
+Trabajo: Grillas y acciones con configuración efectiva, retiro/historia/conteos y mensajes uniformes. Distinguir actual/histórico/retirado/desactualizado sin estado OBSOLETO; bloquear solo mutaciones en contexto cerrado a cambios y mantener descarga histórica autorizada.
 
-Salida verificable: Guardar solo ante cambios, confirmación de éxito, teclado/ancho reducido y forced-colors real registrado como ejecutado o NO VERIFICADO sin inventar.
+Salida verificable: Confirmación de alcance de sincronización, feedback de éxito/errores, teclado/foco/temas, selección y borrador conservados; apoderado explícito por generación y regeneración nunca automática.
 
 ### TASK-H6-023 — Regresión y pruebas de integración/seguridad
 
@@ -201,13 +201,13 @@ Salida verificable: Resultados exactos y riesgos documentados, 70+60 saldo100 y 
 
 Estado: **PLANIFICADA / NO INICIADA**. Trazabilidad: REQ-H6-024 / DES-H6-024. Dependencias: TASK-H6-023.
 
-Trabajo: Revisar inventario real contra DES-024; medir latencia/bytes/CPU/memoria si disponibles, estimar costos con supuestos y publicar evidencia. Sin ampliar arquitectura por dificultad.
+Trabajo: Inventario propuesto actualizado: cuatro tablas y ocho RPC, incluida regularización concreta por OQ-001, sin arquitectura adicional. Medir recursos/costos con supuestos y publicar candidato/evidencia futura; preservar seis residuales.
 
-Salida verificable: SHA/CI/inventario/mediciones reales y residuales; entregar para revisión humana, sin acceptance/Gate 2/merge automáticos.
+Salida verificable: Requisitos/OQ cerrados no implican Gate1/Gate2; SHA/CI/inventario y evidencias reales sin acceptance/merge automáticos.
 
 ## Bloques razonables de construcción futura
 
-- Gate 1/OQ y contratos de concurrencia; maestro/configuración/aplicación con seguridad desde inicio.
+- Gate 1 pendiente (OQ ya resueltas) y contratos de concurrencia; maestro/configuración/aplicación con seguridad desde inicio.
 - Protección de historia, retiro y resumen; RLS/grants reales y rollback inicial de matrícula.
 - Storage/reserva/carga/versiones/retención y descarga; fallos por etapa y carreras antes de UI final.
 - Fuente/renderers fijos y copia H5 persistente; contenido mínimo/extenso, privacidad y regresión de cierre.

@@ -3,17 +3,17 @@
 Fecha: 18/11/2026 (America/Lima). **DRAFT / Gate 1 H6 PENDIENTE. Construcción NO AUTORIZADA.**
 Rama: `feature/h6-expediente-spec`. Base exacta de main: `1228a028fc203e0319340b5b55d7d9aa99802760`, merge [PR #3 H5](https://github.com/fcamasca/perumar-supabase/pull/3). CI main [44381503820](https://github.com/fcamasca/perumar-supabase/actions/runs/44381503820) SUCCESS antes de crear la rama. H5 [CLOSED / ACEPTADO / INTEGRADO](../H5-enrollment-pdf/acceptance.md), candidato final `a19520a1733dca53b38bfe1463d0473304c88d86`, 440/440; cierre `1551538f1fdd190a4a70da402883734c40ff30f1`, CI `44379188039` SUCCESS. [GATE-A01 APROBADO CON AJUSTES](../../architecture/GATE-A01-continuidad-supabase.md).
 
-Esta entrega contiene exclusivamente requirements.md, design.md, tasks.md y test-plan.md. No implementa código/SQL/React/Edge, tablas, buckets, Storage, migraciones ni dependencias H6. Todos los TEST-H6 están **NO EJECUTADOS**. Las propuestas técnicas se someten a Gate 1; las OQ no equivalen a decisiones aprobadas. No se crea acceptance ni Gate 1 automático.
+Esta entrega contiene exclusivamente requirements.md, design.md, tasks.md y test-plan.md. No implementa código/SQL/React/Edge, tablas, buckets, Storage, migraciones ni dependencias H6. Todos los TEST-H6 están **NO EJECUTADOS**. Las decisiones humanas OQ-H6-001 a 006 quedan RESUELTAS en esta revisión sobre la base `cff11ab339ca9dc4ec32283631c7fb68f57d59a3`. El diseño técnico aún se somete a Gate 1, que sigue PENDIENTE; resolver OQ no autoriza construcción. No se crea acceptance ni Gate 1 automático.
 
 ## Decisiones humanas ya cerradas
 
-Modelo propio `tipo_documento → ciclo_documento → matricula_documento`, sin catalogo_valor documental; orígenes SUBIDO/GENERADO; configuración por Ciclo. TODOS los activos se aplican inicialmente, obligatorios y opcionales; opcional activo PENDIENTE cuenta como faltante. Obligatorio no retirable individualmente; Director/Coordinador retiran opcionales a uno o varios alumnos conservando estado, archivos e historia. Estados únicamente PENDIENTE/CARGADO o PENDIENTE/GENERADO; activo independiente. Completitud derivada. Metadatos DB y bytes persistentes en Supabase Storage privado, object_key servidor sin PII, no URL como identidad. Cuatro formatos institucionales, sin editor genérico ni S3. No reabrir estas decisiones en las OQ.
+Modelo propio `tipo_documento → ciclo_documento → matricula_documento`, sin catalogo_valor documental; orígenes SUBIDO/GENERADO; configuración por Ciclo. TODOS los activos se aplican inicialmente, obligatorios y opcionales; opcional activo PENDIENTE cuenta como faltante. Obligatorio no retirable individualmente; la condición/aplicabilidad efectiva se sincroniza transaccionalmente desde el Ciclo conforme a OQ-H6-001. Director/Coordinador retiran opcionales a uno o varios alumnos conservando estado, archivos e historia. Estados únicamente PENDIENTE/CARGADO o PENDIENTE/GENERADO; activo independiente. Completitud derivada. Metadatos DB y bytes persistentes en Supabase Storage privado, object_key servidor sin PII, no URL como identidad. Cuatro formatos institucionales, sin editor genérico ni S3. No reabrir estas decisiones en las OQ.
 
 ## Referencia funcional y límites
 
 `Expediente Perú Mar Nuevos.docx` se encuentra localmente en docs/usuario (archivo del usuario ignorado, no se incorpora al repositorio). Se inspeccionó su contenido OOXML: ficha de matrícula H5, Solicitud de inscripción y obtención de Libreta de Embarco / Carné, Declaración jurada, Carta poder y Ficha de datos personales. Sus personas, DI, domicilios, apoderado, fechas, resoluciones y afirmaciones académicas de ejemplo no son semillas ni datos de producción ni acreditación legal vigente. No hay fuentes externas de universidades ni se copia PII a Spec/tests.
 
-El renderer de referencia no pudo ejecutarse por ausencia local de pdf2image: **revisión visual de ese Word NO EJECUTADA en esta preparación**. No se alteró el archivo ni instalaron dependencias. La adaptación visual/textual de los cuatro formatos se revisará con datos sintéticos durante construcción y revisión humana H6, sin repetir Gate 2 H5. OQ-005 impide inventar contenido o datos de negocio para completar huecos.
+El renderer de referencia no pudo ejecutarse por ausencia local de pdf2image: **revisión visual de ese Word NO EJECUTADA en esta preparación**. No se alteró el archivo ni instalaron dependencias. La adaptación visual/textual de los cuatro formatos se revisará con datos sintéticos durante construcción y revisión humana H6, sin repetir Gate 2 H5. OQ-H6-005 RESUELTA fija datos/fechas y prohíbe inventar contenido o datos de negocio para completar huecos.
 
 ## Requisitos
 
@@ -27,23 +27,23 @@ tipo_documento es un maestro propio con id, codigo, nombre, descripcion, origen 
 
 ### REQ-H6-003 — Configuración por Ciclo
 
-ciclo_documento vincula Ciclo y tipo_documento, obligatorio y activo. La configuración efectiva pertenece al Ciclo, no al Curso. Evitar duplicados de tipo dentro del mismo Ciclo. Conservar historia de configuración. No trasladar cambios de un expediente individual a la configuración. Efectos sobre matrículas existentes sujetos a OQ-H6-001.
+ciclo_documento vincula Ciclo y tipo_documento, obligatorio y activo. La configuración del Ciclo es fuente efectiva para nuevas matrículas y para matrículas ACTIVO ya existentes. Guardar configuración sincroniza explícitamente en la misma transacción DB: alta activa se aplica; reactivación se vuelve a aplicar; desactivación deja de hacer aplicable conservando registro/estado/archivos; cambio obligatorio/opcional actualiza la condición de las aplicaciones del contexto actual. Un opcional retirado individualmente que pasa a obligatorio vuelve a activo/aplicable conservando estado y archivo. No borrar historia ni ejecutar backfill en background. La regularización inicial de matrículas preexistentes es una operación explícita por Ciclo, auditada y transaccional (OQ-H6-001 RESUELTA).
 
 ### REQ-H6-004 — Aplicación inicial completa y atómica
 
-Al registrar una matrícula aplicar TODOS los ciclo_documento activos, tanto obligatorios como opcionales, creando matricula_documento activo y PENDIENTE. No aceptar selección inicial de opcionales desde React. Matrícula/cargos/snapshot/documentos se confirman en la misma transacción DB; un fallo revierte todo. Cero documentos configurados produce cero aplicables, sin impedir la matrícula salvo decisión posterior explícita.
+Al registrar una matrícula aplicar TODOS los ciclo_documento activos, obligatorios y opcionales, creando aplicaciones del contexto actual activas y PENDIENTE. No aceptar selección inicial de opcionales desde React. Matrícula/cargos/snapshot/documentos se confirman en la misma transacción; un fallo revierte todo. Cero configuración produce cero aplicables, sin barrera nueva para matricular. En guardar configuración y regularizar existentes se crean las aplicaciones faltantes del contexto actual, se actualizan/reactivan las correspondientes sin duplicarlas y se conservan sus estados/archivos previos; solo una aplicación nueva nace PENDIENTE. No tocar aplicaciones de contextos históricos ni matrículas ANULADO.
 
 ### REQ-H6-005 — Obligatorios protegidos
 
-Un documento aplicado como obligatorio nace activo y no puede retirarse individualmente, ni siquiera por Director. La condición aplicada no puede alterarse desde React o por cambiar silenciosamente la configuración. Tenerlo PENDIENTE indica faltante, no bloquea pagos, matrícula ni cierre H3 por una regla nueva implícita.
+Todo documento obligatorio aplicable permanece activo y no puede retirarse individualmente, ni por Director. La obligatoriedad efectiva sí se actualiza mediante la sincronización transaccional de configuración del Ciclo autorizada en OQ-H6-001; no es un snapshot inmutable. Si un opcional retirado pasa a obligatorio, vuelve a aplicable preservando estado/archivo. Desactivación de configuración y traslado pueden dejar históricas/inactivas aplicaciones obligatorias como cambio de contexto, no como retiro individual. Conservar auditoría de condiciones anteriores. PENDIENTE no bloquea pagos, matrícula ni cierre H3 por una regla nueva.
 
 ### REQ-H6-006 — Retiro opcional individual y múltiple
 
-Director Académico o Coordinador Académico pueden retirar un opcional para una o varias matrículas seleccionadas. Retirar establece activo=false y conserva estado previo, archivo, versiones, actor, fecha, motivo e historia. Funciona también con CARGADO/GENERADO. Prohibir DELETE funcional y no borrar bytes automáticamente. Validación DB para cada fila y autorización/contexto actuales, con lote atómico y conflictos explícitos.
+Director Académico o Coordinador Académico pueden retirar un opcional para una o varias matrículas seleccionadas bajo la matriz general de OQ-H6-002. Establecer activo=false conserva estado, archivo, versiones, motivo/actor/fecha e historia, incluso CARGADO/GENERADO. No alterar configuración del Ciclo ni borrar registro/bytes. Lote atómico con validación DB de cada fila, contexto, condición y versión; conflicto explícito si una sincronización concurrente lo hizo obligatorio. Guardar otra configuración sin cambios de aplicabilidad no deshace un retiro individual; una reactivación de configuración o conversión a obligatorio sí sigue las reglas explícitas de sincronización.
 
 ### REQ-H6-007 — Estados y completitud derivados
 
-SUBIDO admite solo PENDIENTE/CARGADO; GENERADO solo PENDIENTE/GENERADO. No VALIDADO ni IMPRESO. No persistir COMPLETO/INCOMPLETO. Faltante equivale a activo=true y estado=PENDIENTE, incluidos opcionales. Aplicables cuenta activos; completados cuenta activos CARGADO/GENERADO; pendientes cuenta activos PENDIENTE. Un retirado no cuenta aunque conserve archivo/estado. Con cero aplicables mostrar Sin documentos aplicables, con cero pendientes.
+SUBIDO solo PENDIENTE/CARGADO; GENERADO solo PENDIENTE/GENERADO. No VALIDADO, IMPRESO ni OBSOLETO de negocio. No persistir COMPLETO/INCOMPLETO. En el contexto actual, aplicables cuenta activo=true; completados cuenta activos CARGADO/GENERADO; pendientes cuenta activos PENDIENTE incluidos opcionales. Contextos anteriores y retirados no cuentan. Un generado desactualizado conserva GENERADO y no se convierte en faltante: mostrar diagnóstico de versión histórica/desactualizada separado del estado y de los conteos. Cero aplicables: Sin documentos aplicables y cero pendientes.
 
 ### REQ-H6-008 — Expediente individual y visión por Ciclo
 
@@ -63,43 +63,43 @@ Carga/generación solo cambia el estado documental al confirmar metadatos y arch
 
 ### REQ-H6-012 — Metadatos y versiones inmutables
 
-Registrar por archivo SHA-256 servidor, bytes, MIME verificado, object_key, actor/fecha y, para generados, versión de plantilla y huella de fuente. Nombre original opcional saneado solo si necesario, nunca en object_key/logs. Reemplazar/regenerar crea nueva versión y conserva la anterior, sin sobrescribir bytes. Solo una versión vigente por documento, confirmada por DB. Retiro funcional no borra versiones.
+Por archivo confirmado registrar SHA-256 servidor, bytes, MIME verificado, object_key, actor/fecha y para generados versión de plantilla, huella y fecha real de generación. Nombre original solo saneado si es necesario, nunca en keys/logs. Cada carga/reemplazo/generación crea versión inmutable sin sobrescribir bytes; el vínculo a la última versión confirmada no afirma por sí solo vigencia de fuente. Versiones reemplazadas, retiradas, de contexto anterior y de matrícula anulada siguen en Historia autorizada. Datos de apoderado de Carta Poder se proporcionan explícitamente en cada generación y quedan ligados a esa versión, no inferidos de contactos ni reutilizados automáticamente.
 
 ### REQ-H6-013 — Descarga y privacidad
 
-Descargar solo mediante verificación JWT y autorización/contexto server-side del archivo exacto y su vínculo a la matrícula; proteger IDOR de documento, archivo y key. La posesión de UUID no autoriza. Proponer entrega de bytes con Cache-Control private,no-store y Content-Disposition seguro; sin URLs públicas ni capacidades de larga duración. Revalidar tras esperas y antes de entrega. Las reglas de estados/historia por confirmar están en OQ-H6-002/004/006.
+Director/Coordinador pueden consultar y descargar archivos CONFIRMADO autorizados: versión actual, reemplazadas, documentos retirados, contextos históricos y matrícula anulada, incluso cuando el estado académico bloquea nuevas mutaciones. No bloquear una descarga histórica solo porque la matrícula sea ANULADO o el Ciclo DESIERTO/ANULADO. Mantener JWT, rol activo y vínculo exacto documento/matrícula/archivo para evitar IDOR. Entregar bytes con private,no-store y nombre seguro, sin URL pública ni capacidades largas. Revalidar autorización tras esperas; si entretanto cambia el contexto, ofrecerlo/entregarlo claramente como Historia, nunca presentarlo como actual. service_role no autoriza por sí solo al usuario.
 
 ### REQ-H6-014 — Formatos institucionales fijos
 
-Contemplar Solicitud de inscripción y obtención de Libreta de Embarco / Carné, Declaración jurada, Carta poder y Ficha de datos personales. Evaluar renderers fijos/versionados con pdf-lib, reutilizando componentes de H5 sin crear motor editable. Cada resultado se asocia a matricula_documento. Español completo, campos largos, blanco explícito para datos ausentes y paginación legible sin recortes. Fuente Word local solo referencia: no semillas de personas, apoderados, fechas o resoluciones de ejemplo.
+Contemplar Solicitud de inscripción y obtención de Libreta de Embarco / Carné, Declaración jurada, Carta poder y Ficha de datos personales mediante renderers fijos/versionados, compartiendo utilidades H5 sin motor editable. Misma matriz de mutación para todos: matrícula ACTIVO y Ciclo PROGRAMADO/EN_CURSO/CERRADO; la Solicitud NO requiere CERRADO. Mantener el texto institucional aprobado/referencial sin inferir resultado académico desde el Ciclo: H6 no incorpora aprobado/desaprobado, nota ni equivalentes. No inventar afirmaciones legales/académicas ni importar ejemplos del Word. Ajustes visuales/textuales institucionales durante revisión humana H6 sin editor genérico. Español, blancos no obligatorios y multipágina legible sin recortes.
 
 ### REQ-H6-015 — Fuente y datos específicos de generados
 
-Propuesta mínima: reutilizar proyección autorizada y regla CHG-H5-002 (vigente en PROGRAMADO/EN_CURSO, snapshot final exclusivo en CERRADO), fuente de contexto e impresión explícitas por plantilla. No modificar alumno_snapshot inicial ni snapshot de cierre. Declaraciones, fecha/edad, apoderado, tratamiento/Capitanía y afirmación de haber aprobado el Curso requieren resolución OQ-H6-005; no inferir aprobación académica desde CERRADO ni usar un contacto como apoderado automáticamente.
+Para H6, fecha del documento = fecha real de generación servidor en America/Lima; edad requerida se calcula a esa fecha desde fecha_nacimiento de la fuente autorizada. Reutilizar CHG-H5-002 para datos personales/contactos/etiquetas: vigentes en PROGRAMADO/EN_CURSO, exclusivamente snapshot de cierre en CERRADO; no modificar ni usar fallback a snapshots inicial/final. Contexto actual autorizado al emitir. Carta Poder exige apoderado explícito por generación, nunca contacto inferido; datos no existentes y no obligatorios quedan en blanco. No importar personas/DI/direcciones/resoluciones/fechas del Word. Separar fecha del documento de campos de negocio como fecha de matrícula, que no se reescriben. El contrato temporal H5 conserva su fecha/edad históricas; su copia persistente H6 aplica el perfil de fecha/edad H6 con renderer compartido, sin cambiar la ruta H5 aceptada.
 
 ### REQ-H6-016 — Integración persistente de Ficha H5
 
-Evaluar registrar Ficha de Matrícula como tipo GENERADO y usar renderer/fuente/fingerprint de H5 para producir una copia persistente H6, sin duplicar reglas ni reutilizar como permanente el bucket temporal. H5 mantiene TTL 24h y bloqueo de fuente obsoleta. No promover artefactos viejos/temporales por copia ciega; generar y confirmar bajo autorización actual. OQ-H6-006 define la política de vigencia/historia H6 y coexistencia UX antes de construir.
+Ficha de Matrícula se configura como GENERADO y produce copia persistente H6 propia, con renderer/fuente y reglas CHG-H5-002 compartidos; no copiar a ciegas el temporal, depender de su bucket/TTL ni duplicar lógica. H5 temporal conserva contrato, vencimiento de 24h y bloqueo de artefacto obsoleto. H6 no hereda ese bloqueo de descarga histórica: si fuente/contexto/plantilla cambian, conserva GENERADO, bytes e historia, pero la versión deja de ser actual y solo se ofrece identificada como histórica/desactualizada. Regeneración explícita para versión actual. No estado OBSOLETO ni regeneración automática. Perfil fijo H6 de fecha/edad según REQ-015, separado del contrato H5.
 
 ### REQ-H6-017 — Autorización y RLS
 
-Base propuesta: Director/Coordinador consultan/configuran/suben/generan/descargan y retiran opcionales; ADMIN_SISTEMA sin rol académico no accede a PII/bytes, anonymous/bloqueado/revocado tampoco. Confirmar matriz de estados en OQ-H6-002. Roles provienen de DB y sesión confirmada; React nunca autoriza. SELECT RLS en cada tabla/vista; sin DML sensible autenticado directo ni acceso cliente a Storage. service_role solo Edge/operación técnica cerrada y nunca bundle.
+Roles funcionales autorizados: DIRECTOR_ACADEMICO y COORDINADOR_ACADEMICO. ADMIN_SISTEMA solo no accede a expedientes/bytes. Carga, generación, reemplazo/regeneración y retiro opcional requieren matrícula ACTIVO y Ciclo PROGRAMADO/EN_CURSO/CERRADO; bloquear nuevas mutaciones con matrícula ANULADO o Ciclo DESIERTO/ANULADO. Consulta/descarga histórica autorizadas continúan en esos estados. Regla uniforme para tipos, respetando solo la operación propia del origen SUBIDO/GENERADO; no condicionar Solicitud a CERRADO ni a aprobado. Roles DB y sesión confirmada, RLS por tabla/vista, sin DML sensible ni Storage directo desde React y sin service_role cliente.
 
 ### REQ-H6-018 — Concurrencia, locks y conflictos
 
-Conservar protocolo H3/H4/H5: Ciclo(s) por UUID → Alumno(s) por UUID → Matrícula(s) por UUID; después configuración/documentos/archivos en UUID estable. Bloquear config al aplicar documentos para que guardar configuración y registrar matrícula serialicen coherentemente. expected_updated_at obligatorio, PT409/HTTP409 para conflictos lógicos; 40001/40P01 reales se propagan como conflicto explícito. Revalidar roles/estado/fuente tras esperas. Sin retries ocultos ni pérdidas de borrador.
+Conservar locks H3/H4/H5: Ciclo(s) UUID → Alumno(s) UUID → Matrícula(s) UUID → configuración/documentos/archivos en orden estable. Guardar configuración bloquea el Ciclo y todas las matrículas ACTIVO afectadas y sincroniza todo en UNA transacción, sin partir el lote ni mandar trabajo a background. Verificar versión de configuración y filas esperadas, además del contexto del Ciclo; detectar altas/filas ajenas al conjunto esperado. Tras esperar, revalidar rol, estado, contexto, obligatoriedad, fuente y versión. PT409/HTTP409 lógicos; 40001/40P01 reales visibles, sin retries ocultos ni pérdida de borrador. La descarga histórica revalida acceso, no exige estado apto para nuevas mutaciones.
 
 ### REQ-H6-019 — Estados académicos, traslado y existentes
 
-No cambiar reglas financieras, saldos, idempotencia, estados académicos ni cierre transaccional H5 para imponer completitud documental. Propuesta de traslado: conservar las relaciones/archivos anteriores como historia y aplicar todos los documentos del destino en PENDIENTE, sin reutilizar automáticamente bytes o firmas. Configuración posterior y regularización de matrículas ya existentes deben resolverse en OQ-H6-001/003 antes de implementar, sin reset de datos humanos.
+Al trasladar, todas las aplicaciones del contexto anterior quedan históricas/inactivas por TRASLADO, conservando estado, archivos, versiones y auditoría, sin borrar/mover bytes. Crear nuevo contexto en destino y aplicar TODOS sus documentos activos como activos/PENDIENTE, sin reutilización automática de archivos. Si regresa, otro contexto/aplicaciones nuevos: nunca reactivar la aplicación histórica. Preservar restricciones financieras H4 y rollback del traslado completo; no relajar bloqueos por pagos. Regularizar matrículas ACTIVO preexistentes de un Ciclo explícitamente, con autorización/versiones, auditoría y transacción; no reset humano ni backfill silencioso.
 
 ### REQ-H6-020 — Auditoría mínima
 
-Auditar maestro/configuración, aplicación, retiro opcional, reserva/confirmación técnica, generación y descarga iniciada con actor/fecha/IDs/resultado/correlación/versiones estrictamente necesarias. No contenido PDF/imagen, snapshots, nombres/DI/dirección, filename original, claves secretas, JWT o URLs. No trigger genérico copiando PII. Éxito de negocio y auditoría correspondiente atómicos; intento de descarga no equivale a entrega recibida o impresión.
+Auditar maestro/configuración, sincronización efectiva, regularización, aplicación, cambio de obligatoriedad/reactivación, retiro opcional, traslado, reserva/confirmación y descarga iniciada. IDs/actor/fecha/correlación/versiones y cambios de flags/motivo codificado necesarios; conservar historia de condiciones sin copiar PII ni contenido/snapshots/filename/keys/JWT/URLs o apoderado. Éxito de sincronización/negocio y auditoría atómicos. No trigger genérico de PII. Descarga iniciada no acredita recepción ni impresión.
 
 ### REQ-H6-021 — Retención y operación
 
-Persistente no significa TTL 24h. Retirar, anular matrícula o cerrar Ciclo no elimina archivo/historia automáticamente. Política final de retención/purga funcional requiere OQ-H6-004; mientras no exista decisión no implementar DELETE de historia. Separar limpieza manual de reservas/objetos no confirmados, acotada y sin afectar archivos confirmados; sin scheduler, colas ni infraestructura adicional. Antes de producción resolver/aceptar residuales relevantes.
+RESUELTA PARA MVP: todo archivo CONFIRMADO H6 es persistente, sin TTL de24h, eliminación por retiro/anulación/cierre ni purga funcional de confirmados. Director/Coordinador acceden a versiones actuales, reemplazadas, retiradas, contextos históricos y matrícula anulada según autorización, con etiquetas claras. Solo limpieza técnica manual y acotada de reservas/objetos NUNCA confirmados. La política institucional/legal de eliminación definitiva queda pendiente para H9/release, no como OQ H6 abierta ni bloqueo del Spec. Conservar los seis residuales de GATE-A01; sin scheduler/colas/S3 adicionales.
 
 ### REQ-H6-022 — UX consistente y accesible
 
@@ -117,60 +117,36 @@ Continuar React/TS + Supabase Auth/PostgreSQL/RLS/RPC + Edge acotadas + Storage 
 
 Implementación en esta rama; S3/AWS/WebFlux/API Node/Lambda/colas/microservicios/Kubernetes; StorageProvider multicloud; motor/editor de plantillas; OCR, validación académica nueva, firma electrónica, captura biométrica, estados VALIDADO/IMPRESO, antivirus externo/CDR como infraestructura nueva sin autorización; publicación pública de documentos, importación masiva de expedientes, cargas/generaciones ZIP por lote, pagos/facturación H7+, portal alumno y notificaciones. El retiro opcional por selección múltiple sí está incluido, no implica carga/generación masiva.
 
-## OQ pendientes de decisión humana
+## OQ resueltas por decisión humana
 
-Las propuestas siguientes no están aprobadas. Resolverlas antes de Gate 1 y antes de ejecutar tareas afectadas. No se simulan respuestas por defecto.
+OQ-H6-001 a OQ-H6-006: **RESUELTAS HUMANAMENTE el 18/11/2026**, sobre el Spec base `cff11ab339ca9dc4ec32283631c7fb68f57d59a3`. Sustituyen las propuestas iniciales incompatibles; no equivalen a Gate 1 ni autorización de construcción. Sin nuevas OQ.
 
 ### OQ-H6-001 — Configuración posterior y matrículas existentes
 
-**PENDIENTE HUMANO.** Definir qué ocurre al agregar/desactivar/cambiar obligatoriedad cuando ya hay matrículas, y cómo aplicar H6 a las matrículas preexistentes.
+**RESUELTA.** La configuración del Ciclo también es efectiva para matrículas ACTIVO existentes. Guardar sincroniza explícita y transaccionalmente altas activas, reactivaciones, desactivaciones y cambios obligatorio/opcional. El opcional retirado que pasa a obligatorio vuelve activo, conservando estado/archivo. Nunca borrar historia ni ejecutar backfill de background. Regularización inicial explícita por Ciclo, auditada y transaccional. REQ-H6-003/004/005/018/019; TASK-H6-003/004/005/019; TEST-H6-004/005/007/038/039/042/051.
 
-Propuesta mínima: cambios de configuración solo para nuevas aplicaciones; conservar condiciones aplicadas y archivos existentes. Regularizar matrículas previas mediante acción explícita por Ciclo, auditada y atómica; no sincronización/backfill silencioso. Confirmar si se necesita además aplicar nuevos tipos a todas las matrículas actuales.
+### OQ-H6-002 — Permisos y estados
 
-Impacto trazable (IDs H6): REQ 003/004/005/019; TASK-003/004/019; TEST-004/005/007/042.
+**RESUELTA.** Director y Coordinador; ADMIN solo sin acceso. Mutaciones del expediente (carga/generación/reemplazo/regeneración/retiro opcional) con matrícula ACTIVO y Ciclo PROGRAMADO/EN_CURSO/CERRADO. Bloquearlas con ANULADO o Ciclo DESIERTO/ANULADO, conservando historia. Consulta y descarga históricas autorizadas siguen permitidas. Matriz común por tipo; solo distinguir operación SUBIDO/GENERADO, no permisos académicos específicos por formato. Sin resultado académico. REQ-H6-006/013/014/017; TASK-H6-006/013/014/017; TEST-H6-024/025/034/044/058.
 
-### OQ-H6-002 — Matriz de permisos y estados
+### OQ-H6-003 — Traslado y regreso
 
-**PENDIENTE HUMANO.** Confirmar quién mantiene tipos/configuración (propuesta Director/Coordinador) y operaciones de lectura/carga/generación/retiro/descarga en ACTIVO/ANULADO y PROGRAMADO/EN_CURSO/CERRADO/DESIERTO/ANULADO.
+**RESUELTA.** Contexto anterior histórico/inactivo por TRASLADO, con estados/bytes/versiones/auditoría intactos. Aplicar todos los activos del destino en contexto nuevo y PENDIENTE, sin reutilizar bytes. Al regresar, crear contexto/aplicación nuevos, no reactivar históricos. H4 sigue restringiendo traslado por pagos. REQ-H6-004/005/018/019; TASK-H6-004/005/018/019; TEST-H6-038/040/041/049.
 
-Propuesta mínima: mutaciones documentales y generación solo matrícula ACTIVA con Ciclo PROGRAMADO/EN_CURSO/CERRADO; bloqueo DESIERTO/ANULADO. Conservar archivos al anular; decidir si los roles académicos pueden consultar/descargar historia anulada o si se bloquea como H5. No crear nuevas barreras de matrícula, pagos o cierre por faltantes.
+### OQ-H6-004 — Retención, historia y baja física
 
-Impacto trazable (IDs H6): REQ 005/006/013/017/019; TASK-006/013/017/019; TEST-024/034/058.
+**RESUELTA PARA MVP.** Confirmados persistentes; sin TTL24h, eliminación automática por retiro/anulación/cierre ni purga funcional H6. Director/Coordinador descargan actuales/reemplazados/retirados/contextos históricos/matrícula anulada según autorización, identificados en UI. Solo limpieza manual acotada de objetos/reservas nunca confirmados. Política institucional/legal de eliminación definitiva pendiente para H9/release. REQ-H6-012/013/021; TASK-H6-012/013/021; TEST-H6-020/023/024/044/045/059.
 
-### OQ-H6-003 — Traslado y regreso al Ciclo
+### OQ-H6-005 — Textos, datos y fechas
 
-**PENDIENTE HUMANO.** Definir si documentos/archivos se reaplican al trasladar y qué ocurre al regresar a un Ciclo anterior.
+**RESUELTA PARA MVP.** Generados con la misma matriz general, incluida Solicitud en PROGRAMADO/EN_CURSO/CERRADO; sin aprobado/desaprobado/nota/condición equivalente. Resultado académico queda como evolución futura, no requisito H6. Mantener texto institucional aprobado/referencial sin inferir resultado desde Ciclo ni inventar afirmaciones legales/académicas. Fecha del documento = generación real en America/Lima y edad a esa fecha. Apoderado explícito para cada Carta Poder, nunca inferido de contacto; datos no existentes/no obligatorios en blanco. No importar ejemplos del Word. Ajustes visuales institucionales en revisión humana H6, sin motor editable. REQ-H6-014/015/016; TASK-H6-014/015/016; TEST-H6-025/026/027/028/030/054/055/057.
 
-Propuesta: cerrar contexto documental anterior con motivo de traslado, conservar sus aplicaciones/versiones y crear las del destino activas/PENDIENTE. No reutilizar automáticamente bytes. Una nueva aplicación puede coexistir con historia inactiva del mismo ciclo_documento; si se prefiere reactivar la anterior, requiere decisión explícita. El obligatorio no se retira individualmente: cambia su contexto por transición aprobada, sin perder historia.
+### OQ-H6-006 — Vigencia de persistentes e integración H5
 
-Impacto trazable (IDs H6): REQ 004/005/018/019; TASK-004/005/018/019; TEST-038/040/041.
-
-### OQ-H6-004 — Retención, baja física e historia
-
-**PENDIENTE HUMANO.** Definir plazo/política de conservación y quién puede descargar históricos/retirados/supersedidos/anulados o autorizar purga física.
-
-Propuesta mínima durante MVP: confirmados persistentes, sin borrado automático por retiro/anulación/24h; baja lógica de opcional preserva versiones. Limpieza manual solo de huérfanos técnicos no confirmados. No proponer plazo legal sin decisión institucional; política relevante antes de H9/release.
-
-Impacto trazable (IDs H6): REQ 012/013/021; TASK-013/021; TEST-044/045/059.
-
-### OQ-H6-005 — Textos, datos propios y fechas de los formatos
-
-**PENDIENTE HUMANO.** Aprobar textos institucionales adaptados de Word y cómo completar apoderado de Carta poder, tratamiento/destinatario de Solicitud, afirmación de Curso aprobado, L.M. y fechas/edad/lugar.
-
-Propuesta: reutilizar fuente CHG-H5-002 para datos existentes; no importar personas/leyes/resoluciones de ejemplo ni asumir CERRADO=Curso aprobado. Mantener campos no existentes en blanco o exigir datos específicos aprobados por documento (apoderado no inferido). Confirmar fecha real de emisión en Lima o matrícula para cada formato, edad a fecha aprobada y distrito/Capitanía correctos. Si se requiere prueba de aprobación académica o nuevos campos de negocio, precisar alcance antes de implementar.
-
-Impacto trazable (IDs H6): REQ 014/015; TASK-014/015; TEST-025/026/027/028/030/054/057.
-
-### OQ-H6-006 — Vigencia de generados persistentes e integración H5
-
-**PENDIENTE HUMANO.** Definir qué se considera vigente y descargable si cambia la fuente/plantilla y cómo mostrar la ficha persistente frente a la acción temporal H5.
-
-Propuesta: conservar versión generada y sus bytes, mostrar aviso derivado de fuente cambiada sin persistir OBSOLETO ni alterar estado GENERADO/contadores aprobados; exigir generación explícita para presentar una versión como actual. Decidir descarga histórica identificada frente a bloqueo total del obsoleto. H5 temporal mantiene su contrato y TTL; H6 genera objeto propio con renderer/fuente compartidos.
-
-Impacto trazable (IDs H6): REQ 007/012/014/015/016; TASK-012/014/015/016; TEST-020/029/031/032/033.
+**RESUELTA.** Cada generación confirmada es versión inmutable. Cambio de fuente/contexto/plantilla conserva GENERADO/bytes/historia, pero quita consideración de actual; descargable en Historia como histórica/desactualizada. Sin estado OBSOLETO. Regeneración explícita para versión actual. Ficha de Matrícula H6 es GENERADO, objeto persistente propio con renderer/fuente/CHG-H5-002 compartidos, sin copia ciega del temporal, dependencia de TTL/bucket ni alteración de contrato temporal H5. REQ-H6-007/012/013/015/016; TASK-H6-012/013/015/016; TEST-H6-020/029/031/032/033/055.
 
 ## Residuales y criterios de aceptación
 
-Preservar seis residuales H5/GATE-A01: Hosted Edge/PostgREST 14 NO PROBADO DIRECTAMENTE, CPU y memoria NO MEDIDAS, forced-colors H5 NO VERIFICADO, bundle >500 kB y limpieza física H5 manual. No son PASSED H6 ni se cierran con este Spec. Nuevos riesgos: validación de archivos no equivale a garantía antimalware; consistencia DB/Storage requiere protocolo de compensación; retención/costo persistente y textos/datos por formato requieren las decisiones y evidencia indicadas. Los relevantes para producción deberán resolverse o aceptarse antes de H9/release.
+Preservar seis residuales H5/GATE-A01: Hosted Edge/PostgREST 14 NO PROBADO DIRECTAMENTE, CPU y memoria NO MEDIDAS, forced-colors H5 NO VERIFICADO, bundle >500 kB y limpieza física H5 manual. No son PASSED H6 ni se cierran con este Spec. Nuevos riesgos: validación de archivos no equivale a garantía antimalware; consistencia DB/Storage requiere protocolo de compensación; retención/costo persistente y textos/datos por formato siguen las seis decisiones resueltas; su implementación y evidencia continúan pendientes. La eliminación definitiva institucional/legal se resolverá antes de H9/release. Los relevantes para producción deberán resolverse o aceptarse antes de H9/release.
 
 Gate 1 exige revisión humana del modelo/diseño, OQ resueltas y aceptación del plan de pruebas. La entrega técnica futura exige trazabilidad REQ/DES/TASK/TEST, pruebas progresivas y candidaturas exactas; Gate 2 y acceptance solo con autorización humana posterior. No cerrar H6 por CI verde ni afirmar ejecución humana de subcasos no reportados.
