@@ -6,4 +6,3 @@ export function uploadSizeError(file: Pick<File, 'size'>) {
     ? `El archivo supera el máximo de 5 MiB (tamaño detectado: ${(file.size / 1048576).toFixed(2)} MiB).`
     : ''
 }
-
