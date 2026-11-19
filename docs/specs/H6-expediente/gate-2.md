@@ -50,4 +50,8 @@ Al registrar la aprobación, `feature/h6-expediente` está en `126071206524a1a4d
 
 La aprobación exacta de `ca7a461...` no se amplió automáticamente. Consultado el alcance, el usuario autorizó expresamente: **«Incluir los ajustes revisados: publicar un nuevo candidato, verificar su CI y cerrar sin repetir pruebas humanas.»** Esta decisión posterior incluye el commit `1260712...` y los ajustes locales descritos, sujetos a CI propia SUCCESS antes del cierre e integración. No atribuye nuevas ejecuciones humanas ni cambia los residuales.
 
-El nuevo candidato y su CI exacta se registrarán en acceptance.md después de verificarlos. Cierre documental, CI propia, PR y merge commit trazable están autorizados; INTEGRADO solo se hace efectivo al incorporar el cierre a main y verificar su CI. **H7 NO INICIADO; no crear rama H7.**
+Nuevo candidato final: `f6157e953eb4f307066b16e8b5580b7f09c23f58`, CI [44616848493](https://github.com/fcamasca/perumar-supabase/actions/runs/44616848493) **COMPLETED / SUCCESS**, **524/524 PASSED**. [Acceptance y cierre](acceptance.md) registran este alcance autorizado y su evidencia propia. Cierre documental, CI propia, PR y merge commit trazable están autorizados; INTEGRADO solo se hace efectivo al incorporar el cierre a main y verificar su CI. **H7 NO INICIADO; no crear rama H7.**
+
+## Cierre autorizado
+
+**H6 CLOSED / ACEPTADO.** Se publica un commit exclusivamente documental; CI propia SUCCESS antes de PR/merge y CI del SHA exacto integrado en main. **CLOSED / ACEPTADO / INTEGRADO** se hace efectivo en main al incorporar el cierre y verificar su CI. H7 NO INICIADO.

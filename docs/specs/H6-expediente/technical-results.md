@@ -2,7 +2,7 @@
 
 Último registro humano: **19/11/2026, America/Lima**. **Gate 2 APROBADO HUMANAMENTE sobre ca7a4613e5e8f23d6942b2cb6f75309816f04f12**, CI44443096743 SUCCESS,483/483 pruebas técnicas y siete bloques humanos PASSED; [registro](gate-2.md). El usuario autorizó posteriormente incluir los ajustes revisados de HEAD1260712 y del árbol local: publicar un nuevo candidato, verificar su CI y cerrar sin repetir pruebas humanas. Las menciones humanas pendientes de las secciones técnicas siguientes son históricas o propias de esos ajustes posteriores; no anulan el Gate2 aprobado ni acreditan pruebas adicionales. Forced-colors real sigue NO VERIFICADO. El cierre y merge requieren CI propia SUCCESS del nuevo candidato; H7 NO INICIADO.
 
-## Trazabilidad y candidato
+## Trazabilidad histórica del candidato original
 
 - Spec exacto aprobado: `e2de23443f887d4050aeb910a13e3611ae751be5`; [Gate 1 humano](gate-1.md), CI44399674178 SUCCESS. requirements/design/tasks/test-plan permanecen byte a byte iguales al Spec aprobado; sus estados históricos no se reescriben.
 - Rama: `feature/h6-expediente`, descendiente del Spec exacto. Main de referencia H5: `1228a028fc203e0319340b5b55d7d9aa99802760`; no se modifica ni integra H6 en esta entrega.
@@ -131,10 +131,16 @@ Supuesto ilustrativo, no factura ni precio de proveedor:1000 matrículas,5 gener
 
 Se preservan los seis H5/GATE-A01: **Hosted Edge/PostgREST14 NO PROBADOS DIRECTAMENTE; CPU NO MEDIDA; memoria NO MEDIDA; forced-colors H5 NO VERIFICADO; bundle >500kB; limpieza física H5 manual**. GATE-A01 conserva APROBADO CON AJUSTES, no se reabre ni se convierte en garantía hospedada.
 
-H6: revisión humana de formatos/flujo/accesibilidad/mantenibilidad PENDIENTE y forced-colors real NO VERIFICADO; PDF admitido es un subconjunto conservador (ObjStm/XRef comprimidos y filtros no verificables rechazados), sin garantía antimalware; conciliación de nunca confirmados manual y política de purga definitiva H9/release. Los subcasos no separados de Content-Length falsificado/corte TCP se declaran arriba, no PASSED inventados.
+En el registro técnico previo a Gate 2, la revisión humana figuraba PENDIENTE; el usuario posteriormente reportó siete bloques PASSED y autorizó los ajustes sin repetir pruebas. Forced-colors real H5/H6 sigue NO VERIFICADO; PDF admitido es un subconjunto conservador (ObjStm/XRef comprimidos y filtros no verificables rechazados), sin garantía antimalware; conciliación de nunca confirmados manual y política de purga definitiva H9/release. Los subcasos no separados de Content-Length falsificado/corte TCP se declaran arriba, no PASSED inventados.
 
 **Registro histórico de construcción:** Gate 2 estaba pendiente al emitir la evidencia técnica anterior. El Gate 2 posterior está APROBADO HUMANAMENTE y la inclusión de ajustes fue autorizada expresamente; ver gate-2.md. Nuevo candidato sujeto a CI propia SUCCESS antes del cierre. H7 NO INICIADO.
 
 ## Verificación local del paquete autorizado de ajustes — 19/11/2026
 
 **524/524 pruebas PASSED, 34 archivos**, suite completa con dos workers. Lint, typecheck, typecheck Edge expediente, build y build-safety PASSED. Bundle principal 732.32 kB y previewPdf 741.92 kB: advertencia >500 kB preservada. No sustituye la CI exacta del nuevo candidato ni las pruebas hospedadas/mediciones no realizadas. Inventario: 27 migraciones; sin tablas, RPC, helpers, buckets ni servicios nuevos frente al inventario de H6. Se publica el paquete para verificar CI completa y luego registrar acceptance, sin repetir pruebas humanas.
+
+## Cierre técnico y humano vigente
+
+**H6 CLOSED / ACEPTADO**, Gate 2 APROBADO HUMANAMENTE; [acceptance.md](acceptance.md). Candidato final autorizado `f6157e953eb4f307066b16e8b5580b7f09c23f58`, CI [44616848493](https://github.com/fcamasca/perumar-supabase/actions/runs/44616848493) **COMPLETED / SUCCESS**, **524/524 PASSED**. Pasaron lint/types/Deno/build/build-safety, Auth/RLS, DB/API, rollback/concurrencia H1–H6, Edge/Storage real de CI, render independiente, expiración y reconstrucción con repetición integral. La aprobación original ca7a461/483 pruebas mantiene su alcance histórico; los ajustes posteriores se aceptan por autorización expresa, sin repetir pruebas humanas ni inventar subcasos.
+
+Inventario vigente:27 migraciones (cuatro H6); demás cifras de la tabla histórica sin cambio. Los siete bloques humanos reportados están PASSED; forced-colors H5/H6 NO VERIFICADO. Todos los residuales de acceptance permanecen. Commit de cierre solo documental, CI propia antes del merge y CI de main posterior; INTEGRADO se hace efectivo en main. H7 NO INICIADO.

@@ -123,3 +123,7 @@ El usuario solicita que Optimizar imagen también reduzca el peso de un PNG que 
 ### Autorización posterior de alcance y verificación del paquete final
 
 El usuario responde: «Incluir los ajustes revisados: publicar un nuevo candidato, verificar su CI y cerrar sin repetir pruebas humanas.» Se incluye 1260712 y el trabajo local posterior descrito arriba, preservando la referencia original ca7a461 y sus 483/483. Verificación local completa:524/524 pruebas,34 archivos; lint/typecheck/Edge expediente/build/build-safety PASSED. Se publica nuevo candidato para CI propia integral; el cierre documental será un commit separado sin cambios funcionales. No se repiten pruebas humanas ni se acreditan residuales como PASSED. H7 NO INICIADO.
+
+### Cierre H6 aprobado — candidato final verificado
+
+19/11/2026: candidato `f6157e953eb4f307066b16e8b5580b7f09c23f58`, CI [44616848493](https://github.com/fcamasca/perumar-supabase/actions/runs/44616848493) COMPLETED / SUCCESS,524/524 pruebas. Incluye 1260712, cc38fa1 y corrección de línea vacía f6157e9. CI integral con reconstrucción y repetición H1–H6 SUCCESS. Siete bloques humanos PASSED por reporte, sin repetición; residuales preservados en gate-2.md y acceptance.md. **H6 CLOSED / ACEPTADO**. Cierre exclusivamente documental, sin alterar cuatro documentos Spec, código, migraciones ni tests; verificar su CI, PR/merge commit y CI exacta de main antes de informar INTEGRADO. H7 NO INICIADO y sin rama H7.
