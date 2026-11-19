@@ -542,6 +542,23 @@ try {
   assert.deepEqual((await api('/matricula_documento?select=id', admin)).data, [])
 
   assert.equal((await api('/matricula_documento', f.actor, { id: randomUUID() })).status, 403)
+  for (const table of [
+    'tipo_documento',
+    'ciclo_documento',
+    'matricula_documento',
+    'matricula_documento_archivo',
+  ]) {
+    assert.equal((await api('/' + table, f.actor, { id: randomUUID() })).status, 403)
+    assert.equal(
+      (await api('/' + table + '?id=eq.' + randomUUID(), f.actor, { id: randomUUID() }, 'PATCH'))
+        .status,
+      403,
+    )
+    assert.equal(
+      (await api('/' + table + '?id=eq.' + randomUUID(), f.actor, undefined, 'DELETE')).status,
+      403,
+    )
+  }
   const before = sql(`select count(*) from public.auditoria`)
   const conflict = await api('/rpc/guardar_documentos_ciclo', f.actor, {
     p_ciclo_id: f.cycle,
@@ -645,6 +662,34 @@ try {
     200,
   )
   assert.equal(uploaded().ultimo_archivo_confirmado_id, reserved.data.id)
+  const uncertain = await reserve(uploaded())
+  assert.equal(uncertain.status, 200)
+  const lostBody = await fetch(url + '/rpc/confirmar_archivo_expediente', {
+    method: 'POST',
+    headers: {
+      Authorization: 'Bearer ' + jwt(undefined, 'service_role'),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(confirmation(uncertain.data.id)),
+  })
+  assert.equal(lostBody.status, 200)
+  await lostBody.body.cancel()
+  assert.equal(
+    sql(
+      `select estado_tecnico from public.matricula_documento_archivo where id='${uncertain.data.id}'`,
+    ),
+    'CONFIRMADO',
+  )
+  const recoveredAudit = sql('select count(*) from public.auditoria')
+  assert.equal(
+    (await service('confirmar_archivo_expediente', confirmation(uncertain.data.id))).status,
+    200,
+  )
+  assert.equal(
+    sql('select count(*) from public.auditoria'),
+    recoveredAudit,
+    'Explicit recovery after lost body does not confirm twice',
+  )
   const genDoc = optional(),
     dni = sql(
       "select v.id from public.catalogo_valor v join public.catalogo c on c.id=v.catalogo_id where c.codigo='TIPO_DI' and v.codigo='DNI'",

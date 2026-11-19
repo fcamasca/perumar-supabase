@@ -68,6 +68,13 @@ const messages: Record<string, string> = {
     'Completa el nombre y documento del apoderado para esta generación.',
   DOCUMENT_GLYPH: 'Hay caracteres que la plantilla no puede representar. Revisa los datos.',
   DOCUMENT_SNAPSHOT: 'La fotografía final del Ciclo no está disponible. Solicita revisión.',
+  DOCUMENT_NOT_OPTIONAL:
+    'Solo puedes retirar un documento opcional activo del contexto vigente. Consulta su configuración y decide nuevamente.',
+  DOCUMENT_TYPE_CONFIGURED:
+    'Desactiva primero este tipo de documento en los Ciclos donde está aplicado antes de inactivarlo.',
+  DOCUMENT_TYPE_INVALID: 'Selecciona tipos activos sin repetir el mismo documento en el Ciclo.',
+  DOCUMENT_TYPE_HISTORY_IMMUTABLE:
+    'El código y origen de un tipo ya utilizado no pueden modificarse.',
 }
 export function documentError(error: { code?: string; message?: string }) {
   return (
@@ -77,6 +84,8 @@ export function documentError(error: { code?: string; message?: string }) {
       ? messages.DOCUMENT_VERSION
       : error.code === '42501'
         ? messages.DOCUMENT_ACCESS
-        : 'No se pudo completar la operación. Consulta su resultado antes de intentar nuevamente; no se reintentó automáticamente.')
+        : error.code === '23505'
+          ? 'Ya existe un tipo de documento con ese código o una configuración repetida.'
+          : 'No se pudo completar la operación. Consulta su resultado antes de intentar nuevamente; no se reintentó automáticamente.')
   )
 }

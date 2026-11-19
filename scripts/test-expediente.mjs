@@ -164,6 +164,22 @@ try {
       Object.assign(new PNG({ width: 1, height: 1 }), { data: Buffer.from([255, 0, 0, 255]) }),
     ),
     jpg = jpeg.encode({ width: 1, height: 1, data: Buffer.from([255, 0, 0, 255]) }).data
+  // A valid ancillary PNG text chunk exercises exact byte limits without inflating pixels.
+  const pngAtSize = (size) => {
+    const chunk = Buffer.alloc(size - png.length),
+      dataLength = chunk.length - 12
+    chunk.writeUInt32BE(dataLength, 0)
+    chunk.write('tEXt', 4)
+    chunk.write('synthetic\0', 8)
+    chunk.fill(120, 18, chunk.length - 4)
+    let crc = 0xffffffff
+    for (const b of chunk.subarray(4, -4)) {
+      crc ^= b
+      for (let bit = 0; bit < 8; bit++) crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0)
+    }
+    chunk.writeUInt32BE((crc ^ 0xffffffff) >>> 0, chunk.length - 4)
+    return Buffer.concat([png.subarray(0, -12), chunk, png.subarray(-12)])
+  }
   const upload = async (code, bytes, mime, name, actor = 'D') => {
     const d = await doc(code),
       f = new FormData()
@@ -235,6 +251,45 @@ try {
     beforeInvalid,
     'invalid content creates no reservation',
   )
+  const exact = pngAtSize(5242880)
+  assert.equal(PNG.sync.read(exact).width, 1)
+  assert.equal(
+    (await upload('FOTO_PASAPORTE', exact, 'image/png', 'foto.png')).status,
+    200,
+    'valid exact 5MiB boundary',
+  )
+  assert.equal(
+    (await upload('FOTO_PASAPORTE', new Uint8Array(), 'image/png', 'foto.png')).status,
+    413,
+    'empty file',
+  )
+  const largeForm = new FormData(),
+    largeDoc = await doc('FOTO_PASAPORTE')
+  largeForm.set('documento_id', largeDoc.id)
+  largeForm.set('expected_updated_at', largeDoc.updated_at)
+  largeForm.set(
+    'archivo',
+    new Blob([new Uint8Array(5242880 + 32768)], { type: 'image/png' }),
+    'foto.png',
+  )
+  const encoded = new Request('http://fixture.invalid', { method: 'POST', body: largeForm }),
+    raw = new Uint8Array(await encoded.arrayBuffer())
+  const streamed = await fetch(fixture.config.url + '/functions/v1/expediente-cargar', {
+    method: 'POST',
+    headers: {
+      apikey: fixture.config.key,
+      Authorization: 'Bearer ' + tokens.D,
+      'Content-Type': encoded.headers.get('Content-Type'),
+    },
+    body: new ReadableStream({
+      start(controller) {
+        for (let i = 0; i < raw.length; i += 65536) controller.enqueue(raw.subarray(i, i + 65536))
+        controller.close()
+      },
+    }),
+    duplex: 'half',
+  })
+  assert.equal(streamed.status, 413, 'Actual streamed bytes are bounded without Content-Length')
   // Real post-upload audit failure rolls back confirmation and compensates NEVER-confirmed bytes.
   const target = await doc('DOCUMENTO_IDENTIDAD'),
     priorPointer = target.ultimo_archivo_confirmado_id
@@ -286,6 +341,12 @@ try {
     writeFileSync('.cache/h6-results/' + code + '.pdf', bytes)
     metrics.push({ code, ms: performance.now() - start, pdfBytes: bytes.length })
   }
+  const crossFile = (await doc('DOCUMENTO_IDENTIDAD')).ultimo_archivo_confirmado_id
+  assert.equal(
+    (await download(await doc('FOTO_PASAPORTE'), crossFile, true)).status,
+    403,
+    'Confirmed bytes cannot cross document ownership',
+  )
   // Explicit concurrent generations for the same version: at most one confirmed new version, no retry.
   const request = await input('SOLICITUD'),
     prior = (await versions(request.documento_id)).length,
@@ -298,6 +359,7 @@ try {
   student = await rpc(O, 'guardar_alumno', {
     p: {
       ...initial,
+      contactos: [],
       id: student.id,
       expected_updated_at: student.updated_at,
       domicilio: 'H6 CORREGIDO',
@@ -346,10 +408,38 @@ try {
     200,
     'SUBIDO in CERRADO',
   )
+  // Retirement of each business state preserves its bytes/state and does not change Cycle config.
+  const configBeforeRetire = checked(
+    await D.from('ciclo_documento').select('*').eq('ciclo_id', cycle.id).order('id'),
+    'config before retire',
+  )
+  for (const code of ['CERTIFICADO_PSICOFISICO', 'FOTO_PASAPORTE', 'CARTA_PODER']) {
+    const d = await doc(code)
+    assert.ok(d, 'seeded document ' + code)
+    await rpc(O, 'retirar_documentos_opcionales', {
+      p_ciclo_id: cycle.id,
+      p_documentos: [{ id: d.id, expected_updated_at: d.updated_at }],
+      p_motivo: 'H6 SINTÉTICO',
+    })
+    const retired = await doc(code)
+    assert.equal(retired.activo, false)
+    assert.equal(retired.estado, d.estado)
+    assert.equal(retired.ultimo_archivo_confirmado_id, d.ultimo_archivo_confirmado_id)
+    if (d.ultimo_archivo_confirmado_id)
+      assert.equal((await download(retired, d.ultimo_archivo_confirmado_id, true)).status, 200)
+  }
+  assert.deepEqual(
+    checked(
+      await D.from('ciclo_documento').select('*').eq('ciclo_id', cycle.id).order('id'),
+      'config after retire',
+    ),
+    configBeforeRetire,
+  )
   const beforeClosed = (await versions((await doc('FICHA_MATRICULA')).id)).at(-1)
   student = await rpc(O, 'guardar_alumno', {
     p: {
       ...initial,
+      contactos: [],
       id: student.id,
       expected_updated_at: student.updated_at,
       domicilio: 'H6 POSTERIOR AL CIERRE',
@@ -359,6 +449,33 @@ try {
   const afterClosed = (await versions((await doc('FICHA_MATRICULA')).id)).at(-1)
   assert.equal(afterClosed.fuente_base_fingerprint, beforeClosed.fuente_base_fingerprint)
   assert.deepEqual((await one('matricula', enrollment.id)).alumno_snapshot_cierre, frozen)
+  // H6 persistent Ficha does not depend on a temporary H5 object for the same enrollment.
+  const temporary = await fetch(fixture.config.url + '/functions/v1/ficha-matricula', {
+    method: 'POST',
+    headers: {
+      apikey: fixture.config.key,
+      Authorization: 'Bearer ' + tokens.D,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      matricula_id: enrollment.id,
+      expected_updated_at: enrollment.updated_at,
+    }),
+  })
+  assert.equal(temporary.status, 200)
+  const h5 = await temporary.json()
+  assert.equal(Date.parse(h5.expires_at) - Date.parse(h5.generated_at), 86400000)
+  checked(
+    await fixture.admin.storage
+      .from('fichas-matricula')
+      .remove([enrollment.id + '/' + h5.artefacto_id + '.pdf']),
+    'cleanup own synthetic H5 temporary',
+  )
+  assert.equal(
+    (await download(await doc('FICHA_MATRICULA'), afterClosed.id)).status,
+    200,
+    'Persistent own H6 object survives temporary H5 cleanup',
+  )
   // Operator cleanup is dry-run by default; synthetic clock fixture only in disposable CI.
   checked(
     await fixture.admin.storage
@@ -391,7 +508,24 @@ try {
     'Confirmed file remains downloadable after 24h and cleanup',
   )
   // Private Storage is unavailable to every browser/JWT, including authorized academics.
+  for (const actor of ['A', 'B', 'N', 'F', 'I']) {
+    assert.equal(
+      (await download(target, priorPointer, true, actor)).status,
+      403,
+      'Non-academic Edge download denied',
+    )
+    assert.equal(
+      (await upload('FOTO_PASAPORTE', png, 'image/png', 'foto.png', actor)).status,
+      403,
+      'Non-academic Edge upload denied',
+    )
+  }
   const key = (await versions(target.id)).find((f) => f.estado_tecnico === 'CONFIRMADO').object_key
+  assert.ok(
+    (await fetch(fixture.config.url + '/storage/v1/object/public/h6-expediente/' + key)).status >=
+      400,
+    'No public URL serves private bytes',
+  )
   for (const c of [D, O, clients.A, publicClient(fixture.config)]) {
     assert.ok((await c.storage.from('h6-expediente').download(key)).error)
     assert.ok((await c.storage.from('h6-expediente').createSignedUrl(key, 60)).error)

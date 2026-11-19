@@ -360,7 +360,7 @@ export function EnrollmentDocuments({
     (d) =>
       (showHistory || (d.contexto_vigente && d.activo)) &&
       (!missingOnly || d.estado === 'PENDIENTE') &&
-      (d.codigo + ' ' + d.nombre).includes(search.trim().toUpperCase()),
+      (d.codigo + ' ' + d.nombre).toUpperCase().includes(search.trim().toUpperCase()),
   )
   return (
     <section>
@@ -397,22 +397,24 @@ export function EnrollmentDocuments({
           Consultar estado
         </button>
       </div>
-      <label>
-        <input
-          type="checkbox"
-          checked={missingOnly}
-          onChange={(e) => setMissingOnly(e.target.checked)}
-        />
-        Solo faltantes
-      </label>
-      <label>
-        <input
-          type="checkbox"
-          checked={showHistory}
-          onChange={(e) => setShowHistory(e.target.checked)}
-        />
-        Mostrar retirados y contextos anteriores
-      </label>
+      <div className="document-filters">
+        <label>
+          <input
+            type="checkbox"
+            checked={missingOnly}
+            onChange={(e) => setMissingOnly(e.target.checked)}
+          />
+          Solo faltantes
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={showHistory}
+            onChange={(e) => setShowHistory(e.target.checked)}
+          />
+          Mostrar retirados y contextos anteriores
+        </label>
+      </div>
       {loading ? (
         <p role="status">Cargando expediente…</p>
       ) : (
@@ -491,11 +493,18 @@ export function EnrollmentDocuments({
                             setHistoryDoc(d)
                             setFilePage(0)
                           }}
+                          title={`Historia y operaciones de ${d.nombre}`}
+                          aria-label={`Historia y operaciones de ${d.nombre}`}
                         >
-                          Historia y operaciones
+                          Historia
                         </button>
                         {canMutate && (
-                          <DocumentMoreActions name={d.nombre} mandatory={d.obligatorio} busy={busy} onRetire={()=>void withdraw(d)}/>
+                          <DocumentMoreActions
+                            name={d.nombre}
+                            mandatory={d.obligatorio}
+                            busy={busy}
+                            onRetire={() => void withdraw(d)}
+                          />
                         )}
                       </div>
                     </td>

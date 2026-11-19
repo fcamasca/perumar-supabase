@@ -43,6 +43,14 @@
   begin delete from public.matricula_documento where id=d2.id;raise exception 'History DELETE accepted';exception when insufficient_privilege or check_violation then null;end;
  end loop;
  perform set_config('perumar.document_command','',true);
+ -- Positive multi-pupil withdrawal: exactly the two selected applications of one optional config.
+ second:=public.registrar_matricula(jsonb_build_object('alumno_id',empty_student.id,'expected_alumno_updated_at',empty_student.updated_at,'ciclo_id',c.id,'expected_ciclo_updated_at',c.updated_at));
+ select jsonb_build_array(jsonb_build_object('id',id,'expected_updated_at',updated_at)) into payload from public.matricula_documento where matricula_id=second.id and tipo_documento_id=photo_type and contexto_vigente;
+ empty_student:=public.guardar_alumno(p||jsonb_build_object('numero_di',left(replace(gen_random_uuid()::text,'-',''),30),'nombres','H6 SEGUNDO SELECCIONADO'));
+ second:=public.registrar_matricula(jsonb_build_object('alumno_id',empty_student.id,'expected_alumno_updated_at',empty_student.updated_at,'ciclo_id',c.id,'expected_ciclo_updated_at',c.updated_at));
+ select payload||jsonb_build_array(jsonb_build_object('id',id,'expected_updated_at',updated_at)) into payload from public.matricula_documento where matricula_id=second.id and tipo_documento_id=photo_type and contexto_vigente;
+ if public.retirar_documentos_opcionales(c.id,payload,'SYNTHETIC TWO PUPILS')<>2 then raise exception 'Multi-pupil count incorrect';end if;
+ if (select count(*) from public.matricula_documento where id in(select (value->>'id')::uuid from jsonb_array_elements(payload)) and not activo)<>2 or not(select activo from public.matricula_documento where id=d2.id) then raise exception 'Multi-pupil scope incorrect';end if;
  -- Regularization failure must roll back its audit and every application's mutation.
  perform public.retirar_documentos_opcionales(c.id,jsonb_build_array(jsonb_build_object('id',d2.id,'expected_updated_at',d2.updated_at)),'SYNTHETIC');
  perform public.regularizar_expedientes_ciclo(c.id,c.updated_at,expected);

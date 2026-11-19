@@ -499,3 +499,8 @@ form.enrollment-detail-form { max-width:none; margin:1rem 0 0; padding:1rem 0 0;
 .document-grid .document-more-trigger { width:2rem; padding:.15rem; font-size:1.25rem; }
 .document-actions-menu { width:220px; }
 .document-actions-menu small { display:block; padding:.35rem .5rem; }
+
+.document-filters { display:flex; flex-wrap:wrap; gap:.6rem 1.2rem; margin:.65rem 0; }
+.document-filters label { display:inline-flex; align-items:center; gap:.45rem; font-weight:400; }
+.document-grid :is(th,td) { padding:.6rem .7rem; vertical-align:middle; }
+.document-grid td:nth-child(2),.document-grid td:nth-child(3) { overflow-wrap:normal; }

@@ -94,7 +94,7 @@ export function DocumentTypes() {
     }
   }
   const filtered = rows.filter((r) =>
-      (r.codigo + ' ' + r.nombre).includes(search.trim().toUpperCase()),
+      (r.codigo + ' ' + r.nombre).toUpperCase().includes(search.trim().toUpperCase()),
     ),
     visible = filtered.slice(page * 30, page * 30 + 30)
   return (

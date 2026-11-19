@@ -153,7 +153,9 @@ export function CycleDocuments({
             </thead>
             <tbody>
               {types
-                .filter((t) => (t.codigo + ' ' + t.nombre).includes(search.trim().toUpperCase()))
+                .filter((t) =>
+                  (t.codigo + ' ' + t.nombre).toUpperCase().includes(search.trim().toUpperCase()),
+                )
                 .map((t) => {
                   const c = draft.find((c) => c.tipo_documento_id === t.id)
                   return (
