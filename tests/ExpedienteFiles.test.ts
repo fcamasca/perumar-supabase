@@ -88,6 +88,8 @@ it('hashes actual bytes on the server', async () => {
 })
 it('parses safe PDF and rejects encrypted/active/structurally unbounded/too-many-page or corrupt input', async () => {
   expect(await validateFile(await pdf(), 'application/pdf', 'scan.pdf')).toBe('application/pdf')
+  // Synthetic encrypted blank page generated with pypdf; never a user document.
+  await expect(validateFile(Buffer.from('JVBERi0xLjMKJeLjz9MKMSAwIG9iago8PAovUHJvZHVjZXIgPDE1MWUzOTQxMjA+Cj4+CmVuZG9iagoyIDAgb2JqCjw8Ci9UeXBlIC9QYWdlcwovQ291bnQgMQovS2lkcyBbIDQgMCBSIF0KPj4KZW5kb2JqCjMgMCBvYmoKPDwKL1R5cGUgL0NhdGFsb2cKL1BhZ2VzIDIgMCBSCj4+CmVuZG9iago0IDAgb2JqCjw8Ci9UeXBlIC9QYWdlCi9SZXNvdXJjZXMgPDwKPj4KL01lZGlhQm94IFsgMC4wIDAuMCAyMDAgMjAwIF0KL1BhcmVudCAyIDAgUgo+PgplbmRvYmoKNSAwIG9iago8PAovViAyCi9SIDMKL0xlbmd0aCAxMjgKL1AgNDI5NDk2NzI5MgovRmlsdGVyIC9TdGFuZGFyZAovTyA8YjllZmY2OTMxOGI2OTNjMmE0YmI3YzMyMjhlNTk4NDQ2MTNjZDQ1M2NiMGNjMDY5NDBmNDk2ZGU2ZGNlODMwNz4KL1UgPDY0OGZlMDQwMDE0NzdmYzhiMzliZDVmZDFjZmJiODZmMjhiZjRlNWU0ZTc1OGE0MTY0MDA0ZTU2ZmZmYTAxMDg+Cj4+CmVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMTUgMDAwMDAgbiAKMDAwMDAwMDA1OSAwMDAwMCBuIAowMDAwMDAwMTE4IDAwMDAwIG4gCjAwMDAwMDAxNjcgMDAwMDAgbiAKMDAwMDAwMDI2MSAwMDAwMCBuIAp0cmFpbGVyCjw8Ci9TaXplIDYKL1Jvb3QgMyAwIFIKL0luZm8gMSAwIFIKL0lEIFsgPDM1Mzk2MzMyMzA2MjYyNjE2NTYzMzgzMjY1MzE2MjM1NjMzNjMzNjM2MTYyNjU2NjM1NjE2NjYxNjU2NjMxMzE+IDwzNTM5NjMzMjMwNjI2MjYxNjU2MzM4MzI2NTMxNjIzNTYzMzYzMzYzNjE2MjY1NjYzNTYxNjY2MTY1NjYzMTMxPiBdCi9FbmNyeXB0IDUgMCBSCj4+CnN0YXJ0eHJlZgo0NzYKJSVFT0YK','base64'),'application/pdf','encrypted.pdf')).rejects.toThrow('DOCUMENT_FILE_INVALID')
   await expect(validateFile(await pdf(1, true), 'application/pdf', 'scan.pdf')).rejects.toThrow(
     'DOCUMENT_FILE_INVALID',
   )

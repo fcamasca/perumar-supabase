@@ -290,6 +290,11 @@ try {
     duplex: 'half',
   })
   assert.equal(streamed.status, 413, 'Actual streamed bytes are bounded without Content-Length')
+  const photoBeforeWriteFailure=await doc('FOTO_PASAPORTE')
+  checked(await fixture.admin.storage.updateBucket('h6-expediente',{allowedMimeTypes:['application/pdf']}),'inject H6 initial write failure')
+  try{assert.equal((await upload('FOTO_PASAPORTE',png,'image/png','foto.png')).status,503)}finally{checked(await fixture.admin.storage.updateBucket('h6-expediente',{allowedMimeTypes:['application/pdf','image/jpeg','image/png']}),'restore private H6 bucket')}
+  assert.equal((await doc('FOTO_PASAPORTE')).ultimo_archivo_confirmado_id,photoBeforeWriteFailure.ultimo_archivo_confirmado_id)
+  const initialWriteFailure=(await versions(photoBeforeWriteFailure.id)).at(-1);assert.equal(initialWriteFailure.estado_tecnico,'ABORTADO')
   // Real post-upload audit failure rolls back confirmation and compensates NEVER-confirmed bytes.
   const target = await doc('DOCUMENTO_IDENTIDAD'),
     priorPointer = target.ultimo_archivo_confirmado_id
@@ -307,6 +312,9 @@ try {
     )
   }
   assert.equal((await doc('DOCUMENTO_IDENTIDAD')).ultimo_archivo_confirmado_id, priorPointer)
+  inspectDatabase("create function private.h6_pointer_failure() returns trigger language plpgsql set search_path='' as $$begin raise exception using errcode='P0001',message='H6_SYNTHETIC_POINTER_FAILURE';end$$;revoke all on function private.h6_pointer_failure() from public,anon,authenticated;create trigger z_h6_pointer_failure before update on public.matricula_documento for each row when(new.id=:'document_id'::uuid and new.ultimo_archivo_confirmado_id is distinct from old.ultimo_archivo_confirmado_id) execute function private.h6_pointer_failure();",{document_id:target.id})
+  try{assert.equal((await upload('DOCUMENTO_IDENTIDAD',safePdf,'application/pdf','documento.pdf')).status,503)}finally{inspectDatabase('drop trigger z_h6_pointer_failure on public.matricula_documento;drop function private.h6_pointer_failure();')}
+  assert.equal((await doc('DOCUMENTO_IDENTIDAD')).ultimo_archivo_confirmado_id,priorPointer,'Pointer failure rolls back file confirmation too')
   const failed = (await versions(target.id)).at(-1)
   assert.equal(failed.estado_tecnico, 'ABORTADO')
   assert.ok((await fixture.admin.storage.from('h6-expediente').download(failed.object_key)).error)
@@ -408,6 +416,14 @@ try {
     200,
     'SUBIDO in CERRADO',
   )
+  // Effective configuration changes preserve an actually uploaded CARGADO file and bytes.
+  const cargadoBefore=await doc('FOTO_PASAPORTE')
+  for(const [mandatory,active] of [[true,true],[false,false],[false,true]]){
+    const expected=checked(await D.from('ciclo_documento').select('id,updated_at').eq('ciclo_id',cycle.id).order('id'),'effective file config snapshot')
+    await rpc(O,'guardar_documentos_ciclo',{p_ciclo_id:cycle.id,p_expected_updated_at:cycle.updated_at,p_expected_config:expected,p_documentos:config.map(t=>t.tipo_documento_id===cargadoBefore.tipo_documento_id?{...t,obligatorio:String(mandatory),activo:String(active)}:t)})
+    const changed=await doc('FOTO_PASAPORTE');assert.equal(changed.activo,active);assert.equal(changed.obligatorio,mandatory);assert.equal(changed.estado,'CARGADO');assert.equal(changed.ultimo_archivo_confirmado_id,cargadoBefore.ultimo_archivo_confirmado_id)
+    assert.equal((await download(changed,changed.ultimo_archivo_confirmado_id,!active)).status,200)
+  }
   // Retirement of each business state preserves its bytes/state and does not change Cycle config.
   const configBeforeRetire = checked(
     await D.from('ciclo_documento').select('*').eq('ciclo_id', cycle.id).order('id'),
