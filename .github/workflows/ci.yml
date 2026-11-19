@@ -1,4 +1,4 @@
-name: H5 PDF payments academic and security verification
+name: H6 expediente PDF payments academic and security verification
 
 on:
   push:
@@ -38,6 +38,7 @@ jobs:
           npm run lint
           npm run typecheck
           npm run typecheck:edge
+          npm run typecheck:edge:expediente
           npm test
       - name: Start isolated local platform
         run: npm run supabase:start
@@ -68,6 +69,16 @@ jobs:
           npm run test:pdf:rollback
           npm run test:pdf
           node scripts/test-pdf-layout.mjs
+      - name: Expediente real Edge private Storage and versions
+        run: npm run test:expediente
+      - name: Synthetic expediente evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: h6-synthetic-document-evidence
+          path: .cache/h6-results/
+          if-no-files-found: ignore
+          retention-days: 3
       - name: Synthetic PDF evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -97,6 +108,8 @@ jobs:
           npm run test:pdf:rollback
           npm run test:pdf
           node scripts/test-pdf-layout.mjs
+          npm run test:expediente:isolated
+          npm run test:expediente
       - name: Stop local platform
         if: always()
         run: npm run supabase:stop

@@ -139,7 +139,7 @@ try{
  docker(['run','-d','--name',rest,'--network',networkName,'-p','127.0.0.1::3000','-e',`PGRST_DB_URI=postgres://${login}:${password}@${container}:5432/${database}`,'-e','PGRST_DB_SCHEMAS=public','-e','PGRST_DB_ANON_ROLE=anon','-e',`PGRST_JWT_SECRET=${secret}`,image]);restStarted=true
  const port=JSON.parse(docker(['inspect',rest]))[0].NetworkSettings.Ports['3000/tcp'][0].HostPort
  const url=`http://127.0.0.1:${port}`
- const jwt=actor=>{const head=Buffer.from(JSON.stringify({alg:'HS256',typ:'JWT'})).toString('base64url'),body=Buffer.from(JSON.stringify({role:'authenticated',sub:actor,exp:Math.floor(Date.now()/1000)+300})).toString('base64url');return head+'.'+body+'.'+createHmac('sha256',secret).update(head+'.'+body).digest('base64url')}
+ const jwt=(actor,role='authenticated')=>{const head=Buffer.from(JSON.stringify({alg:'HS256',typ:'JWT'})).toString('base64url'),body=Buffer.from(JSON.stringify({role,sub:actor,exp:Math.floor(Date.now()/1000)+300})).toString('base64url');return head+'.'+body+'.'+createHmac('sha256',secret).update(head+'.'+body).digest('base64url')}
  let healthy=false;for(let i=0;i<40;i++){try{if((await fetch(url+'/')).ok){healthy=true;break}}catch{/* disposable API may still be starting */}await new Promise(r=>setTimeout(r,250))}assert.ok(healthy,'Disposable PostgREST readiness')
  const api=async(path,actor,body,method=body?'POST':'GET')=>{const res=await fetch(url+path,{method,headers:{Authorization:'Bearer '+jwt(actor),'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});return {status:res.status,data:await res.json()}}
  assert.equal((await api('/matricula_documento?select=id',f.actor)).status,200)
@@ -158,7 +158,47 @@ try{
  assert.equal(conflict.status,409);assert.equal(conflict.data.code,'PT409');assert.equal(sql('select count(*) from public.auditoria'),before)
  assert.ok(docs().every(d=>d.activo))
  console.log('H6 PostgREST real: PT409/HTTP409, no mutation/audit-success, JWT academic vs admin RLS, direct DML denied: PASSED')
- // More adversarial/rollback/cross-context and concurrent probes are added with the block.
+
+ // Service-only RPCs through real PostgREST. These probes validate metadata transactions;
+ // byte upload/integrity is deliberately covered by the separate real Edge/Storage suite.
+ const service=async(name,body)=>{const r=await fetch(url+'/rpc/'+name,{method:'POST',headers:{Authorization:'Bearer '+jwt(undefined,'service_role'),'Content-Type':'application/json'},body:JSON.stringify(body)});return {status:r.status,data:await r.json()}}
+ const uploaded=()=>docs().find(d=>d.codigo==='DOCUMENTO_IDENTIDAD')
+ const reserve=async(d,extra={})=>service('preparar_archivo_expediente',{p_actor:f.actor,p_documento_id:d.id,p_expected_updated_at:d.updated_at,...extra})
+ const confirmation=(id)=>({p_actor:f.actor,p_archivo_id:id,p_mime:'application/pdf',p_bytes:128,p_sha256:'b'.repeat(64)})
+ const forbidden=await api('/rpc/preparar_archivo_expediente',f.actor,{p_actor:f.actor,p_documento_id:uploaded().id,p_expected_updated_at:uploaded().updated_at});assert.equal(forbidden.status,403)
+ const reserved=await reserve(uploaded());assert.equal(reserved.status,200);assert.match(reserved.data.object_key,/^[a-f0-9-]{36}\/[a-f0-9-]{36}$/)
+ assert.equal(uploaded().estado,'PENDIENTE');assert.equal((await reserve(uploaded())).status,409)
+ const confirmed=await service('confirmar_archivo_expediente',confirmation(reserved.data.id));assert.equal(confirmed.status,200);assert.equal(uploaded().estado,'CARGADO')
+ assert.equal(sql(`select actor from public.auditoria where registro_id='${uploaded().id}' order by fecha desc limit 1`),f.actor)
+ const auditConfirmed=sql('select count(*) from public.auditoria')
+ assert.equal((await service('confirmar_archivo_expediente',confirmation(reserved.data.id))).status,200);assert.equal(sql('select count(*) from public.auditoria'),auditConfirmed,'Exact explicit replay is read-only')
+ assert.equal((await service('confirmar_archivo_expediente',{...confirmation(reserved.data.id),p_bytes:129})).status,409)
+ assert.equal((await service('abortar_reserva_expediente',{p_actor:f.actor,p_archivo_id:reserved.data.id})).status,409)
+ const replacement=await reserve(uploaded());assert.equal(replacement.status,200)
+ assert.equal((await service('abortar_reserva_expediente',{p_actor:f.actor,p_archivo_id:replacement.data.id})).status,200);assert.equal(uploaded().ultimo_archivo_confirmado_id,reserved.data.id)
+ const genDoc=optional(),dni=sql("select v.id from public.catalogo_valor v join public.catalogo c on c.id=v.catalogo_id where c.codigo='TIPO_DI' and v.codigo='DNI'")
+ const generatedReservation=await reserve(genDoc,{p_plantilla_version:'h6-1:CARTA_PODER',p_datos_generacion:{apoderado_nombre:'APODERADO SINTETICO',apoderado_tipo_di_id:dni,apoderado_numero_di:'00000001'}})
+ assert.equal(generatedReservation.status,200);assert.ok(generatedReservation.data.source.datos_ficha)
+ // Change source while generation is outside DB; reject confirmation with no state/pointer/success audit.
+ sql(actorSql(f.actor,`update public.alumno set domicilio='H6 SYNTHETIC SOURCE CHANGE' where id='${f.student}'`))
+ const beforeSource=sql('select count(*) from public.auditoria'),pointer=optional().ultimo_archivo_confirmado_id
+ const staleSource=await service('confirmar_archivo_expediente',confirmation(generatedReservation.data.id));assert.equal(staleSource.status,409);assert.equal(staleSource.data.message,'DOCUMENT_SOURCE_CHANGED');assert.equal(optional().ultimo_archivo_confirmado_id,pointer);assert.equal(sql('select count(*) from public.auditoria'),beforeSource)
+ assert.equal((await service('abortar_reserva_expediente',{p_actor:f.actor,p_archivo_id:generatedReservation.data.id})).status,200)
+ const reserve2=await reserve(optional(),{p_plantilla_version:'h6-1:CARTA_PODER',p_datos_generacion:{apoderado_nombre:'APODERADO SINTETICO',apoderado_tipo_di_id:dni,apoderado_numero_di:'00000001'}});assert.equal(reserve2.status,200)
+ sql(actorSql(f.actor,retire(optional())))
+ assert.equal((await service('confirmar_archivo_expediente',confirmation(reserve2.data.id))).status,409,'Withdrawal during I/O prevents confirmation')
+ assert.equal((await service('abortar_reserva_expediente',{p_actor:f.actor,p_archivo_id:reserve2.data.id})).status,200)
+ // Authorized historical access persists after an annulment, but never a new mutation.
+ sql(actorSql(f.actor,`select public.anular_matricula('${f.enrollment}',(select updated_at from public.matricula where id='${f.enrollment}'),'H6 SYNTHETIC')`))
+ assert.equal((await reserve(uploaded())).status,409)
+ const dl={p_actor:f.coordinator,p_documento_id:uploaded().id,p_archivo_id:reserved.data.id,p_historico:false}
+ assert.equal((await service('registrar_descarga_expediente',dl)).status,409)
+ assert.equal((await service('registrar_descarga_expediente',{...dl,p_historico:true})).status,200)
+ sql(`update public.app_users set active=false where id='${f.coordinator}'`)
+ assert.equal((await service('registrar_descarga_expediente',{...dl,p_historico:true})).status,403)
+ assert.equal(sql("select count(*) from public.auditoria where entidad in ('matricula_documento','matricula_documento_archivo') and (new_values::text ~ 'APODERADO|object_key|sha256|domicilio|numero_di')"),'0')
+ console.log('H6 real PostgREST service contracts: reserve/confirm/replay/abort, immutable confirmed, source drift, concurrent-phase withdrawal, annulled history and current role: PASSED (metadata; byte delivery separately tested)')
+
  console.log('H6 FIRST BLOCK probes completed (fixture-only DB/API, no Storage writes).')
 }finally{
  if(restStarted)docker(['rm','-f',rest])

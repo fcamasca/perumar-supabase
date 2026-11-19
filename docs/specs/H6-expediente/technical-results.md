@@ -17,3 +17,13 @@ No atribuir un PASSED completo a todos los TEST-H6 por estas comprobaciones: aú
 ## Corrección de bootstrap CI del bloque 1
 
 CI44406885369 sobre cd5f8c50ec2c244b03476d163597e81d29ca9ec7: lint/tipos/unidades, Auth/RLS, académico, matrícula y pagos PASSED; nuevo ensayo aislado falló por reaplicar CREATE TABLE tipo_documento cuando el esquema de CI ya incluía H6. Se corrigió solo el bootstrap: reconocer objetos existentes, restaurar referencias tipadas explícitamente con actor sintético y preservar ACL de objetos (sin ALTER DEFAULT PRIVILEGES de roles ajenos en la DB desechable). Prueba local con referencias documentales vacías equivalente a CI: DB/API/dos carreras/regresión H3–H5 PASSED; lint/diff-check PASSED. Sin debilitar aserciones ni tocar datos humanos. No declarar esa CI fallida como SUCCESS; el nuevo SHA se verifica posteriormente.
+
+## Bloque 2 — verificación incremental
+
+- Migración tercera aditiva verificada sobre esquema/referencias desechables, sin reset humano. Contratos service_role reales vía PostgREST PASSED (reserva/confirmación/replay/aborto/fuente/retiro/anulación/revocación).
+- Suite local de trabajo 475/475 PASSED; lint/typecheck PASSED. Incluye UI aún en bloque posterior separado.
+- Deno2.1.4: tres entry points comprobados; locks congelados.
+- Incremento acumulado: cuatro tablas, una vista invoker, ocho RPC públicas específicas, dos helpers privados, un bucket privado persistente y tres Edge; 28 tablas públicas/5 vistas/28 funciones públicas/21 helpers/31 policies SELECT/26 migraciones SQL/2 buckets privados/4 Edge contando H5.
+- Seguridad/IO: ningún campo privilegiado desde React; respuestas cerradas sin keys/PII, compensación solo después de aborto reconocido, nunca eliminar bytes confirmados ante respuesta incierta.
+- Residual adicional: PDF comprimido estructural o filtros no verificables rechazados (subconjunto admitido conservador). No se ofrece antivirus.
+- Auth/Edge/Storage integral nuevo PENDIENTE CI; pruebas humanas H6 PENDIENTES; Gate2 PENDIENTE. Los seis residuales H5/GATE-A01 se mantienen.
