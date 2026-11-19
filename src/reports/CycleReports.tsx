@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { AcademicPagination, AcademicSearch, AcademicTabs } from '../academic/AcademicLayout'
 import { useSession } from '../security/SessionProvider'
-import { exportReport, reportCells, reportHeaders, reportNames, reportQuery, type ReportKind, type ReportRow } from './reportData'
+import { checkMatrix, matrixColumns, exportReport, reportCells, reportHeaders, reportNames, reportQuery, type MatrixColumn, type ReportKind, type ReportRow } from './reportData'
 
 export function CycleReports({ cycle }: { cycle: string }) {
   const { client, state } = useSession()
@@ -9,6 +9,7 @@ export function CycleReports({ cycle }: { cycle: string }) {
   const [kind, setKind] = useState<ReportKind>(0), [search, setSearch] = useState(''), [includeCancelled, setIncludeCancelled] = useState(false)
   const [page, setPage] = useState(0), [rows, setRows] = useState<ReportRow[]>([]), [count, setCount] = useState(0)
   const [loading, setLoading] = useState(true), [error, setError] = useState(''), [revision, setRevision] = useState(0)
+  const [documents, setDocuments] = useState<MatrixColumn[]>([])
   const [exporting, setExporting] = useState(false), [exportError, setExportError] = useState('')
   const [resolvedKey, setResolvedKey] = useState('')
   const requestKey = JSON.stringify([state.userId, cycle, kind, search, includeCancelled, page, revision])
@@ -20,10 +21,15 @@ export function CycleReports({ cycle }: { cycle: string }) {
     setRows([]); setCount(0); setError(''); setLoading(allowed)
     if (allowed) void (async () => {
       try {
-        const r = await reportQuery(client, { cycle, kind, search, includeCancelled }, page * 30, 30).abortSignal(controller.signal)
+        const [r, cols] = await Promise.all([
+          reportQuery(client, { cycle, kind, search, includeCancelled }, page * 30, 30).abortSignal(controller.signal),
+          kind === 1 ? matrixColumns(client, cycle, controller.signal) : Promise.resolve([]),
+        ])
         if (controller.signal.aborted) return
         if (r.error) throw r.error
-        setRows(r.data as unknown as ReportRow[]); setCount(r.count ?? 0)
+        const nextRows = r.data as unknown as ReportRow[]
+        if (kind === 1) checkMatrix(nextRows, cols)
+        setDocuments(cols); setRows(nextRows); setCount(r.count ?? 0)
       } catch { if (!controller.signal.aborted) setError('No se pudo consultar el reporte. Vuelve a consultar.') }
       finally { if (!controller.signal.aborted) { setResolvedKey(requestKey); setLoading(false) } }
     })()
@@ -43,6 +49,7 @@ export function CycleReports({ cycle }: { cycle: string }) {
     } catch { if (!controller.signal.aborted) setExportError('No se pudo exportar el reporte completo. No se descargó un archivo parcial.') }
     finally { exportingRef.current = false; setExporting(false) }
   }
+  const headers = kind === 1 ? [...reportHeaders[kind], ...documents.map(c => c.nombre)] : reportHeaders[kind]
   if (!allowed) return <p role="alert">No tienes acceso académico a estos reportes.</p>
   return <section className="cycle-reports" aria-label="Reportes del Ciclo">
     <h3>Reportes del Ciclo</h3>
@@ -59,9 +66,13 @@ export function CycleReports({ cycle }: { cycle: string }) {
       {exporting && <p role="status">Preparando exportación con los filtros activos…</p>}
       {!pending && error && <p role="alert" className="validation-message">{error}</p>}
       {exportError && <p role="alert" className="validation-message">{exportError}</p>}
-      <div className="table-scroll"><table aria-label={reportNames[kind]}><thead><tr>{reportHeaders[kind].map((h, index) => <th key={h} scope="col" className={kind === 2 && index >= 4 ? 'payment-money' : undefined}>{h}</th>)}</tr></thead><tbody>
-        {!pending && !error && rows.map(row => <tr key={row.matricula_id}>{reportCells(row, kind).map((value, index) => <td key={index} className={kind === 2 && index >= 4 ? 'payment-money' : undefined}>{value}</td>)}</tr>)}
-        {!pending && !error && !rows.length && <tr><td colSpan={reportHeaders[kind].length}>No hay matrículas para estos filtros.</td></tr>}
+      {kind === 1 && <p className="help-text matrix-legend">✓ Completo · ○ Pendiente · — No aplica</p>}
+      {!pending && !error && kind === 1 && !documents.length && <p>Sin documentos activos configurados para este Ciclo.</p>}
+      <div className="table-scroll" tabIndex={0} aria-label="Tabla desplazable del reporte"><table className={kind === 1 ? 'document-matrix' : undefined} aria-label={reportNames[kind]}>
+        {kind === 1 && <colgroup><col className="matrix-code"/><col className="matrix-name"/><col className="matrix-di"/>{documents.map(d => <col key={d.codigo} className="matrix-document"/>)}</colgroup>}
+        <thead><tr>{headers.map((h, index) => <th key={`${index}-${h}`} scope="col" className={kind === 1 && index >= 3 ? 'matrix-document-heading' : kind === 2 && index >= 4 ? 'payment-money' : undefined} title={kind === 1 && index >= 3 ? h : undefined} tabIndex={kind === 1 && index >= 3 ? 0 : undefined}>{kind === 1 && index >= 3 ? <span>{h}</span> : h}</th>)}</tr></thead><tbody>
+        {!pending && !error && rows.map(row => <tr key={row.matricula_id}>{reportCells(row, kind, documents).map((value, index) => <td key={index} className={kind === 1 && index >= 3 ? 'matrix-cell' : kind === 2 && index >= 4 ? 'payment-money' : undefined}>{kind === 1 && index >= 3 ? <span className={`matrix-status ${value === 'Completo' ? 'matrix-complete' : value === 'Pendiente' ? 'matrix-pending' : 'matrix-na'}`} role="img" aria-label={value} title={value}>{value === 'Completo' ? '✓' : value === 'Pendiente' ? '○' : '—'}</span> : value}</td>)}</tr>)}
+        {!pending && !error && !rows.length && <tr><td colSpan={headers.length}>No hay matrículas para estos filtros.</td></tr>}
       </tbody></table></div>
       <AcademicPagination page={page} count={pending ? 0 : rows.length} disabled={pending || exporting} onChange={setPage}/>
       {!pending && !error && <small>{count} matrículas coinciden con los filtros.</small>}

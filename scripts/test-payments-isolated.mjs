@@ -37,6 +37,7 @@ try {
   sql('drop view if exists public.matricula_reporte_ciclo;drop view if exists public.matricula_pago_listado;')
   sql(readFileSync('supabase/migrations/20261109060000_direct_payment_access.sql','utf8'))
   if (hasReportSource) sql(readFileSync('supabase/migrations/20261119020000_h6_1_cycle_reports.sql','utf8'))
+  if (hasReportSource) sql(readFileSync('supabase/migrations/20261119030000_h6_1_document_matrix.sql','utf8'))
   sql(readFileSync('supabase/migrations/20261110010000_default_all_enrollment_charges.sql','utf8'))
   sql(readFileSync('tests/sql/h4-payments.sql','utf8'))
   sql(readFileSync('tests/sql/h4-regression.sql','utf8'))

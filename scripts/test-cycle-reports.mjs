@@ -5,14 +5,14 @@ export async function testCycleReports({ sql, api, fixture, actorSql, admin }) {
   const f = fixture(), other = fixture()
   assert.equal(sql("select reloptions::text from pg_class where oid='public.matricula_reporte_ciclo'::regclass"), '{security_invoker=true}')
   const path = (cycle, extra = {}) => '/matricula_reporte_ciclo?' + new URLSearchParams({
-    select: 'matricula_id,codigo_alumno,apellido_paterno,apellido_materno,nombres,numero_di,codigo_matricula,matricula_estado,base::text,abonado::text,pendiente::text,aplicables,completados,pendientes,faltantes',
+    select: 'matricula_id,codigo_alumno,apellido_paterno,apellido_materno,nombres,numero_di,codigo_matricula,matricula_estado,base::text,abonado::text,pendiente::text,aplicables,completados,pendientes,faltantes,documentos',
     ciclo_id: `eq.${cycle}`, matricula_estado: 'eq.ACTIVO', order: 'apellido_paterno,apellido_materno,nombres,matricula_id', ...extra,
   })
   const read = async (actor = f.actor, extra = {}) => {
     const r = await api(path(f.cycle, extra), actor); assert.equal(r.status, 200); return r.data
   }
   const initial = (await read())[0]
-  assert.equal(initial.aplicables, 0); assert.deepEqual(initial.faltantes, []); assert.equal(initial.pendientes, 0)
+  assert.deepEqual(initial.documentos, []); assert.equal(initial.aplicables, 0); assert.deepEqual(initial.faltantes, []); assert.equal(initial.pendientes, 0)
   assert.equal(Number(initial.base), 100); assert.equal(Number(initial.abonado), 0); assert.equal(Number(initial.pendiente), 100)
   sql(actorSql(f.actor, `
   select public.guardar_documentos_ciclo('${f.cycle}','${f.cycleVersion}','[]',
@@ -36,6 +36,12 @@ export async function testCycleReports({ sql, api, fixture, actorSql, admin }) {
   assert.equal(docs.aplicables, 4); assert.equal(docs.completados, 2); assert.equal(docs.pendientes, 2)
   const expectedNames = JSON.parse(sql(`select json_agg(nombre order by nombre,id) from public.matricula_documento where matricula_id='${f.enrollment}' and activo and contexto_vigente and estado='PENDIENTE'`))
   assert.deepEqual(docs.faltantes, expectedNames)
+  const cells = Object.fromEntries(docs.documentos.map(d => [d.codigo, d.estado]))
+  assert.equal(cells.DOCUMENTO_IDENTIDAD, 'PENDIENTE'); assert.equal(cells.CERTIFICADO_ESTUDIOS, 'PENDIENTE')
+  assert.equal(cells.FOTO_ALUMNO, 'CARGADO'); assert.equal(cells.DECLARACION_JURADA, 'GENERADO')
+  assert.equal(cells.CERTIFICADO_PSICOFISICO, null); assert.equal(cells.CARTA_PODER, null)
+  assert.ok(!Object.hasOwn(cells, 'SOLICITUD'), 'Inactive configuration is not a matrix column')
+  for (const cell of docs.documentos) assert.deepEqual(Object.keys(cell).sort(), ['codigo', 'estado', 'nombre'])
   assert.equal(sql(`select row(r.aplicables,r.completados,r.pendientes) = row(h.aplicables,h.completados,h.pendientes) from public.matricula_reporte_ciclo r join public.matricula_expediente_resumen h using(matricula_id) where matricula_id='${f.enrollment}'`), 't')
   // Complete remaining documents using H6 commands, not a persisted COMPLETE flag.
   sql(actorSql(f.actor, `do $$ declare d public.matricula_documento; r jsonb;begin
@@ -44,6 +50,11 @@ export async function testCycleReports({ sql, api, fixture, actorSql, admin }) {
     perform public.confirmar_archivo_expediente('${f.actor}',(r->>'id')::uuid,'image/png',64,repeat('b',64));
    end loop;end $$;`))
   assert.equal((await read())[0].pendientes, 0); assert.deepEqual((await read())[0].faltantes, [])
+  assert.ok((await read())[0].documentos.every(d => d.estado === null || ['CARGADO', 'GENERADO'].includes(d.estado)))
+  sql(actorSql(f.actor, `select public.retirar_documentos_opcionales('${f.cycle}',
+    (select jsonb_agg(jsonb_build_object('id',id,'expected_updated_at',updated_at)) from public.matricula_documento where matricula_id='${f.enrollment}' and codigo='FOTO_ALUMNO'),'SYNTHETIC MATRIX')`))
+  assert.equal((await read())[0].documentos.find(d => d.codigo === 'FOTO_ALUMNO').estado, null, 'A retired loaded file is not applicable, not complete')
+  assert.equal(sql(`select estado from public.matricula_documento where matricula_id='${f.enrollment}' and codigo='FOTO_ALUMNO'`), 'CARGADO', 'Matrix introduces no persisted state')
   // Authoritative H4 equality, actual payment commands and decimal text transport.
   for (const amount of [70, 30]) {
     sql(actorSql(f.actor, `select public.registrar_pago(jsonb_build_object('matricula_id','${f.enrollment}','expected_matricula_updated_at',(select updated_at from public.matricula where id='${f.enrollment}'),'idempotency_key','${randomUUID()}','importe','${amount}','medio_pago_id',(select v.id from public.catalogo_valor v join public.catalogo c on c.id=v.catalogo_id where c.codigo='MEDIO_PAGO' and v.codigo='EFECTIVO'),'aplicaciones',jsonb_build_array(jsonb_build_object('matricula_cargo_id',(select id from public.matricula_cargo where matricula_id='${f.enrollment}' and activo),'importe','${amount}'))))`))
@@ -67,6 +78,12 @@ export async function testCycleReports({ sql, api, fixture, actorSql, admin }) {
     assert.deepEqual((await api(path(other.cycle), actor)).data, [], 'Cross-Cycle IDOR does not bypass RLS')
     assert.deepEqual((await api('/matricula_reporte_ciclo?select=*', actor)).data, [], 'Removing client filters does not grant access')
   }
+  const configPath = '/ciclo_documento?' + new URLSearchParams({ select: 'tipo_documento!inner(codigo,nombre)', ciclo_id: `eq.${f.cycle}`, activo: 'eq.true', order: 'tipo_documento_id' })
+  for (const actor of [f.actor, f.coordinator]) {
+    const headers = await api(configPath, actor); assert.equal(headers.status, 200)
+    assert.deepEqual(headers.data.map(d => d.tipo_documento.codigo).sort(), docs.documentos.map(d => d.codigo).sort())
+  }
+  for (const actor of [admin, none]) assert.deepEqual((await api(configPath, actor)).data, [])
   const badId = await api(path('not-a-uuid'), f.actor); assert.equal(badId.status, 400)
   const fields = await api('/matricula_reporte_ciclo?select=object_key,sha256', f.actor); assert.equal(fields.status, 400)
   const injection = await read(f.actor, { or: '(nombres.ilike."%x).or(id.neq.null)%")' }); assert.deepEqual(injection, [])
@@ -80,5 +97,5 @@ export async function testCycleReports({ sql, api, fixture, actorSql, admin }) {
   assert.equal((await read()).length, 1)
   const all = await api(path(f.cycle, { matricula_estado: 'in.(ACTIVO,ANULADO)' }), f.actor)
   assert.equal(all.data.length, 2); assert.ok(all.data.some(r => r.matricula_estado === 'ANULADO'))
-  console.log('H6.1 reports PASSED real DB/API: active/cancelled, filters/pages, H6 missing/complete/zero + excluded retired/inactive/historical/loaded/generated; H4 no/partial/full payment source equality; Director/Coordinator allowed, Admin/no-role/IDOR/DML denied. Synthetic metadata only, no human DB writes.')
+  console.log('H6.1 matrix and reports PASSED real DB/API: active/cancelled, filters/pages, H6 missing/complete/zero + excluded retired/inactive/historical/loaded/generated; H4 no/partial/full payment source equality; Director/Coordinator allowed, Admin/no-role/IDOR/DML denied. Synthetic metadata only, no human DB writes.')
 }

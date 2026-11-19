@@ -100,6 +100,7 @@ try {
     if (sql(marker) !== 't') sql(readFileSync('supabase/migrations/' + file, 'utf8'))
   }
   if (sql("select to_regclass('public.matricula_reporte_ciclo') is not null") !== 't') sql(readFileSync('supabase/migrations/20261119020000_h6_1_cycle_reports.sql', 'utf8'))
+  sql(readFileSync('supabase/migrations/20261119030000_h6_1_document_matrix.sql', 'utf8'))
   // Exercise the same empty-reference state produced by CI schema-only cloning.
   // This TRUNCATE is exclusively in the random disposable DB, before fixture creation.
   sql('truncate public.tipo_documento cascade')
