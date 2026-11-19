@@ -29,7 +29,7 @@ try {
   }
   const { D, O } = clients,
     tag = randomUUID().slice(0, 8).toUpperCase(),
-    rpc = async (c, n, p) => checked(await c.rpc(n, p), n)
+    rpc = async (c, n, p) => {const result=await c.rpc(n,p);if(result.error)console.error('H6 RPC '+n+' code='+result.error.code);return checked(result,n)}
   const rows = async (table) => checked(await D.from(table).select('*'), table),
     one = async (table, id) => checked(await D.from(table).select('*').eq('id', id).single(), table)
   const cats = await rows('catalogo'),
@@ -564,6 +564,7 @@ try {
     historyBefore,
     'annulment preserves every file version',
   )
+  console.log('H6 actual Edge: five formats, 5MiB/stream limits, CERRADO final source, three-state retirement, H5 independence and dry-run cleanup PASSED')
   // Distinct terminal Cycle contexts keep historical access for an ACTIVO enrollment.
   for (const destination of ['DESIERTO', 'ANULADO']) {
     let terminal = await rpc(D, 'guardar_ciclo', {
@@ -615,21 +616,18 @@ try {
       created = await invoke('generar', request(sol))
     assert.equal(created.status, 200)
     const manifest = await created.json()
-    terminal = await rpc(D, 'cambiar_estado_ciclo', {
-      id: terminal.id,
-      expected_updated_at: terminal.updated_at,
-      destino: destination,
-      motivo: 'H6 SINTÉTICO',
-      ...(destination === 'DESIERTO'
-        ? { motivo_desierto_id: value('MOTIVO_CICLO_DESIERTO', 'OTRO') }
-        : {}),
-    })
-    for (const d of td.filter((d) => d.origen === 'GENERADO'))
-      assert.equal(
-        (await invoke('generar', request(d))).status,
-        409,
-        destination + ' blocks ' + d.codigo,
-      )
+    const transition={id:terminal.id,expected_updated_at:terminal.updated_at,destino:destination,motivo:'H6 SINTÉTICO',...(destination==='DESIERTO'?{motivo_desierto_id:value('MOTIVO_CICLO_DESIERTO','OTRO')}:{})}
+    if(destination==='ANULADO'){
+      const protectedTransition=await D.rpc('cambiar_estado_ciclo',transition)
+      assert.equal(protectedTransition.error?.code,'23514','H4 still forbids annulling a Cycle with enrollments')
+      // Defense-in-depth state fixture only: unreachable through H4's normal command.
+      // Do not relax financial/academic rules to manufacture this matrix case.
+      inspectDatabase("begin;select set_config('request.jwt.claim.sub',:'actor',true);alter table public.ciclo disable trigger ciclo_enrollment_guard;update public.ciclo set estado_codigo='ANULADO',motivo='H6 DEFENSIVE FIXTURE ONLY' where id=:'cycle'::uuid;alter table public.ciclo enable trigger ciclo_enrollment_guard;commit;",{actor:fixture.entries.D.id,cycle:terminal.id})
+    }else terminal=await rpc(D,'cambiar_estado_ciclo',transition)
+    for(const d of td.filter(d=>d.origen==='GENERADO')){
+      const currentDoc=await one('matricula_documento',d.id)
+      assert.equal((await invoke('generar',request(currentDoc))).status,409,destination+' blocks '+d.codigo)
+    }
     const photo = td.find((d) => d.codigo === 'FOTO_PASAPORTE'),
       f = new FormData()
     f.set('documento_id', photo.id)

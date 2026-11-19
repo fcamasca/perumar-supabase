@@ -122,10 +122,11 @@ try {
       ),
     )
   if (sql('select count(*) from public.tipo_documento') === '0') {
+    sql(actorSql(f.actor,"select public.guardar_tipo_documento(jsonb_build_object('codigo','SOLICITUD','nombre','SOLICITUD','origen','GENERADO'))"))
     const seed = readFileSync(
       'supabase/migrations/20261118010000_h6_document_model.sql',
       'utf8',
-    ).match(/insert into public.tipo_documento[\s\S]*?;/)[0]
+    ).match(/insert into public.tipo_documento[\s\S]*?;/)[0].replace(/\('SOLICITUD','[^']*','GENERADO'\),\s*/, '')
     sql(actorSql(f.actor, "select set_config('perumar.document_command','TYPE',true);" + seed))
   }
   const types = JSON.parse(sql('select json_object_agg(codigo,id) from public.tipo_documento'))
@@ -530,6 +531,13 @@ try {
       (x) => x.id === file,
     ),
   )
+  const customType=await api('/rpc/guardar_tipo_documento',f.coordinator,{p:{codigo:'H6_CUSTOM',nombre:'SYNTHETIC MASTER',origen:'SUBIDO'}})
+  assert.equal(customType.status,200);assert.equal(customType.data.origen,'SUBIDO')
+  const editedType=await api('/rpc/guardar_tipo_documento',f.coordinator,{p:{id:customType.data.id,expected_updated_at:customType.data.updated_at,nombre:'UPDATED SYNTHETIC MASTER',activo:'false'}})
+  assert.equal(editedType.status,200);assert.equal(editedType.data.activo,false);assert.equal(editedType.data.nombre,'UPDATED SYNTHETIC MASTER')
+  const typeAudit=sql('select count(*) from public.auditoria')
+  const staleType=await api('/rpc/guardar_tipo_documento',f.coordinator,{p:{id:customType.data.id,expected_updated_at:customType.data.updated_at,nombre:'STALE'}})
+  assert.equal(staleType.status,409);assert.equal(staleType.data.code,'PT409');assert.equal(sql('select count(*) from public.auditoria'),typeAudit)
   const invalid = await api('/rpc/guardar_tipo_documento', f.actor, {
     p: { codigo: 'FORGED', nombre: 'SYNTHETIC', origen: 'SUBIDO', actor: f.actor },
   })

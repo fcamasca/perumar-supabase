@@ -65,6 +65,7 @@ beforeEach(() => {
       members: Record<string, unknown[]> = {}
     const q = {
       select: () => q,
+      or: () => q,
       order: () => q,
       range: () => q,
       limit: () => q,

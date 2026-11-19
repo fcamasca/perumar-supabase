@@ -90,7 +90,8 @@ export function EnrollmentDocuments({
     [message, setMessage] = useState('')
   const [search, setSearch] = useState(''),
     [showHistory, setShowHistory] = useState(false),
-    [missingOnly, setMissingOnly] = useState(false)
+    [missingOnly, setMissingOnly] = useState(false),
+    [page,setPage]=useState(0)
   const [editing, setEditing] = useState<AppliedDocument | null>(null),
     [file, setFile] = useState<File | null>(null),
     [proxy, setProxy] = useState({
@@ -132,12 +133,15 @@ export function EnrollmentDocuments({
     let alive = true
     setLoading(true)
     void (async () => {
+      let query=client.from('matricula_documento').select('*').eq('matricula_id',enrollment)
+      if(!showHistory||missingOnly)query=query.eq('contexto_vigente',true).eq('activo',true)
+      if(missingOnly)query=query.eq('estado','PENDIENTE')
+      if(search.trim()){
+        const pattern=JSON.stringify(`%${search.trim()}%`)
+        query=query.or(`codigo.ilike.${pattern},nombre.ilike.${pattern}`)
+      }
       const [d, s, f, c] = await Promise.all([
-        client
-          .from('matricula_documento')
-          .select('*')
-          .eq('matricula_id', enrollment)
-          .order('nombre'),
+        query.order('nombre').order('id').range(page*30,page*30+29),
         client
           .from('matricula_expediente_resumen')
           .select('aplicables,completados,pendientes')
@@ -153,6 +157,7 @@ export function EnrollmentDocuments({
       if (!alive) return
       setLoading(false)
       if (d.error || s.error) {
+        setRows([]);setSummary(null);setSourceKnown(false);setLastFiles({})
         setFailure(true)
         setMessage('No se pudo consultar el expediente completo.')
         return
@@ -185,7 +190,7 @@ export function EnrollmentDocuments({
     return () => {
       alive = false
     }
-  }, [client, enrollment, cycleId, revision])
+  }, [client, enrollment, cycleId, revision,showHistory,missingOnly,search,page])
   useEffect(() => {
     if (!historyDoc) return
     let alive = true
@@ -386,7 +391,7 @@ export function EnrollmentDocuments({
         <AcademicSearch
           label="Buscar documento del expediente"
           value={search}
-          onChange={setSearch}
+          onChange={v=>{setSearch(v);setPage(0)}}
         />
         <button
           type="button"
@@ -402,7 +407,7 @@ export function EnrollmentDocuments({
           <input
             type="checkbox"
             checked={missingOnly}
-            onChange={(e) => setMissingOnly(e.target.checked)}
+          onChange={(e) => {setMissingOnly(e.target.checked);setPage(0)}}
           />
           Solo faltantes
         </label>
@@ -410,7 +415,7 @@ export function EnrollmentDocuments({
           <input
             type="checkbox"
             checked={showHistory}
-            onChange={(e) => setShowHistory(e.target.checked)}
+          onChange={(e) => {setShowHistory(e.target.checked);setPage(0)}}
           />
           Mostrar retirados y contextos anteriores
         </label>
@@ -523,6 +528,7 @@ export function EnrollmentDocuments({
           </table>
         </div>
       )}
+      {(page>0||rows.length===30)&&<AcademicPagination page={page} count={rows.length} disabled={busy||loading} onChange={setPage}/>}
       {editing && (
         <DocumentDialog busy={busy} close={() => setEditing(null)}>
           <h2>

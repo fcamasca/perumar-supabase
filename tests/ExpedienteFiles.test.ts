@@ -173,6 +173,13 @@ it('preserves the old H5 default date/age while H6 uses a fixed generation profi
   expect(h6).toContain('35 años')
   expect(h6).toContain('Fecha de matrícula: 2026-01-01')
 })
+it.each([
+  ['2035-01-02T04:59:59Z','34 años'],
+  ['2035-01-02T05:00:00Z','35 años'],
+])('fixes age at the Lima birthday boundary %s',async(instant,age)=>{
+  const bytes=await renderExpediente('DECLARACION_JURADA',fichaFixture(),new Date(instant),{})
+  expect(await words(bytes)).toContain(age)
+})
 it('paginates all personal contacts and rejects unsupported glyphs without silent substitution', async () => {
   const source = fichaFixture(100),
     at = new Date('2035-01-03T02:00:00Z')
