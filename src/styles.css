@@ -562,19 +562,17 @@ form.enrollment-detail-form { max-width:none; margin:1rem 0 0; padding:1rem 0 0;
 
 .cycle-reports .payment-money { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 
-/* H6.1 matrix: fixed identification, compact document cells and vertical headings. */
+/* H6.1 matrix: fixed DI/name, compact document cells and vertical headings. */
 .cycle-reports td:nth-child(3) { white-space: nowrap; overflow-wrap: normal; }
-.document-matrix { --matrix-code: 8.5rem; --matrix-name: 16rem; --matrix-di: 10rem; table-layout: fixed; border-collapse: separate; border-spacing: 0; width: max-content; min-width: 100%; }
-.document-matrix col.matrix-code { width: var(--matrix-code); }
+.document-matrix { --matrix-name: 16rem; --matrix-di: 10rem; table-layout: fixed; border-collapse: separate; border-spacing: 0; width: max-content; min-width: 100%; }
 .document-matrix col.matrix-name { width: var(--matrix-name); }
 .document-matrix col.matrix-di { width: var(--matrix-di); }
 .document-matrix col.matrix-document { width: 3.25rem; }
 .document-matrix th, .document-matrix td { box-sizing: border-box; }
-.document-matrix tr > :nth-child(-n+3) { position: sticky; z-index: 1; background: var(--surface-elevated); }
-.document-matrix tr > :first-child { left: 0; width: var(--matrix-code); }
-.document-matrix tr > :nth-child(2) { left: var(--matrix-code); width: var(--matrix-name); }
-.document-matrix tr > :nth-child(3) { left: calc(var(--matrix-code) + var(--matrix-name)); width: var(--matrix-di); border-right: 2px solid var(--border); }
-.document-matrix thead tr > :nth-child(-n+3) { z-index: 2; background: var(--surface); vertical-align: bottom; }
+.document-matrix tr > :nth-child(-n+2) { position: sticky; z-index: 1; background: var(--surface-elevated); }
+.document-matrix tr > :first-child { left: 0; width: var(--matrix-di); white-space: nowrap; overflow-wrap: normal; }
+.document-matrix tr > :nth-child(2) { left: var(--matrix-di); width: var(--matrix-name); border-right: 2px solid var(--border); }
+.document-matrix thead tr > :nth-child(-n+2) { z-index: 2; background: var(--surface); vertical-align: bottom; }
 .document-matrix .matrix-document-heading { text-align: center; vertical-align: bottom; padding: .6rem .45rem; }
 .matrix-document-heading > span { display: inline-block; writing-mode: vertical-rl; transform: rotate(180deg); max-height: 15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .document-matrix .matrix-cell { text-align: center; padding: .6rem .4rem; }
@@ -582,13 +580,7 @@ form.enrollment-detail-form { max-width:none; margin:1rem 0 0; padding:1rem 0 0;
 .matrix-complete { color: var(--success); background: color-mix(in srgb, var(--success) 12%, var(--surface-elevated)); }
 .matrix-pending { color: var(--warning); background: color-mix(in srgb, var(--warning) 12%, var(--surface-elevated)); }
 .matrix-na { color: var(--text-secondary); }
-@media (max-width: 800px) {
-  .document-matrix { --matrix-code: 7.5rem; --matrix-name: 12rem; --matrix-di: 9rem; }
-  .document-matrix tr > :nth-child(3) { position: static; }
-}
-@media (max-width: 520px) {
-  .document-matrix tr > :nth-child(2) { position: static; }
-}
+@media (max-width: 800px) { .document-matrix { --matrix-name: 12rem; --matrix-di: 9rem; } }
+@media (max-width: 520px) { .document-matrix tr > :nth-child(2) { position: static; } }
 @media (forced-colors: active) { .matrix-status { color: CanvasText; background: Canvas; border-color: CanvasText; } }
-
-.document-matrix td[colspan] { position: static; width: auto; }
+.document-matrix td[colspan] { position: static; width: auto; white-space: normal; }

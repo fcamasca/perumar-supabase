@@ -15,10 +15,10 @@ export type ReportRow = {
 }
 export const reportNames = ['Alumnos matriculados', 'Documentos pendientes', 'Saldos']
 const identity = 'matricula_id,codigo_alumno,apellido_paterno,apellido_materno,nombres,numero_di'
-const columns = [identity + ',codigo_matricula,matricula_estado', identity + ',documentos', identity + ',codigo_matricula,base::text,abonado::text,pendiente::text']
+const columns = [identity + ',codigo_matricula,matricula_estado', 'matricula_id,apellido_paterno,apellido_materno,nombres,numero_di,documentos', identity + ',codigo_matricula,base::text,abonado::text,pendiente::text']
 export const reportHeaders = [
   ['Código alumno', 'Apellidos y nombres', 'Documento de identidad', 'Código matrícula', 'Estado matrícula'],
-  ['Código alumno', 'Apellidos y nombres', 'Doc. Identidad'],
+  ['Doc. Identidad', 'Apellidos y nombres'],
   ['Código alumno', 'Apellidos y nombres', 'DI', 'Código matrícula', 'Base', 'Abonado', 'Saldo pendiente'],
 ]
 export const reportName = (r: ReportRow) => `${r.apellido_paterno} ${r.apellido_materno}, ${r.nombres}`
@@ -49,7 +49,7 @@ export async function matrixColumns(client: SupabaseClient, cycle: string, signa
 export function reportCells(r: ReportRow, kind: ReportKind, documents: MatrixColumn[] = []): string[] {
   const common = [r.codigo_alumno, reportName(r), r.numero_di]
   return kind === 0 ? [...common, r.codigo_matricula, r.matricula_estado === 'ACTIVO' ? 'Activa' : 'Anulada']
-    : kind === 1 ? [...common, ...documents.map(c => matrixLabel(r.documentos.find(d => d.codigo === c.codigo)!))]
+    : kind === 1 ? [r.numero_di, reportName(r), ...documents.map(c => matrixLabel(r.documentos.find(d => d.codigo === c.codigo)!))]
       : [...common, r.codigo_matricula, pen(r.base), pen(r.abonado), pen(r.pendiente)]
 }
 export function reportQuery(client: SupabaseClient, filters: ReportFilters, offset: number, size: number) {

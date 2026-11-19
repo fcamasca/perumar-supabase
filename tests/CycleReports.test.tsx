@@ -50,7 +50,8 @@ it('shows per-Cycle document columns, pending/complete/not-applicable cells with
   expect(queries.some(q => q.select.endsWith(',documentos'))).toBe(true)
   expect(screen.getAllByRole('img', { name: 'Pendiente' })).toHaveLength(2)
   expect(screen.getByRole('img', { name: 'No aplica' })).toBeVisible()
-  expect(screen.getByRole('columnheader', { name: 'Doc. Identidad' })).toBeVisible()
+  expect(screen.getAllByRole('columnheader').slice(0, 2).map(h => h.textContent)).toEqual(['Doc. Identidad', 'Apellidos y nombres'])
+  expect(screen.queryByRole('columnheader', { name: 'Código alumno' })).not.toBeInTheDocument()
   expect(screen.getByRole('columnheader', { name: 'Documento de identidad' })).toHaveAttribute('title', 'Documento de identidad')
   expect(screen.queryByRole('columnheader', { name: 'Aplicables' })).not.toBeInTheDocument()
   expect(new Set(client.from.mock.calls.map(c => c[0]))).toEqual(new Set(['matricula_reporte_ciclo', 'ciclo_documento']))
@@ -89,7 +90,7 @@ it('escapes Unicode, commas, quotes and newlines, includes BOM and no internal U
 it('neutralizes every persisted text column, including DI and document names', () => {
   const unsafe = [{ codigo: 'FORMULA', nombre: '@SUM(1)' }]
   const csv = reportCsv([{ ...row, codigo_alumno: '=A1', apellido_paterno: '+P', numero_di: ' -42', documentos: [{ ...unsafe[0], estado: 'PENDIENTE' }] }], 1, unsafe)
-  for (const text of ["'=A1", "'+P", "' -42", "'@SUM(1)"]) expect(csv).toContain(text)
+  for (const text of ["'+P", "' -42", "'@SUM(1)"]) expect(csv).toContain(text)
 })
 it('exports all filtered pages, not only the visible page, without UUIDs', async () => {
   data = Array.from({ length: 501 }, (_, i) => ({ ...row, matricula_id: `private-${i}`, codigo_alumno: `A-${i}` }))
@@ -146,9 +147,9 @@ it('switches between loaded report projections without reusing incompatible rows
 
 it('exports the same document matrix with readable status labels and no technical IDs', () => {
   const csv = reportCsv([row], 1, docs)
-  expect(csv).toContain('"Código alumno","Apellidos y nombres","Doc. Identidad","Documento de identidad"')
+  expect(csv).toContain('"Doc. Identidad","Apellidos y nombres","Documento de identidad"')
   expect(csv).toContain('"Pendiente","Pendiente","Completo","No aplica"')
-  expect(csv).not.toContain('internal-uuid'); expect(csv).not.toContain('"Aplicables"')
+  expect(csv).not.toContain('internal-uuid'); expect(csv).not.toContain('Código alumno'); expect(csv).not.toContain(row.codigo_alumno); expect(csv).not.toContain('"Aplicables"')
 })
 it('rejects an inconsistent configuration rather than reporting missing data as not applicable', () => {
   expect(() => checkMatrix([{ ...row, documentos: [] }], docs)).toThrow('configuración documental cambió')
@@ -181,7 +182,7 @@ it('shows only identity columns when the Cycle has no configured documents', asy
   configuredDocs = []; data = [{ ...row, documentos: [] }]
   render(<CycleReports cycle={cycle}/>); fireEvent.click(screen.getByRole('tab', { name: 'Documentos pendientes' }))
   await screen.findByText('Sin documentos activos configurados para este Ciclo.')
-  expect(within(screen.getByRole('table', { name: 'Documentos pendientes' })).getAllByRole('columnheader')).toHaveLength(3)
+  expect(within(screen.getByRole('table', { name: 'Documentos pendientes' })).getAllByRole('columnheader')).toHaveLength(2)
   expect(screen.queryByRole('img', { name: 'Pendiente' })).not.toBeInTheDocument()
 })
 it('shows a query error without rendering a misleading matrix when configuration changes', async () => {
