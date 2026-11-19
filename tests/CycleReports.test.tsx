@@ -15,7 +15,7 @@ beforeEach(() => {
     const q = { select: (s: string) => { log.select = s; return q }, eq: (...args: unknown[]) => { log.eq.push(args); return q }, or: (s: string) => { log.or.push(s); return q }, order: (s: string) => { log.orders.push(s); return q }, range: (...args: number[]) => { log.range = args; return q }, abortSignal: () => q,
       then: (resolve: (r: unknown) => unknown) => {
         const filtered = data.filter(r => !log.eq.some(([k, v]) => k === 'matricula_estado' && r.matricula_estado !== v))
-        return Promise.resolve({ data: failed ? null : filtered.slice(log.range[0], log.range[1] + 1), count: filtered.length + (changedCount && log.range[0] > 0 ? 1 : 0), error: failed ? { code: 'FAIL', message: 'secret raw error' } : null }).then(resolve)
+        return Promise.resolve({ data: failed ? null : filtered.slice(log.range[0], log.range[1] + 1).map(r => Object.fromEntries(log.select.split(',').map(field => field.split('::')[0]).map(field => [field, r[field as keyof ReportRow]]))), count: filtered.length + (changedCount && log.range[0] > 0 ? 1 : 0), error: failed ? { code: 'FAIL', message: 'secret raw error' } : null }).then(resolve)
       } }
     return q
   })
@@ -121,4 +121,17 @@ it('rejects malformed Cycle IDs before issuing a query', () => {
 it('keeps zero balances as zero, and formats no-payment amounts directly', () => {
   expect(reportCells({ ...row, abonado: '0', pendiente: '100' }, 2).slice(-3)).toEqual(['S/ 100.00', 'S/ 0.00', 'S/ 100.00'])
   expect(reportCells({ ...row, abonado: '100', pendiente: '0' }, 2).at(-1)).toBe('S/ 0.00')
+})
+
+it('switches between loaded report projections without reusing incompatible rows', async () => {
+  render(<CycleReports cycle={cycle}/>)
+  await screen.findByText('Activa')
+  fireEvent.click(screen.getByRole('tab', { name: 'Documentos pendientes' }))
+  await screen.findByText('Documento de identidad, Certificado psicofísico')
+  fireEvent.click(screen.getByRole('tab', { name: 'Saldos' }))
+  await screen.findByText('S/ 30.00')
+  fireEvent.click(screen.getByRole('tab', { name: 'Documentos pendientes' }))
+  await screen.findByText('Documento de identidad, Certificado psicofísico')
+  fireEvent.click(screen.getByRole('tab', { name: 'Alumnos matriculados' }))
+  await screen.findByText('Activa')
 })

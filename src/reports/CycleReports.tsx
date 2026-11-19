@@ -10,6 +10,10 @@ export function CycleReports({ cycle }: { cycle: string }) {
   const [page, setPage] = useState(0), [rows, setRows] = useState<ReportRow[]>([]), [count, setCount] = useState(0)
   const [loading, setLoading] = useState(true), [error, setError] = useState(''), [revision, setRevision] = useState(0)
   const [exporting, setExporting] = useState(false), [exportError, setExportError] = useState('')
+  const [resolvedKey, setResolvedKey] = useState('')
+  const requestKey = JSON.stringify([state.userId, cycle, kind, search, includeCancelled, page, revision])
+  // A new tab/filter renders before its effect runs. Never present a previous projection as the new one.
+  const pending = loading || resolvedKey !== requestKey
   const exportingRef = useRef(false), exportAbort = useRef<AbortController | null>(null)
   useEffect(() => {
     const controller = new AbortController()
@@ -21,10 +25,10 @@ export function CycleReports({ cycle }: { cycle: string }) {
         if (r.error) throw r.error
         setRows(r.data as unknown as ReportRow[]); setCount(r.count ?? 0)
       } catch { if (!controller.signal.aborted) setError('No se pudo consultar el reporte. Vuelve a consultar.') }
-      finally { if (!controller.signal.aborted) setLoading(false) }
+      finally { if (!controller.signal.aborted) { setResolvedKey(requestKey); setLoading(false) } }
     })()
     return () => controller.abort()
-  }, [client, allowed, state.userId, cycle, kind, search, includeCancelled, page, revision])
+  }, [client, allowed, state.userId, cycle, kind, search, includeCancelled, page, revision, requestKey])
   useEffect(() => () => { exportAbort.current?.abort() }, [cycle, kind, search, includeCancelled, allowed, state.userId])
   async function download() {
     if (exportingRef.current || !allowed) return
@@ -47,20 +51,20 @@ export function CycleReports({ cycle }: { cycle: string }) {
       <div className="filters academic-toolbar" role="search" aria-label="Filtros del reporte">
         <AcademicSearch label="Buscar alumno" placeholder="Apellidos, nombres o DI" value={search} onChange={value => { setSearch(value); setPage(0); setExportError('') }}/>
         {kind === 0 && <label className="report-checkbox"><input type="checkbox" checked={includeCancelled} disabled={exporting} onChange={e => { setIncludeCancelled(e.target.checked); setPage(0) }}/>Incluir anulados</label>}
-        <button type="button" className="secondary" disabled={loading || exporting} onClick={() => setRevision(value => value + 1)}>Consultar</button>
-        <button type="button" className="secondary" disabled={loading || exporting || !!error} onClick={() => void download()}>{exporting ? 'Exportando…' : 'Exportar CSV'}</button>
+        <button type="button" className="secondary" disabled={pending || exporting} onClick={() => setRevision(value => value + 1)}>Consultar</button>
+        <button type="button" className="secondary" disabled={pending || exporting || !!error} onClick={() => void download()}>{exporting ? 'Exportando…' : 'Exportar CSV'}</button>
       </div>
       {kind !== 0 && <p className="help-text">Solo matrículas activas. {kind === 1 ? 'Pendientes según el expediente vigente del alumno.' : 'Importes registrados; no se recalculan desde tarifas actuales.'}</p>}
-      {loading && <p role="status">Consultando reporte…</p>}
+      {pending && <p role="status">Consultando reporte…</p>}
       {exporting && <p role="status">Preparando exportación con los filtros activos…</p>}
-      {error && <p role="alert" className="validation-message">{error}</p>}
+      {!pending && error && <p role="alert" className="validation-message">{error}</p>}
       {exportError && <p role="alert" className="validation-message">{exportError}</p>}
       <div className="table-scroll"><table aria-label={reportNames[kind]}><thead><tr>{reportHeaders[kind].map((h, index) => <th key={h} scope="col" className={kind === 2 && index >= 4 ? 'payment-money' : undefined}>{h}</th>)}</tr></thead><tbody>
-        {!loading && !error && rows.map(row => <tr key={row.matricula_id}>{reportCells(row, kind).map((value, index) => <td key={index} className={kind === 2 && index >= 4 ? 'payment-money' : undefined}>{value}</td>)}</tr>)}
-        {!loading && !error && !rows.length && <tr><td colSpan={reportHeaders[kind].length}>No hay matrículas para estos filtros.</td></tr>}
+        {!pending && !error && rows.map(row => <tr key={row.matricula_id}>{reportCells(row, kind).map((value, index) => <td key={index} className={kind === 2 && index >= 4 ? 'payment-money' : undefined}>{value}</td>)}</tr>)}
+        {!pending && !error && !rows.length && <tr><td colSpan={reportHeaders[kind].length}>No hay matrículas para estos filtros.</td></tr>}
       </tbody></table></div>
-      <AcademicPagination page={page} count={rows.length} disabled={loading || exporting} onChange={setPage}/>
-      {!loading && !error && <small>{count} matrículas coinciden con los filtros.</small>}
+      <AcademicPagination page={page} count={pending ? 0 : rows.length} disabled={pending || exporting} onChange={setPage}/>
+      {!pending && !error && <small>{count} matrículas coinciden con los filtros.</small>}
     </div>
   </section>
 }
