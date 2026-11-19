@@ -1,15 +1,19 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf-lib'
-import { FichaError, projectFicha, type Source } from './contract.ts'
+import { FichaError, projectFicha, ageAtEnrollment, limaDate, type Source } from './contract.ts'
 import { perumarLogoPng } from './brand.ts'
 import { institutionalNote } from './note.ts'
 
 export const TEMPLATE_VERSION = 'h5-2'
 // Institutional layout retained; CHG-H5-002 selects explicit current/final data before rendering.
-export async function renderFicha(source: Source, now: Date): Promise<Uint8Array> {
+export async function renderFicha(source: Source, now: Date, profile: 'H5' | 'H6' = 'H5'): Promise<Uint8Array> {
   const model = projectFicha(source, now)
+  if (profile === 'H6') {
+    const age = model.sections[1].fields.find(([label]) => label === 'Edad a la matrícula')!
+    age[1] = ageAtEnrollment(String(source.datos_ficha.alumno.fecha_nacimiento), now.toISOString())
+  }
   const document = await PDFDocument.create()
   document.setTitle('Ficha de matrícula - PERÚ MAR')
-  document.setProducer(`PERÚ MAR / ${TEMPLATE_VERSION} / CHG-H5-001`)
+  document.setProducer(`PERÚ MAR / ${profile === 'H6' ? 'h6-1:FICHA_MATRICULA' : TEMPLATE_VERSION} / CHG-H5-001`)
   document.setCreationDate(now)
   const normal = await document.embedFont(StandardFonts.Helvetica)
   const bold = await document.embedFont(StandardFonts.HelveticaBold)
@@ -128,7 +132,7 @@ export async function renderFicha(source: Source, now: Date): Promise<Uint8Array
   newPage(true)
   const top = y, headerX = margin + 99, headerWidth = available - 99
   page.drawImage(logo, { x: margin + 5, y: top - 80, width: 80, height: 80 })
-  table(['CURSO', 'LIBRO', 'FOLIO', 'REGISTRO', 'FECHA'], [[context.Curso, '', '', '', context['Fecha de matrícula']]], [headerWidth - 193, 36, 36, 60, 61], headerX, true)
+  table(['CURSO', 'LIBRO', 'FOLIO', 'REGISTRO', profile === 'H6' ? 'FECHA DE EMISIÓN' : 'FECHA'], [[context.Curso, '', '', '', profile === 'H6' ? limaDate(now) : context['Fecha de matrícula']]], [headerWidth - 193, 36, 36, 60, 61], headerX, true)
   y += 4
   table(['PROMOCIÓN', 'PATROCINADOR'], [[context.Promoción, source.empresa_patrocinadora ? sponsor['Razón social'] : '']], [headerWidth * .5, headerWidth * .5], headerX)
   y = Math.min(y, top - 80)
@@ -168,7 +172,7 @@ export async function renderFicha(source: Source, now: Date): Promise<Uint8Array
   const signatureX = margin + 280, signatureWidth = available - 280
   const district = source.ciclo?.distrito?.nombre?.trim()
   const place = district ? district.toLocaleLowerCase('es-PE').replace(/(^|\s)\p{L}/gu, part => part.toLocaleUpperCase('es-PE')) : 'Sin dato'
-  const signatureDate = new Intl.DateTimeFormat('es-PE', { timeZone: 'America/Lima', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(source.created_at))
+  const signatureDate = new Intl.DateTimeFormat('es-PE', { timeZone: 'America/Lima', day: 'numeric', month: 'long', year: 'numeric' }).format(profile === 'H6' ? now : new Date(source.created_at))
   const signatureLines = wrap(`${place}, ${signatureDate}`, signatureWidth, bold)
   signatureLines.forEach((line, index) => center(line, signatureX, signatureWidth, spacesTop - 12 - index * leading, true))
   page.drawLine({ start: { x: signatureX, y: spacesTop - 77 }, end: { x: signatureX + signatureWidth, y: spacesTop - 77 }, thickness: .7, color: border })
@@ -178,9 +182,10 @@ export async function renderFicha(source: Source, now: Date): Promise<Uint8Array
     page = p
     page.drawLine({ start: { x: margin, y: 38 }, end: { x: width - margin, y: 38 }, thickness: .5, color: border })
     text(`Emisión Lima: ${model.emitted}`, margin, 25)
+    if (profile === 'H6') text(`Fecha de matrícula: ${context['Fecha de matrícula']}`, margin, 13)
     text(`Página ${i + 1} de ${total}`, width - margin - 76, 25)
   })
-  const bytes = await document.save()
+  const bytes = await document.save(profile === 'H6' ? { useObjectStreams: false } : undefined)
   if (bytes.length > 2 * 1024 * 1024) throw new FichaError(413, 'LIMIT')
   return bytes
 }

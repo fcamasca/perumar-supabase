@@ -31,12 +31,18 @@
     "test:payments": "node scripts/test-payments.mjs",
     "test:payments:rollback": "node scripts/test-payments-rollback.mjs",
     "test:payments:isolated": "node scripts/test-payments-isolated.mjs",
+    "test:expediente:isolated": "node scripts/test-expediente-isolated.mjs",
     "test:pdf:rollback": "node scripts/test-pdf-rollback.mjs",
     "test:pdf": "node scripts/test-pdf.mjs",
-    "pdf:cleanup": "node scripts/cleanup-pdf.mjs"
+    "pdf:cleanup": "node scripts/cleanup-pdf.mjs",
+    "typecheck:edge:expediente": "npx --yes deno@2.1.4 check --config=supabase/functions/expediente-cargar/deno.json --node-modules-dir=none --frozen supabase/functions/expediente-cargar/index.ts supabase/functions/expediente-generar/index.ts supabase/functions/expediente-descargar/index.ts",
+    "expediente:cleanup": "node scripts/cleanup-expediente.mjs",
+    "test:expediente": "node scripts/test-expediente.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.118.0",
+    "jpeg-js": "0.4.4",
+    "pngjs": "7.0.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "react-router-dom": "7.18.4"
@@ -46,6 +52,7 @@
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "16.3.3",
     "@types/node": "24.19.2",
+    "@types/pngjs": "6.0.5",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.1.2",
