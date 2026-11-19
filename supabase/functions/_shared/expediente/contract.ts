@@ -20,7 +20,7 @@ export class DocumentoError extends Error {
 export function templateVersion(code: string) {
   if (!(GENERADO_CODES as readonly string[]).includes(code))
     throw new DocumentoError(422, 'DOCUMENT_TEMPLATE')
-  return `h6-1:${code}`
+  return `${code === 'FICHA_MATRICULA' ? 'h6-1' : 'h6-2'}:${code}`
 }
 export function object(value: unknown, keys: string[]): Record<string, unknown> {
   if (

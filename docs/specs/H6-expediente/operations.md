@@ -20,7 +20,7 @@ La actualización es aditiva. **No ejecutar reset** para actualizar el entorno d
 Si las funciones locales no están atendiendo, mantener otra terminal en el proyecto:
 
 ```powershell
-node node_modules/supabase/dist/supabase.js functions serve
+node node_modules/supabase/dist/supabase.js functions serve --network-id perumar-h0-local
 ```
 
 Las tres funciones son `expediente-cargar`, `expediente-generar` y `expediente-descargar`. Autorizan mediante getUser y roles académicos actuales antes de operar; no colocar service_role en Vite/React ni deshabilitar controles de identidad para resolver un error. `EXPEDIENTE_ALLOWED_ORIGINS` solo se configura en el entorno servidor; el valor local por defecto es `http://127.0.0.1:5173`. No hay despliegue hospedado acreditado.

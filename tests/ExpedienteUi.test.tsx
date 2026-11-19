@@ -11,6 +11,11 @@ const { client } = vi.hoisted(() => ({
 vi.mock('../src/security/SessionProvider', () => ({
   useSession: () => ({ client, state: { userId: 'actor', roles: ['COORDINADOR_ACADEMICO'] } }),
 }))
+vi.mock('../src/documents/DocumentPreview', () => ({
+  DocumentPreview: ({ name, onClose }: { name: string; onClose: () => void }) => (
+    <div role="dialog" aria-label={`Vista previa: ${name}`}><button onClick={onClose}>Cerrar vista previa</button></div>
+  ),
+}))
 let tables: Record<string, Record<string, unknown>[]>
 const cycle = { id: 'cycle', updated_at: 'cv', estado_codigo: 'CERRADO' }
 const applied = {
@@ -98,6 +103,41 @@ beforeEach(() => {
     }
     return q
   })
+})
+it('offers generated-type previews and preserves the unsaved type draft when closing them', async () => {
+  tables.tipo_documento.push({ id: 'generated', codigo: 'SOLICITUD', nombre: 'SOLICITUD', origen: 'GENERADO', activo: true, updated_at: 'v' })
+  render(<DocumentTypes />)
+  expect(await screen.findByRole('button', { name: 'Vista previa' })).toBeEnabled()
+  expect(within(screen.getByRole('row', { name: /DOCUMENTO DE IDENTIDAD/ })).queryByRole('button', { name: 'Vista previa' })).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Editar SOLICITUD' }))
+  fireEvent.change(screen.getByRole('textbox', { name: 'Nombre' }), { target: { value: 'BORRADOR' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Vista previa' }))
+  expect(screen.getByRole('dialog', { name: 'Vista previa: BORRADOR' })).toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: 'Cerrar vista previa' }))
+  expect(screen.getByRole('textbox', { name: 'Nombre' })).toHaveValue('BORRADOR')
+  expect(client.rpc).not.toHaveBeenCalled()
+  expect(client.functions.invoke).not.toHaveBeenCalled()
+})
+it('selects visible Cycle documents together, preserves mandatory flags and excludes inactive types', async () => {
+  tables.tipo_documento.push(
+    { id: 'photo', codigo: 'FOTO', nombre: 'FOTO', origen: 'SUBIDO', activo: true },
+    { id: 'inactive', codigo: 'ANTERIOR', nombre: 'ANTERIOR', origen: 'SUBIDO', activo: false },
+  )
+  tables.ciclo_documento[0].obligatorio = true
+  render(<CycleDocuments cycle={cycle} />)
+  const all = await screen.findByRole('checkbox', { name: 'Seleccionar todos los documentos visibles' })
+  expect(all).toBePartiallyChecked()
+  fireEvent.click(all)
+  expect(screen.getByRole('checkbox', { name: 'Aplicar FOTO' })).toBeChecked()
+  expect(screen.getByRole('checkbox', { name: 'Aplicar ANTERIOR' })).not.toBeChecked()
+  expect(screen.getByRole('checkbox', { name: 'Obligatorio DOCUMENTO DE IDENTIDAD' })).toBeChecked()
+  fireEvent.change(screen.getByRole('searchbox', { name: 'Buscar documento' }), { target: { value: 'FOTO' } })
+  fireEvent.click(all)
+  expect(screen.getByRole('checkbox', { name: 'Aplicar FOTO' })).not.toBeChecked()
+  fireEvent.change(screen.getByRole('searchbox', { name: 'Buscar documento' }), { target: { value: '' } })
+  expect(screen.getByRole('checkbox', { name: 'Aplicar DOCUMENTO DE IDENTIDAD' })).toBeChecked()
+  expect(all).toBePartiallyChecked()
+  expect(client.rpc).not.toHaveBeenCalled()
 })
 it('keeps closed-Cycle document configuration editable and saves/synchronizes only after scope confirmation', async () => {
   render(<CycleDocuments cycle={cycle} />)

@@ -356,7 +356,7 @@ export function EnrollmentDocuments({
     const f = lastFiles[d.ultimo_archivo_confirmado_id]
     if (!f || !sourceKnown || capitania === null) return 'Vigencia por consultar'
     return f.fuente_base_fingerprint !== source ||
-      f.plantilla_version !== `h6-1:${d.codigo}` ||
+      f.plantilla_version !== `${d.codigo === 'FICHA_MATRICULA' ? 'h6-1' : 'h6-2'}:${d.codigo}` ||
       f.datos_generacion.capitania_nombre !== capitania
       ? 'Fuente o plantilla cambiada'
       : ''

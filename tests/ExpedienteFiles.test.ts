@@ -1,6 +1,7 @@
 import { expect, it, vi } from 'vitest'
 import { webcrypto } from 'node:crypto'
-import { Buffer } from 'node:buffer'
+import { Buffer, Blob as NodeBlob } from 'node:buffer'
+import { buildDocumentPreview } from '../src/documents/previewPdf'
 import { PNG } from 'pngjs'
 import jpeg from 'jpeg-js'
 import { PDFDocument, PDFName, PDFDict, PDFArray, PDFRawStream, decodePDFRawStream } from 'pdf-lib'
@@ -11,12 +12,26 @@ import {
   sha256,
   databaseError,
   GENERADO_CODES,
+  templateVersion,
 } from '../supabase/functions/_shared/expediente/contract'
 import { renderExpediente } from '../supabase/functions/_shared/expediente/renderers'
 import { renderFicha } from '../supabase/functions/_shared/ficha/render'
 import { fichaFixture } from './ficha-fixture'
 const id = '11111111-1111-4111-8111-111111111111',
   version = '2026-01-01T12:00:00.123456Z'
+it.each(GENERADO_CODES)('creates a marked synthetic preview for %s from its actual renderer', async code => {
+  const previousBlob = globalThis.Blob
+  vi.stubGlobal('Blob', NodeBlob)
+  try {
+    const blob = await buildDocumentPreview(code)
+    const text = (await words(new Uint8Array(await blob.arrayBuffer()))).replace(/\s+/g, ' ')
+    expect(blob.type).toBe('application/pdf')
+    expect(text).toContain('VISTA PREVIA')
+    expect(text).toContain('SIN VALIDEZ')
+    expect(text).toContain('PERSONA')
+    expect(text).toContain('00000000')
+  } finally { vi.stubGlobal('Blob', previousBlob) }
+})
 async function pdf(pages = 1, active = false, compressed = false) {
   const p = await PDFDocument.create()
   for (let i = 0; i < pages; i++) p.addPage()
@@ -152,8 +167,9 @@ it.each(GENERADO_CODES)(
         apoderado_numero_di: '00000002',
       }
     const bytes = await renderExpediente(code, source, at, data),
-      text = await words(bytes)
-    expect(text).toContain('35 años')
+      text = (await words(bytes)).replace(/\s+/g, ' ')
+    if (code !== 'FICHA_DATOS_PERSONALES') expect(text).toContain('35 años')
+    else expect(text).toContain('02-01-2000')
     expect(text).toContain('2035')
     expect(text).toContain('ÁNGELA LUCÍA')
     expect(await validateFile(bytes, 'application/pdf', 'documento.pdf')).toBe('application/pdf')
@@ -175,12 +191,61 @@ it('preserves the old H5 default date/age while H6 uses a fixed generation profi
   expect(h6).toContain('35 años')
   expect(h6).toContain('Fecha de matrícula: 2026-01-01')
 })
+it('uses the supplied declaration composition and preserves the enrollment template version', async () => {
+  const bytes = await renderExpediente('DECLARACION_JURADA', fichaFixture(), new Date('2035-01-03T02:00:00Z'), {})
+  const text = (await words(bytes)).replace(/\s+/g, ' ')
+  expect(text).toContain('Art. 42° de la Ley 27444')
+  expect(text).toContain('PISCO, 2 de enero de 2035')
+  expect(text).toContain('ÁNGELA LUCÍA MUÑOZ QUIÑONES DNI 00000001')
+  expect(text).not.toContain('Gestión Académica')
+  expect(text).not.toContain('Matrícula:')
+  expect(text).not.toContain('Generado en Lima:')
+  expect(text).not.toContain('FIRMA')
+  expect((await PDFDocument.load(bytes)).getPageCount()).toBe(1)
+  expect(templateVersion('DECLARACION_JURADA')).toBe('h6-2:DECLARACION_JURADA')
+  expect(templateVersion('CARTA_PODER')).toBe('h6-2:CARTA_PODER')
+  expect(templateVersion('FICHA_MATRICULA')).toBe('h6-1:FICHA_MATRICULA')
+})
+it.each(['SOLICITUD', 'CARTA_PODER', 'FICHA_DATOS_PERSONALES'])(
+  'follows the supplied %s paper model without academic UI headers', async (code) => {
+    const source = fichaFixture()
+    source.datos_ficha.alumno.estatura_cm = 164
+    const bytes = await renderExpediente(code, source, new Date('2035-01-03T02:00:00Z'), {
+      capitania_nombre: 'PISCO', apoderado_nombre: 'APODERADO SINTÉTICO',
+      apoderado_tipo_di_etiqueta: 'DNI', apoderado_numero_di: '00000002',
+    })
+    const text = (await words(bytes)).replace(/\s+/g, ' ')
+    expect(text).not.toContain('PERÚ MAR')
+    expect(text).not.toContain('Gestión Académica')
+    expect(text).not.toContain('Matrícula:')
+    expect(text).not.toContain('Generado en Lima:')
+    expect(text).toContain('PISCO, 2 de enero de 2035')
+    expect((await PDFDocument.load(bytes)).getPageCount()).toBe(1)
+    expect(templateVersion(code)).toBe(`h6-2:${code}`)
+    if (code === 'SOLICITUD') {
+      expect(text).toContain('CAPITÁN DE FRAGATA')
+      expect(text).toContain('S.C.P.')
+      expect(text).toContain('PARA TAL EFECTO:')
+      expect(text).toContain('POR LO EXPUESTO:')
+    } else if (code === 'CARTA_PODER') expect(text).toContain('APODERADO SINTÉTICO')
+    else {
+      expect(text).toContain('MARÍTIMA DE PISCO')
+      expect(text).toContain('L.M.:')
+      expect(text).toContain('1.64 mts.')
+      expect(text).toContain('CONTACTO SINTÉTICO')
+      expect(text).toContain('(Firma)')
+      expect(text).toContain('Huella')
+    }
+    if (code !== 'FICHA_DATOS_PERSONALES')
+      expect(text).toContain('ÁNGELA LUCÍA MUÑOZ QUIÑONES DNI 00000001')
+  },
+)
 it.each([
   ['2035-01-02T04:59:59Z','34 años'],
   ['2035-01-02T05:00:00Z','35 años'],
 ])('fixes age at the Lima birthday boundary %s',async(instant,age)=>{
   const bytes=await renderExpediente('DECLARACION_JURADA',fichaFixture(),new Date(instant),{})
-  expect(await words(bytes)).toContain(age)
+  expect((await words(bytes)).replace(/\s+/g, ' ')).toContain(age)
 })
 it('paginates all personal contacts and rejects unsupported glyphs without silent substitution', async () => {
   const source = fichaFixture(100),

@@ -75,6 +75,31 @@ export function CycleDocuments({
           ]
     })
   }
+  const visibleTypes = types.filter((t) =>
+    (t.codigo + ' ' + t.nombre).toUpperCase().includes(search.trim().toUpperCase()),
+  )
+  const selectableTypes = visibleTypes.filter(
+    (t) => t.activo || draft.some((c) => c.tipo_documento_id === t.id && c.activo),
+  )
+  const selectedCount = selectableTypes.filter((t) =>
+    draft.some((c) => c.tipo_documento_id === t.id && c.activo),
+  ).length
+  const allSelected = selectableTypes.length > 0 && selectedCount === selectableTypes.length
+  function selectAll(checked: boolean) {
+    setDraft((old) => {
+      const next = old.map((c) =>
+        selectableTypes.some((t) => t.id === c.tipo_documento_id)
+          ? { ...c, activo: checked }
+          : c,
+      )
+      for (const t of selectableTypes) {
+        if (!next.some((c) => c.tipo_documento_id === t.id)) {
+          next.push({ id: '', updated_at: '', tipo_documento_id: t.id, activo: checked, obligatorio: false })
+        }
+      }
+      return next
+    })
+  }
   async function save(regularize = false) {
     if (blocked || busy || !eligible || loading) return
     if (
@@ -147,16 +172,26 @@ export function CycleDocuments({
               <tr>
                 <th>Documento</th>
                 <th>Origen</th>
-                <th>Aplicar</th>
+                <th>
+                  <label className="document-select-all">
+                    <input
+                      type="checkbox"
+                      aria-label="Seleccionar todos los documentos visibles"
+                      checked={allSelected}
+                      ref={(input) => {
+                        if (input) input.indeterminate = selectedCount > 0 && !allSelected
+                      }}
+                      disabled={blocked || busy || !eligible || !selectableTypes.length}
+                      onChange={(e) => selectAll(e.target.checked)}
+                    />
+                    Aplicar
+                  </label>
+                </th>
                 <th>Obligatorio</th>
               </tr>
             </thead>
             <tbody>
-              {types
-                .filter((t) =>
-                  (t.codigo + ' ' + t.nombre).toUpperCase().includes(search.trim().toUpperCase()),
-                )
-                .map((t) => {
+              {visibleTypes.map((t) => {
                   const c = draft.find((c) => c.tipo_documento_id === t.id)
                   return (
                     <tr key={t.id}>

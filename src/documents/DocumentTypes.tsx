@@ -9,8 +9,10 @@ import {
 import { InlineForm, StatusBadge } from '../academic/AcademicUi'
 import { formTextValue } from '../lib/formText'
 import { documentError, generatedCodes, type DocumentType } from './contracts'
+import { DocumentPreview } from './DocumentPreview'
 
 export function DocumentTypes() {
+  const [preview, setPreview] = useState<{ codigo: string; nombre: string } | null>(null)
   const { client } = useSession()
   const [rows, setRows] = useState<DocumentType[]>([]),
     [search, setSearch] = useState(''),
@@ -99,6 +101,7 @@ export function DocumentTypes() {
     visible = filtered.slice(page * 30, page * 30 + 30)
   return (
     <section>
+      {preview && <DocumentPreview code={preview.codigo} name={preview.nombre} onClose={() => setPreview(null)} />}
       {open ? (
         <>
           <AcademicRecordHeader
@@ -111,6 +114,11 @@ export function DocumentTypes() {
             onBack={() => setOpen(false)}
             onEdit={() => setEditing(true)}
           />
+          {draft.origen === 'GENERADO' && generatedCodes.includes(draft.codigo) && (
+            <div className="record-header-actions document-preview-action">
+              <button type="button" className="secondary" disabled={busy} onClick={() => setPreview({ codigo: draft.codigo, nombre: draft.nombre || draft.codigo })}>Vista previa</button>
+            </div>
+          )}
           <InlineForm onSubmit={() => void save()}>
             <fieldset disabled={!editing || busy} className="academic-fields">
               <legend>Datos del tipo</legend>
@@ -166,7 +174,7 @@ export function DocumentTypes() {
                   <option value="GENERADO">Generado</option>
                 </select>
               </label>
-              <label>
+              <label className="academic-checkbox-field">
                 <input
                   type="checkbox"
                   checked={draft.activo}
@@ -244,6 +252,9 @@ export function DocumentTypes() {
                         <StatusBadge value={r.activo ? 'Activo' : 'Inactivo'} />
                       </td>
                       <td>
+                        {r.origen === 'GENERADO' && generatedCodes.includes(r.codigo) && (
+                          <button type="button" className="secondary document-preview-row-action" onClick={() => setPreview(r)}>Vista previa</button>
+                        )}
                         <AcademicAction
                           icon="view"
                           label={`Ver ${r.nombre}`}

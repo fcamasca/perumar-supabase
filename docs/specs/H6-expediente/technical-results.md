@@ -10,6 +10,10 @@ Fecha: **18/11/2026, America/Lima**. Estado: **CONSTRUCCIÓN TÉCNICA COMPLETADA
 - **483/483 unidades PASSED,29 archivos**; lint, typecheck, Deno2.1.4 con locks congelados, build y build-safety PASSED. `git diff --check` y comparación del Spec PASSED localmente.
 - El paquete posterior añade documentación y regresiones de archivos (PDF cifrado sintético, fallo inicial Storage/puntero y preservación CARGADO al cambiar configuración), sin cambios funcionales ni migraciones posteriores al candidato. La CI del SHA final se verifica y se informa con su identificador exacto en la entrega; no se presupone SUCCESS antes de terminar.
 
+## Cambios locales posteriores durante revisión humana
+
+Después del candidato publicado se corrigieron las cuatro composiciones institucionales y se añadió vista previa sintética del maestro, además de selección general de documentos del Ciclo y alineación de Activo. Detalle y verificaciones locales en implementation-log.md. Estos cambios funcionales locales **no están cubiertos por la CI histórica del candidato**; requieren publicar/verificar un nuevo candidato antes de Gate 2. Los cuatro documentos del Spec aprobado permanecen intactos. La evidencia de los runs anteriores conserva su alcance y sus SHA; no acredita aprobación humana de estos ajustes.
+
 ## Bloques construidos
 
 Primera puerta, antes de Storage: CI44408192177 SUCCESS sobre `da58db375677e2238e61628cc74f8c09032d12a2`. Modelo/locks/maestro/configuración/aplicaciones/sincronización/historia/RLS/retiro/resumen probados con DB/PostgREST reales desechables y regresión H1–H5.
