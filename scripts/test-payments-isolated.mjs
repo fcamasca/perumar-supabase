@@ -31,8 +31,12 @@ try {
   for(const [name,definition] of Object.entries(definitionsBefore))assert.equal(definitionsAfter[name].replaceAll('\r\n','\n'),definition.replaceAll('\r\n','\n').replaceAll("errcode='40001'","errcode='PT409'"),'Only the deliberate error contract may change')
   assert.equal(sql("select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname in ('public','private') and p.prosrc ~* 'errcode[[:space:]]*=[[:space:]]*''40001''';"),'0')
   console.log('Logical conflicts PT409: PASSED (effective definitions contain no deliberate 40001; function contracts otherwise identical)')
-  sql('drop view if exists public.matricula_pago_listado;')
+  // H6.1 read projection depends on this H4 view. Replay in dependency order, only in this disposable DB.
+  const hasReportSource = sql("select to_regclass('public.matricula_expediente_resumen') is not null") === 't'
+  if (hasReportSource && sql("select to_regclass('public.matricula_reporte_ciclo') is not null") !== 't') sql(readFileSync('supabase/migrations/20261119020000_h6_1_cycle_reports.sql','utf8'))
+  sql('drop view if exists public.matricula_reporte_ciclo;drop view if exists public.matricula_pago_listado;')
   sql(readFileSync('supabase/migrations/20261109060000_direct_payment_access.sql','utf8'))
+  if (hasReportSource) sql(readFileSync('supabase/migrations/20261119020000_h6_1_cycle_reports.sql','utf8'))
   sql(readFileSync('supabase/migrations/20261110010000_default_all_enrollment_charges.sql','utf8'))
   sql(readFileSync('tests/sql/h4-payments.sql','utf8'))
   sql(readFileSync('tests/sql/h4-regression.sql','utf8'))
