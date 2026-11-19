@@ -669,7 +669,7 @@ it('terminal Cycle subjects allow history consultation without mutation controls
 
 it('Cycle exposes enrollment history between Asignaturas and Estado without requiring Cycle edit mode',async()=>{
  session(['COORDINADOR_ACADEMICO']);render(<MemoryRouter><Ciclos/></MemoryRouter>);fireEvent.click(await screen.findByRole('button',{name:'Ver 2026-001-NAV'}));
- expect(screen.getAllByRole('tab').map(t=>t.textContent)).toEqual(['Datos','Asignaturas','Tarifas','Matrículas','Estado','Documentos']);fireEvent.click(screen.getByRole('tab',{name:'Matrículas'}));
+ expect(screen.getAllByRole('tab').map(t=>t.textContent)).toEqual(['Datos','Asignaturas','Tarifas','Matrículas','Estado','Documentos','Reportes']);fireEvent.click(screen.getByRole('tab',{name:'Matrículas'}));
  expect(await screen.findByRole('table',{name:'Alumnos matriculados en el Ciclo'})).toBeVisible();await waitFor(()=>expect(screen.getByRole('button',{name:'+ Matricular alumno'})).toBeEnabled());expect(screen.queryByRole('button',{name:'Guardar Ciclo'})).not.toBeInTheDocument();expect(rpc).not.toHaveBeenCalled();
 });
 it('returning from enrollment details opens the requested Cycle directly on Matriculas',async()=>{
@@ -691,7 +691,7 @@ it('preserves tariff drafts across tabs, blocks registration until saved and use
 
 it('Cycle editing keeps one shared Cancel/Save bar on every tab and submits the Data form from Matriculas',async()=>{
  session(['DIRECTOR_ACADEMICO']);render(<MemoryRouter><Ciclos/></MemoryRouter>);fireEvent.click(await screen.findByRole('button',{name:'Editar 2026-001-NAV'}));await waitFor(()=>expect(screen.getByRole('button',{name:'Guardar Ciclo'})).toBeEnabled());
- for(const name of ['Datos','Asignaturas','Tarifas','Matrículas','Estado','Documentos']){fireEvent.click(screen.getByRole('tab',{name}));expect(screen.getByRole('button',{name:'Cancelar'})).toBeVisible();expect(screen.getByRole('button',{name:'Guardar Ciclo'})).toBeVisible();expect(screen.getAllByRole('button',{name:'Cancelar'})).toHaveLength(1)}
+ for(const name of ['Datos','Asignaturas','Tarifas','Matrículas','Estado','Documentos','Reportes']){fireEvent.click(screen.getByRole('tab',{name}));expect(screen.getByRole('button',{name:'Cancelar'})).toBeVisible();expect(screen.getByRole('button',{name:'Guardar Ciclo'})).toBeVisible();expect(screen.getAllByRole('button',{name:'Cancelar'})).toHaveLength(1)}
  fireEvent.click(screen.getByRole('tab',{name:'Datos'}));fireEvent.change(screen.getByLabelText('Nombre de promoción (opcional)'),{target:{value:'PROMOCION'}});fireEvent.click(screen.getByRole('tab',{name:'Matrículas'}));rpc.mockResolvedValue({data:{...ciclo,updated_at:'v2'},error:null});fireEvent.click(screen.getByRole('button',{name:'Guardar Ciclo'}));await waitFor(()=>expect(rpc).toHaveBeenCalledWith('guardar_ciclo',{p:expect.objectContaining({id:'cycle',nombre_promocion:'PROMOCION'}),adicionales:[]}));
 });
 

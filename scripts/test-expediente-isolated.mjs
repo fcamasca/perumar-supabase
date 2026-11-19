@@ -1,3 +1,4 @@
+import { testCycleReports } from './test-cycle-reports.mjs'
 import assert from 'node:assert/strict'
 import { randomUUID, randomBytes, createHmac } from 'node:crypto'
 import { spawnSync, spawn } from 'node:child_process'
@@ -98,6 +99,7 @@ try {
         : "select to_regproc('public.preparar_archivo_expediente') is not null"
     if (sql(marker) !== 't') sql(readFileSync('supabase/migrations/' + file, 'utf8'))
   }
+  if (sql("select to_regclass('public.matricula_reporte_ciclo') is not null") !== 't') sql(readFileSync('supabase/migrations/20261119020000_h6_1_cycle_reports.sql', 'utf8'))
   // Exercise the same empty-reference state produced by CI schema-only cloning.
   // This TRUNCATE is exclusively in the random disposable DB, before fixture creation.
   sql('truncate public.tipo_documento cascade')
@@ -558,6 +560,7 @@ try {
     `insert into auth.users(id) values('${admin}');insert into public.app_users(id) values('${admin}');insert into public.app_user_roles(user_id,role_code) values('${admin}','ADMIN_SISTEMA');`,
   )
   assert.deepEqual((await api('/matricula_documento?select=id', admin)).data, [])
+  await testCycleReports({ sql, api, fixture, actorSql, admin })
   const studentPhotoQuery = new URLSearchParams({
     select: 'id,confirmado_at,documento:matricula_documento!matricula_documento_archivo_matricula_documento_id_fkey!inner(id,activo,contexto_vigente,ultimo_archivo_confirmado_id,matricula:matricula!inner(alumno_id,codigo_matricula,estado_codigo,ciclo:ciclo!inner(estado_codigo)))',
     estado_tecnico: 'eq.CONFIRMADO', 'documento.codigo': 'eq.FOTO_ALUMNO',

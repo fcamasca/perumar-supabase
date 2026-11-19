@@ -553,3 +553,11 @@ form.enrollment-detail-form { max-width:none; margin:1rem 0 0; padding:1rem 0 0;
 .document-pending-required td:first-child { box-shadow:inset 3px 0 var(--warning); }
 .document-grid .document-file-diagnostic { color:var(--warning); }
 @media(forced-colors:active) { .document-state-badge { background:Canvas; border-color:CanvasText; } .document-pending-required td:first-child { box-shadow:none; border-inline-start:3px solid CanvasText; } }
+
+/* H6.1: compact controls within the existing Cycle workspace. */
+.cycle-reports .academic-toolbar { margin-block: 1rem; align-items: end; }
+.cycle-reports .report-checkbox { display: flex; align-items: center; gap: .5rem; white-space: nowrap; padding-block: .7rem; }
+.cycle-reports .report-checkbox input { width: auto; margin: 0; }
+.cycle-reports td { overflow-wrap: anywhere; }
+
+.cycle-reports .payment-money { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
