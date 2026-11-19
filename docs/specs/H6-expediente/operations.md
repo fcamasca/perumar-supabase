@@ -40,8 +40,9 @@ Todos los puntos anteriores están **PENDIENTES DE REVISIÓN HUMANA**; las prueb
 
 ## Archivos admitidos y persistencia
 
-- Carga: máximo 5 MiB; PDF simple hasta20 páginas o JPEG/PNG hasta20 megapíxeles. Se verifica contenido y hash en servidor. Foto pasaporte admite solo JPEG/PNG.
+- Carga: máximo 5 MiB; PDF simple hasta20 páginas o JPEG/PNG sin requisito de dimensiones ni tope funcional de megapíxeles (ajuste humano posterior). Se verifica contenido y hash en servidor, conservando presupuestos de memoria/descompresión para procesar archivos. Foto del alumno (FOTO_ALUMNO) admite solo JPEG/PNG, sin formato de tamaño pasaporte/carné obligatorio.
 - PDF conservador: sin cifrado, formularios, enlaces/acciones, adjuntos ni estructuras ObjStm/XRef comprimidas o filtros no verificables por el parser. Reexportar un PDF simple o usar una imagen admitida. No es antivirus ni garantía antimalware.
+- Imágenes que no puedan procesarse: la acción opcional «Optimizar imagen» prepara una copia local, permite revisarla o volver al original, y requiere «Confirmar carga» para enviarla. El original del equipo se conserva; para certificados, comprobar legibilidad antes de confirmar.
 - Generación: máximo 2 MiB y20 páginas; cinco renderers fijos. No se admite plantilla, SQL, URL, ruta, bucket, hash o actor desde React.
 - `CONFIRMADO` persiste sin TTL24h ni purga funcional, también al reemplazar/retirar/trasladar/anular. Los objetos H5 temporales siguen separados y no son la fuente del objeto H6.
 

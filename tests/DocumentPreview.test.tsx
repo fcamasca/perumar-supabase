@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { DocumentPreview } from '../src/documents/DocumentPreview'
+import { StrictMode, useState } from 'react'
 const { build, createUrl, revokeUrl } = vi.hoisted(() => ({ build: vi.fn(), createUrl: vi.fn(), revokeUrl: vi.fn() }))
 vi.mock('../src/documents/previewPdf', () => ({ buildDocumentPreview: build }))
 const originalShowModal = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, 'showModal')
@@ -15,7 +16,12 @@ beforeEach(() => {
   }
   vi.stubGlobal('URL', PreviewURL)
   Object.defineProperty(HTMLDialogElement.prototype, 'showModal', { configurable: true, value: function (this: HTMLDialogElement) { this.setAttribute('open', '') } })
-  Object.defineProperty(HTMLDialogElement.prototype, 'close', { configurable: true, value: function (this: HTMLDialogElement) { this.removeAttribute('open') } })
+  Object.defineProperty(HTMLDialogElement.prototype, 'close', { configurable: true, value: function (this: HTMLDialogElement) {
+    if (!this.open) return
+    this.removeAttribute('open')
+    // Native close() queues a close event, even if React reopens the dialog first.
+    setTimeout(() => this.dispatchEvent(new Event('close')), 0)
+  } })
 })
 afterEach(() => {
   cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals()
@@ -52,4 +58,21 @@ it('does not retain a PDF URL when the dialog closes before rendering completes'
   resolve(new Blob(['synthetic']))
   await Promise.resolve()
   expect(createUrl).not.toHaveBeenCalled()
+})
+it('keeps the preview open after StrictMode effect replay and the queued native close event', async () => {
+  const close = vi.fn()
+  function Harness() {
+    const [open, setOpen] = useState(true)
+    return open ? <DocumentPreview code="SOLICITUD" name="Solicitud" onClose={() => { close(); setOpen(false) }} /> : <p>Cerrado</p>
+  }
+  render(<StrictMode><Harness /></StrictMode>)
+  await act(async () => { await vi.dynamicImportSettled() })
+  await screen.findByTitle('Vista previa PDF de Solicitud')
+  // Yield beyond the native close event dispatched by the StrictMode cleanup.
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)) })
+  expect(screen.getByRole('dialog', { name: 'Vista previa: Solicitud' })).toBeVisible()
+  expect(close).not.toHaveBeenCalled()
+  fireEvent.click(screen.getByRole('button', { name: 'Cerrar vista previa' }))
+  expect(screen.getByText('Cerrado')).toBeVisible()
+  expect(close).toHaveBeenCalledOnce()
 })

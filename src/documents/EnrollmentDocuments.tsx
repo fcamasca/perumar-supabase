@@ -1,20 +1,27 @@
 import { DocumentMoreActions } from './DocumentMoreActions'
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useSession } from '../security/SessionProvider'
-import { AcademicPagination, AcademicSearch } from '../academic/AcademicLayout'
+import { AcademicAction, AcademicPagination, AcademicSearch } from '../academic/AcademicLayout'
 import { InlineForm, useConfirmation } from '../academic/AcademicUi'
 import { formTextValue } from '../lib/formText'
 import { documentError, type AppliedDocument, type DocumentFile } from './contracts'
+import { uploadSizeError } from './uploadLimits'
+import { optimizeImage } from './optimizeImage'
+import { documentFileBlob } from './documentFileResponse'
 
 function DocumentDialog({
   close,
   busy,
   children,
+  wide = false,
+  label = 'Archivo del expediente',
 }: {
   close: () => void
   busy: boolean
   children: ReactNode
+  wide?: boolean
+  label?: string
 }) {
   const panel = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -37,17 +44,17 @@ function DocumentDialog({
   return createPortal(
     <div className="dialog-backdrop">
       <div
-        className="confirm-dialog"
+        className={`confirm-dialog${wide ? ' document-file-preview' : ''}`}
         ref={panel}
         role="dialog"
         aria-modal="true"
-        aria-label="Archivo del expediente"
+        aria-label={label}
         onKeyDown={(e) => {
           if (e.key === 'Escape' && !busy) close()
           if (e.key === 'Tab') {
             const items = [
               ...panel.current!.querySelectorAll<HTMLElement>(
-                'input:not(:disabled),select:not(:disabled),button:not(:disabled),[tabindex="0"]',
+                'input:not(:disabled),select:not(:disabled),button:not(:disabled),a[href],iframe,[tabindex="0"]',
               ),
             ]
             if (e.shiftKey && document.activeElement === items[0]) {
@@ -100,6 +107,10 @@ export function EnrollmentDocuments({
       apoderado_numero_di: '',
     }),
     [types, setTypes] = useState<{ id: string; nombre: string }[]>([])
+  const [fileError, setFileError] = useState('')
+  const [storedPreview, setStoredPreview] = useState<{ name: string; blob: Blob; historical: boolean } | null>(null), [storedPreviewUrl, setStoredPreviewUrl] = useState('')
+  const [originalFile, setOriginalFile] = useState<File | null>(null), [optimizing, setOptimizing] = useState(false), [optimized, setOptimized] = useState(false), [imagePreview, setImagePreview] = useState('')
+  const fileHintId = useId(), fileErrorId = useId()
   const [historyDoc, setHistoryDoc] = useState<AppliedDocument | null>(null),
     [files, setFiles] = useState<DocumentFile[]>([]),
     [filePage, setFilePage] = useState(0),
@@ -112,6 +123,7 @@ export function EnrollmentDocuments({
     } | null>(null),
     [source, setSource] = useState<string | null>(null),
     [sourceKnown, setSourceKnown] = useState(false)
+  const [requiredPending, setRequiredPending] = useState<number | null>(null)
   const [lastFiles, setLastFiles] = useState<Record<string, DocumentFile>>({}),
     [capitania, setCapitania] = useState<string | null>(null)
   const { ask, dialog } = useConfirmation(busy),
@@ -119,6 +131,18 @@ export function EnrollmentDocuments({
     mounted = useRef(true)
   const eligible =
     enrollmentState === 'ACTIVO' && ['PROGRAMADO', 'EN_CURSO', 'CERRADO'].includes(cycleState)
+  useEffect(() => {
+    if (!storedPreview) { setStoredPreviewUrl(''); return }
+    const url = URL.createObjectURL(storedPreview.blob)
+    setStoredPreviewUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [storedPreview])
+  useEffect(() => {
+    if (!editing || !optimized || !file) { setImagePreview(''); return }
+    const url = URL.createObjectURL(file)
+    setImagePreview(url)
+    return () => URL.revokeObjectURL(url)
+  }, [editing, optimized, file])
   useEffect(() => {
     mounted.current = true
     return () => {
@@ -140,8 +164,10 @@ export function EnrollmentDocuments({
         const pattern=JSON.stringify(`%${search.trim()}%`)
         query=query.or(`codigo.ilike.${pattern},nombre.ilike.${pattern}`)
       }
-      const [d, s, f, c] = await Promise.all([
-        query.order('nombre').order('id').range(page*30,page*30+29),
+      const [d, s, f, c, required] = await Promise.all([
+        query.order('contexto_vigente', { ascending: false }).order('activo', { ascending: false })
+          .order('estado', { ascending: false }).order('obligatorio', { ascending: false })
+          .order('nombre').order('id').range(page*30,page*30+29),
         client
           .from('matricula_expediente_resumen')
           .select('aplicables,completados,pendientes')
@@ -153,11 +179,14 @@ export function EnrollmentDocuments({
           .eq('id', enrollment)
           .maybeSingle(),
         client.from('ciclo').select('capitania(nombre)').eq('id', cycleId).maybeSingle(),
+        client.from('matricula_documento').select('id', { count: 'exact', head: true })
+          .eq('matricula_id', enrollment).eq('contexto_vigente', true).eq('activo', true)
+          .eq('estado', 'PENDIENTE').eq('obligatorio', true),
       ])
       if (!alive) return
       setLoading(false)
       if (d.error || s.error) {
-        setRows([]);setSummary(null);setSourceKnown(false);setLastFiles({})
+        setRows([]);setSummary(null);setRequiredPending(null);setSourceKnown(false);setLastFiles({})
         setFailure(true)
         setMessage('No se pudo consultar el expediente completo.')
         return
@@ -165,6 +194,7 @@ export function EnrollmentDocuments({
       const docs = d.data as AppliedDocument[]
       setRows(docs)
       setSummary(s.data)
+      setRequiredPending(!required.error && typeof required.count === 'number' ? required.count : null)
       setSourceKnown(!f.error && typeof f.data?.source_fingerprint === 'string')
       setSource(f.data?.source_fingerprint ?? null)
       const ref = c.data?.capitania as unknown as { nombre: string } | null
@@ -218,6 +248,8 @@ export function EnrollmentDocuments({
     }
   }, [client, historyDoc, filePage, fileRevision])
   function open(d: AppliedDocument) {
+    setFileError('')
+    setOriginalFile(null); setOptimized(false)
     setEditing(d)
     setFile(null)
     setProxy({ apoderado_nombre: '', apoderado_tipo_di_id: '', apoderado_numero_di: '' })
@@ -279,12 +311,15 @@ export function EnrollmentDocuments({
       } catch {
         /* no raw platform response */
       }
+      if (code === 'DOCUMENT_FILE_INVALID' && editing?.codigo === 'FOTO_ALUMNO')
+        code = 'DOCUMENT_IMAGE_INVALID'
       throw new Error(documentError({ code }))
     }
-    return r.data
+    return name === 'expediente-descargar' ? documentFileBlob(r.data, r.response) : r.data
   }
   async function submit() {
     if (!editing || !eligible || blocked) return
+    if (editing.origen === 'SUBIDO' && (fileError || optimizing)) return
     const d = editing
     await operation(async () => {
       let body: FormData | Record<string, unknown>
@@ -332,6 +367,15 @@ export function EnrollmentDocuments({
       return historical ? 'Descarga histórica iniciada.' : 'Descarga iniciada.'
     })
   }
+  async function previewStoredFile(d: AppliedDocument, id: string, historical: boolean) {
+    await operation(async () => {
+      const blob = await invoke('expediente-descargar', { documento_id: d.id, archivo_id: id, historico: historical })
+      if (!(blob instanceof Blob) || !['application/pdf', 'image/jpeg', 'image/png'].includes(blob.type))
+        throw new Error('No se recibió un archivo válido para la vista previa.')
+      if (mounted.current) setStoredPreview({ name: d.nombre, blob, historical })
+      return historical ? 'Vista previa histórica preparada.' : 'Vista previa preparada.'
+    })
+  }
   async function withdraw(d: AppliedDocument) {
     const reason = await ask({
       title: 'Retirar documento opcional',
@@ -366,15 +410,22 @@ export function EnrollmentDocuments({
       (showHistory || (d.contexto_vigente && d.activo)) &&
       (!missingOnly || d.estado === 'PENDIENTE') &&
       (d.codigo + ' ' + d.nombre).toUpperCase().includes(search.trim().toUpperCase()),
+  ).sort((a, b) =>
+    Number(b.contexto_vigente) - Number(a.contexto_vigente)
+    || Number(b.activo) - Number(a.activo)
+    || b.estado.localeCompare(a.estado, 'es')
+    || Number(b.obligatorio) - Number(a.obligatorio)
+    || a.nombre.localeCompare(b.nombre, 'es') || a.id.localeCompare(b.id),
   )
   return (
     <section>
       {dialog}
       <h3>Expediente</h3>
       {summary && (
-        <p role="status">
-          {summary.completados} de {summary.aplicables} documentos completos · {summary.pendientes}{' '}
-          pendientes
+        <p role="status" className="document-summary">
+          <span className="document-summary-pending"><strong>{summary.pendientes}</strong> {summary.pendientes === 1 ? 'pendiente' : 'pendientes'}</span>
+          <span>{requiredPending === null ? 'Obligatorios pendientes: por consultar' : <><strong>{requiredPending}</strong> {requiredPending === 1 ? 'obligatorio pendiente' : 'obligatorios pendientes'}</>}</span>
+          <span className="document-summary-complete"><strong>{summary.completados}</strong> {summary.completados === 1 ? 'completo' : 'completos'}</span>
         </p>
       )}
       {!eligible && <p>Solo consulta e historia. No se permiten nuevas modificaciones.</p>}
@@ -403,18 +454,15 @@ export function EnrollmentDocuments({
         </button>
       </div>
       <div className="document-filters">
-        <label>
-          <input
-            type="checkbox"
-            checked={missingOnly}
-          onChange={(e) => {setMissingOnly(e.target.checked);setPage(0)}}
-          />
-          Solo faltantes
-        </label>
+        <div role="group" aria-label="Estado de documentos" className="document-status-filters">
+          <button type="button" className="secondary" aria-pressed={missingOnly} disabled={loading || busy} onClick={() => { setMissingOnly(true); setShowHistory(false); setPage(0) }}>Pendientes{summary ? ` (${summary.pendientes})` : ''}</button>
+          <button type="button" className="secondary" aria-pressed={!missingOnly} disabled={loading || busy} onClick={() => { setMissingOnly(false); setPage(0) }}>Todos{summary ? ` (${summary.aplicables})` : ''}</button>
+        </div>
         <label>
           <input
             type="checkbox"
             checked={showHistory}
+            disabled={missingOnly || busy}
           onChange={(e) => {setShowHistory(e.target.checked);setPage(0)}}
           />
           Mostrar retirados y contextos anteriores
@@ -438,79 +486,56 @@ export function EnrollmentDocuments({
                 const status = diagnostic(d),
                   canMutate = eligible && d.activo && d.contexto_vigente && !blocked
                 return (
-                  <tr key={d.id}>
+                  <tr key={d.id} className={d.estado === 'PENDIENTE' && d.obligatorio && d.activo && d.contexto_vigente ? 'document-pending-required' : undefined}>
                     <td>
                       {d.nombre}
+                      {!d.activo && <span className="document-retired-badge">
+                        <svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="10" cy="10" r="7.5"/><path d="M6 10h8"/></svg>
+                        Retirado
+                      </span>}
                       <small className="secondary-text">
                         {d.origen === 'SUBIDO' ? 'Subido' : 'Generado'}
                       </small>
                     </td>
                     <td>
                       {d.obligatorio ? 'Obligatorio' : 'Opcional'}
-                      {!d.activo && <small> · Retirado</small>}
                       {!d.contexto_vigente && <small> · Contexto anterior</small>}
                     </td>
                     <td>
-                      {d.estado}
-                      {status && <small className="secondary-text">{status}</small>}
+                      <span className={`document-state-badge ${d.estado === 'PENDIENTE' ? 'document-state-pending' : 'document-state-complete'}`}>
+                        <span aria-hidden="true">{d.estado === 'PENDIENTE' ? '○' : '✓'}</span> {d.estado}
+                      </span>
+                      {status && <small className="secondary-text document-file-diagnostic">{status}</small>}
                     </td>
                     <td>
                       <div className="record-header-actions">
                         {canMutate && (
-                          <button
-                            type="button"
-                            className="secondary"
+                          <AcademicAction
+                            icon={d.origen === 'SUBIDO' ? 'upload' : 'generate'}
+                            label={d.origen === 'SUBIDO' ? d.estado === 'PENDIENTE' ? 'Cargar' : 'Reemplazar' : d.estado === 'PENDIENTE' ? 'Generar' : 'Regenerar'}
                             disabled={busy}
                             onClick={() => open(d)}
-                          >
-                            {d.origen === 'SUBIDO'
-                              ? d.estado === 'PENDIENTE'
-                                ? 'Cargar'
-                                : 'Reemplazar'
-                              : d.estado === 'PENDIENTE'
-                                ? 'Generar'
-                                : 'Regenerar'}
-                          </button>
+                          />
                         )}
-                        {d.ultimo_archivo_confirmado_id && (
-                          <button
-                            type="button"
-                            className="secondary"
-                            disabled={busy}
-                            onClick={() =>
-                              void download(
-                                d,
-                                d.ultimo_archivo_confirmado_id!,
-                                status === 'Histórico' || status === 'Fuente o plantilla cambiada',
-                              )
-                            }
-                          >
-                            {status === 'Histórico' || status === 'Fuente o plantilla cambiada'
-                              ? 'Descargar histórico'
-                              : 'Descargar'}
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          className="secondary"
-                          disabled={busy}
-                          onClick={() => {
-                            setHistoryDoc(d)
-                            setFilePage(0)
-                          }}
-                          title={`Historia y operaciones de ${d.nombre}`}
-                          aria-label={`Historia y operaciones de ${d.nombre}`}
-                        >
-                          Historia
-                        </button>
-                        {canMutate && (
+                        <AcademicAction
+                          icon="preview"
+                          label={status === 'Histórico' || status === 'Fuente o plantilla cambiada' ? 'Vista previa histórica' : 'Vista previa'}
+                          disabled={busy || !d.ultimo_archivo_confirmado_id}
+                          onClick={() => d.ultimo_archivo_confirmado_id && void previewStoredFile(d, d.ultimo_archivo_confirmado_id, status === 'Histórico' || status === 'Fuente o plantilla cambiada')}
+                        />
+                          <AcademicAction
+                            icon="download"
+                            label={status === 'Histórico' || status === 'Fuente o plantilla cambiada' ? 'Descargar histórico' : 'Descargar'}
+                            disabled={busy || !d.ultimo_archivo_confirmado_id}
+                            onClick={() => d.ultimo_archivo_confirmado_id && void download(d, d.ultimo_archivo_confirmado_id, status === 'Histórico' || status === 'Fuente o plantilla cambiada')}
+                          />
                           <DocumentMoreActions
                             name={d.nombre}
                             mandatory={d.obligatorio}
                             busy={busy}
-                            onRetire={() => void withdraw(d)}
+                            onHistory={() => { setHistoryDoc(d); setFilePage(0) }}
+                            onRetire={canMutate ? () => void withdraw(d) : undefined}
                           />
-                        )}
                       </div>
                     </td>
                   </tr>
@@ -529,8 +554,16 @@ export function EnrollmentDocuments({
         </div>
       )}
       {(page>0||rows.length===30)&&<AcademicPagination page={page} count={rows.length} disabled={busy||loading} onChange={setPage}/>}
+      {storedPreview && <DocumentDialog wide busy={busy} label={`Vista previa: ${storedPreview.name}`} close={() => setStoredPreview(null)}>
+        <h2>Vista previa: {storedPreview.name}</h2>
+        {storedPreview.historical && <p className="help-text">Versión histórica: puede no reflejar los datos actuales.</p>}
+        {storedPreviewUrl && (storedPreview.blob.type === 'application/pdf'
+          ? <iframe title={`Archivo de ${storedPreview.name}`} src={storedPreviewUrl} />
+          : <img alt={`Archivo de ${storedPreview.name}`} src={storedPreviewUrl} />)}
+        <div className="form-actions"><button type="button" className="secondary" disabled={busy} onClick={() => setStoredPreview(null)}>Cerrar vista previa</button></div>
+      </DocumentDialog>}
       {editing && (
-        <DocumentDialog busy={busy} close={() => setEditing(null)}>
+        <DocumentDialog busy={busy || optimizing} close={() => setEditing(null)}>
           <h2>
             {editing.origen === 'SUBIDO' ? 'Cargar documento' : 'Generar documento'}:{' '}
             {editing.nombre}
@@ -544,27 +577,59 @@ export function EnrollmentDocuments({
             </p>
           )}
           <InlineForm onSubmit={() => void submit()}>
-            <fieldset disabled={busy}>
+            <fieldset disabled={busy || optimizing}>
               {editing.origen === 'SUBIDO' ? (
+                <>
                 <label>
                   Archivo (máximo 5 MiB)
                   <input
                     type="file"
                     aria-label="Archivo (máximo 5 MiB)"
                     required
+                    aria-invalid={!!fileError}
+                    aria-describedby={fileError ? `${fileHintId} ${fileErrorId}` : fileHintId}
                     accept={
-                      editing.codigo === 'FOTO_PASAPORTE'
+                      editing.codigo === 'FOTO_ALUMNO'
                         ? 'image/jpeg,image/png'
                         : 'application/pdf,image/jpeg,image/png'
                     }
-                    onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                    onChange={(e) => {
+                      const selected = e.target.files?.[0] ?? null
+                      setFile(selected)
+                      setOriginalFile(selected); setOptimized(false)
+                      setMessage(''); setFailure(false)
+                      setFileError(selected ? uploadSizeError(selected) : '')
+                    }}
                   />
-                  <small>
-                    PDF simple de hasta 20 páginas, JPEG o PNG de hasta 20 megapíxeles. Los PDF
-                    cifrados, con contenido activo o estructuras comprimidas no verificables se
-                    rechazan.
+                  <small id={fileHintId}>
+                    {editing.codigo === 'FOTO_ALUMNO'
+                      ? 'Solo JPG/JPEG o PNG, hasta 5 MiB. No se admite PDF.'
+                      : 'PDF simple de hasta 20 páginas, JPG/JPEG o PNG, hasta 5 MiB. Los PDF cifrados, con contenido activo o estructuras comprimidas no verificables se rechazan.'}
                   </small>
                 </label>
+                {fileError && <p id={fileErrorId} role="alert" className="validation-message">{fileError}</p>}
+                {originalFile && ['image/jpeg', 'image/png'].includes(originalFile.type) && (
+                  <div>
+                    <button type="button" className="secondary" disabled={busy || optimizing} onClick={async () => {
+                      setOptimizing(true)
+                      try {
+                        const copy = await optimizeImage(originalFile)
+                        if (!mounted.current) return
+                        setFile(copy); setOptimized(true); setFileError('')
+                        setMessage(''); setFailure(false)
+                      } catch (error) {
+                        if (mounted.current) { setMessage(error instanceof Error ? error.message : 'No se pudo optimizar la imagen.'); setFailure(true) }
+                      } finally { if (mounted.current) setOptimizing(false) }
+                    }}>{optimizing ? 'Preparando copia…' : 'Optimizar imagen'}</button>
+                    <p className="help-text">Comprime una copia para que no supere 5 MiB. El archivo original se conserva en tu equipo. Revisa la legibilidad antes de confirmar.</p>
+                    {optimized && file && <>
+                      <p role="status">Se cargará la copia optimizada: {file.name} · {(file.size / 1048576).toFixed(2)} MiB.</p>
+                      {imagePreview && <a href={imagePreview} target="_blank" rel="noopener noreferrer">Ver imagen optimizada</a>}
+                      <button type="button" className="secondary" disabled={busy || optimizing} onClick={() => { setFile(originalFile); setOptimized(false); setFileError(uploadSizeError(originalFile)) }}>Usar archivo original</button>
+                    </>}
+                  </div>
+                )}
+                </>
               ) : editing.codigo === 'CARTA_PODER' ? (
                 <>
                   <label>
@@ -616,12 +681,12 @@ export function EnrollmentDocuments({
               <button
                 type="button"
                 className="secondary"
-                disabled={busy}
+                disabled={busy || optimizing}
                 onClick={() => setEditing(null)}
               >
                 Cancelar
               </button>
-              <button disabled={busy}>
+              <button disabled={busy || optimizing || (editing.origen === 'SUBIDO' && !!fileError)}>
                 {busy
                   ? 'Procesando…'
                   : editing.origen === 'SUBIDO'
@@ -633,7 +698,7 @@ export function EnrollmentDocuments({
           <button
             type="button"
             className="secondary"
-            disabled={busy}
+            disabled={busy || optimizing}
             onClick={() => {
               setHistoryDoc(editing)
               setFilePage(0)

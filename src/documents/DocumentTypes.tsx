@@ -252,9 +252,6 @@ export function DocumentTypes() {
                         <StatusBadge value={r.activo ? 'Activo' : 'Inactivo'} />
                       </td>
                       <td>
-                        {r.origen === 'GENERADO' && generatedCodes.includes(r.codigo) && (
-                          <button type="button" className="secondary document-preview-row-action" onClick={() => setPreview(r)}>Vista previa</button>
-                        )}
                         <AcademicAction
                           icon="view"
                           label={`Ver ${r.nombre}`}
@@ -265,6 +262,9 @@ export function DocumentTypes() {
                           label={`Editar ${r.nombre}`}
                           onClick={() => show(r, true)}
                         />
+                        {r.origen === 'GENERADO' && generatedCodes.includes(r.codigo) && (
+                          <AcademicAction icon="preview" label={`Vista previa del formato: ${r.nombre}`} onClick={() => setPreview(r)} />
+                        )}
                       </td>
                     </tr>
                   ))}

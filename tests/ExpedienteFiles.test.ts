@@ -134,12 +134,12 @@ it('decodes real PNG/JPEG and rejects corruption, MIME disguise, tails and dange
   ).rejects.toThrow()
   await expect(
     validateFile(Buffer.concat([jpg, Buffer.from('<html>')]), 'image/jpeg', 'foto.jpg'),
-  ).rejects.toThrow()
+  ).rejects.toThrow('DOCUMENT_IMAGE_INVALID')
   await expect(validateFile(png, 'image/png', 'foto.exe.png')).rejects.toThrow()
   const bad = Buffer.from(png)
   bad[bad.length - 1] ^= 1
   await expect(validateFile(bad, 'image/png', 'foto.png')).rejects.toThrow()
-  await expect(validateFile(await pdf(), 'application/pdf', 'foto.pdf', true)).rejects.toThrow()
+  await expect(validateFile(await pdf(), 'application/pdf', 'foto.pdf', true)).rejects.toThrow('DOCUMENT_PHOTO_FORMAT')
 })
 it('rejects empty/oversized and oversized decoded PNG before allocating pixels', async () => {
   await expect(validateFile(new Uint8Array(), 'image/png', 'x.png')).rejects.toThrow(
@@ -153,7 +153,14 @@ it('rejects empty/oversized and oversized decoded PNG before allocating pixels',
   )
   png.writeUInt32BE(100000, 16)
   png.writeUInt32BE(100000, 20)
-  await expect(validateFile(png, 'image/png', 'x.png')).rejects.toThrow('DOCUMENT_FILE_INVALID')
+  await expect(validateFile(png, 'image/png', 'x.png')).rejects.toThrow('DOCUMENT_IMAGE_LIMIT')
+})
+it('does not reject PNG solely for exceeding 20 MP and still validates its content', async () => {
+  const png = PNG.sync.write(Object.assign(new PNG({ width: 1, height: 1 }), { data: Buffer.from([0, 0, 0, 255]) }))
+  png.writeUInt32BE(5001, 16)
+  png.writeUInt32BE(4000, 20)
+  // 20.004 MP reaches content validation; the deliberately invalid CRC must still fail.
+  await expect(validateFile(png, 'image/png', 'photo.png', true)).rejects.toThrow('DOCUMENT_IMAGE_INVALID')
 })
 it.each(GENERADO_CODES)(
   'renders fixed institutional %s with current generation date/age and safe output',

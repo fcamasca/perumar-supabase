@@ -4,6 +4,7 @@ import jpeg from 'jpeg-js'
 import { Buffer } from 'node:buffer'
 import { inflateSync } from 'node:zlib'
 import { DocumentoError, MAX_FILE } from './contract.ts'
+const DECODE_BUDGET_BYTES = 96 * 1024 * 1024
 
 export async function validateFile(
   bytes: Uint8Array,
@@ -12,6 +13,8 @@ export async function validateFile(
   photo = false,
 ) {
   if (!bytes.length || bytes.length > MAX_FILE) throw new DocumentoError(413, 'DOCUMENT_LIMIT')
+  if (photo && !['image/jpeg', 'image/png'].includes(declared))
+    throw new DocumentoError(422, 'DOCUMENT_PHOTO_FORMAT')
   if (
     !filename ||
     filename.length > 150 ||
@@ -113,7 +116,7 @@ export async function validateFile(
             !Number.isSafeInteger(h) ||
             w < 1 ||
             h < 1 ||
-            w * h > 20_000_000
+            w * h * 4 > DECODE_BUDGET_BYTES
           )
             throw Error('PDF image budget')
         }
@@ -133,7 +136,9 @@ export async function validateFile(
         throw Error('PNG envelope')
       const w = b.readUInt32BE(16),
         h = b.readUInt32BE(20)
-      if (!w || !h || w * h > 20_000_000) throw Error('PNG dimensions')
+      if (!w || !h) throw Error('PNG dimensions')
+      // Resource budget, not a required photo width/height or megapixel business rule.
+      if (w * h * 4 > DECODE_BUDGET_BYTES) throw new DocumentoError(413, 'DOCUMENT_IMAGE_LIMIT')
       let offset = 8,
         ended = false
       const compressed: Buffer[] = []
@@ -171,19 +176,24 @@ export async function validateFile(
         useTArray: true,
         formatAsRGBA: false,
         tolerantDecoding: false,
-        maxResolutionInMP: 20,
+        maxResolutionInMP: Number.MAX_SAFE_INTEGER,
         maxMemoryUsageInMB: 96,
       })
       if (
         !decoded.width ||
         !decoded.height ||
-        decoded.width * decoded.height > 20_000_000 ||
         decoded.data.length !== decoded.width * decoded.height * 3
       )
         throw Error('JPEG decode')
       return 'image/jpeg'
     }
-  } catch {
+  } catch (error) {
+    if (error instanceof DocumentoError) throw error
+    if (declared === 'image/jpeg' || declared === 'image/png') {
+      if (error instanceof Error && /^max(?:ResolutionInMP|MemoryUsageInMB) limit exceeded/.test(error.message))
+        throw new DocumentoError(413, 'DOCUMENT_IMAGE_LIMIT')
+      throw new DocumentoError(422, 'DOCUMENT_IMAGE_INVALID')
+    }
     throw new DocumentoError(422, 'DOCUMENT_FILE_INVALID')
   }
   throw new DocumentoError(422, 'DOCUMENT_FILE_INVALID')

@@ -215,8 +215,8 @@ try {
   )
   for (const [code, bytes, mime, name] of [
     ['DOCUMENTO_IDENTIDAD', safePdf, 'application/pdf', 'documento.pdf'],
-    ['FOTO_PASAPORTE', png, 'image/png', 'foto.png'],
-    ['FOTO_PASAPORTE', jpg, 'image/jpeg', 'foto.jpg'],
+    ['FOTO_ALUMNO', png, 'image/png', 'foto.png'],
+    ['FOTO_ALUMNO', jpg, 'image/jpeg', 'foto.jpg'],
   ]) {
     const r = await upload(code, bytes, mime, name, 'O')
     assert.equal(r.status, 200, 'real ' + mime + ' upload/decoder')
@@ -227,6 +227,9 @@ try {
     assert.equal(dl.status, 200)
     assert.equal(dl.headers.get('cache-control'), 'private, no-store')
     assert.equal(dl.headers.get('x-content-type-options'), 'nosniff')
+    assert.equal(dl.headers.get('x-documento-mime'), mime)
+    assert.equal(dl.headers.get('content-type'), mime.startsWith('image/') ? 'application/octet-stream' : mime)
+    assert.ok(dl.headers.get('access-control-expose-headers')?.toLowerCase().includes('x-documento-mime'))
     assert.equal(
       createHash('sha256')
         .update(Buffer.from(await dl.arrayBuffer()))
@@ -237,7 +240,7 @@ try {
   const bad = await PDFDocument.create()
   bad.addPage()
   bad.catalog.set(PDFName.of('OpenAction'), PDFDict.withContext(bad.context))
-  const beforeInvalid = (await versions((await doc('FOTO_PASAPORTE')).id)).length
+  const beforeInvalid = (await versions((await doc('FOTO_ALUMNO')).id)).length
   for (const [bytes, mime, name] of [
     [safePdf, 'application/pdf', 'foto.pdf'],
     [png, 'image/jpeg', 'foto.jpg'],
@@ -245,26 +248,26 @@ try {
     [new Uint8Array(5242881), 'image/png', 'foto.png'],
     [await bad.save({ useObjectStreams: false }), 'application/pdf', 'foto.pdf'],
   ])
-    assert.ok([413, 422].includes((await upload('FOTO_PASAPORTE', bytes, mime, name)).status))
+    assert.ok([413, 422].includes((await upload('FOTO_ALUMNO', bytes, mime, name)).status))
   assert.equal(
-    (await versions((await doc('FOTO_PASAPORTE')).id)).length,
+    (await versions((await doc('FOTO_ALUMNO')).id)).length,
     beforeInvalid,
     'invalid content creates no reservation',
   )
   const exact = pngAtSize(5242880)
   assert.equal(PNG.sync.read(exact).width, 1)
   assert.equal(
-    (await upload('FOTO_PASAPORTE', exact, 'image/png', 'foto.png')).status,
+    (await upload('FOTO_ALUMNO', exact, 'image/png', 'foto.png')).status,
     200,
     'valid exact 5MiB boundary',
   )
   assert.equal(
-    (await upload('FOTO_PASAPORTE', new Uint8Array(), 'image/png', 'foto.png')).status,
+    (await upload('FOTO_ALUMNO', new Uint8Array(), 'image/png', 'foto.png')).status,
     413,
     'empty file',
   )
   const largeForm = new FormData(),
-    largeDoc = await doc('FOTO_PASAPORTE')
+    largeDoc = await doc('FOTO_ALUMNO')
   largeForm.set('documento_id', largeDoc.id)
   largeForm.set('expected_updated_at', largeDoc.updated_at)
   largeForm.set(
@@ -290,10 +293,10 @@ try {
     duplex: 'half',
   })
   assert.equal(streamed.status, 413, 'Actual streamed bytes are bounded without Content-Length')
-  const photoBeforeWriteFailure=await doc('FOTO_PASAPORTE')
+  const photoBeforeWriteFailure=await doc('FOTO_ALUMNO')
   checked(await fixture.admin.storage.updateBucket('h6-expediente',{allowedMimeTypes:['application/pdf']}),'inject H6 initial write failure')
-  try{assert.equal((await upload('FOTO_PASAPORTE',png,'image/png','foto.png')).status,503)}finally{checked(await fixture.admin.storage.updateBucket('h6-expediente',{allowedMimeTypes:['application/pdf','image/jpeg','image/png']}),'restore private H6 bucket')}
-  assert.equal((await doc('FOTO_PASAPORTE')).ultimo_archivo_confirmado_id,photoBeforeWriteFailure.ultimo_archivo_confirmado_id)
+  try{assert.equal((await upload('FOTO_ALUMNO',png,'image/png','foto.png')).status,503)}finally{checked(await fixture.admin.storage.updateBucket('h6-expediente',{allowedMimeTypes:['application/pdf','image/jpeg','image/png']}),'restore private H6 bucket')}
+  assert.equal((await doc('FOTO_ALUMNO')).ultimo_archivo_confirmado_id,photoBeforeWriteFailure.ultimo_archivo_confirmado_id)
   const initialWriteFailure=(await versions(photoBeforeWriteFailure.id)).at(-1);assert.equal(initialWriteFailure.estado_tecnico,'ABORTADO')
   // Real post-upload audit failure rolls back confirmation and compensates NEVER-confirmed bytes.
   const target = await doc('DOCUMENTO_IDENTIDAD'),
@@ -351,7 +354,7 @@ try {
   }
   const crossFile = (await doc('DOCUMENTO_IDENTIDAD')).ultimo_archivo_confirmado_id
   assert.equal(
-    (await download(await doc('FOTO_PASAPORTE'), crossFile, true)).status,
+    (await download(await doc('FOTO_ALUMNO'), crossFile, true)).status,
     403,
     'Confirmed bytes cannot cross document ownership',
   )
@@ -412,16 +415,16 @@ try {
       'ACTIVO/CERRADO ' + code,
     )
   assert.equal(
-    (await upload('FOTO_PASAPORTE', png, 'image/png', 'foto.png', 'O')).status,
+    (await upload('FOTO_ALUMNO', png, 'image/png', 'foto.png', 'O')).status,
     200,
     'SUBIDO in CERRADO',
   )
   // Effective configuration changes preserve an actually uploaded CARGADO file and bytes.
-  const cargadoBefore=await doc('FOTO_PASAPORTE')
+  const cargadoBefore=await doc('FOTO_ALUMNO')
   for(const [mandatory,active] of [[true,true],[false,false],[false,true]]){
     const expected=checked(await D.from('ciclo_documento').select('id,updated_at').eq('ciclo_id',cycle.id).order('id'),'effective file config snapshot')
     await rpc(O,'guardar_documentos_ciclo',{p_ciclo_id:cycle.id,p_expected_updated_at:cycle.updated_at,p_expected_config:expected,p_documentos:config.map(t=>t.tipo_documento_id===cargadoBefore.tipo_documento_id?{...t,obligatorio:String(mandatory),activo:String(active)}:t)})
-    const changed=await doc('FOTO_PASAPORTE');assert.equal(changed.activo,active);assert.equal(changed.obligatorio,mandatory);assert.equal(changed.estado,'CARGADO');assert.equal(changed.ultimo_archivo_confirmado_id,cargadoBefore.ultimo_archivo_confirmado_id)
+    const changed=await doc('FOTO_ALUMNO');assert.equal(changed.activo,active);assert.equal(changed.obligatorio,mandatory);assert.equal(changed.estado,'CARGADO');assert.equal(changed.ultimo_archivo_confirmado_id,cargadoBefore.ultimo_archivo_confirmado_id)
     assert.equal((await download(changed,changed.ultimo_archivo_confirmado_id,!active)).status,200)
   }
   // Retirement of each business state preserves its bytes/state and does not change Cycle config.
@@ -429,7 +432,7 @@ try {
     await D.from('ciclo_documento').select('*').eq('ciclo_id', cycle.id).order('id'),
     'config before retire',
   )
-  for (const code of ['CERTIFICADO_PSICOFISICO', 'FOTO_PASAPORTE', 'CARTA_PODER']) {
+  for (const code of ['CERTIFICADO_PSICOFISICO', 'FOTO_ALUMNO', 'CARTA_PODER']) {
     const d = await doc(code)
     assert.ok(d, 'seeded document ' + code)
     await rpc(O, 'retirar_documentos_opcionales', {
@@ -531,7 +534,7 @@ try {
       'Non-academic Edge download denied',
     )
     assert.equal(
-      (await upload('FOTO_PASAPORTE', png, 'image/png', 'foto.png', actor)).status,
+      (await upload('FOTO_ALUMNO', png, 'image/png', 'foto.png', actor)).status,
       403,
       'Non-academic Edge upload denied',
     )
@@ -644,7 +647,7 @@ try {
       const currentDoc=await one('matricula_documento',d.id)
       assert.equal((await invoke('generar',request(currentDoc))).status,409,destination+' blocks '+d.codigo)
     }
-    const photo = td.find((d) => d.codigo === 'FOTO_PASAPORTE'),
+    const photo = td.find((d) => d.codigo === 'FOTO_ALUMNO'),
       f = new FormData()
     f.set('documento_id', photo.id)
     f.set('expected_updated_at', photo.updated_at)

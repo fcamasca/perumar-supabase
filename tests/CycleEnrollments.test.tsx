@@ -113,7 +113,7 @@ it('hides transfer for annulled enrollments and disables it when the Cycle has a
 it('keeps transfer in the more-actions menu and supports keyboard, dismissal and focus return',async()=>{
  show();await screen.findByRole('link',{name:'Ver matrícula'});
  const more=screen.getByRole('button',{name:'Más acciones de matrícula 2026-NAV-001'});
- expect(screen.queryByRole('menuitem',{name:'Cambiar Ciclo…'})).not.toBeInTheDocument();expect(screen.getByRole('link',{name:'Editar matrícula'})).toHaveTextContent('Editar');
+ expect(screen.queryByRole('menuitem',{name:'Cambiar Ciclo…'})).not.toBeInTheDocument();expect(screen.getByRole('link',{name:'Editar matrícula'}).querySelector('svg')).not.toBeNull();
  more.focus();fireEvent.keyDown(more,{key:'ArrowDown'});const action=screen.getByRole('menuitem',{name:'Cambiar Ciclo…'});await waitFor(()=>expect(action).toHaveFocus());expect(more).toHaveAttribute('aria-expanded','true');
  fireEvent.keyDown(action,{key:'Escape'});expect(screen.queryByRole('menu')).not.toBeInTheDocument();expect(more).toHaveFocus();expect(more).toHaveAttribute('aria-expanded','false');
  fireEvent.click(more);fireEvent.blur(screen.getByRole('menuitem'),{relatedTarget:more});fireEvent.click(more);expect(screen.queryByRole('menu')).not.toBeInTheDocument();

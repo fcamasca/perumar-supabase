@@ -19,7 +19,10 @@ export function DocumentPreview({ code, name, onClose }: { code: string; name: s
     }).catch(() => { if (alive) setError(true) })
     return () => { alive = false; if (objectUrl) URL.revokeObjectURL(objectUrl) }
   }, [code])
-  return <dialog ref={dialog} className="document-preview" aria-labelledby={headingId} onCancel={e => { e.preventDefault(); onClose() }} onClose={onClose}>
+  return <dialog ref={dialog} className="document-preview" aria-labelledby={headingId} onCancel={e => { e.preventDefault(); onClose() }} onClose={e => {
+    // StrictMode may reopen the dialog before the cleanup's queued close event arrives.
+    if (!e.currentTarget.open) onClose()
+  }}>
     <header><h2 id={headingId}>Vista previa: {name}</h2><button type="button" className="secondary" onClick={onClose}>Cerrar vista previa</button></header>
     <p>Formato con datos de ejemplo. No se registra ningún documento en el expediente.</p>
     {error ? <p role="alert" className="validation-message">No se pudo preparar la vista previa. Cierra y vuelve a abrirla para intentar nuevamente.</p> : url ? <iframe title={`Vista previa PDF de ${name}`} src={url} /> : <p role="status">Preparando vista previa…</p>}

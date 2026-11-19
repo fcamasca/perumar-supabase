@@ -5,9 +5,11 @@ import { EnrollmentDocuments } from '../src/documents/EnrollmentDocuments'
 import { BulkDocumentRetirement } from '../src/documents/BulkDocumentRetirement'
 import { DocumentTypes } from '../src/documents/DocumentTypes'
 import { DocumentMoreActions } from '../src/documents/DocumentMoreActions'
-const { client } = vi.hoisted(() => ({
+const { client, optimize } = vi.hoisted(() => ({
+  optimize: vi.fn(),
   client: { from: vi.fn(), rpc: vi.fn(), functions: { invoke: vi.fn() } },
 }))
+vi.mock('../src/documents/optimizeImage', () => ({ optimizeImage: optimize }))
 vi.mock('../src/security/SessionProvider', () => ({
   useSession: () => ({ client, state: { userId: 'actor', roles: ['COORDINADOR_ACADEMICO'] } }),
 }))
@@ -33,6 +35,7 @@ const applied = {
   ultimo_archivo_confirmado_id: null,
 }
 beforeEach(() => {
+  optimize.mockReset()
   client.rpc.mockReset()
   client.functions.invoke.mockReset()
   tables = {
@@ -65,11 +68,11 @@ beforeEach(() => {
     matricula_documento_archivo: [],
   }
   client.from.mockImplementation((table: string) => {
-    let single = false
+    let single = false, counting = false
     const filters: Record<string, unknown> = {},
       members: Record<string, unknown[]> = {}
     const q = {
-      select: () => q,
+      select: (_fields?: string, options?: { count?: string }) => { counting = !!options?.count; return q },
       or: () => q,
       order: () => q,
       range: () => q,
@@ -96,7 +99,7 @@ beforeEach(() => {
             Object.entries(filters).every(([k, v]) => r[k] === v) &&
             Object.entries(members).every(([k, v]) => v.includes(r[k])),
         )
-        return Promise.resolve({ data: single ? (rows[0] ?? null) : rows, error: null }).then(
+        return Promise.resolve({ data: counting ? null : single ? (rows[0] ?? null) : rows, count: counting ? rows.length : null, error: null }).then(
           resolve,
         )
       },
@@ -107,8 +110,8 @@ beforeEach(() => {
 it('offers generated-type previews and preserves the unsaved type draft when closing them', async () => {
   tables.tipo_documento.push({ id: 'generated', codigo: 'SOLICITUD', nombre: 'SOLICITUD', origen: 'GENERADO', activo: true, updated_at: 'v' })
   render(<DocumentTypes />)
-  expect(await screen.findByRole('button', { name: 'Vista previa' })).toBeEnabled()
-  expect(within(screen.getByRole('row', { name: /DOCUMENTO DE IDENTIDAD/ })).queryByRole('button', { name: 'Vista previa' })).not.toBeInTheDocument()
+  expect(await screen.findByRole('button', { name: 'Vista previa del formato: SOLICITUD' })).toBeEnabled()
+  expect(within(screen.getByRole('row', { name: /DOCUMENTO DE IDENTIDAD/ })).queryByRole('button', { name: /Vista previa del formato/ })).not.toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: 'Editar SOLICITUD' }))
   fireEvent.change(screen.getByRole('textbox', { name: 'Nombre' }), { target: { value: 'BORRADOR' } })
   fireEvent.click(screen.getByRole('button', { name: 'Vista previa' }))
@@ -117,6 +120,132 @@ it('offers generated-type previews and preserves the unsaved type draft when clo
   expect(screen.getByRole('textbox', { name: 'Nombre' })).toHaveValue('BORRADOR')
   expect(client.rpc).not.toHaveBeenCalled()
   expect(client.functions.invoke).not.toHaveBeenCalled()
+})
+it('blocks an oversized file immediately, clears the error for a replacement and never invokes upload', async () => {
+  render(<EnrollmentDocuments enrollment="enrollment" cycleId="cycle" enrollmentState="ACTIVO" cycleState="CERRADO" />)
+  fireEvent.click(await screen.findByRole('button', { name: 'Cargar' }))
+  const dialog = screen.getByRole('dialog'), input = within(dialog).getByLabelText('Archivo (máximo 5 MiB)')
+  const oversized = new File(['synthetic'], 'large.pdf', { type: 'application/pdf' })
+  Object.defineProperty(oversized, 'size', { value: 6 * 1024 * 1024 })
+  fireEvent.change(input, { target: { files: [oversized] } })
+  expect(within(dialog).getByRole('alert')).toHaveTextContent('supera el máximo de 5 MiB')
+  expect(input).toHaveAttribute('aria-invalid', 'true')
+  expect(within(dialog).getByRole('button', { name: 'Confirmar carga' })).toBeDisabled()
+  expect(client.functions.invoke).not.toHaveBeenCalled()
+  fireEvent.change(input, { target: { files: [new File(['small'], 'small.pdf', { type: 'application/pdf' })] } })
+  expect(within(dialog).queryByRole('alert')).not.toBeInTheDocument()
+  expect(within(dialog).getByRole('button', { name: 'Confirmar carga' })).toBeEnabled()
+})
+it('does not block a lightweight photo because of its dimensions', async () => {
+  tables.matricula_documento = [{ ...applied, codigo: 'FOTO_ALUMNO', nombre: 'FOTO DEL ALUMNO' }]
+  render(<EnrollmentDocuments enrollment="enrollment" cycleId="cycle" enrollmentState="ACTIVO" cycleState="CERRADO" />)
+  fireEvent.click(await screen.findByRole('button', { name: 'Cargar' }))
+  const dialog = screen.getByRole('dialog'), input = within(dialog).getByLabelText('Archivo (máximo 5 MiB)')
+  const bytes = new Uint8Array(24), view = new DataView(bytes.buffer)
+  bytes.set([137, 80, 78, 71, 13, 10, 26, 10]); bytes.set([73, 72, 68, 82], 12)
+  view.setUint32(16, 6000); view.setUint32(20, 4000)
+  fireEvent.change(input, { target: { files: [new File([bytes.buffer], 'photo.png', { type: 'image/png' })] } })
+  expect(within(dialog).getByRole('button', { name: 'Confirmar carga' })).toBeEnabled()
+  expect(within(dialog).queryByRole('alert')).not.toBeInTheDocument()
+  expect(client.functions.invoke).not.toHaveBeenCalled()
+})
+it('prepares an optimized copy only on request and uploads it only after explicit confirmation', async () => {
+  const createUrl = vi.fn(() => 'blob:optimized'), revokeUrl = vi.fn()
+  class LocalURL extends URL { static createObjectURL = createUrl; static revokeObjectURL = revokeUrl }
+  vi.stubGlobal('URL', LocalURL)
+  const copy = new File(['optimized'], 'imagen-optimizada.jpg', { type: 'image/jpeg' })
+  optimize.mockResolvedValue(copy)
+  const view = render(<EnrollmentDocuments enrollment="enrollment" cycleId="cycle" enrollmentState="ACTIVO" cycleState="CERRADO" />)
+  try {
+    fireEvent.click(await screen.findByRole('button', { name: 'Cargar' }))
+    const dialog = screen.getByRole('dialog'), input = within(dialog).getByLabelText('Archivo (máximo 5 MiB)')
+    const original = new File(['original'], 'camera.jpg', { type: 'image/jpeg' })
+    fireEvent.change(input, { target: { files: [original] } })
+    expect(optimize).not.toHaveBeenCalled()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Optimizar imagen' }))
+    await waitFor(() => expect(within(dialog).getByRole('status')).toHaveTextContent('Se cargará la copia optimizada'))
+    expect(optimize).toHaveBeenCalledExactlyOnceWith(original)
+    expect(client.functions.invoke).not.toHaveBeenCalled()
+    expect(await within(dialog).findByRole('link', { name: 'Ver imagen optimizada' })).toHaveAttribute('href', 'blob:optimized')
+    Object.defineProperty(input, 'validity', { configurable: true, value: { valid: true } })
+    Object.defineProperty(input, 'value', { configurable: true, value: 'C:/fakepath/camera.jpg' })
+    client.functions.invoke.mockResolvedValue({ data: { estado_tecnico: 'CONFIRMADO' }, error: null })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Confirmar carga' }))
+    await waitFor(() => expect(client.functions.invoke).toHaveBeenCalledOnce())
+    expect(client.functions.invoke.mock.calls[0][1].body.get('archivo').name).toBe('imagen-optimizada.jpg')
+    expect(original.name).toBe('camera.jpg')
+  } finally { view.unmount(); vi.unstubAllGlobals() }
+  expect(revokeUrl).toHaveBeenCalled()
+})
+it('orders document actions and disables preview/download until a confirmed file exists', async () => {
+  render(<EnrollmentDocuments enrollment="enrollment" cycleId="cycle" enrollmentState="ACTIVO" cycleState="PROGRAMADO" />)
+  const row = (await screen.findByRole('button', { name: 'Cargar' })).closest('tr')!
+  expect(within(row).getAllByRole('button').map(button => button.getAttribute('aria-label'))).toEqual([
+    'Cargar', 'Vista previa', 'Descargar', 'Más acciones de DOCUMENTO DE IDENTIDAD',
+  ])
+  expect(within(row).getByRole('button', { name: 'Vista previa' })).toBeDisabled()
+  expect(within(row).getByRole('button', { name: 'Descargar' })).toBeDisabled()
+  fireEvent.click(within(row).getByRole('button', { name: /Más acciones/ }))
+  expect(screen.getByRole('menuitem', { name: 'Historial' })).toHaveFocus()
+  fireEvent.keyDown(screen.getByRole('menu'), { key: 'ArrowDown' })
+  expect(screen.getByRole('menuitem', { name: 'Retirar opcional' })).toHaveFocus()
+  fireEvent.click(screen.getByRole('menuitem', { name: 'Historial' }))
+  expect(await screen.findByRole('dialog')).toHaveTextContent('Historia: DOCUMENTO DE IDENTIDAD')
+  expect(client.functions.invoke).not.toHaveBeenCalled()
+})
+it('previews the confirmed file through the authorized read endpoint without generating it', async () => {
+  const revoke = vi.fn()
+  class LocalURL extends URL { static createObjectURL = vi.fn(() => 'blob:stored-preview'); static revokeObjectURL = revoke }
+  vi.stubGlobal('URL', LocalURL)
+  tables.matricula_documento = [{ ...applied, estado: 'CARGADO', ultimo_archivo_confirmado_id: 'confirmed' }]
+  client.functions.invoke.mockResolvedValue({ data: new Blob(['synthetic'], { type: 'application/pdf' }), error: null })
+  const view = render(<EnrollmentDocuments enrollment="enrollment" cycleId="cycle" enrollmentState="ACTIVO" cycleState="PROGRAMADO" />)
+  try {
+    fireEvent.click(await screen.findByRole('button', { name: 'Vista previa' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Vista previa: DOCUMENTO DE IDENTIDAD' })
+    await waitFor(() => expect(within(dialog).getByTitle('Archivo de DOCUMENTO DE IDENTIDAD')).toHaveAttribute('src', 'blob:stored-preview'))
+    expect(client.functions.invoke).toHaveBeenCalledExactlyOnceWith('expediente-descargar', { body: { documento_id: 'doc', archivo_id: 'confirmed', historico: false } })
+    expect(client.rpc).not.toHaveBeenCalled()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cerrar vista previa' }))
+    expect(revoke).toHaveBeenCalledExactlyOnceWith('blob:stored-preview')
+  } finally { view.unmount(); vi.unstubAllGlobals() }
+})
+it('prioritizes mandatory pending documents, shows global counts and filters pending without changing states', async () => {
+  tables.matricula_documento = [
+    { ...applied, id: 'complete', nombre: 'A COMPLETO', estado: 'CARGADO', ultimo_archivo_confirmado_id: 'file' },
+    { ...applied, id: 'optional', nombre: 'B OPCIONAL' },
+    { ...applied, id: 'required', nombre: 'Z OBLIGATORIO', obligatorio: true },
+  ]
+  tables.matricula_expediente_resumen = [{ matricula_id: 'enrollment', aplicables: 3, completados: 1, pendientes: 2 }]
+  render(<EnrollmentDocuments enrollment="enrollment" cycleId="cycle" enrollmentState="ACTIVO" cycleState="PROGRAMADO" />)
+  const table = await screen.findByRole('table', { name: 'Documentos de la matrícula' })
+  const rows = within(table).getAllByRole('row')
+  expect(rows[1]).toHaveTextContent('Z OBLIGATORIO')
+  expect(rows[2]).toHaveTextContent('B OPCIONAL')
+  expect(rows[3]).toHaveTextContent('A COMPLETO')
+  expect(screen.getByRole('status')).toHaveTextContent('2 pendientes')
+  expect(screen.getByRole('status')).toHaveTextContent('1 obligatorio pendiente')
+  expect(screen.getByRole('status')).toHaveTextContent('1 completo')
+  fireEvent.click(screen.getByRole('button', { name: 'Pendientes (2)' }))
+  await waitFor(() => expect(screen.queryByText('A COMPLETO')).not.toBeInTheDocument())
+  expect(screen.getByRole('button', { name: 'Pendientes (2)' })).toHaveAttribute('aria-pressed', 'true')
+  expect(screen.getByRole('checkbox', { name: 'Mostrar retirados y contextos anteriores' })).toBeDisabled()
+  fireEvent.click(screen.getByRole('button', { name: 'Todos (3)' }))
+  expect(await screen.findByText('A COMPLETO')).toBeVisible()
+  expect(client.rpc).not.toHaveBeenCalled()
+  expect(client.functions.invoke).not.toHaveBeenCalled()
+})
+it('marks a retired document beside its name while keeping its file state and historical access', async () => {
+  tables.matricula_documento = [{ ...applied, activo: false, estado: 'CARGADO', ultimo_archivo_confirmado_id: 'file' }]
+  render(<EnrollmentDocuments enrollment="enrollment" cycleId="cycle" enrollmentState="ACTIVO" cycleState="PROGRAMADO" />)
+  fireEvent.click(await screen.findByRole('checkbox', { name: 'Mostrar retirados y contextos anteriores' }))
+  const retired = await screen.findByText('Retirado')
+  expect(retired).toHaveClass('document-retired-badge')
+  expect(retired.closest('td')).toHaveTextContent('DOCUMENTO DE IDENTIDAD')
+  expect(screen.getByRole('table')).toHaveTextContent('CARGADO')
+  expect(screen.getByRole('button', { name: 'Descargar histórico' })).toBeEnabled()
+  expect(screen.getByRole('button', { name: 'Vista previa histórica' })).toBeEnabled()
+  expect(client.rpc).not.toHaveBeenCalled()
 })
 it('selects visible Cycle documents together, preserves mandatory flags and excludes inactive types', async () => {
   tables.tipo_documento.push(
@@ -206,7 +335,7 @@ it('counts optional missing, permits upload in CERRADO and preserves File on exp
     />,
   )
   await screen.findByRole('table', { name: 'Documentos de la matrícula' })
-  expect(screen.getByRole('status')).toHaveTextContent('1 pendientes')
+  expect(screen.getByRole('status')).toHaveTextContent('1 pendiente')
   fireEvent.click(screen.getByRole('button', { name: 'Cargar' }))
   const dialog = screen.getByRole('dialog'),
     input = within(dialog).getByLabelText('Archivo (máximo 5 MiB)'),
@@ -289,7 +418,7 @@ it('derives stale source separately while GENERADO and completeness remain uncha
   )
   expect(await screen.findByText('Fuente o plantilla cambiada')).toBeVisible()
   expect(screen.getByRole('table')).toHaveTextContent('GENERADO')
-  expect(screen.getByRole('status')).toHaveTextContent('1 de 1 documentos completos')
+  expect(screen.getByRole('status')).toHaveTextContent('1 completo')
   expect(client.functions.invoke).not.toHaveBeenCalled()
 })
 it('withdraws only the selected optional documents atomically with versions and a reason', async () => {

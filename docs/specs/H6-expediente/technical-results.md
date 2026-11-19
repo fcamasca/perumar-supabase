@@ -1,6 +1,6 @@
 # H6 — Evidencia técnica del candidato
 
-Fecha: **18/11/2026, America/Lima**. Estado: **CONSTRUCCIÓN TÉCNICA COMPLETADA / REVISIÓN HUMANA Y GATE 2 PENDIENTES**. Sin acceptance, PR/merge a main ni inicio H7.
+Último registro humano: **19/11/2026, America/Lima**. **Gate 2 APROBADO HUMANAMENTE sobre ca7a4613e5e8f23d6942b2cb6f75309816f04f12**, CI44443096743 SUCCESS,483/483 pruebas técnicas y siete bloques humanos PASSED; [registro](gate-2.md). El usuario autorizó posteriormente incluir los ajustes revisados de HEAD1260712 y del árbol local: publicar un nuevo candidato, verificar su CI y cerrar sin repetir pruebas humanas. Las menciones humanas pendientes de las secciones técnicas siguientes son históricas o propias de esos ajustes posteriores; no anulan el Gate2 aprobado ni acreditan pruebas adicionales. Forced-colors real sigue NO VERIFICADO. El cierre y merge requieren CI propia SUCCESS del nuevo candidato; H7 NO INICIADO.
 
 ## Trazabilidad y candidato
 
@@ -12,7 +12,9 @@ Fecha: **18/11/2026, America/Lima**. Estado: **CONSTRUCCIÓN TÉCNICA COMPLETADA
 
 ## Cambios locales posteriores durante revisión humana
 
-Después del candidato publicado se corrigieron las cuatro composiciones institucionales y se añadió vista previa sintética del maestro, además de selección general de documentos del Ciclo y alineación de Activo. Detalle y verificaciones locales en implementation-log.md. Estos cambios funcionales locales **no están cubiertos por la CI histórica del candidato**; requieren publicar/verificar un nuevo candidato antes de Gate 2. Los cuatro documentos del Spec aprobado permanecen intactos. La evidencia de los runs anteriores conserva su alcance y sus SHA; no acredita aprobación humana de estos ajustes.
+La enmienda FOTO_ALUMNO incorpora una migración aditiva posterior (27 migraciones locales; demás objetos sin incremento), aplicada y verificada localmente. Prueba de preservación y regresión DB/API/concurrencia desechable completadas; detalle en implementation-log.md. Las cifras del inventario del candidato publicado abajo conservan su referencia histórica de26 migraciones.
+
+Después del candidato publicado se corrigieron las cuatro composiciones institucionales y se añadió vista previa sintética del maestro, además de selección general de documentos del Ciclo y alineación de Activo. Detalle y verificaciones locales en implementation-log.md. Estos cambios funcionales locales **no están cubiertos por la CI histórica del candidato**; requieren publicar/verificar un nuevo candidato antes del cierre autorizado. Los cuatro documentos del Spec aprobado permanecen intactos. La evidencia de los runs anteriores conserva su alcance y sus SHA; no acredita nuevas ejecuciones humanas de estos ajustes; su inclusión fue autorizada expresamente sin repetir las pruebas.
 
 ## Bloques construidos
 
@@ -131,4 +133,8 @@ Se preservan los seis H5/GATE-A01: **Hosted Edge/PostgREST14 NO PROBADOS DIRECTA
 
 H6: revisión humana de formatos/flujo/accesibilidad/mantenibilidad PENDIENTE y forced-colors real NO VERIFICADO; PDF admitido es un subconjunto conservador (ObjStm/XRef comprimidos y filtros no verificables rechazados), sin garantía antimalware; conciliación de nunca confirmados manual y política de purga definitiva H9/release. Los subcasos no separados de Content-Length falsificado/corte TCP se declaran arriba, no PASSED inventados.
 
-**GATE 2 H6 PENDIENTE.** Entregar SHA/CI exactos del paquete final para revisión humana. Sin acceptance, integración a main ni H7.
+**Registro histórico de construcción:** Gate 2 estaba pendiente al emitir la evidencia técnica anterior. El Gate 2 posterior está APROBADO HUMANAMENTE y la inclusión de ajustes fue autorizada expresamente; ver gate-2.md. Nuevo candidato sujeto a CI propia SUCCESS antes del cierre. H7 NO INICIADO.
+
+## Verificación local del paquete autorizado de ajustes — 19/11/2026
+
+**524/524 pruebas PASSED, 34 archivos**, suite completa con dos workers. Lint, typecheck, typecheck Edge expediente, build y build-safety PASSED. Bundle principal 732.32 kB y previewPdf 741.92 kB: advertencia >500 kB preservada. No sustituye la CI exacta del nuevo candidato ni las pruebas hospedadas/mediciones no realizadas. Inventario: 27 migraciones; sin tablas, RPC, helpers, buckets ni servicios nuevos frente al inventario de H6. Se publica el paquete para verificar CI completa y luego registrar acceptance, sin repetir pruebas humanas.

@@ -7,16 +7,17 @@ export function DocumentMoreActions({
   mandatory,
   busy,
   onRetire,
+  onHistory,
 }: {
   name: string
   mandatory: boolean
   busy: boolean
-  onRetire: () => void
+  onRetire?: () => void
+  onHistory?: () => void
 }) {
   const id = useId(),
     trigger = useRef<HTMLButtonElement>(null),
-    panel = useRef<HTMLDivElement>(null),
-    item = useRef<HTMLButtonElement>(null)
+    panel = useRef<HTMLDivElement>(null)
   const [position, setPosition] = useState<{ top: number; left: number } | null>(null)
   function close(restore = false) {
     setPosition(null)
@@ -24,14 +25,16 @@ export function DocumentMoreActions({
   }
   function open() {
     const box = trigger.current!.getBoundingClientRect()
+    const height = onHistory && onRetire ? 114 : 78
     setPosition({
-      top: box.bottom + 78 > window.innerHeight ? Math.max(8, box.top - 78) : box.bottom + 4,
+      top: box.bottom + height > window.innerHeight ? Math.max(8, box.top - height) : box.bottom + 4,
       left: Math.max(8, Math.min(window.innerWidth - 228, box.right - 220)),
     })
   }
   useEffect(() => {
     if (!position) return
-    ;(mandatory ? panel.current : item.current)?.focus()
+    const first = panel.current?.querySelector<HTMLButtonElement>('button:not(:disabled)')
+    ;(first ?? panel.current)?.focus()
     const outside = (e: PointerEvent) => {
         if (
           !panel.current?.contains(e.target as Node) &&
@@ -59,6 +62,7 @@ export function DocumentMoreActions({
         title="Más acciones"
         aria-haspopup="menu"
         aria-expanded={!!position && !busy}
+        aria-controls={position && !busy ? id : undefined}
         disabled={busy}
         onClick={() => (position ? close() : open())}
         onKeyDown={(e) => {
@@ -88,7 +92,10 @@ export function DocumentMoreActions({
                 close(true)
               } else if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) {
                 e.preventDefault()
-                if (!mandatory) item.current?.focus()
+                const items = [...e.currentTarget.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')]
+                const current = items.indexOf(document.activeElement as HTMLButtonElement)
+                const next = e.key === 'Home' ? 0 : e.key === 'End' ? items.length - 1 : e.key === 'ArrowUp' ? (current - 1 + items.length) % items.length : (current + 1) % items.length
+                items[next]?.focus()
               } else if (e.key === 'Tab') close(true)
             }}
             onBlur={(e) => {
@@ -99,10 +106,10 @@ export function DocumentMoreActions({
                 close()
             }}
           >
-            <button
+            {onHistory && <button type="button" role="menuitem" onClick={() => { close(true); onHistory() }}>Historial</button>}
+            {onRetire && <button
               type="button"
               role="menuitem"
-              ref={item}
               disabled={mandatory}
               onClick={() => {
                 close(true)
@@ -110,8 +117,8 @@ export function DocumentMoreActions({
               }}
             >
               Retirar opcional
-            </button>
-            {mandatory && (
+            </button>}
+            {mandatory && onRetire && (
               <small>El documento obligatorio no puede retirarse individualmente.</small>
             )}
           </div>,

@@ -747,3 +747,9 @@ Solo después crear `feature/h6-expediente-spec` desde el main exacto integrado 
 ## Autorización posterior de construcción H6 — 18/11/2026
 
 Gate 1 humano sobre Spec exacto `e2de23443f887d4050aeb910a13e3611ae751be5`, CI44399674178 SUCCESS. Esta decisión sustituye el límite histórico de solo Spec: se autorizan TASK-H6-002+ por bloques y sus pruebas reales. La puerta inicial DB/API/locks pasó en CI44408192177 antes de Storage/renderers. Mantener modelo y arquitectura del Spec; no reset humano, quinta tabla, infraestructura ni motor adicional. Detenerse al entregar candidato técnico H6 para revisión humana; no Gate2 automático, acceptance ni merge a main.
+
+## Gate 2 humano H6 — 19/11/2026
+
+**Gate 2 H6 APROBADO HUMANAMENTE** exclusivamente sobre `ca7a4613e5e8f23d6942b2cb6f75309816f04f12`, CI44443096743 SUCCESS y483/483 pruebas técnicas; siete bloques humanos PASSED, sin repetirlos. [Registro y residuales](specs/H6-expediente/gate-2.md). Forced-colors real H5/H6 permanece NO VERIFICADO; se preservan todos los demás residuales.
+
+Autorización humana posterior: incluir HEAD1260712 y los ajustes revisados locales, publicar un nuevo candidato, verificar su CI y cerrar sin repetir pruebas humanas. El cierre e integración requieren CI propia SUCCESS del paquete final. **H7 NO INICIADO, sin rama H7**. No marcar H6 INTEGRADO hasta completar merge y CI de main.

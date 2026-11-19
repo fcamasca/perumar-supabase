@@ -62,8 +62,11 @@ const messages: Record<string, string> = {
     'Existe una operación pendiente. Consulta su resultado o cancela la reserva antes de volver a intentar.',
   DOCUMENT_FILE_INVALID:
     'Archivo no admitido. Usa PDF simple sin cifrado, formularios, enlaces ni contenido activo, o una imagen JPEG/PNG válida.',
+  DOCUMENT_PHOTO_FORMAT: 'Foto del alumno admite únicamente imágenes JPG/JPEG o PNG; no admite PDF.',
+  DOCUMENT_IMAGE_INVALID: 'No se pudo validar la imagen. Vuelve a exportarla como JPG/JPEG o PNG e intenta cargar el nuevo archivo.',
+  DOCUMENT_IMAGE_LIMIT: 'No se pudo procesar la imagen dentro de los recursos disponibles. Exporta una copia optimizada e intenta nuevamente.',
   DOCUMENT_LIMIT:
-    'El archivo supera los límites: 5 MiB, PDF de hasta 20 páginas o imagen de hasta 20 megapíxeles.',
+    'El archivo supera los límites: máximo 5 MiB y, para PDF, hasta 20 páginas.',
   DOCUMENT_REPRESENTATIVE_REQUIRED:
     'Completa el nombre y documento del apoderado para esta generación.',
   DOCUMENT_GLYPH: 'Hay caracteres que la plantilla no puede representar. Revisa los datos.',

@@ -88,8 +88,9 @@ try {
     ]),
   )
   for (const file of readdirSync('supabase/migrations')
-    .filter((n) => /^20261118.*\.sql$/.test(n))
+    .filter((n) => /^20261118.*\.sql$/.test(n) || n === '20261119010000_h6_student_photo.sql')
     .sort()) {
+    if (file === '20261119010000_h6_student_photo.sql') { sql(readFileSync('supabase/migrations/' + file, 'utf8')); continue }
     const marker = file.includes('010000')
       ? "select to_regclass('public.tipo_documento') is not null"
       : file.includes('020000')
@@ -129,6 +130,38 @@ try {
     ).match(/insert into public.tipo_documento[\s\S]*?;/)[0].replace(/\('SOLICITUD','[^']*','GENERADO'\),\s*/, '')
     sql(actorSql(f.actor, "select set_config('perumar.document_command','TYPE',true);" + seed))
   }
+  sql(readFileSync('supabase/migrations/20261119010000_h6_student_photo.sql', 'utf8'))
+  // One-time rename regression, entirely rolled back in the disposable DB.
+  const renameMigration = readFileSync('supabase/migrations/20261119010000_h6_student_photo.sql', 'utf8')
+  const renameProof = sql(`begin;
+ select set_config('request.jwt.claim.sub','${f.actor}',true);
+ select public.guardar_documentos_ciclo('${f.cycle}','${f.cycleVersion}','[]',jsonb_build_array(jsonb_build_object('tipo_documento_id',(select id from public.tipo_documento where codigo='FOTO_ALUMNO'),'activo','true','obligatorio','false')));
+ do $setup$ declare d public.matricula_documento; r jsonb;begin
+ select * into strict d from public.matricula_documento where matricula_id='${f.enrollment}' and codigo='FOTO_ALUMNO';
+ r:=public.preparar_archivo_expediente('${f.actor}',d.id,d.updated_at);
+ perform public.confirmar_archivo_expediente('${f.actor}',(r->>'id')::uuid,'image/png',64,repeat('a',64));
+ end $setup$;
+ create temporary table rename_proof as select d.tipo_documento_id,d.id,
+ to_jsonb(d)-array['codigo','nombre','updated_at'] as document_before,
+ (select jsonb_agg(to_jsonb(a) order by a.id) from public.matricula_documento_archivo a where a.matricula_documento_id=d.id) as files_before
+ from public.matricula_documento d where d.matricula_id='${f.enrollment}' and d.codigo='FOTO_ALUMNO';
+ alter table public.tipo_documento disable trigger b_history;alter table public.matricula_documento disable trigger b_history;
+ update public.tipo_documento set codigo='FOTO_PASAPORTE',nombre='Foto pasaporte' where codigo='FOTO_ALUMNO';
+ update public.matricula_documento set codigo='FOTO_PASAPORTE',nombre='Foto pasaporte' where id=(select id from rename_proof);
+ alter table public.tipo_documento enable trigger b_history;alter table public.matricula_documento enable trigger b_history;
+ ${renameMigration}
+ do $proof$ declare p record; d public.matricula_documento;begin
+ select * into strict p from rename_proof;select * into strict d from public.matricula_documento where id=p.id;
+ if d.codigo<>'FOTO_ALUMNO' or d.nombre<>'Foto del alumno' or (to_jsonb(d)-array['codigo','nombre','updated_at']) is distinct from p.document_before
+ or (select jsonb_agg(to_jsonb(a) order by a.id) from public.matricula_documento_archivo a where a.matricula_documento_id=d.id) is distinct from p.files_before
+ or not exists(select 1 from public.tipo_documento where id=p.tipo_documento_id and codigo='FOTO_ALUMNO') then raise exception 'Photo rename changed identity/state/versions';end if;
+ if exists(select 1 from pg_trigger where tgrelid in('public.tipo_documento'::regclass,'public.matricula_documento'::regclass) and tgname='b_history' and tgenabled<>'O') then raise exception 'Photo rename left a guard disabled';end if;
+ begin perform public.guardar_tipo_documento(jsonb_build_object('id',p.tipo_documento_id,'expected_updated_at',(select updated_at from public.tipo_documento where id=p.tipo_documento_id),'codigo','OTHER_PHOTO'));
+ raise exception 'Ordinary referenced rename accepted';exception when check_violation then null;end;
+ end $proof$;
+ rollback;select 'PHOTO_RENAME_PRESERVED';`)
+  assert.ok(renameProof.includes('PHOTO_RENAME_PRESERVED'))
+  console.log('H6 photo rename: UUID/context/state/confirmed versions/hash/key preserved, guards restored, ordinary rename still denied PASSED (disposable metadata)')
   const types = JSON.parse(sql('select json_object_agg(codigo,id) from public.tipo_documento'))
   const config = (items, expected = snapshot()) =>
     `select public.guardar_documentos_ciclo('${f.cycle}','${f.cycleVersion}','${JSON.stringify(expected)}','${JSON.stringify(items)}')`
@@ -525,6 +558,15 @@ try {
     `insert into auth.users(id) values('${admin}');insert into public.app_users(id) values('${admin}');insert into public.app_user_roles(user_id,role_code) values('${admin}','ADMIN_SISTEMA');`,
   )
   assert.deepEqual((await api('/matricula_documento?select=id', admin)).data, [])
+  const studentPhotoQuery = new URLSearchParams({
+    select: 'id,confirmado_at,documento:matricula_documento!matricula_documento_archivo_matricula_documento_id_fkey!inner(id,activo,contexto_vigente,ultimo_archivo_confirmado_id,matricula:matricula!inner(alumno_id,codigo_matricula,estado_codigo,ciclo:ciclo!inner(estado_codigo)))',
+    estado_tecnico: 'eq.CONFIRMADO', 'documento.codigo': 'eq.FOTO_ALUMNO',
+    'documento.matricula.alumno_id': `eq.${f.student}`, mime: 'in.(image/jpeg,image/png)',
+    order: 'confirmado_at.desc,id.desc', limit: '1',
+  })
+  const studentPhotoRead = await api(`/matricula_documento_archivo?${studentPhotoQuery}`, f.actor)
+  assert.equal(studentPhotoRead.status, 200, 'Student latest-photo nested relationship/query is accepted by real PostgREST')
+  assert.deepEqual(studentPhotoRead.data, [], 'No unrelated student/document MIME is returned')
   assert.ok((await api('/matricula_documento?select=id', f.coordinator)).data.length > 0)
   assert.ok(
     (await api('/matricula_documento_archivo?select=id', f.coordinator)).data.some(

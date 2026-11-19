@@ -149,7 +149,10 @@ export async function serveExpediente(req: Request, kind: 'cargar' | 'generar' |
         result = await generateDocument(user, server, actor, generationRequest(parsed))
       else if (kind === 'descargar') {
         const downloaded = await downloadDocument(user, server, actor, downloadRequest(parsed))
-        headers.set('Content-Type', downloaded.mime)
+        // functions-js reads image/* as text; use a binary envelope without changing stored bytes.
+        headers.set('Content-Type', downloaded.mime.startsWith('image/') ? 'application/octet-stream' : downloaded.mime)
+        headers.set('X-Documento-Mime', downloaded.mime)
+        headers.set('Access-Control-Expose-Headers', 'X-Documento-Mime, X-Documento-Historico')
         headers.set('Content-Disposition', `attachment; filename="${downloaded.filename}"`)
         headers.set('X-Documento-Historico', String(downloaded.historico))
         return new Response(Uint8Array.from(downloaded.bytes).buffer, { headers })

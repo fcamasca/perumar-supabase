@@ -1,7 +1,7 @@
 -- Appended to the synthetic H4 fixture DO block in a disposable DB transaction.
  declare identity_type uuid; photo_type uuid; generated_type uuid; config jsonb; expected jsonb; d public.matricula_documento; d2 public.matricula_documento; app_before jsonb; counts_before jsonb; audit_count bigint; row_count bigint; c2 public.ciclo; empty_student public.alumno; second public.matricula; version_id uuid; x text; begin
  select id into identity_type from public.tipo_documento where codigo='DOCUMENTO_IDENTIDAD';
- select id into photo_type from public.tipo_documento where codigo='FOTO_PASAPORTE';
+ select id into photo_type from public.tipo_documento where codigo='FOTO_ALUMNO';
  select id into generated_type from public.tipo_documento where codigo='SOLICITUD';
  if exists(select 1 from public.matricula_documento where matricula_id=e.id) then raise exception 'Zero configuration unexpectedly applied documents';end if;
  -- Master validation and referenced code/origin stability.

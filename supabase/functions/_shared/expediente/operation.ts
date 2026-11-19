@@ -146,7 +146,7 @@ export async function uploadDocument(
   const d = await documentRow(user, input.documento_id)
   if (d.origen !== 'SUBIDO') throw new DocumentoError(422, 'DOCUMENT_ORIGIN')
   const bytes = new Uint8Array(await file.arrayBuffer()),
-    mime = await validateFile(bytes, file.type, file.name, d.codigo === 'FOTO_PASAPORTE')
+    mime = await validateFile(bytes, file.type, file.name, d.codigo === 'FOTO_ALUMNO')
   const r = (await call(server, 'preparar_archivo_expediente', {
     p_actor: actor,
     p_documento_id: d.id,
