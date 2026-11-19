@@ -492,3 +492,10 @@ form.enrollment-detail-form { max-width:none; margin:1rem 0 0; padding:1rem 0 0;
 .account-signout { margin-top:.6rem; padding-top:.8rem; border-top:1px solid var(--border-soft); }.account-signout button { width:100%; }
 @media(max-width:44rem) { .account-nav { justify-content:flex-end; }.account-popover { position:fixed; top:1rem; right:1rem; left:1rem; width:auto; max-height:calc(100dvh - 2rem); overflow:auto; } }
 @media(forced-colors:active) { .account-avatar { border:1px solid ButtonText; background:ButtonFace; color:ButtonText; }.account-popover { border:1px solid CanvasText; } }
+
+/* H6 document rows keep ordinary actions compact and withdrawal secondary. */
+.document-grid .record-header-actions { display:flex; align-items:center; flex-wrap:wrap; gap:.35rem; }
+.document-grid .record-header-actions button { min-height:2rem; padding:.35rem .55rem; font-size:.8rem; white-space:nowrap; }
+.document-grid .document-more-trigger { width:2rem; padding:.15rem; font-size:1.25rem; }
+.document-actions-menu { width:220px; }
+.document-actions-menu small { display:block; padding:.35rem .5rem; }

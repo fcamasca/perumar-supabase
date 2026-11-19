@@ -1,3 +1,4 @@
+import { DocumentTypes } from '../documents/DocumentTypes'
 import { PaymentsPage } from '../payments/PaymentAccess'
 import { Students, NewStudent, StudentDetail, EnrollmentDetail, Tariffs, Companies } from '../enrollment/EnrollmentPages'
 import { useEffect, useState, type FormEvent } from 'react'
@@ -50,7 +51,7 @@ function ProtectedArea() {
     <button onClick={() => void logout()}>Cerrar sesión</button>
   </section>
   return <>
-    <div className="navigation-shell"><nav aria-label="Académico" className="main-nav">{state.roles?.some(r => r === 'DIRECTOR_ACADEMICO' || r === 'COORDINADOR_ACADEMICO') && <><NavLink to="/academico/materias">Asignaturas</NavLink><NavLink to="/academico/carreras">Cursos</NavLink><NavLink to="/academico/ciclos">Ciclos</NavLink><NavLink to="/alumnos">Alumnos</NavLink><NavLink to="/pagos">Pagos</NavLink><NavLink to="/tarifas">Tarifas</NavLink><NavLink to="/empresas">Empresas</NavLink></>}<NavLink to="/academico/auditoria">Auditoría</NavLink></nav>
+    <div className="navigation-shell"><nav aria-label="Académico" className="main-nav">{state.roles?.some(r => r === 'DIRECTOR_ACADEMICO' || r === 'COORDINADOR_ACADEMICO') && <><NavLink to="/academico/materias">Asignaturas</NavLink><NavLink to="/academico/carreras">Cursos</NavLink><NavLink to="/academico/ciclos">Ciclos</NavLink><NavLink to="/alumnos">Alumnos</NavLink><NavLink to="/pagos">Pagos</NavLink><NavLink to="/tarifas">Tarifas</NavLink><NavLink to="/empresas">Empresas</NavLink><NavLink to="/documentos">Documentos</NavLink></>}<NavLink to="/academico/auditoria">Auditoría</NavLink></nav>
     <nav aria-label="Seguridad" className="account-nav"><AccountMenu key={state.userId}/></nav></div>
     <Outlet />
   </>
@@ -104,6 +105,7 @@ export function SecurityRoutes() {
       <Route path="/matriculas/nueva" element={<AcademicOnly><Navigate to="/academico/ciclos" replace /></AcademicOnly>} />
       <Route path="/matriculas/:id" element={<AcademicOnly><EnrollmentDetail /></AcademicOnly>} />
       <Route path="/pagos/*" element={<AcademicOnly><PaymentsPage /></AcademicOnly>} />
+      <Route path="/documentos" element={<AcademicOnly><DocumentTypes /></AcademicOnly>} />
       <Route path="/tarifas" element={<AcademicOnly><Tariffs /></AcademicOnly>} />
       <Route path="/empresas" element={<AcademicOnly><Companies /></AcademicOnly>} />
       <Route path="/academico/materias" element={<AcademicOnly><Materias /></AcademicOnly>} />
