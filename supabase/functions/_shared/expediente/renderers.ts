@@ -87,6 +87,6 @@ export async function renderExpediente(code: string, source: Source, at: Date, d
   if(y<185)next();y-=12;paragraph(`${place}${place?', ':''}${date}`)
   if(['DECLARACION_JURADA','FICHA_DATOS_PERSONALES'].includes(code)){page.drawRectangle({x:margin,y:y-65,width:50,height:65,borderColor:ink,borderWidth:.6});draw('Índice derecho',margin,y-79,false,9)}
   page.drawLine({start:{x:margin+200,y:y-63},end:{x:margin+width,y:y-63},color:ink,thickness:.6});draw('FIRMA',margin+295,y-79,false,9)
-  const pages=pdf.getPages();pages.forEach((p,i)=>{page=p;draw(`Generado en Lima: ${new Intl.DateTimeFormat('es-PE',{timeZone:'America/Lima',dateStyle:'short',timeStyle:'medium'}).format(at)}`,margin,27,false,8);draw(`${i+1} / ${pages.length}`,520,27,false,8)})
+  const pages=pdf.getPages();pages.forEach((p,i)=>{page=p;draw(`Generado en Lima: ${new Intl.DateTimeFormat('es-PE',{timeZone:'America/Lima',dateStyle:'short',timeStyle:'medium',hour12:false}).format(at)}`,margin,27,false,8);draw(`${i+1} / ${pages.length}`,520,27,false,8)})
   const bytes=await pdf.save({useObjectStreams:false});if(bytes.length>2097152)throw new DocumentoError(413,'DOCUMENT_LIMIT');return bytes
 }

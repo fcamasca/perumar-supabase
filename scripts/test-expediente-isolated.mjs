@@ -129,6 +129,8 @@ try{
  console.log('H6 real concurrency: config/config and mandatory conversion/retirement, two SERIALIZABLE sessions plus lock barrier, one commit, no retry: PASSED')
  sql(readFileSync('tests/sql/h4-payments.sql','utf8'));sql(readFileSync('tests/sql/h4-regression.sql','utf8'))
  console.log('H6 effective configuration, all-applied, optional retirement/reactivation, mandatory conversion, summary, regularization: PASSED DB')
+ sql(base.slice(0,end)+readFileSync('tests/sql/h6-adversarial.sql','utf8'))
+ console.log('H6 adversarial master/configuration, mixed/duplicate/51/stale retirement, independent Cycle, complete enrollment rollback and history DELETE guards: PASSED isolated DB')
  sql(base.slice(0,end)+readFileSync('tests/sql/h5-source.sql','utf8'))
  console.log('H4/H3 financial and academic rollback regression, H5 source/final snapshot/closure regression: PASSED isolated DB')
  // Real PostgREST + independently signed fixture JWT, scoped to the disposable database.

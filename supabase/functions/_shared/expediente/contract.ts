@@ -3,7 +3,9 @@ export const EXPEDIENTE_BUCKET = 'h6-expediente'
 export const MAX_FILE = 5 * 1024 * 1024
 export const GENERADO_CODES = ['SOLICITUD', 'DECLARACION_JURADA', 'CARTA_PODER', 'FICHA_DATOS_PERSONALES', 'FICHA_MATRICULA'] as const
 export class DocumentoError extends Error {
-  constructor(public status: number, public code: string) { super(code) }
+  status:number
+  code:string
+  constructor(status: number, code: string) { super(code);this.status=status;this.code=code }
 }
 export function templateVersion(code: string) {
   if (!(GENERADO_CODES as readonly string[]).includes(code)) throw new DocumentoError(422, 'DOCUMENT_TEMPLATE')

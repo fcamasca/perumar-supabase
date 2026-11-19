@@ -70,13 +70,17 @@ jobs:
           npm run test:pdf
           node scripts/test-pdf-layout.mjs
       - name: Expediente real Edge private Storage and versions
-        run: npm run test:expediente
+        run: |
+          npm run test:expediente
+          node scripts/test-expediente-layout.mjs
       - name: Synthetic expediente evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: h6-synthetic-document-evidence
-          path: .cache/h6-results/
+          path: |
+            .cache/h6-results/
+            .cache/h6-layout/
           if-no-files-found: ignore
           retention-days: 3
       - name: Synthetic PDF evidence
@@ -110,6 +114,7 @@ jobs:
           node scripts/test-pdf-layout.mjs
           npm run test:expediente:isolated
           npm run test:expediente
+          node scripts/test-expediente-layout.mjs
       - name: Stop local platform
         if: always()
         run: npm run supabase:stop

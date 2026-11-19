@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import {randomUUID,createHash} from 'node:crypto'
 import {mkdirSync,writeFileSync} from 'node:fs'
+import {spawnSync} from 'node:child_process'
 import {PDFDocument,PDFName,PDFDict} from 'pdf-lib'
 import {PNG} from 'pngjs'
 import jpeg from 'jpeg-js'
@@ -52,7 +53,7 @@ try{
  const failed=(await versions(target.id)).at(-1);assert.equal(failed.estado_tecnico,'ABORTADO');assert.ok((await fixture.admin.storage.from('h6-expediente').download(failed.object_key)).error)
  mkdirSync('.cache/h6-results',{recursive:true});const metrics=[]
  for(const code of ['SOLICITUD','DECLARACION_JURADA','CARTA_PODER','FICHA_DATOS_PERSONALES','FICHA_MATRICULA']){
-  const start=performance.now(),r=await invoke('generar',await input(code),'O');assert.equal(r.status,200,'real fixed renderer '+code);const manifest=await r.json(),d=await doc(code);assert.equal(d.estado,'GENERADO')
+  const start=performance.now(),r=await invoke('generar',await input(code),'O');const manifest=await r.json();assert.equal(r.status,200,'real fixed renderer '+code+' HTTP '+r.status+' '+String(manifest.code??'unknown')),d=await doc(code);assert.equal(d.estado,'GENERADO')
   const dl=await download(d,manifest.archivo_id);assert.equal(dl.status,200);const bytes=Buffer.from(await dl.arrayBuffer());assert.equal((await PDFDocument.load(bytes)).getPageCount()>0,true);writeFileSync('.cache/h6-results/'+code+'.pdf',bytes);metrics.push({code,ms:performance.now()-start,pdfBytes:bytes.length})
  }
  // Explicit concurrent generations for the same version: at most one confirmed new version, no retry.
@@ -61,6 +62,27 @@ try{
  const current=await doc('SOLICITUD'),latest=current.ultimo_archivo_confirmado_id
  student=await rpc(O,'guardar_alumno',{p:{...initial,id:student.id,expected_updated_at:student.updated_at,domicilio:'H6 CORREGIDO'}})
  assert.equal((await download(current,latest)).status,409);assert.equal((await download(current,latest,true)).status,200,'stale persistent file is explicit history, not erased')
+ // Same operation matrix in open and closed Cycles; closure freezes H5/H6 source transactionally.
+ cycle=await rpc(D,'cambiar_estado_ciclo',{id:cycle.id,expected_updated_at:cycle.updated_at,destino:'EN_CURSO'})
+ assert.equal((await invoke('generar',await input('SOLICITUD'))).status,200,'Solicitud in EN_CURSO without a grade rule')
+ cycle=await rpc(D,'cambiar_estado_ciclo',{id:cycle.id,expected_updated_at:cycle.updated_at,destino:'CERRADO'})
+ enrollment=await one('matricula',enrollment.id)
+ const frozen=enrollment.alumno_snapshot_cierre
+ assert.ok(frozen);assert.equal(frozen.alumno.domicilio,'H6 CORREGIDO')
+ for(const code of ['SOLICITUD','DECLARACION_JURADA','CARTA_PODER','FICHA_DATOS_PERSONALES','FICHA_MATRICULA'])assert.equal((await invoke('generar',await input(code),'O')).status,200,'ACTIVO/CERRADO '+code)
+ assert.equal((await upload('FOTO_PASAPORTE',png,'image/png','foto.png','O')).status,200,'SUBIDO in CERRADO')
+ const beforeClosed=(await versions((await doc('FICHA_MATRICULA')).id)).at(-1)
+ student=await rpc(O,'guardar_alumno',{p:{...initial,id:student.id,expected_updated_at:student.updated_at,domicilio:'H6 POSTERIOR AL CIERRE'}})
+ assert.equal((await invoke('generar',await input('FICHA_MATRICULA'))).status,200)
+ const afterClosed=(await versions((await doc('FICHA_MATRICULA')).id)).at(-1)
+ assert.equal(afterClosed.fuente_base_fingerprint,beforeClosed.fuente_base_fingerprint);assert.deepEqual((await one('matricula',enrollment.id)).alumno_snapshot_cierre,frozen)
+ // Operator cleanup is dry-run by default; synthetic clock fixture only in disposable CI.
+ checked(await fixture.admin.storage.from('h6-expediente').upload(failed.object_key,new Blob([safePdf],{type:'application/pdf'})),'synthetic private orphan')
+ inspectDatabase("alter table public.matricula_documento_archivo disable trigger b_history;update public.matricula_documento_archivo set iniciado_at=clock_timestamp()-interval '48 hours',confirmado_at=case when estado_tecnico='CONFIRMADO' then clock_timestamp()-interval '47 hours' else confirmado_at end where id in (:'failed_id'::uuid,:'confirmed_id'::uuid);alter table public.matricula_documento_archivo enable trigger b_history;",{failed_id:failed.id,confirmed_id:priorPointer})
+ const cleanup=execute=>{const r=spawnSync(process.execPath,['scripts/cleanup-expediente.mjs',...(execute?['--execute']:[])],{encoding:'utf8',windowsHide:true});assert.equal(r.status,0,'bounded operator cleanup');return JSON.parse(r.stdout.trim().split('\n').at(-1))}
+ const dry=cleanup(false);assert.equal(dry.mode,'DRY RUN');assert.ok(dry.candidates>=1);assert.ok((await fixture.admin.storage.from('h6-expediente').download(failed.object_key)).data)
+ cleanup(true);assert.ok((await fixture.admin.storage.from('h6-expediente').download(failed.object_key)).error)
+ assert.equal((await download(target,priorPointer)).status,200,'Confirmed file remains downloadable after 24h and cleanup')
  // Private Storage is unavailable to every browser/JWT, including authorized academics.
  const key=(await versions(target.id)).find(f=>f.estado_tecnico==='CONFIRMADO').object_key
  for(const c of [D,O,clients.A,publicClient(fixture.config)]){assert.ok((await c.storage.from('h6-expediente').download(key)).error);assert.ok((await c.storage.from('h6-expediente').createSignedUrl(key,60)).error);assert.ok((await c.storage.from('h6-expediente').upload(key,new Blob([png]),{contentType:'image/png'})).error);const list=await c.storage.from('h6-expediente').list(target.id);assert.ok(list.error||list.data.length===0);assert.ok((await c.rpc('abortar_reserva_expediente',{p_actor:fixture.entries.D.id,p_archivo_id:latest})).error)}
@@ -69,6 +91,19 @@ try{
  assert.equal((await upload('DOCUMENTO_IDENTIDAD',safePdf,'application/pdf','documento.pdf')).status,409)
  assert.equal((await download(target,priorPointer)).status,409);assert.equal((await download(target,priorPointer,true,'O')).status,200)
  assert.deepEqual(await versions(target.id),historyBefore,'annulment preserves every file version')
+ // Distinct terminal Cycle contexts keep historical access for an ACTIVO enrollment.
+ for(const destination of ['DESIERTO','ANULADO']){
+  let terminal=await rpc(D,'guardar_ciclo',{p:{...geo,carrera_id:course.id,capitania_id:cycle.capitania_id,fecha_inicio:'2049-01-01',fecha_fin:'2049-02-01'}})
+  terminal=await rpc(D,'guardar_ciclo_tarifas',{ciclo_id:terminal.id,expected_updated_at:terminal.updated_at,configuracion:[{tarifa_id:tariff.id,importe:'100',obligatorio:'true'}]})
+  await rpc(O,'guardar_documentos_ciclo',{p_ciclo_id:terminal.id,p_expected_updated_at:terminal.updated_at,p_expected_config:[],p_documentos:config})
+  const te=await rpc(O,'registrar_matricula',{p:{alumno_id:student.id,expected_alumno_updated_at:student.updated_at,ciclo_id:terminal.id,expected_ciclo_updated_at:terminal.updated_at}})
+  const td=checked(await D.from('matricula_documento').select('*').eq('matricula_id',te.id),'terminal fixture docs');documentIds.push(...td.map(d=>d.id));const request=d=>({documento_id:d.id,expected_updated_at:d.updated_at,datos_generacion:d.codigo==='CARTA_PODER'?{apoderado_nombre:'APODERADO SINTÉTICO',apoderado_tipo_di_id:value('TIPO_DI','DNI'),apoderado_numero_di:'00000001'}:{}})
+  const sol=td.find(d=>d.codigo==='SOLICITUD'),created=await invoke('generar',request(sol));assert.equal(created.status,200);const manifest=await created.json()
+  terminal=await rpc(D,'cambiar_estado_ciclo',{id:terminal.id,expected_updated_at:terminal.updated_at,destino:destination,motivo:'H6 SINTÉTICO',...(destination==='DESIERTO'?{motivo_desierto_id:value('MOTIVO_CICLO_DESIERTO','OTRO')}:{})})
+  for(const d of td.filter(d=>d.origen==='GENERADO'))assert.equal((await invoke('generar',request(d))).status,409,destination+' blocks '+d.codigo)
+  const photo=td.find(d=>d.codigo==='FOTO_PASAPORTE'),f=new FormData();f.set('documento_id',photo.id);f.set('expected_updated_at',photo.updated_at);f.set('archivo',new Blob([png],{type:'image/png'}),'foto.png');assert.equal((await invoke('cargar',f)).status,409)
+  assert.equal((await download(sol,manifest.archivo_id)).status,409);assert.equal((await download(sol,manifest.archivo_id,true,'O')).status,200,destination+' authorized history')
+ }
  checked(await fixture.admin.from('app_user_roles').delete().eq('user_id',fixture.entries.O.id),'revoke H6 synthetic role')
  assert.equal((await download(target,priorPointer,true,'O')).status,403)
  const audit=checked(await D.from('auditoria').select('actor,new_values,old_values').in('entidad',['matricula_documento','matricula_documento_archivo']).in('registro_id',[...documentIds,...(await versions(target.id)).map(f=>f.id)]),'H6 audit')
