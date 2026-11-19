@@ -564,7 +564,7 @@ form.enrollment-detail-form { max-width:none; margin:1rem 0 0; padding:1rem 0 0;
 
 /* H6.1 matrix: fixed DI/name, compact document cells and vertical headings. */
 .cycle-reports td:nth-child(3) { white-space: nowrap; overflow-wrap: normal; }
-.document-matrix { --matrix-name: 16rem; --matrix-di: 10rem; table-layout: fixed; border-collapse: separate; border-spacing: 0; width: max-content; min-width: 100%; }
+.document-matrix { --matrix-name: 14rem; --matrix-di: 7.5rem; table-layout: fixed; border-collapse: separate; border-spacing: 0; width: max-content; min-width: 100%; }
 .document-matrix col.matrix-name { width: var(--matrix-name); }
 .document-matrix col.matrix-di { width: var(--matrix-di); }
 .document-matrix col.matrix-document { width: 3.25rem; }
@@ -580,7 +580,7 @@ form.enrollment-detail-form { max-width:none; margin:1rem 0 0; padding:1rem 0 0;
 .matrix-complete { color: var(--success); background: color-mix(in srgb, var(--success) 12%, var(--surface-elevated)); }
 .matrix-pending { color: var(--warning); background: color-mix(in srgb, var(--warning) 12%, var(--surface-elevated)); }
 .matrix-na { color: var(--text-secondary); }
-@media (max-width: 800px) { .document-matrix { --matrix-name: 12rem; --matrix-di: 9rem; } }
+@media (max-width: 800px) { .document-matrix { --matrix-name: 11.5rem; --matrix-di: 7rem; } }
 @media (max-width: 520px) { .document-matrix tr > :nth-child(2) { position: static; } }
 @media (forced-colors: active) { .matrix-status { color: CanvasText; background: Canvas; border-color: CanvasText; } }
 .document-matrix td[colspan] { position: static; width: auto; white-space: normal; }
