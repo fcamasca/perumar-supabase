@@ -69,7 +69,7 @@ export function reportCsv(rows: ReportRow[], kind: ReportKind, documents: Matrix
   const headers = kind === 1 ? [...reportHeaders[kind], ...documents.map(c => c.nombre)] : reportHeaders[kind]
   return '\uFEFF' + [headers, ...rows.map(r => reportCells(r, kind, documents))].map(row => row.map(csvCell).join(',')).join('\r\n') + '\r\n'
 }
-export async function exportReport(client: SupabaseClient, filters: ReportFilters, signal: AbortSignal) {
+export async function loadReportExport(client: SupabaseClient, filters: ReportFilters, signal: AbortSignal) {
   const documents = filters.kind === 1 ? await matrixColumns(client, filters.cycle, signal) : []
   const rows: ReportRow[] = []
   const seen = new Set<string>()
@@ -92,5 +92,9 @@ export async function exportReport(client: SupabaseClient, filters: ReportFilter
     if (page.length < 500) break
   }
   if (rows.length !== expected) throw new Error('No se pudo completar la exportación')
+  return { rows, documents }
+}
+export async function exportReport(client: SupabaseClient, filters: ReportFilters, signal: AbortSignal) {
+  const { rows, documents } = await loadReportExport(client, filters, signal)
   return reportCsv(rows, filters.kind, documents)
 }

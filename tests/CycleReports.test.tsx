@@ -74,7 +74,7 @@ it.each([['ADMIN_SISTEMA'], []])('does not enumerate reports without academic ro
 it('shows empty/error and recovers only on explicit Consultar, without leaking raw error', async () => {
   failed = true; render(<CycleReports cycle={cycle}/>); expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo consultar')
   expect(screen.queryByText('secret raw error')).not.toBeInTheDocument(); expect(client.from).toHaveBeenCalledTimes(1)
-  failed = false; data = []; fireEvent.click(screen.getByRole('button', { name: 'Consultar' })); expect(await screen.findByText('No hay matrículas para estos filtros.')).toBeVisible()
+  failed = false; data = []; fireEvent.click(screen.getByRole('button', { name: 'Actualizar reporte' })); expect(await screen.findByText('No hay matrículas para estos filtros.')).toBeVisible()
 })
 it('uses existing keyboard tab navigation', async () => {
   render(<CycleReports cycle={cycle}/>); const first = screen.getByRole('tab', { name: 'Alumnos matriculados' }); first.focus()
@@ -114,7 +114,7 @@ it('rejects an export if the server set count changes between pages', async () =
 })
 it('downloads a CSV from the toolbar using the active filters', async () => {
   const create = vi.fn<(blob: Blob) => string>(() => 'blob:report'), revoke = vi.fn()
-  vi.stubGlobal('URL', { createObjectURL: create, revokeObjectURL: revoke })
+  vi.stubGlobal('URL', class extends URL { static createObjectURL = (blob: Blob | MediaSource) => create(blob as Blob); static revokeObjectURL = revoke })
   const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
   try {
     render(<CycleReports cycle={cycle}/>); await screen.findByText('Activa')
@@ -123,6 +123,8 @@ it('downloads a CSV from the toolbar using the active filters', async () => {
     await waitFor(() => expect(click).toHaveBeenCalledTimes(1))
     expect(queries.at(-1)?.range).toEqual([0, 499]); expect(queries.at(-1)?.or[0]).toContain('QUIROZ')
     expect(create.mock.calls[0]?.[0]).toBeInstanceOf(Blob)
+    await new Promise(resolve => setTimeout(resolve, 1100))
+    expect(revoke).toHaveBeenCalledWith('blob:report')
   } finally { click.mockRestore(); vi.unstubAllGlobals() }
 })
 it('rejects malformed Cycle IDs before issuing a query', () => {
@@ -201,4 +203,42 @@ it.each([0, 1, 2] as ReportKind[])('uses identity/name first, without student co
   expect(csv).toContain('"Doc. Identidad","Apellidos y nombres"')
   reportQuery(client as never, { cycle, kind, search: '', includeCancelled: false }, 0, 30)
   expect(queries.at(-1)?.select).not.toContain('codigo_alumno')
+})
+
+it.each(['Alumnos matriculados', 'Documentos pendientes', 'Saldos'])('provides three icon actions with accessible tooltips in %s', async name => {
+  render(<CycleReports cycle={cycle} cycleCode="2026-1001-MA"/>); fireEvent.click(screen.getByRole('tab', { name }))
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Exportar PDF' })).toBeEnabled())
+  for (const action of ['Actualizar reporte', 'Exportar CSV', 'Exportar PDF']) {
+    const button = screen.getByRole('button', { name: action })
+    expect(button.querySelector('svg')).not.toBeNull()
+    expect(document.getElementById(button.getAttribute('aria-describedby')!)).toHaveTextContent(action)
+  }
+})
+it.each(['Alumnos matriculados', 'Documentos pendientes', 'Saldos'])('previews the actual filtered PDF with viewer controls and a close icon: %s', async name => {
+  const create = vi.fn<(blob: Blob) => string>(() => 'blob:pdf-report')
+  const revoke = vi.fn()
+  vi.stubGlobal('URL', class extends URL { static createObjectURL = (blob: Blob | MediaSource) => create(blob as Blob); static revokeObjectURL = revoke })
+  const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+  try {
+    render(<CycleReports cycle={cycle} cycleCode="2026-1001-MA"/>); await screen.findByText('Activa')
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'QUIROZ' } }); await screen.findByText('Activa')
+    fireEvent.click(screen.getByRole('tab', { name }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Exportar PDF' })).toBeEnabled())
+    fireEvent.click(screen.getByRole('button', { name: 'Exportar PDF' }))
+    const dialog = await screen.findByRole('dialog', { name: `Vista previa: ${name}` }, { timeout: 5000 })
+    const frame = await within(dialog).findByTitle(`PDF de ${name}`) as HTMLIFrameElement
+    await waitFor(() => expect(frame).toHaveAttribute('src', 'blob:pdf-report'))
+    expect(click).not.toHaveBeenCalled()
+    expect(create.mock.calls[0][0].type).toBe('application/pdf')
+    expect(queries.at(-1)?.or[0]).toContain('QUIROZ'); expect(queries.at(-1)?.range).toEqual([0, 499])
+    expect(within(dialog).queryByRole('button', { name: 'Imprimir' })).not.toBeInTheDocument()
+    expect(within(dialog).queryByRole('button', { name: 'Descargar PDF' })).not.toBeInTheDocument()
+    const close = within(dialog).getByRole('button', { name: 'Cerrar vista previa' })
+    expect(close).toHaveTextContent('×')
+    expect(within(dialog).getAllByRole('button')).toHaveLength(1)
+    expect(revoke).not.toHaveBeenCalled()
+    fireEvent.click(close)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(revoke).toHaveBeenCalledWith('blob:pdf-report')
+  } finally { click.mockRestore(); vi.unstubAllGlobals() }
 })

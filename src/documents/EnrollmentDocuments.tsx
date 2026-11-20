@@ -1,4 +1,5 @@
 import { DocumentMoreActions } from './DocumentMoreActions'
+import { PreviewHeader } from './PreviewHeader'
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useSession } from '../security/SessionProvider'
@@ -10,7 +11,7 @@ import { uploadSizeError } from './uploadLimits'
 import { optimizeImage } from './optimizeImage'
 import { documentFileBlob } from './documentFileResponse'
 
-function DocumentDialog({
+export function DocumentDialog({
   close,
   busy,
   children,
@@ -555,12 +556,11 @@ export function EnrollmentDocuments({
       )}
       {(page>0||rows.length===30)&&<AcademicPagination page={page} count={rows.length} disabled={busy||loading} onChange={setPage}/>}
       {storedPreview && <DocumentDialog wide busy={busy} label={`Vista previa: ${storedPreview.name}`} close={() => setStoredPreview(null)}>
-        <h2>Vista previa: {storedPreview.name}</h2>
+        <PreviewHeader name={storedPreview.name} disabled={busy} close={() => setStoredPreview(null)}/>
         {storedPreview.historical && <p className="help-text">Versión histórica: puede no reflejar los datos actuales.</p>}
         {storedPreviewUrl && (storedPreview.blob.type === 'application/pdf'
           ? <iframe title={`Archivo de ${storedPreview.name}`} src={storedPreviewUrl} />
           : <img alt={`Archivo de ${storedPreview.name}`} src={storedPreviewUrl} />)}
-        <div className="form-actions"><button type="button" className="secondary" disabled={busy} onClick={() => setStoredPreview(null)}>Cerrar vista previa</button></div>
       </DocumentDialog>}
       {editing && (
         <DocumentDialog busy={busy || optimizing} close={() => setEditing(null)}>

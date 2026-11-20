@@ -7,6 +7,8 @@ export default defineConfig(({ command, mode }) => {
   if (command === 'build') validateEnv({ ...loadEnv(mode, process.cwd(), 'VITE_'), ...process.env })
   return {
   plugins: [react()],
+  // PDF export is loaded on demand; prebundle it before the first browser request.
+  optimizeDeps: { include: ['pdf-lib'] },
   server: { host: '127.0.0.1', port: 5173, strictPort: true },
   preview: { host: '127.0.0.1', port: 4173, strictPort: true },
   test: {
