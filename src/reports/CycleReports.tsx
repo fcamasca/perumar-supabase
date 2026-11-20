@@ -1,0 +1,99 @@
+import { useEffect, useRef, useState } from 'react'
+import { AcademicAction, AcademicPagination, AcademicSearch, AcademicTabs } from '../academic/AcademicLayout'
+import { useSession } from '../security/SessionProvider'
+import { ReportPdfPreview } from './ReportPdfPreview'
+import { checkMatrix, matrixColumns, exportReport, loadReportExport, reportCells, reportHeaders, reportNames, reportQuery, type MatrixColumn, type ReportKind, type ReportRow } from './reportData'
+
+export function CycleReports({ cycle, cycleCode = '' }: { cycle: string; cycleCode?: string }) {
+  const { client, state } = useSession()
+  const allowed = !!state.roles?.some(role => ['DIRECTOR_ACADEMICO', 'COORDINADOR_ACADEMICO'].includes(role))
+  const [kind, setKind] = useState<ReportKind>(0), [search, setSearch] = useState(''), [includeCancelled, setIncludeCancelled] = useState(false)
+  const [page, setPage] = useState(0), [rows, setRows] = useState<ReportRow[]>([]), [count, setCount] = useState(0)
+  const [loading, setLoading] = useState(true), [error, setError] = useState(''), [revision, setRevision] = useState(0)
+  const [documents, setDocuments] = useState<MatrixColumn[]>([])
+  const [exporting, setExporting] = useState(false), [exportError, setExportError] = useState('')
+  const [preview, setPreview] = useState<{ blob: Blob; name: string } | null>(null)
+  const [resolvedKey, setResolvedKey] = useState('')
+  const requestKey = JSON.stringify([state.userId, cycle, kind, search, includeCancelled, page, revision])
+  // A new tab/filter renders before its effect runs. Never present a previous projection as the new one.
+  const pending = loading || resolvedKey !== requestKey
+  const exportingRef = useRef(false), exportAbort = useRef<AbortController | null>(null)
+  useEffect(() => {
+    const controller = new AbortController()
+    setRows([]); setCount(0); setError(''); setLoading(allowed)
+    if (allowed) void (async () => {
+      try {
+        const [r, cols] = await Promise.all([
+          reportQuery(client, { cycle, kind, search, includeCancelled }, page * 30, 30).abortSignal(controller.signal),
+          kind === 1 ? matrixColumns(client, cycle, controller.signal) : Promise.resolve([]),
+        ])
+        if (controller.signal.aborted) return
+        if (r.error) throw r.error
+        const nextRows = r.data as unknown as ReportRow[]
+        if (kind === 1) checkMatrix(nextRows, cols)
+        setDocuments(cols); setRows(nextRows); setCount(r.count ?? 0)
+      } catch { if (!controller.signal.aborted) setError('No se pudo consultar el reporte. Vuelve a consultar.') }
+      finally { if (!controller.signal.aborted) { setResolvedKey(requestKey); setLoading(false) } }
+    })()
+    return () => controller.abort()
+  }, [client, allowed, state.userId, cycle, kind, search, includeCancelled, page, revision, requestKey])
+  useEffect(() => { setPreview(null); return () => { exportAbort.current?.abort() } }, [cycle, kind, search, includeCancelled, allowed, state.userId])
+  async function download(format: 'csv' | 'pdf') {
+    if (exportingRef.current || !allowed) return
+    exportingRef.current = true; setExporting(true); setExportError('')
+    const controller = new AbortController(); exportAbort.current = controller
+    try {
+      let blob: Blob
+      const filters = { cycle, kind, search, includeCancelled }
+      if (format === 'csv') blob = new Blob([await exportReport(client, filters, controller.signal)], { type: 'text/csv;charset=utf-8' })
+      else {
+        const data = await loadReportExport(client, filters, controller.signal)
+        const { renderCycleReportPdf } = await import('./cycleReportPdf')
+        const bytes = await renderCycleReportPdf(data.rows, kind, data.documents, { cycleCode, search, includeCancelled: kind === 0 && includeCancelled, at: new Date() }, controller.signal)
+        blob = new Blob([new Uint8Array(bytes)], { type: 'application/pdf' })
+      }
+      if (controller.signal.aborted) return
+      if (format === 'pdf') {
+        setPreview({ blob, name: reportNames[kind] })
+        return
+      }
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a'); link.href = url; link.download = `reporte-ciclo-${['alumnos', 'documentos', 'saldos'][kind]}.${format}`
+      link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000)
+    } catch { if (!controller.signal.aborted) setExportError('No se pudo exportar el reporte completo. No se descargó un archivo parcial.') }
+    finally { exportingRef.current = false; setExporting(false) }
+  }
+  const headers = kind === 1 ? [...reportHeaders[kind], ...documents.map(c => c.nombre)] : reportHeaders[kind]
+  if (!allowed) return <p role="alert">No tienes acceso académico a estos reportes.</p>
+  return <section className="cycle-reports" aria-label="Reportes del Ciclo">
+    {preview && <ReportPdfPreview {...preview} close={() => setPreview(null)}/>}
+    <h3>Reportes del Ciclo</h3>
+    <AcademicTabs id="cycle-reports" names={reportNames} active={kind} disabled={exporting} onChange={index => { setKind(index as ReportKind); setPage(0); setExportError('') }}/>
+    <div role="tabpanel" id={`cycle-reports-panel-${kind}`} aria-labelledby={`cycle-reports-tab-${kind}`} tabIndex={0}>
+      <div className="filters academic-toolbar" role="search" aria-label="Filtros del reporte">
+        <AcademicSearch label="Buscar alumno" placeholder="Apellidos, nombres o DI" value={search} onChange={value => { setSearch(value); setPage(0); setExportError('') }}/>
+        {kind === 0 && <label className="report-checkbox"><input type="checkbox" checked={includeCancelled} disabled={exporting} onChange={e => { setIncludeCancelled(e.target.checked); setPage(0) }}/>Incluir anulados</label>}
+        <div className="report-toolbar-actions">
+          <AcademicAction label="Actualizar reporte" icon="refresh" disabled={pending || exporting} onClick={() => setRevision(value => value + 1)}/>
+          <AcademicAction label="Exportar CSV" icon="csv" disabled={pending || exporting || !!error} onClick={() => void download('csv')}/>
+          <AcademicAction label="Exportar PDF" icon="pdf" disabled={pending || exporting || !!error} onClick={() => void download('pdf')}/>
+        </div>
+      </div>
+      {kind !== 0 && <p className="help-text">Solo matrículas activas. {kind === 1 ? 'Pendientes según el expediente vigente del alumno.' : 'Importes registrados; no se recalculan desde tarifas actuales.'}</p>}
+      {pending && <p role="status">Consultando reporte…</p>}
+      {exporting && <p role="status">Preparando exportación con los filtros activos…</p>}
+      {!pending && error && <p role="alert" className="validation-message">{error}</p>}
+      {exportError && <p role="alert" className="validation-message">{exportError}</p>}
+      {kind === 1 && <p className="help-text matrix-legend">✓ Completo · ○ Pendiente · — No aplica</p>}
+      {!pending && !error && kind === 1 && !documents.length && <p>Sin documentos activos configurados para este Ciclo.</p>}
+      <div className={`table-scroll${kind === 1 ? ' report-matrix-scroll' : ''}`} tabIndex={0} aria-label="Tabla desplazable del reporte"><table className={kind === 1 ? 'document-matrix' : undefined} style={kind === 1 ? { width: `calc(var(--matrix-di) + var(--matrix-name) + ${documents.length * 3.25}rem)` } : undefined} aria-label={reportNames[kind]}>
+        {kind === 1 && <colgroup><col className="matrix-di"/><col className="matrix-name"/>{documents.map(d => <col key={d.codigo} className="matrix-document"/>)}</colgroup>}
+        <thead><tr>{headers.map((h, index) => <th key={`${index}-${h}`} scope="col" className={kind === 1 && index >= 2 ? 'matrix-document-heading' : kind === 2 && index >= 3 ? 'payment-money' : undefined} title={kind === 1 && index >= 2 ? h : undefined} tabIndex={kind === 1 && index >= 2 ? 0 : undefined}>{kind === 1 && index >= 2 ? <span>{h}</span> : h}</th>)}</tr></thead><tbody>
+        {!pending && !error && rows.map(row => <tr key={row.matricula_id}>{reportCells(row, kind, documents).map((value, index) => <td key={index} className={kind === 1 && index >= 2 ? 'matrix-cell' : kind === 2 && index >= 3 ? 'payment-money' : undefined}>{kind === 1 && index >= 2 ? <span className={`matrix-status ${value === 'Completo' ? 'matrix-complete' : value === 'Pendiente' ? 'matrix-pending' : 'matrix-na'}`} role="img" aria-label={value} title={value}>{value === 'Completo' ? '✓' : value === 'Pendiente' ? '○' : '—'}</span> : value}</td>)}</tr>)}
+        {!pending && !error && !rows.length && <tr><td colSpan={headers.length}>No hay matrículas para estos filtros.</td></tr>}
+      </tbody></table></div>
+      <AcademicPagination page={page} count={pending ? 0 : rows.length} disabled={pending || exporting} onChange={setPage}/>
+      {!pending && !error && <small>{count} matrículas coinciden con los filtros.</small>}
+    </div>
+  </section>
+}

@@ -514,6 +514,10 @@ form.enrollment-detail-form { max-width:none; margin:1rem 0 0; padding:1rem 0 0;
 .document-preview::backdrop { background:var(--scrim); }
 .document-preview > header { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.75rem; }
 .document-preview h2 { margin:0; font-size:1.15rem; }
+.preview-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; margin-bottom:.8rem; }
+.preview-heading h2 { min-width:0; margin:0; overflow-wrap:anywhere; font-size:1.15rem; }
+.document-preview > .preview-heading { flex-wrap:nowrap; align-items:flex-start; }
+.preview-close.secondary { flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; width:2.5rem; height:2.5rem; padding:0; font-size:1.7rem; line-height:1; }
 .document-preview > p { margin:.75rem 0; }
 .document-preview iframe { display:block; width:100%; height:70dvh; border:1px solid var(--border); margin-bottom:.65rem; background:var(--surface); }
 .document-preview-action { margin-bottom:1rem; }
@@ -553,3 +557,57 @@ form.enrollment-detail-form { max-width:none; margin:1rem 0 0; padding:1rem 0 0;
 .document-pending-required td:first-child { box-shadow:inset 3px 0 var(--warning); }
 .document-grid .document-file-diagnostic { color:var(--warning); }
 @media(forced-colors:active) { .document-state-badge { background:Canvas; border-color:CanvasText; } .document-pending-required td:first-child { box-shadow:none; border-inline-start:3px solid CanvasText; } }
+
+/* H6.1: compact controls within the existing Cycle workspace. */
+.cycle-reports .academic-toolbar { margin-block: 1rem; align-items: end; }
+.cycle-reports .report-checkbox { display: flex; align-items: center; gap: .5rem; white-space: nowrap; padding-block: .7rem; }
+.cycle-reports .report-checkbox input { width: auto; margin: 0; }
+.cycle-reports td { overflow-wrap: anywhere; }
+
+.cycle-reports .payment-money { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* H6.1 matrix: fixed DI/name, compact document cells and vertical headings. */
+.cycle-reports td:nth-child(3) { white-space: nowrap; overflow-wrap: normal; }
+.document-matrix { --matrix-name: 14rem; --matrix-di: 6.5rem; table-layout: fixed; border-collapse: separate; border-spacing: 0; min-width: 0; }
+.document-matrix col.matrix-name { width: var(--matrix-name); }
+.document-matrix col.matrix-di { width: var(--matrix-di); }
+.document-matrix col.matrix-document { width: 3.25rem; }
+.document-matrix th, .document-matrix td { box-sizing: border-box; }
+.document-matrix tr > :nth-child(-n+2) { position: sticky; z-index: 1; background: var(--surface-elevated); }
+.document-matrix tr > :first-child { left: 0; width: var(--matrix-di); white-space: nowrap; overflow-wrap: normal; }
+.document-matrix tr > :nth-child(2) { left: var(--matrix-di); width: var(--matrix-name); border-right: 2px solid var(--border); }
+.document-matrix thead tr > :nth-child(-n+2) { z-index: 2; background: var(--surface); vertical-align: bottom; }
+.document-matrix .matrix-document-heading { text-align: center; vertical-align: bottom; padding: .6rem .45rem; }
+.matrix-document-heading > span { display: inline-block; writing-mode: vertical-rl; transform: rotate(180deg); max-height: 15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.document-matrix .matrix-cell { text-align: center; padding: .6rem .4rem; }
+.matrix-status { display: inline-flex; align-items: center; justify-content: center; width: 1.8rem; height: 1.8rem; font-size: 1.1rem; font-weight: 750; border: 1px solid currentColor; border-radius: .3rem; }
+.matrix-complete { color: var(--success); background: color-mix(in srgb, var(--success) 12%, var(--surface-elevated)); }
+.matrix-pending { color: var(--warning); background: color-mix(in srgb, var(--warning) 12%, var(--surface-elevated)); }
+.matrix-na { color: var(--text-secondary); }
+@media (max-width: 800px) { .document-matrix { --matrix-name: 11.5rem; --matrix-di: 6.5rem; } }
+@media (max-width: 520px) { .document-matrix tr > :nth-child(2) { position: static; } }
+@media (forced-colors: active) { .matrix-status { color: CanvasText; background: Canvas; border-color: CanvasText; } }
+.document-matrix td[colspan] { position: static; width: auto; white-space: normal; }
+
+.document-matrix tr > :first-child { padding-inline: .65rem .35rem; }
+
+.cycle-reports td:first-child { white-space: nowrap; overflow-wrap: normal; }
+
+.cycle-reports .report-matrix-scroll { width: fit-content; max-width: 100%; }
+.report-toolbar-actions { display: flex; align-items: center; gap: .25rem; margin-left: auto; }
+
+.report-toolbar-actions .icon-action > svg { width: 1.6rem; height: 1.6rem; }
+.export-file-csv { --export-file-color: #007f42; }
+.export-file-pdf { --export-file-color: #c53b2d; }
+.export-file-paper { fill: #f8fafc; stroke: #607489; stroke-width: 1.2; }
+.export-file-fold { fill: #cbd5e1; stroke: #607489; stroke-width: 1; }
+.export-file-badge { fill: var(--export-file-color); stroke: none; }
+.export-file-text { fill: #fff; stroke: none; }
+@media (forced-colors: active) {
+  .export-file-icon { --export-file-color: ButtonText; }
+  .export-file-paper, .export-file-fold { fill: Canvas; stroke: CanvasText; }
+  .export-file-badge { fill: CanvasText; }
+  .export-file-text { fill: Canvas; }
+}
+
+.report-toolbar-actions .icon-action > svg:has(.export-file-icon) { width: 2rem; height: 2rem; }

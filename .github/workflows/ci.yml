@@ -73,6 +73,7 @@ jobs:
         run: |
           npm run test:expediente
           node scripts/test-expediente-layout.mjs
+          node scripts/test-cycle-report-pdf-layout.mjs
       - name: Synthetic expediente evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -115,6 +116,7 @@ jobs:
           npm run test:expediente:isolated
           npm run test:expediente
           node scripts/test-expediente-layout.mjs
+          node scripts/test-cycle-report-pdf-layout.mjs
       - name: Stop local platform
         if: always()
         run: npm run supabase:stop
