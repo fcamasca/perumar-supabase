@@ -7,19 +7,19 @@ export type ReportFilters = { cycle: string; kind: ReportKind; search: string; i
 export type MatrixColumn = { codigo: string; nombre: string }
 export type MatrixDocument = MatrixColumn & { estado: 'PENDIENTE' | 'CARGADO' | 'GENERADO' | null }
 export type ReportRow = {
-  matricula_id: string; codigo_alumno: string; apellido_paterno: string; apellido_materno: string
+  matricula_id: string; apellido_paterno: string; apellido_materno: string
   nombres: string; numero_di: string; codigo_matricula: string; matricula_estado: string
   aplicables: number; completados: number; pendientes: number; faltantes: string[]
   base: string; abonado: string; pendiente: string
   documentos: MatrixDocument[]
 }
 export const reportNames = ['Alumnos matriculados', 'Documentos pendientes', 'Saldos']
-const identity = 'matricula_id,codigo_alumno,apellido_paterno,apellido_materno,nombres,numero_di'
-const columns = [identity + ',codigo_matricula,matricula_estado', 'matricula_id,apellido_paterno,apellido_materno,nombres,numero_di,documentos', identity + ',codigo_matricula,base::text,abonado::text,pendiente::text']
+const identity = 'matricula_id,apellido_paterno,apellido_materno,nombres,numero_di'
+const columns = [identity + ',codigo_matricula,matricula_estado', identity + ',documentos', identity + ',codigo_matricula,base::text,abonado::text,pendiente::text']
 export const reportHeaders = [
-  ['Código alumno', 'Apellidos y nombres', 'Documento de identidad', 'Código matrícula', 'Estado matrícula'],
+  ['Doc. Identidad', 'Apellidos y nombres', 'Código matrícula', 'Estado matrícula'],
   ['Doc. Identidad', 'Apellidos y nombres'],
-  ['Código alumno', 'Apellidos y nombres', 'DI', 'Código matrícula', 'Base', 'Abonado', 'Saldo pendiente'],
+  ['Doc. Identidad', 'Apellidos y nombres', 'Código matrícula', 'Base', 'Abonado', 'Saldo pendiente'],
 ]
 export const reportName = (r: ReportRow) => `${r.apellido_paterno} ${r.apellido_materno}, ${r.nombres}`
 export const missingNames = (r: ReportRow) => r.aplicables === 0 ? 'Sin documentos aplicables' : r.pendientes === 0 ? 'Completo' : r.faltantes.join(', ')
@@ -47,9 +47,9 @@ export async function matrixColumns(client: SupabaseClient, cycle: string, signa
   return columns.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es') || a.codigo.localeCompare(b.codigo))
 }
 export function reportCells(r: ReportRow, kind: ReportKind, documents: MatrixColumn[] = []): string[] {
-  const common = [r.codigo_alumno, reportName(r), r.numero_di]
+  const common = [r.numero_di, reportName(r)]
   return kind === 0 ? [...common, r.codigo_matricula, r.matricula_estado === 'ACTIVO' ? 'Activa' : 'Anulada']
-    : kind === 1 ? [r.numero_di, reportName(r), ...documents.map(c => matrixLabel(r.documentos.find(d => d.codigo === c.codigo)!))]
+    : kind === 1 ? [...common, ...documents.map(c => matrixLabel(r.documentos.find(d => d.codigo === c.codigo)!))]
       : [...common, r.codigo_matricula, pen(r.base), pen(r.abonado), pen(r.pendiente)]
 }
 export function reportQuery(client: SupabaseClient, filters: ReportFilters, offset: number, size: number) {

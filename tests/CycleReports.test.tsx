@@ -1,12 +1,12 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, expect, it, vi } from 'vitest'
 import { CycleReports } from '../src/reports/CycleReports'
-import { csvCell, exportReport, checkMatrix, matrixColumns, matrixLabel, missingNames, reportCells, reportCsv, reportQuery, type ReportRow } from '../src/reports/reportData'
+import { csvCell, exportReport, checkMatrix, matrixColumns, matrixLabel, missingNames, reportCells, reportCsv, reportQuery, reportHeaders, type ReportKind, type ReportRow } from '../src/reports/reportData'
 const { client, access } = vi.hoisted(() => ({ client: { from: vi.fn() }, access: { roles: ['DIRECTOR_ACADEMICO'] } }))
 vi.mock('../src/security/SessionProvider', () => ({ useSession: () => ({ client, state: { userId: 'actor', roles: access.roles } }) }))
 const cycle = '11111111-1111-4111-8111-111111111111'
 const docs = [{ codigo: 'DI', nombre: 'Documento de identidad' }, { codigo: 'PSI', nombre: 'Certificado psicofísico' }, { codigo: 'FOTO', nombre: 'Foto del alumno' }, { codigo: 'RET', nombre: 'Retirado' }]
-const row: ReportRow = { matricula_id: 'internal-uuid', codigo_alumno: 'A-0000001', apellido_paterno: 'QUIROZ', apellido_materno: 'PÉREZ', nombres: 'JUAN', numero_di: '12345678', codigo_matricula: '2026-MA-001', matricula_estado: 'ACTIVO', aplicables: 3, completados: 1, pendientes: 2, faltantes: ['Documento de identidad', 'Certificado psicofísico'], documentos: docs.map((d, i) => ({ ...d, estado: i < 2 ? 'PENDIENTE' : i === 2 ? 'CARGADO' : null })), base: '100.00', abonado: '70.00', pendiente: '30.00' }
+const row: ReportRow & { codigo_alumno: string } = { matricula_id: 'internal-uuid', codigo_alumno: 'A-0000001', apellido_paterno: 'QUIROZ', apellido_materno: 'PÉREZ', nombres: 'JUAN', numero_di: '12345678', codigo_matricula: '2026-MA-001', matricula_estado: 'ACTIVO', aplicables: 3, completados: 1, pendientes: 2, faltantes: ['Documento de identidad', 'Certificado psicofísico'], documentos: docs.map((d, i) => ({ ...d, estado: i < 2 ? 'PENDIENTE' : i === 2 ? 'CARGADO' : null })), base: '100.00', abonado: '70.00', pendiente: '30.00' }
 let configuredDocs = docs
 let data: ReportRow[], failed = false, changedCount = false
 const queries: { select: string; eq: unknown[][]; or: string[]; range: number[]; orders: string[] }[] = []
@@ -37,10 +37,10 @@ it.each(['JUAN', 'QUIROZ PÉREZ', '12345678', 'a,b).or(id.neq.null)'])('sends qu
   expect(expression).toContain(JSON.stringify(`%${term.toUpperCase().split(/\s/)[0]}%`))
 })
 it('requests stable server pages and resets to page one on filter changes', async () => {
-  data = Array.from({ length: 31 }, (_, i) => ({ ...row, matricula_id: String(i), codigo_alumno: `A-${i}` }))
-  render(<CycleReports cycle={cycle}/>); await screen.findByText('A-29')
-  fireEvent.click(screen.getByRole('button', { name: 'Siguiente página' })); await screen.findByText('A-30')
-  expect(queries.at(-1)?.range).toEqual([30, 59]); expect(screen.queryByText('A-0')).not.toBeInTheDocument()
+  data = Array.from({ length: 31 }, (_, i) => ({ ...row, matricula_id: String(i), codigo_alumno: `A-${i}`, numero_di: String(20000000 + i) }))
+  render(<CycleReports cycle={cycle}/>); await screen.findByText('20000029')
+  fireEvent.click(screen.getByRole('button', { name: 'Siguiente página' })); await screen.findByText('20000030')
+  expect(queries.at(-1)?.range).toEqual([30, 59]); expect(screen.queryByText('20000000')).not.toBeInTheDocument()
   expect(queries.at(-1)?.orders).toEqual(['apellido_paterno', 'apellido_materno', 'nombres', 'matricula_id'])
   fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'JUAN' } }); await waitFor(() => expect(queries.at(-1)?.range).toEqual([0, 29]))
 })
@@ -85,19 +85,20 @@ it.each(['=1+1', '+SUM(A1)', '-1+2', '@SUM(1)', '  =1', '\t+1', '\r\n@1', '\u200
 })
 it('escapes Unicode, commas, quotes and newlines, includes BOM and no internal UUID', () => {
   const csv = reportCsv([{ ...row, nombres: 'NIÑO, "Ángel"\nDOS' }], 0)
-  expect(csv.startsWith('\uFEFF')).toBe(true); expect(csv).toContain('NIÑO, ""Ángel""\nDOS'); expect(csv).toContain('Código alumno'); expect(csv).not.toContain('internal-uuid')
+  expect(csv.startsWith('\uFEFF')).toBe(true); expect(csv).toContain('NIÑO, ""Ángel""\nDOS'); expect(csv).toContain('Doc. Identidad'); expect(csv).not.toContain('Código alumno'); expect(csv).not.toContain('internal-uuid')
 })
 it('neutralizes every persisted text column, including DI and document names', () => {
   const unsafe = [{ codigo: 'FORMULA', nombre: '@SUM(1)' }]
-  const csv = reportCsv([{ ...row, codigo_alumno: '=A1', apellido_paterno: '+P', numero_di: ' -42', documentos: [{ ...unsafe[0], estado: 'PENDIENTE' }] }], 1, unsafe)
+  const untrusted = { ...row, codigo_alumno: '=A1', apellido_paterno: '+P', numero_di: ' -42', documentos: [{ ...unsafe[0], estado: 'PENDIENTE' as const }] }
+  const csv = reportCsv([untrusted], 1, unsafe)
   for (const text of ["'+P", "' -42", "'@SUM(1)"]) expect(csv).toContain(text)
 })
 it('exports all filtered pages, not only the visible page, without UUIDs', async () => {
-  data = Array.from({ length: 501 }, (_, i) => ({ ...row, matricula_id: `private-${i}`, codigo_alumno: `A-${i}` }))
+  data = Array.from({ length: 501 }, (_, i) => ({ ...row, matricula_id: `private-${i}`, codigo_alumno: `A-${i}`, numero_di: String(20000000 + i) }))
   const csv = await exportReport(client as never, { cycle, kind: 0, search: 'JUAN', includeCancelled: false }, new AbortController().signal)
   expect(queries.map(q => q.range)).toEqual([[0, 499], [500, 999]])
   for (const q of queries) { expect(q.eq).toEqual([['ciclo_id', cycle], ['matricula_estado', 'ACTIVO']]); expect(q.or[0]).toContain('JUAN') }
-  expect(csv).toContain('A-500'); expect(csv).not.toContain('private-500')
+  expect(csv).toContain('20000500'); expect(csv).not.toContain('A-500'); expect(csv).not.toContain('private-500')
 })
 it('fails a complete CSV on any page error and honors cancellation without retry', async () => {
   failed = true
@@ -190,4 +191,14 @@ it('shows a query error without rendering a misleading matrix when configuration
   render(<CycleReports cycle={cycle}/>); fireEvent.click(screen.getByRole('tab', { name: 'Documentos pendientes' }))
   expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo consultar')
   expect(screen.queryByRole('img', { name: 'No aplica' })).not.toBeInTheDocument()
+})
+
+it.each([0, 1, 2] as ReportKind[])('uses identity/name first, without student code, in report and CSV %s', kind => {
+  expect(reportHeaders[kind].slice(0, 2)).toEqual(['Doc. Identidad', 'Apellidos y nombres'])
+  expect(reportCells(row, kind, docs).slice(0, 2)).toEqual(['12345678', 'QUIROZ PÉREZ, JUAN'])
+  const csv = reportCsv([row], kind, docs)
+  expect(csv).not.toContain(row.codigo_alumno); expect(csv).not.toContain('Código alumno')
+  expect(csv).toContain('"Doc. Identidad","Apellidos y nombres"')
+  reportQuery(client as never, { cycle, kind, search: '', includeCancelled: false }, 0, 30)
+  expect(queries.at(-1)?.select).not.toContain('codigo_alumno')
 })
