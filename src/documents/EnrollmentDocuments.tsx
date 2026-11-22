@@ -1,5 +1,6 @@
 import { DocumentMoreActions } from './DocumentMoreActions'
 import { PreviewHeader } from './PreviewHeader'
+import { PrintExpediente } from './PrintExpediente'
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useSession } from '../security/SessionProvider'
@@ -110,6 +111,7 @@ export function EnrollmentDocuments({
     [types, setTypes] = useState<{ id: string; nombre: string }[]>([])
   const [fileError, setFileError] = useState('')
   const [storedPreview, setStoredPreview] = useState<{ name: string; blob: Blob; historical: boolean } | null>(null), [storedPreviewUrl, setStoredPreviewUrl] = useState('')
+  const [printing, setPrinting] = useState(false)
   const [originalFile, setOriginalFile] = useState<File | null>(null), [optimizing, setOptimizing] = useState(false), [optimized, setOptimized] = useState(false), [imagePreview, setImagePreview] = useState('')
   const fileHintId = useId(), fileErrorId = useId()
   const [historyDoc, setHistoryDoc] = useState<AppliedDocument | null>(null),
@@ -422,6 +424,8 @@ export function EnrollmentDocuments({
     <section>
       {dialog}
       <h3>Expediente</h3>
+      {eligible && state.roles?.some(r => ['DIRECTOR_ACADEMICO', 'COORDINADOR_ACADEMICO'].includes(r)) && <button type="button" className="secondary" disabled={busy || blocked || loading} onClick={() => setPrinting(true)}>Imprimir expediente</button>}
+      {printing && <PrintExpediente cycle={cycleId} enrollments={[enrollment]} close={() => setPrinting(false)}/>}
       {summary && (
         <p role="status" className="document-summary">
           <span className="document-summary-pending"><strong>{summary.pendientes}</strong> {summary.pendientes === 1 ? 'pendiente' : 'pendientes'}</span>
