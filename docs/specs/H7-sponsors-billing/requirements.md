@@ -21,6 +21,18 @@ Las instrucciones humanas H7 iniciales y la resolución definitiva OQ001..005 su
 
 No OQ abiertas. El diseño técnico sigue sujeto a Gate 1 humano sobre SHA exacto.
 
+### Decisión humana Gate 1 — anulación y dependencias
+
+Reglas congeladas y obligatorias, trazadas por REQ-H7-008/011, DES-H7-004, TASK-H7-003/004 y TEST-H7-006/012:
+
+1. Una OS no puede anularse mientras esté asociada a alguna factura no anulada.
+2. Una factura no puede anularse mientras tenga aplicaciones vigentes de pagos CONFIRMADOS.
+3. No existen anulaciones en cascada.
+4. Para corregir esos casos, primero debe regularizarse/anularse el objeto dependiente conforme a sus propias reglas; la operación bloqueada no lo modifica automáticamente.
+5. Toda la historia se conserva, sin DELETE físico.
+
+Esta decisión congela estas reglas; no constituye aprobación global del Gate 1 ni autorización de construcción.
+
 ## Requisitos observables
 
 | ID | Contrato | Origen |

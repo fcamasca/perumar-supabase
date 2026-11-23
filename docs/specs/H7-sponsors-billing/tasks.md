@@ -8,8 +8,8 @@ OQ-H7-001..005 RESUELTAS humanamente, ninguna tarea técnica ejecutada por este 
 | --- | --- | --- | --- | --- | --- |
 | TASK-H7-001 | Revisión cuatro docs/decisiones y Gate 1 humano sobre SHA exacto. Resolver OQ no supone aprobación. | Humana | 001–015 | 001–008 | 001 |
 | TASK-H7-002 | Modelo aditivo seis tablas negocio + técnica PDF OS, constraints/serie-correlativo/índices/proyecciones sin estado financiero persistido. | 001 | 001–008,012,015 | 002–004,008 | 001–008,012,016 |
-| TASK-H7-003 | RPC OS/factura/workflow/anulación, historia/locks, solo Director anula. | 002 | 002–006,011–012 | 002–006 | 002–006,010–012 |
-| TASK-H7-004 | RPC transferencia banco/fecha/aplicaciones, idempotencia/concurrencia/saldo derivado/anulación. | 003 | 007–008,011–012 | 004–006 | 007–008,010–012 |
+| TASK-H7-003 | RPC OS/factura/workflow/anulación, historia/locks, solo Director anula. Aplicar decisión humana Gate 1: bloquear OS con alguna factura no anulada y factura con aplicaciones vigentes de pagos CONFIRMADOS; primero regularizar/anular dependientes por sus propias reglas, sin cascadas ni DELETE físico. | 002 | 002–006,008,011–012 | 002–006 | 002–006,010–012 |
+| TASK-H7-004 | RPC transferencia banco/fecha/aplicaciones, idempotencia/concurrencia/saldo derivado/anulación. Preservar toda la historia y exigir regularización/anulación explícita del dependiente, sin cascadas ni DELETE físico. | 003 | 007–008,011–012 | 004–006 | 007–012 |
 | TASK-H7-005 | Enmienda aditiva registrar_pago H4 bloquea patrocinado tras locks; historia/idempotencia/anulación/carrera H3 preservadas. RLS/grants/auditoría DB/API antes de UI. | 004 | 009,011–012 | 001,005–006 | 009–012 |
 | TASK-H7-006 | UX central patrocinador, serie-correlativo, diferencia confirmable, transferencia, bloqueo H4 y consulta matrícula. | 005 | 001–010 | 001–004,007 | 002–009,014 |
 | TASK-H7-007 | Reportes OS/facturas/pagos/beneficiarios y CSV sin deuda H4+H7 ni distribución por alumno/Ciclo. | 006 | 010,013 | 003,007 | 013–014 |

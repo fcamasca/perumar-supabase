@@ -52,7 +52,7 @@ Workflow manual adyacente hacia adelante EMITIDA → REGISTRADA_PATROCINADOR →
 
 Pago solo facturas propias/no anuladas en PENDIENTE_DESEMBOLSO. Transferencia, banco y fecha obligatorios. Fecha_efectiva <= hoy America/Lima y >= emisión de todas aplicadas; referencia opcional. No exigir fecha >= etapa pendiente: decisión humana solo fija emisión. created_at real conserva cuándo registró Perú Mar, sin hora efectiva nueva.
 
-Parciales/múltiples conservan workflow pendiente; anular pago cambia proyección financiera sin retroceso manual. Solo Director anula OS/factura/pago con motivo. Consistencia propuesta: OS con factura vigente no anulable, factura con pago vigente no anulable, sin cascadas/borrado; historia anulada preservada. Estados académicos posteriores no impiden cobrar factura válida. Anular OS conserva versiones PDF autorizadas.
+Parciales/múltiples conservan workflow pendiente; anular pago cambia proyección financiera sin retroceso manual. Solo Director anula OS/factura/pago con motivo. **Decisión humana Gate 1, contrato obligatorio:** una OS no puede anularse si está asociada a alguna factura no anulada; una factura no puede anularse si tiene aplicaciones vigentes de pagos CONFIRMADOS. No existen anulaciones en cascada. Primero debe regularizarse/anularse el objeto dependiente conforme a sus propias reglas; la operación bloqueada no lo modifica automáticamente. Toda la historia se conserva, sin DELETE físico. Estados académicos posteriores no impiden cobrar factura válida. Anular OS conserva versiones PDF autorizadas.
 
 ## DES-H7-005 — RPC, locks e idempotencia
 
