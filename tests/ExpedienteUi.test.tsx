@@ -5,11 +5,13 @@ import { EnrollmentDocuments } from '../src/documents/EnrollmentDocuments'
 import { BulkDocumentRetirement } from '../src/documents/BulkDocumentRetirement'
 import { DocumentTypes } from '../src/documents/DocumentTypes'
 import { DocumentMoreActions } from '../src/documents/DocumentMoreActions'
-const { client, optimize } = vi.hoisted(() => ({
+const { client, optimize, word } = vi.hoisted(() => ({
   optimize: vi.fn(),
+  word: vi.fn(),
   client: { from: vi.fn(), rpc: vi.fn(), functions: { invoke: vi.fn() } },
 }))
 vi.mock('../src/documents/optimizeImage', () => ({ optimizeImage: optimize }))
+vi.mock('../src/documents/wordDownload', () => ({ buildWordDownload: word }))
 vi.mock('../src/security/SessionProvider', () => ({
   useSession: () => ({ client, state: { userId: 'actor', roles: ['COORDINADOR_ACADEMICO'] } }),
 }))
@@ -36,6 +38,7 @@ const applied = {
 }
 beforeEach(() => {
   optimize.mockReset()
+  word.mockReset()
   client.rpc.mockReset()
   client.functions.invoke.mockReset()
   tables = {
@@ -489,4 +492,39 @@ it('explains why mandatory documents cannot be individually withdrawn', () => {
   fireEvent.click(screen.getByRole('button', { name: 'Más acciones de DNI' }))
   expect(screen.getByRole('menuitem')).toBeDisabled()
   expect(screen.getByRole('menu')).toHaveTextContent('no puede retirarse individualmente')
+})
+
+it('offers a Word per current generated document only in individual consultation and downloads on explicit action', async () => {
+  tables.matricula_documento = [{ ...applied, codigo: 'DECLARACION_JURADA', origen: 'GENERADO', estado: 'GENERADO', nombre: 'Declaración jurada', ultimo_archivo_confirmado_id: 'confirmed' }]
+  tables.matricula_documento_archivo = [{ id: 'confirmed', matricula_documento_id: 'doc', plantilla_version: 'h6-2:DECLARACION_JURADA', fuente_base_fingerprint: 'source', datos_generacion: { capitania_nombre: 'PISCO' } }]
+  word.mockResolvedValue(new Blob(['word'], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }))
+  const create = vi.fn(() => 'blob:word'), revoke = vi.fn()
+  vi.stubGlobal('URL', class extends URL { static createObjectURL = create; static revokeObjectURL = revoke })
+  const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+  const view = render(<EnrollmentDocuments allowWord enrollment="enrollment" cycleId="cycle" enrollmentState="ACTIVO" cycleState="PROGRAMADO" />)
+  try {
+    fireEvent.click(await screen.findByRole('button', { name: 'Más acciones de Declaración jurada' }))
+    const action = screen.getByRole('menuitem', { name: 'Descargar Word (.docx)' })
+    await waitFor(() => expect(action).toBeEnabled())
+    expect(word).not.toHaveBeenCalled(); fireEvent.click(action)
+    await waitFor(() => expect(click).toHaveBeenCalledOnce())
+    expect(word).toHaveBeenCalledExactlyOnceWith(client, 'enrollment', 'doc', 'confirmed', expect.any(AbortSignal))
+    expect(await screen.findByText(/Las ediciones de esa copia/)).toBeVisible()
+    await new Promise(resolve => setTimeout(resolve, 1100)); expect(revoke).toHaveBeenCalledWith('blob:word')
+  } finally { view.unmount(); click.mockRestore(); vi.unstubAllGlobals() }
+})
+
+it.each([false, true])('hides Word outside consultation or for uploaded files: allowWord=%s', async allowWord => {
+  if (!allowWord) tables.matricula_documento = [{ ...applied, codigo: 'DECLARACION_JURADA', origen: 'GENERADO', estado: 'GENERADO' }]
+  render(<EnrollmentDocuments allowWord={allowWord} enrollment="enrollment" cycleId="cycle" enrollmentState="ACTIVO" cycleState="PROGRAMADO" />)
+  fireEvent.click(await screen.findByRole('button', { name: 'Más acciones de DOCUMENTO DE IDENTIDAD' }))
+  expect(screen.queryByRole('menuitem', { name: 'Descargar Word (.docx)' })).not.toBeInTheDocument()
+})
+
+it('disables Word for generated documents that need regeneration', async () => {
+  tables.matricula_documento = [{ ...applied, codigo: 'DECLARACION_JURADA', origen: 'GENERADO', estado: 'GENERADO', ultimo_archivo_confirmado_id: 'confirmed' }]
+  tables.matricula_documento_archivo = [{ id: 'confirmed', plantilla_version: 'h6-2:DECLARACION_JURADA', fuente_base_fingerprint: 'old', datos_generacion: { capitania_nombre: 'PISCO' } }]
+  render(<EnrollmentDocuments allowWord enrollment="enrollment" cycleId="cycle" enrollmentState="ACTIVO" cycleState="PROGRAMADO" />)
+  fireEvent.click(await screen.findByRole('button', { name: 'Más acciones de DOCUMENTO DE IDENTIDAD' }))
+  expect(screen.getByRole('menuitem', { name: 'Descargar Word (.docx)' })).toBeDisabled(); expect(word).not.toHaveBeenCalled()
 })

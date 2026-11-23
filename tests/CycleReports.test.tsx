@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { beforeEach, expect, it, vi } from 'vitest'
+import { beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { CycleReports } from '../src/reports/CycleReports'
 import { csvCell, exportReport, checkMatrix, matrixColumns, matrixLabel, missingNames, reportCells, reportCsv, reportQuery, reportHeaders, type ReportKind, type ReportRow } from '../src/reports/reportData'
 const { client, access } = vi.hoisted(() => ({ client: { from: vi.fn() }, access: { roles: ['DIRECTOR_ACADEMICO'] } }))
@@ -10,6 +10,9 @@ const row: ReportRow & { codigo_alumno: string } = { matricula_id: 'internal-uui
 let configuredDocs = docs
 let data: ReportRow[], failed = false, changedCount = false
 const queries: { select: string; eq: unknown[][]; or: string[]; range: number[]; orders: string[] }[] = []
+// These actions test actual PDF content/preview, not cold module-fetch latency under parallel load.
+// Load outside the per-action deadline so a timed-out first import cannot outlive URL mocks.
+beforeAll(async () => { await import('../src/reports/cycleReportPdf') })
 beforeEach(() => {
   data = [row, { ...row, matricula_id: 'cancelled', matricula_estado: 'ANULADO' }]; failed = false; changedCount = false; configuredDocs = docs; access.roles = ['DIRECTOR_ACADEMICO']; queries.length = 0; client.from.mockReset()
   client.from.mockImplementation((table: string) => {

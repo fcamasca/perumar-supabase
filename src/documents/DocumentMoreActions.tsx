@@ -8,12 +8,16 @@ export function DocumentMoreActions({
   busy,
   onRetire,
   onHistory,
+  onWord,
+  wordDisabled = false,
 }: {
   name: string
   mandatory: boolean
   busy: boolean
   onRetire?: () => void
   onHistory?: () => void
+  onWord?: () => void
+  wordDisabled?: boolean
 }) {
   const id = useId(),
     trigger = useRef<HTMLButtonElement>(null),
@@ -25,7 +29,7 @@ export function DocumentMoreActions({
   }
   function open() {
     const box = trigger.current!.getBoundingClientRect()
-    const height = onHistory && onRetire ? 114 : 78
+    const height = 42 + [onHistory, onRetire, onWord].filter(Boolean).length * 36
     setPosition({
       top: box.bottom + height > window.innerHeight ? Math.max(8, box.top - height) : box.bottom + 4,
       left: Math.max(8, Math.min(window.innerWidth - 228, box.right - 220)),
@@ -107,6 +111,7 @@ export function DocumentMoreActions({
             }}
           >
             {onHistory && <button type="button" role="menuitem" onClick={() => { close(true); onHistory() }}>Historial</button>}
+            {onWord && <button type="button" role="menuitem" disabled={wordDisabled} title={wordDisabled ? 'Genera o regenera el documento vigente antes de descargar Word.' : 'Copia editable; los cambios en Word no modifican el sistema.'} onClick={() => { close(true); onWord() }}>Descargar Word (.docx)</button>}
             {onRetire && <button
               type="button"
               role="menuitem"

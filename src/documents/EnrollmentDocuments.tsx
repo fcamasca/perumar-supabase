@@ -82,6 +82,7 @@ export function EnrollmentDocuments({
   cycleState,
   blocked = false,
   onBusyChange,
+  allowWord = false,
 }: {
   enrollment: string
   cycleId: string
@@ -89,6 +90,7 @@ export function EnrollmentDocuments({
   cycleState: string
   blocked?: boolean
   onBusyChange?: (v: boolean) => void
+  allowWord?: boolean
 }) {
   const { client, state } = useSession(),
     [rows, setRows] = useState<AppliedDocument[]>([]),
@@ -112,6 +114,7 @@ export function EnrollmentDocuments({
   const [fileError, setFileError] = useState('')
   const [storedPreview, setStoredPreview] = useState<{ name: string; blob: Blob; historical: boolean } | null>(null), [storedPreviewUrl, setStoredPreviewUrl] = useState('')
   const [printing, setPrinting] = useState(false)
+  const wordAbort = useRef<AbortController | null>(null)
   const [originalFile, setOriginalFile] = useState<File | null>(null), [optimizing, setOptimizing] = useState(false), [optimized, setOptimized] = useState(false), [imagePreview, setImagePreview] = useState('')
   const fileHintId = useId(), fileErrorId = useId()
   const [historyDoc, setHistoryDoc] = useState<AppliedDocument | null>(null),
@@ -150,6 +153,7 @@ export function EnrollmentDocuments({
     mounted.current = true
     return () => {
       mounted.current = false
+      wordAbort.current?.abort()
     }
   }, [])
   useEffect(() => {
@@ -370,6 +374,21 @@ export function EnrollmentDocuments({
       return historical ? 'Descarga histórica iniciada.' : 'Descarga iniciada.'
     })
   }
+  async function downloadWord(d: AppliedDocument) {
+    if (!allowWord || !eligible || blocked || d.origen !== 'GENERADO' || !d.ultimo_archivo_confirmado_id) return
+    await operation(async () => {
+      const controller = new AbortController(); wordAbort.current = controller
+      try {
+        const { buildWordDownload } = await import('./wordDownload')
+        const blob = await buildWordDownload(client, enrollment, d.id, d.ultimo_archivo_confirmado_id!, controller.signal)
+        if (!mounted.current || controller.signal.aborted) return ''
+        const url = URL.createObjectURL(blob), link = document.createElement('a')
+        link.href = url; link.download = `${d.codigo.toLowerCase()}.docx`; link.click()
+        setTimeout(() => URL.revokeObjectURL(url), 1000)
+        return 'Word descargado. Las ediciones de esa copia no modifican el documento ni los datos del sistema.'
+      } finally { wordAbort.current = null }
+    })
+  }
   async function previewStoredFile(d: AppliedDocument, id: string, historical: boolean) {
     await operation(async () => {
       const blob = await invoke('expediente-descargar', { documento_id: d.id, archivo_id: id, historico: historical })
@@ -539,6 +558,8 @@ export function EnrollmentDocuments({
                             mandatory={d.obligatorio}
                             busy={busy}
                             onHistory={() => { setHistoryDoc(d); setFilePage(0) }}
+                            onWord={allowWord && eligible && d.origen === 'GENERADO' && d.activo && d.contexto_vigente && state.roles?.some(r => ['DIRECTOR_ACADEMICO', 'COORDINADOR_ACADEMICO'].includes(r)) ? () => void downloadWord(d) : undefined}
+                            wordDisabled={blocked || !d.ultimo_archivo_confirmado_id || d.estado !== 'GENERADO' || status !== ''}
                             onRetire={canMutate ? () => void withdraw(d) : undefined}
                           />
                       </div>
