@@ -31,6 +31,7 @@
     "test:payments": "node scripts/test-payments.mjs",
     "test:payments:rollback": "node scripts/test-payments-rollback.mjs",
     "test:payments:isolated": "node scripts/test-payments-isolated.mjs",
+    "test:billing:core": "node scripts/test-billing-core.mjs",
     "test:expediente:isolated": "node scripts/test-expediente-isolated.mjs",
     "test:pdf:rollback": "node scripts/test-pdf-rollback.mjs",
     "test:pdf": "node scripts/test-pdf.mjs",

@@ -27,8 +27,12 @@ try {
   const conflictFunctions="select json_object_agg(n.nspname||'.'||p.proname,pg_get_functiondef(p.oid)) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where (n.nspname='private' and p.proname='require_version') or (n.nspname='public' and p.proname in ('cambiar_estado_ciclo','registrar_pago','anular_pago'));"
   const definitionsBefore=JSON.parse(sql(conflictFunctions))
   sql(readFileSync('supabase/migrations/20261109050000_logical_conflicts_pt409.sql','utf8'))
+  // Preserve the later H7 eligibility amendment while replaying the historical error migration.
+  sql(readFileSync('supabase/migrations/20261123030000_h7_private_payment_eligibility.sql','utf8'))
   const definitionsAfter=JSON.parse(sql(conflictFunctions))
-  for(const [name,definition] of Object.entries(definitionsBefore))assert.equal(definitionsAfter[name].replaceAll('\r\n','\n'),definition.replaceAll('\r\n','\n').replaceAll("errcode='40001'","errcode='PT409'"),'Only the deliberate error contract may change')
+  const withoutH7Eligibility = definition => definition.replaceAll('\r\n','\n').replace(" if enrollment.empresa_patrocinadora_id is not null then raise exception using errcode='23514',message='PAYMENT_ENROLLMENT_SPONSORED'; end if;\n",'')
+  for(const [name,definition] of Object.entries(definitionsBefore))assert.equal(withoutH7Eligibility(definitionsAfter[name]),withoutH7Eligibility(definition).replaceAll("errcode='40001'","errcode='PT409'"),'Only deliberate error contracts and the explicit H7 eligibility amendment may change')
+  assert.ok(definitionsAfter['public.registrar_pago'].includes('PAYMENT_ENROLLMENT_SPONSORED'))
   assert.equal(sql("select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname in ('public','private') and p.prosrc ~* 'errcode[[:space:]]*=[[:space:]]*''40001''';"),'0')
   console.log('Logical conflicts PT409: PASSED (effective definitions contain no deliberate 40001; function contracts otherwise identical)')
   // H6.1 read projection depends on this H4 view. Replay in dependency order, only in this disposable DB.
