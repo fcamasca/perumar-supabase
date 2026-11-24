@@ -92,3 +92,25 @@ Validaciones de esta corrección exclusivamente:
 - SQL/RPC/RLS, migraciones y tests DB: sin cambios. **No se ejecutaron de nuevo las186 comprobaciones DB ni la regresión completa H1–H6.**
 
 El commit utiliza `[skip ci]` para impedir que el workflow de push dispare las suites DB excluidas por instrucción humana. No se atribuye CI completa SUCCESS a este fix; los resultados son los chequeos focalizados locales anteriores. Sin pruebas humanas/capturas ni Gate 2; demás residuales permanecen.
+
+## Enmienda MVP — empresa patrocinadora única por Ciclo
+
+Base `a0c4abfe88f21879672f491bf96f9347f21685af`. Regla humana nueva trazada en implementation-log; los resultados anteriores no se atribuyen automáticamente al nuevo contrato.
+
+Validación focalizada DB: `node scripts/test-cycle-sponsor.mjs` — PASSED. Clona únicamente esquema y referencias locales a una base desechable; crea actores/alumnos/empresas sintéticos y reconstruye solo las cinco definiciones previas afectadas para probar la actualización. No copia alumnos humanos ni resetea el stack; no reconstruye ni ejecuta toda la suite H1–H6. Pruebas SQL de RPC/guards con actor funcional sintético; no equivale a una ejecución hospedada/JWT completa.
+
+Cobertura: guardar Ciclo con/sin empresa; nueva matrícula heredada y NULL; traslado con cambio/retirada de empresa; cambio y retirada en Ciclo sincronizan; input legado contradictorio no es autoridad; guard rechaza contradicción; pago H4 nuevo bloqueado con patrocinador y permitido sin él; recuperación de pago histórico intacta; OS solo admite empresa del Ciclo y conserva historia tras cambiar patrocinio. Añade sincronización de referencia en matrícula anulada sin alterar historia, rollback completo de Ciclo/matrículas/auditoría por fallo de sincronización y rechazo atómico del backfill ambiguo. Los problemas iniciales del arnés aislado se corrigieron antes de la pasada final satisfactoria.
+
+El backfill y el nuevo contrato se probaron en base desechable. Preflight local: ninguna ambigüedad multiempresa; un Ciclo con empresa y dos matrículas activas NULL que se normalizarán cuando se aplique la migración. No se modificaron los datos del entorno habitual.
+
+Los fixtures de preparación de patrocinio del runner core H7 y de SQL H4/H5 se actualizan al nuevo mando por Ciclo para una futura ejecución integral. No se ejecutaron las 186 comprobaciones core, carreras 70+60, suites PDF/Expediente ni regresión completa H1–H6. No se les atribuye PASSED en este checkpoint.
+
+CI completa diferida por instrucción humana; publicación `[skip ci]`. Build no repetido: sin dependencias nuevas, cambios de imports ni assets; validación frontend por tests afectados y typecheck. Residuales previos permanecen: hosted Edge/PostgREST no probado directamente; CPU/memoria no medidas; forced-colors real NO VERIFICADO; bundle >500kB; limpieza/conciliación manual y purga H9/release. Gate 2 H7 PENDIENTE, sin acceptance/merge, PDF OS, reportes o SUNAT.
+
+Validaciones frontend del checkpoint:
+
+- `vitest run tests/AcademicPages.test.tsx tests/EnrollmentPages.test.tsx tests/Billing.test.tsx --maxWorkers=1`: **180/180 PASSED**, tres archivos directamente afectados. Incluye guardado de empresa/NULL en Ciclo, fallo de carga del selector sin guardar un NULL silencioso, patrocinio heredado de solo lectura y filtro de Ciclos de OS.
+- `npm run lint`: PASSED.
+- `npm run typecheck`: PASSED.
+- `node --check scripts/test-cycle-sponsor.mjs` y `node --check scripts/test-billing-core.mjs`: PASSED; el último es solo sintaxis, no ejecución de sus comprobaciones DB.
+- `git diff --check`: PASSED.

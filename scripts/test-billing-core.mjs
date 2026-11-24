@@ -39,7 +39,8 @@ try {
  const company=json(asActor(f.actor,`select to_jsonb(public.guardar_empresa_patrocinadora('{"ruc":"20777777777","razon_social":"H7 SYNTHETIC"}'::jsonb))`))
  const enroll=id=>json(`select to_jsonb(m) from public.matricula m where id='${id}'`)
  const version=(table,id)=>sql(`select updated_at from public.${table} where id='${id}'`)
- const sponsor=(companyId=company.id)=>runActor(`select public.editar_matricula(${j({id:f.enrollment,expected_updated_at:enroll(f.enrollment).updated_at,empresa_patrocinadora_id:companyId})})`)
+ const cycleSponsorPayload=(fixture,companyId)=>{const c=json(`select to_jsonb(c) from public.ciclo c where id='${fixture.cycle}'`);return Object.fromEntries(['id','carrera_id','fecha_inicio','fecha_fin','nombre_promocion','departamento_id','provincia_id','distrito_id','capitania_id'].map(k=>[k,c[k]]).concat([['expected_updated_at',c.updated_at],['empresa_patrocinadora_id',companyId]]))}
+ const sponsor=(companyId=company.id)=>runActor(`select public.guardar_ciclo(${j(cycleSponsorPayload(f,companyId))})`)
  const h4Payload=()=>({matricula_id:f.enrollment,expected_matricula_updated_at:enroll(f.enrollment).updated_at,idempotency_key:randomUUID(),importe:'1',medio_pago_id:sql("select v.id from public.catalogo_valor v join public.catalogo c on c.id=v.catalogo_id where c.codigo='MEDIO_PAGO' and v.codigo='EFECTIVO'"),aplicaciones:[{matricula_cargo_id:sql(`select id from public.matricula_cargo where matricula_id='${f.enrollment}' and activo limit 1`),importe:'1'}]})
  const historical=h4Payload()
  const oldPayment=json(asActor(f.actor,`select public.registrar_pago(${j(historical)})`))
@@ -191,9 +192,9 @@ try {
  assert.ok(['23514','PT409','40001'].includes(httpRace.find(r=>r.status!==200).data.code));checks++
  // H3 sponsor assignment vs new H4 payment uses only the established academic lock order.
  sponsor(null)
- const h4=h4Payload(),e=enroll(f.enrollment)
- const h3p={id:f.enrollment,expected_updated_at:e.updated_at,empresa_patrocinadora_id:company.id}
- const assignRace=await race(`select id from public.ciclo where id='${f.cycle}' for update`,`select public.registrar_pago(${j(h4)})`,`select public.editar_matricula(${j(h3p)})`)
+ const h4=h4Payload()
+ const h3p=cycleSponsorPayload(f,company.id)
+ const assignRace=await race(`select id from public.ciclo where id='${f.cycle}' for update`,`select public.registrar_pago(${j(h4)})`,`select public.guardar_ciclo(${j(h3p)})`)
  check(assignRace.filter(r=>r.ok).length,1,'H3/H4 exactly one concurrent decision')
  const afterRace=enroll(f.enrollment)
  if(afterRace.empresa_patrocinadora_id)check(sql(`select count(*) from public.pago where idempotency_key='${h4.idempotency_key}'`),'0')
@@ -208,13 +209,13 @@ try {
  // Invoice uniqueness is global, OS uniqueness is scoped to sponsor; historical coverage is not repriced.
  const f2=fixture()
  const company2=json(asActor(f2.actor,`select to_jsonb(public.guardar_empresa_patrocinadora('{"ruc":"20666666666","razon_social":"H7 SECOND"}'::jsonb))`))
- sql(asActor(f2.actor,`select public.editar_matricula(${j({id:f2.enrollment,expected_updated_at:enroll(f2.enrollment).updated_at,empresa_patrocinadora_id:company2.id})})`))
+ sql(asActor(f2.actor,`select public.guardar_ciclo(${j(cycleSponsorPayload(f2,company2.id))})`))
  const osOther=await rpc('registrar_orden_servicio',{p:{...osPayload('000123','100'),empresa_patrocinadora_id:company2.id,ciclo_id:f2.cycle,expected_ciclo_updated_at:version('ciclo',f2.cycle),matriculas:[{id:f2.enrollment,expected_updated_at:enroll(f2.enrollment).updated_at}]}})
  await fail('registrar_factura_patrocinador',{p:{...invoicePayload('000456','100',[osOther]),empresa_patrocinadora_id:company2.id}},'23505')
  await fail('registrar_factura_patrocinador',{p:invoicePayload('200001','100',[osOther])},'23514')
  await fail('registrar_pago_patrocinador',{p:{...payPayload([[invR2,'1']],'1'),empresa_patrocinadora_id:company2.id}},'23514')
  const historicCoverage=sql(`select to_jsonb(o) from public.orden_servicio o where id='${osOther.id}'`)
- sql(asActor(f2.actor,`select public.editar_matricula(${j({id:f2.enrollment,expected_updated_at:enroll(f2.enrollment).updated_at,empresa_patrocinadora_id:company.id})})`))
+ sql(asActor(f2.actor,`select public.guardar_ciclo(${j(cycleSponsorPayload(f2,company.id))})`))
  const target=json(asActor(f2.actor,`select to_jsonb(public.guardar_ciclo(jsonb_build_object('carrera_id',c.carrera_id,'departamento_id',c.departamento_id,'provincia_id',c.provincia_id,'distrito_id',c.distrito_id,'capitania_id',c.capitania_id,'fecha_inicio','2039-01-01','fecha_fin','2039-02-01'))) from public.ciclo c where id='${f2.cycle}'`))
  const configured=json(asActor(f2.actor,`select to_jsonb(public.guardar_ciclo_tarifas('${target.id}','${target.updated_at}',(select jsonb_agg(jsonb_build_object('tarifa_id',tarifa_id,'importe',importe::text,'obligatorio',obligatorio::text)) from public.ciclo_tarifa where ciclo_id='${f2.cycle}' and activo)))`))
  sql(asActor(f2.actor,`select public.editar_matricula(${j({id:f2.enrollment,expected_updated_at:enroll(f2.enrollment).updated_at,ciclo_id:target.id,expected_ciclo_updated_at:configured.updated_at})})`))

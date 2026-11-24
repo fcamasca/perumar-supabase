@@ -83,16 +83,25 @@ do $$ declare actor uuid:=gen_random_uuid(); coordinator uuid:=gen_random_uuid()
  select * into second_pay from jsonb_populate_record(null::public.pago,response);
  select * into e from public.matricula where id=e.id;
  company:=public.guardar_empresa_patrocinadora(jsonb_build_object('ruc','20999999999','razon_social','H4 SYNTHETIC'));
- e:=public.editar_matricula(jsonb_build_object('id',e.id,'expected_updated_at',e.updated_at,'empresa_patrocinadora_id',company.id));
+ -- Sponsor setup now follows Cycle authority; financial/source assertions below stay unchanged.
+ perform public.guardar_ciclo(jsonb_build_object('id',cy.id,'expected_updated_at',cy.updated_at,'carrera_id',cy.carrera_id,'fecha_inicio',cy.fecha_inicio,'fecha_fin',cy.fecha_fin,'nombre_promocion',cy.nombre_promocion,'departamento_id',cy.departamento_id,'provincia_id',cy.provincia_id,'distrito_id',cy.distrito_id,'capitania_id',cy.capitania_id,'empresa_patrocinadora_id',company.id)) from public.ciclo cy where cy.id=e.ciclo_id;
+ select * into e from public.matricula where id=e.id;
+ select * into c from public.ciclo where id=c.id;
  response:=public.registrar_pago(sponsored_payload);
  if (response->>'id')::uuid<>second_pay.id then raise exception 'Historical sponsored replay duplicated payment';end if;
  begin perform public.registrar_pago(sponsored_payload||jsonb_build_object('expected_matricula_updated_at',e.updated_at,'idempotency_key',gen_random_uuid()));raise exception 'New sponsored private payment accepted';exception when check_violation then if sqlerrm<>'PAYMENT_ENROLLMENT_SPONSORED' then raise;end if;end;
  company:=public.guardar_empresa_patrocinadora(jsonb_build_object('ruc','20888888888','razon_social','H4 SYNTHETIC SECOND'));
- e:=public.editar_matricula(jsonb_build_object('id',e.id,'expected_updated_at',e.updated_at,'empresa_patrocinadora_id',company.id));
+ -- Sponsor setup now follows Cycle authority; financial/source assertions below stay unchanged.
+ perform public.guardar_ciclo(jsonb_build_object('id',cy.id,'expected_updated_at',cy.updated_at,'carrera_id',cy.carrera_id,'fecha_inicio',cy.fecha_inicio,'fecha_fin',cy.fecha_fin,'nombre_promocion',cy.nombre_promocion,'departamento_id',cy.departamento_id,'provincia_id',cy.provincia_id,'distrito_id',cy.distrito_id,'capitania_id',cy.capitania_id,'empresa_patrocinadora_id',company.id)) from public.ciclo cy where cy.id=e.ciclo_id;
+ select * into e from public.matricula where id=e.id;
+ select * into c from public.ciclo where id=c.id;
  if (select matricula_id from public.pago where id=second_pay.id)<>e.id or (select matricula_cargo_id from public.pago_aplicacion where pago_id=second_pay.id)<>cargo_id then raise exception 'Sponsor edit reassigned financial history';end if;
  perform public.anular_pago(second_pay.id,second_pay.updated_at,'SYNTHETIC');
  select * into e from public.matricula where id=e.id;
- e:=public.editar_matricula(jsonb_build_object('id',e.id,'expected_updated_at',e.updated_at,'empresa_patrocinadora_id',null));
+ -- Sponsor setup now follows Cycle authority; financial/source assertions below stay unchanged.
+ perform public.guardar_ciclo(jsonb_build_object('id',cy.id,'expected_updated_at',cy.updated_at,'carrera_id',cy.carrera_id,'fecha_inicio',cy.fecha_inicio,'fecha_fin',cy.fecha_fin,'nombre_promocion',cy.nombre_promocion,'departamento_id',cy.departamento_id,'provincia_id',cy.provincia_id,'distrito_id',cy.distrito_id,'capitania_id',cy.capitania_id,'empresa_patrocinadora_id',null)) from public.ciclo cy where cy.id=e.ciclo_id;
+ select * into e from public.matricula where id=e.id;
+ select * into c from public.ciclo where id=c.id;
  target_cycle:=public.guardar_ciclo(jsonb_build_object('carrera_id',career.id,'fecha_inicio','2038-02-01','fecha_fin','2038-02-02','departamento_id',p->>'domicilio_departamento_id','provincia_id',p->>'domicilio_provincia_id','distrito_id',p->>'domicilio_distrito_id','capitania_id',(select id from public.capitania where active limit 1)));
  target_cycle:=public.guardar_ciclo_tarifas(target_cycle.id,target_cycle.updated_at,jsonb_build_array(jsonb_build_object('tarifa_id',(select tarifa_id from public.matricula_cargo where id=cargo_id),'importe','100','obligatorio','true')));
  other_enrollment:=public.registrar_matricula(jsonb_build_object('alumno_id',a.id,'expected_alumno_updated_at',a.updated_at,'ciclo_id',target_cycle.id,'expected_ciclo_updated_at',target_cycle.updated_at));

@@ -15,11 +15,11 @@ type CarreraDicapi = { url_resolucion_malla: string; codigo_curso_dicapi: string
 const blankDicapi: CarreraDicapi = { url_resolucion_malla:'',codigo_curso_dicapi:'',resolucion_malla_curricular:'',fecha_resolucion_malla:'',resolucion_autorizacion_centro:'',observaciones_normativas:'' }
 type Carrera = Materia & Partial<CarreraDicapi> & { sigla: string; modalidad_id: string | null; con_experiencia: boolean }
 type Valor = { id: string; catalogo_id: string; codigo: string; nombre: string; activo: boolean }
-type Ciclo = { id: string; carrera_id: string; codigo_ciclo: string; fecha_inicio: string; fecha_fin: string; nombre_promocion: string | null; departamento_id: string; provincia_id: string; distrito_id: string; capitania_id: string; estado_codigo: string; updated_at: string }
+type Ciclo = { empresa_patrocinadora_id: string | null; id: string; carrera_id: string; codigo_ciclo: string; fecha_inicio: string; fecha_fin: string; nombre_promocion: string | null; departamento_id: string; provincia_id: string; distrito_id: string; capitania_id: string; estado_codigo: string; updated_at: string }
 type Relacion = { id: string; materia_id: string; activo: boolean; origen: string; motivo_inactivacion: string | null }
 const materiaColumns = 'id,nombre,descripcion,active,updated_at'
 const carreraColumns = `${materiaColumns},sigla,modalidad_id,con_experiencia,codigo_curso_dicapi,resolucion_malla_curricular,fecha_resolucion_malla,resolucion_autorizacion_centro,observaciones_normativas,url_resolucion_malla`
-const cicloColumns = 'id,carrera_id,codigo_ciclo,fecha_inicio,fecha_fin,nombre_promocion,departamento_id,provincia_id,distrito_id,capitania_id,estado_codigo,updated_at'
+const cicloColumns = 'id,carrera_id,codigo_ciclo,fecha_inicio,fecha_fin,nombre_promocion,departamento_id,provincia_id,distrito_id,capitania_id,empresa_patrocinadora_id,estado_codigo,updated_at'
 
 export function academicError(error: { code?: string; message?: string } | null, entity: 'Asignatura' | 'Curso' | 'Ciclo' = 'Ciclo'): string {
   if(error?.message?.startsWith('PAYMENT_')) return paymentError(error)
@@ -222,7 +222,7 @@ export function Carreras() {
 }
 
 type CicloDraft = Omit<Ciclo, 'id' | 'codigo_ciclo' | 'estado_codigo' | 'updated_at'>
-const blankCiclo: CicloDraft = { carrera_id: '', fecha_inicio: '', fecha_fin: '', nombre_promocion: '', departamento_id: '', provincia_id: '', distrito_id: '', capitania_id: '' }
+const blankCiclo: CicloDraft = { empresa_patrocinadora_id: null, carrera_id: '', fecha_inicio: '', fecha_fin: '', nombre_promocion: '', departamento_id: '', provincia_id: '', distrito_id: '', capitania_id: '' }
 export function Ciclos({initialCycleId}:{initialCycleId?:string}={}) {
   const [open, setOpen] = useState(false), [readOnly, setReadOnly] = useState(true), [page, setPage] = useState(0), [tab, setTab] = useState(0)
   useListFocus(open, 'Ciclos')
@@ -239,6 +239,8 @@ export function Ciclos({initialCycleId}:{initialCycleId?:string}={}) {
   const [search, setSearch] = useState(''), [estado, setEstado] = useState(''), [message, setMessage] = useState(''), [busy, setBusy] = useState(false), [revision, setRevision] = useState(0)
   const { ask, dialog } = useConfirmation(busy)
   const [subjectSearch, setSubjectSearch] = useState(''), [subjectId, setSubjectId] = useState(''), [showRetired, setShowRetired] = useState(false)
+  const [companies, setCompanies] = useState<{id:string;razon_social:string;ruc:string}[]>([])
+  const [companyStatus, setCompanyStatus] = useState<'loading'|'ready'|'error'>('loading')
   const [hasActiveEnrollments, setHasActiveEnrollments] = useState<boolean | null>(null)
   const activeSubjectWarning = 'Este Ciclo tiene matrículas activas. El cambio afectará la lista vigente de asignaturas para los alumnos matriculados. Los códigos, cargos y datos históricos de las matrículas se conservarán. ¿Deseas continuar?'
   const [relationsStatus, setRelationsStatus] = useState<'loading' | 'ready' | 'error'>('ready')
@@ -246,7 +248,7 @@ export function Ciclos({initialCycleId}:{initialCycleId?:string}={}) {
   const canModify = state.roles?.some(role => role === 'DIRECTOR_ACADEMICO' || role === 'COORDINADOR_ACADEMICO') ?? false
   const canEditCycle = (row: Ciclo) => canModify && ['PROGRAMADO', 'EN_CURSO'].includes(row.estado_codigo)
   const editable = canModify && (!selected || canEditCycle(selected))
-  const dirty = !!selected && (Object.keys(blankCiclo).some(key => draft[key as keyof CicloDraft] !== (selected[key as keyof CicloDraft] ?? '')) || additional.length > 0)
+  const dirty = !!selected && (Object.keys(blankCiclo).some(key => (draft[key as keyof CicloDraft] ?? '') !== (selected[key as keyof CicloDraft] ?? '')) || additional.length > 0)
   const [inheritedStatus, setInheritedStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   useEffect(() => {
     let current = true
@@ -285,17 +287,35 @@ export function Ciclos({initialCycleId}:{initialCycleId?:string}={}) {
     void client.from('ciclo').select(cicloColumns).eq('id',initialCycleId).single().then(r=>{if(!active)return;if(r.error)setMessage('No se pudo abrir el Ciclo solicitado.');else void edit(r.data as Ciclo,true,3)})
     return()=>{active=false}
   },[client,initialCycleId])
+  useEffect(() => {
+    if (!open) return
+    let active = true
+    setCompanyStatus('loading')
+    void (async () => {
+      try {
+        const all: {id:string;razon_social:string;ruc:string}[] = []
+        for (let offset=0; active; offset+=200) {
+          const r = await client.from('empresa_patrocinadora').select('id,razon_social,ruc').order('razon_social').order('id').range(offset,offset+199)
+          if (r.error) throw r.error
+          all.push(...r.data)
+          if (r.data.length<200) break
+        }
+        if(active){setCompanies(all);setCompanyStatus('ready')}
+      } catch {if(active)setCompanyStatus('error')}
+    })()
+    return () => {active=false}
+  }, [client,open])
   async function edit(row: Ciclo | null, view = false, section = 0) {
     setReadOnly(view || (!!row && !canEditCycle(row)) || !canModify); setTab(section)
     setOpen(true); setSubjectSearch(''); setSubjectId(''); if(section !== 1) setShowRetired(false); setRelationsStatus(row ? 'loading' : 'ready'); setHasActiveEnrollments(row ? null : false)
     const request = ++editEpoch.current
-    setSelected(row); setDraft(row ? { carrera_id: row.carrera_id, fecha_inicio: row.fecha_inicio, fecha_fin: row.fecha_fin, nombre_promocion: row.nombre_promocion ?? '', departamento_id: row.departamento_id, provincia_id: row.provincia_id, distrito_id: row.distrito_id, capitania_id: row.capitania_id } : blankCiclo)
+    setSelected(row); setDraft(row ? { empresa_patrocinadora_id: row.empresa_patrocinadora_id ?? null, carrera_id: row.carrera_id, fecha_inicio: row.fecha_inicio, fecha_fin: row.fecha_fin, nombre_promocion: row.nombre_promocion ?? '', departamento_id: row.departamento_id, provincia_id: row.provincia_id, distrito_id: row.distrito_id, capitania_id: row.capitania_id } : blankCiclo)
     setAdditional([]); setRelations([]); setMessage(''); setDestino(''); setMotivoId(''); setDetalle('')
     if (row) { const [r,enrolled] = await Promise.all([client.from('ciclo_materia').select('id,materia_id,activo,origen,motivo_inactivacion').eq('ciclo_id', row.id),client.from('matricula').select('id').eq('ciclo_id',row.id).eq('estado_codigo','ACTIVO').limit(1)]); if (request !== editEpoch.current) return; if (!r.error && !enrolled.error) { setRelations(r.data); setHasActiveEnrollments(enrolled.data.length>0); setRelationsStatus('ready') } else { setRelationsStatus('error'); setMessage('No se pudieron consultar asignaturas y matrículas del Ciclo.') } }
   }
   async function save(event: FormEvent) {
     event.preventDefault()
-    if (readOnly || !editable || tariffsDirty || documentsDirty || inheritedStatus === 'loading' || inheritedStatus === 'error') return
+    if (readOnly || !editable || companyStatus!=='ready' || tariffsDirty || documentsDirty || inheritedStatus === 'loading' || inheritedStatus === 'error') return
     if (!selected && !materias.some(m => m.active && (inherited.includes(m.id) || additional.includes(m.id)))) { setMessage('Selecciona un Curso con Asignaturas activas o añade al menos una Asignatura activa.'); return }
     if (selected && selected.carrera_id !== draft.carrera_id && await ask({ title: 'Cambiar Curso del Ciclo', confirmLabel: 'Cambiar Curso', description: `${academicLabel(carreras.find(c => c.id === draft.carrera_id)!)}. Las asignaturas heredadas del Curso actual se retirarán del Ciclo. Las asignaturas adicionales se conservarán y se agregarán las asignaturas faltantes de la nuevo Curso. Las retiradas no se reactivarán.` }) === null) return
     setBusy(true)
@@ -369,6 +389,8 @@ export function Ciclos({initialCycleId}:{initialCycleId?:string}={}) {
     <div hidden={tab>=2}><InlineForm id={cycleFormId} className="academic-record-form" key={`${selected?.id ?? 'new'}-${readOnly}`} aria-describedby={message ? 'academic-message' : undefined} onInvalidField={field=>setTab(Number(field.closest<HTMLElement>('[data-academic-tab]')?.dataset.academicTab ?? 0))} onSubmit={event=>void save(event)}>
       <div hidden={tab!==0} data-academic-tab="0" role="tabpanel" tabIndex={0} id="cycle-sections-panel-0" aria-labelledby="cycle-sections-tab-0" className="student-section-panel cycle-data-panel"><fieldset className="cycle-data" disabled={busy}><legend>Datos del Ciclo</legend><fieldset className="academic-fields" aria-label="Datos principales">
         <label><span className="field-label">Curso{!readOnly && ' *'}</span>{readOnly ? <input aria-label="Curso" readOnly value={academicLabel(carreras.find(c=>c.id===draft.carrera_id))}/> : <select aria-label="Curso" required value={draft.carrera_id} onChange={e=>setDraft({...draft,carrera_id:formTextValue(e.currentTarget)})}><option value="">Seleccionar</option>{referenceOptions(carreras,draft.carrera_id)}</select>}</label>
+        <label><span className="field-label">Empresa patrocinadora</span>{readOnly?<input aria-label="Empresa patrocinadora" readOnly value={draft.empresa_patrocinadora_id ? companies.find(c=>c.id===draft.empresa_patrocinadora_id)?.razon_social ?? 'No disponible' : 'Sin patrocinador'}/>:<select aria-label="Empresa patrocinadora" disabled={companyStatus!=='ready'} value={draft.empresa_patrocinadora_id??''} onChange={e=>setDraft({...draft,empresa_patrocinadora_id:e.target.value||null})}><option value="">Sin patrocinador</option>{draft.empresa_patrocinadora_id&&!companies.some(c=>c.id===draft.empresa_patrocinadora_id)&&<option value={draft.empresa_patrocinadora_id}>Empresa seleccionada</option>}{companies.map(c=><option key={c.id} value={c.id}>{c.razon_social} · {c.ruc}</option>)}</select>}<small>Se aplica a todas las matrículas del Ciclo.</small></label>
+        {companyStatus==='loading'&&<p role="status">Consultando empresas…</p>}{companyStatus==='error'&&<p role="alert">No se pudieron consultar empresas. Vuelve a abrir el Ciclo antes de guardar.</p>}
         <label>Nombre de promoción (opcional)<input aria-label="Nombre de promoción (opcional)" readOnly={readOnly} maxLength={150} value={draft.nombre_promocion ?? ''} onChange={e=>setDraft({...draft,nombre_promocion:formTextValue(e.currentTarget)})}/></label>
         <label><span className="field-label">Fecha de inicio{!readOnly && ' *'}</span><input aria-label="Fecha de inicio" readOnly={readOnly} required={!readOnly} type={readOnly?'text':'date'} value={readOnly?academicDate(draft.fecha_inicio):draft.fecha_inicio} onChange={e=>setDraft({...draft,fecha_inicio:formTextValue(e.currentTarget)})}/></label>
         <label><span className="field-label">Fecha de fin{!readOnly && ' *'}</span><input aria-label="Fecha de fin" readOnly={readOnly} required={!readOnly} type={readOnly?'text':'date'} min={readOnly?undefined:draft.fecha_inicio} value={readOnly?academicDate(draft.fecha_fin):draft.fecha_fin} onChange={e=>setDraft({...draft,fecha_fin:formTextValue(e.currentTarget)})}/></label>
@@ -391,7 +413,7 @@ export function Ciclos({initialCycleId}:{initialCycleId?:string}={}) {
     </InlineForm></> : <p>{!editable ? 'Este Ciclo permanece solo para consulta.' : director?'Para cambiar el estado, selecciona Editar Ciclo.':'Solo el Director puede cambiar el estado.'}</p>}</div>}
     {selected&&<div hidden={tab!==5} role="tabpanel" tabIndex={0} id="cycle-sections-panel-5" aria-labelledby="cycle-sections-tab-5" className="student-section-panel"><CycleDocuments key={`${selected.id}-${documentsReset}`} cycle={selected} blocked={dirty||busy||tariffsDirty||tariffsBusy} onDirtyChange={setDocumentsDirty} onBusyChange={setDocumentsBusy}/></div>}
     {selected&&tab===6&&<div role="tabpanel" tabIndex={0} id="cycle-sections-panel-6" aria-labelledby="cycle-sections-tab-6" className="student-section-panel"><CycleReports key={selected.id} cycle={selected.id} cycleCode={selected.codigo_ciclo}/></div>}
-    {!readOnly&&<div className="form-actions cycle-record-actions"><button type="button" className="secondary" disabled={busy||tariffsBusy||documentsBusy||enrollmentPanelOpen} onClick={cancelEditing}>{selected?'Cancelar':'Cancelar / descartar formulario'}</button><button type="submit" form={cycleFormId} disabled={busy||tariffsBusy||tariffsDirty||documentsDirty||documentsBusy||enrollmentPanelOpen||inheritedStatus==='loading'||inheritedStatus==='error'}>Guardar Ciclo</button>{tariffsDirty&&<small>Guarda o cancela primero los cambios de Tarifas.</small>}</div>}
+    {!readOnly&&<div className="form-actions cycle-record-actions"><button type="button" className="secondary" disabled={busy||tariffsBusy||documentsBusy||enrollmentPanelOpen} onClick={cancelEditing}>{selected?'Cancelar':'Cancelar / descartar formulario'}</button><button type="submit" form={cycleFormId} disabled={busy||companyStatus!=='ready'||tariffsBusy||tariffsDirty||documentsDirty||documentsBusy||enrollmentPanelOpen||inheritedStatus==='loading'||inheritedStatus==='error'}>Guardar Ciclo</button>{tariffsDirty&&<small>Guarda o cancela primero los cambios de Tarifas.</small>}</div>}
 
   </section>
   return <section>{dialog}<h2>Ciclos</h2><div className="filters academic-toolbar" role="search" aria-label="Búsqueda de ciclos"><AcademicSearch label="Buscar Ciclo por código o Curso" placeholder="Código de Ciclo o nombre de Curso" value={search} onChange={text=>{setSearch(text);setPage(0)}}/><label>Estado del listado<select value={estado} onChange={e=>{setEstado(e.currentTarget.value);setPage(0)}}><option value="">Todos</option>{['PROGRAMADO','EN_CURSO','CERRADO','DESIERTO','ANULADO'].map(x=><option key={x} value={x}>{x.replaceAll('_',' ')}</option>)}</select></label><div className="record-header-actions">{canModify&&<AcademicAction label="Crear Ciclo" createFor="Ciclos" icon="new" disabled={busy} onClick={()=>void edit(null)}/>}</div></div><Notice message={message}/>{loading&&<p role="status">Cargando ciclos…</p>}

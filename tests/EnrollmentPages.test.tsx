@@ -637,19 +637,31 @@ it('replaces the company grid with its record, puts Edit above fields and restor
     expect(screen.getByRole('table')).toBeVisible();expect(client.rpc).not.toHaveBeenCalled();
 });
 
-function enrollmentFixture() {
-    const cycles=[{id:'c1',codigo_ciclo:'2026-001-NAV',estado_codigo:'PROGRAMADO',updated_at:'cv1'},{id:'c2',codigo_ciclo:'2026-002-NAV',estado_codigo:'EN_CURSO',updated_at:'cv2'}];
+function enrollmentFixture(sponsored=false) {
+    const cycles=[{id:'c1',codigo_ciclo:'2026-001-NAV',estado_codigo:'PROGRAMADO',updated_at:'cv1',empresa_patrocinadora_id:sponsored?'company':null},{id:'c2',codigo_ciclo:'2026-002-NAV',estado_codigo:'EN_CURSO',updated_at:'cv2',empresa_patrocinadora_id:null}];
     const pupil={id:'s1',codigo_alumno:'A-0000001',apellido_paterno:'MUÑOZ',apellido_materno:'PEREZ',nombres:'ANA MARIA',numero_di:'00123456',updated_at:'sv1',domicilio:'AV. MAR'};
     const tariffs=[{id:'fee',importe:'100',obligatorio:true,tarifa:{nombre:'CARRERA',activo:true}},{id:'extra',importe:'20',obligatorio:false,tarifa:{nombre:'SEGURO',activo:true}}];
     const searches=vi.fn();
     client.from.mockImplementation((table:string)=>{
         let single=false;const filters:Record<string,unknown>={};
-        const q={select:()=>q,eq:(key:string,val:unknown)=>{filters[key]=val;return q},in:()=>q,order:()=>q,limit:()=>q,single:()=>{single=true;return q},or:(expression:string)=>{searches(expression);return q},then:(resolve:(r:unknown)=>unknown)=>Promise.resolve({data:table==='ciclo'?single?cycles.find(c=>c.id===filters.id):cycles:table==='ciclo_tarifa'?tariffs:table==='alumno'?single?pupil:[pupil]:[],error:null}).then(resolve)};return q;
+        const q={select:()=>q,eq:(key:string,val:unknown)=>{filters[key]=val;return q},in:()=>q,order:()=>q,limit:()=>q,single:()=>{single=true;return q},or:(expression:string)=>{searches(expression);return q},then:(resolve:(r:unknown)=>unknown)=>Promise.resolve({data:table==='ciclo'?single?cycles.find(c=>c.id===filters.id):cycles:table==='ciclo_tarifa'?tariffs:table==='alumno'?single?pupil:[pupil]:table==='empresa_patrocinadora'?{id:'company',razon_social:'EMPRESA MVP'}:[],error:null}).then(resolve)};return q;
     });
     return {cycles,pupil,searches};
 }
+it('shows the inherited Cycle sponsor without individual assignment controls',async()=>{
+ const {cycles}=enrollmentFixture(true);
+ render(<MemoryRouter><NewEnrollment cycleContext={cycles[0]}/></MemoryRouter>);
+ expect(await screen.findByText(/Patrocinador: EMPRESA MVP/)).toBeVisible();
+ expect(screen.getByText('Definido por el Ciclo')).toBeVisible();
+ expect(screen.queryByRole('button',{name:'Elegir empresa'})).not.toBeInTheDocument();
+ expect(screen.queryByRole('button',{name:'Sin patrocinador'})).not.toBeInTheDocument();
+ expect(client.rpc).not.toHaveBeenCalled();
+})
 it('enrollment uses freely navigable tabs, preserves data and registers only on final confirmation',async()=>{
  const {pupil,searches}=enrollmentFixture();render(<MemoryRouter><NewEnrollment/></MemoryRouter>);
+ expect(screen.queryByRole('button',{name:'Elegir empresa'})).not.toBeInTheDocument();
+ expect(screen.queryByRole('button',{name:'Sin patrocinador'})).not.toBeInTheDocument();
+ expect(screen.getByText('Definido por el Ciclo')).toBeVisible();
  expect(screen.queryByRole('button',{name:'Siguiente'})).not.toBeInTheDocument();
  fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));expect(screen.getByText(/Selecciona un Ciclo en Datos/)).toBeVisible();
  fireEvent.keyDown(screen.getByRole('tab',{name:'Cargos'}),{key:'Home'});expect(screen.getByRole('tab',{name:'Datos de matrícula'})).toHaveFocus();
@@ -662,7 +674,7 @@ it('enrollment uses freely navigable tabs, preserves data and registers only on 
  fireEvent.click(screen.getByRole('tab',{name:'Datos de matrícula'}));expect(screen.getByRole('combobox',{name:'Ciclo'})).toHaveValue('c1');
  fireEvent.click(screen.getByRole('tab',{name:'Resumen'}));expect(screen.getByRole('table',{name:'Resumen de cargos'})).toHaveTextContent('SEGURO');expect(client.rpc).not.toHaveBeenCalled();
  client.rpc.mockResolvedValue({data:{id:'m1',codigo_matricula:'2026-NAV-001'},error:null});fireEvent.click(screen.getByRole('button',{name:'Confirmar matrícula'}));
- await waitFor(()=>expect(client.rpc).toHaveBeenCalledExactlyOnceWith('registrar_matricula',{p:{ciclo_id:'c1',expected_ciclo_updated_at:'cv1',alumno_id:pupil.id,expected_alumno_updated_at:'sv1',empresa_patrocinadora_id:null},opcionales:[]}));
+ await waitFor(()=>expect(client.rpc).toHaveBeenCalledExactlyOnceWith('registrar_matricula',{p:{ciclo_id:'c1',expected_ciclo_updated_at:'cv1',alumno_id:pupil.id,expected_alumno_updated_at:'sv1'},opcionales:[]}));
  expect(await screen.findByRole('heading',{name:'Matrícula registrada'})).toBeVisible();
 });
 it('changing enrollment Cycle includes all charges and resets Director discount without dropping the pupil',async()=>{

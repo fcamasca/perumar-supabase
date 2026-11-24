@@ -43,6 +43,25 @@ beforeEach(() => {
   }
 })
 afterEach(cleanup)
+it.each(['company', ''])('saves the Cycle sponsor via its existing command: %s', async company => {
+  session(['DIRECTOR_ACADEMICO'])
+  tables.empresa_patrocinadora = [{id:'company',razon_social:'EMPRESA MVP',ruc:'20711111111'}]
+  rpc.mockResolvedValue({data:{...ciclo,empresa_patrocinadora_id:company||null},error:null})
+  render(<Ciclos />)
+  fireEvent.click(await screen.findByRole('button',{name:'Editar 2026-001-NAV'}))
+  const selector = screen.getByRole('combobox',{name:'Empresa patrocinadora'})
+  await waitFor(()=>expect(selector).toBeEnabled())
+  fireEvent.change(selector,{target:{value:company}})
+  fireEvent.click(screen.getByRole('button',{name:'Guardar Ciclo'}))
+  await waitFor(()=>expect(rpc).toHaveBeenCalledExactlyOnceWith('guardar_ciclo',expect.objectContaining({p:expect.objectContaining({id:'cycle',expected_updated_at:version,empresa_patrocinadora_id:company||null})})))
+})
+it('cannot save a silent NULL sponsor when company references fail to load',async()=>{
+ session(['DIRECTOR_ACADEMICO']);errorTable='empresa_patrocinadora';render(<Ciclos/>);
+ fireEvent.click(await screen.findByRole('button',{name:'Editar 2026-001-NAV'}));
+ expect(await screen.findByRole('alert')).toHaveTextContent('No se pudieron consultar empresas');
+ expect(screen.getByRole('button',{name:'Guardar Ciclo'})).toBeDisabled();
+ expect(rpc).not.toHaveBeenCalled();
+})
 it('Coordinador reads references without academic maintenance', async () => {
   session(['COORDINADOR_ACADEMICO'])
   render(<Materias />)

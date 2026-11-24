@@ -16,7 +16,7 @@ export function OrderForm({company,busy,call,saved,cancel}:Props){
  const [cycle,setCycle]=useState(''),[cyclePage,setCyclePage]=useState(0),[page,setPage]=useState(0),[search,setSearch]=useState('')
  const [selected,setSelected]=useState<string[]>([]),[draft,setDraft]=useState<Record<string,string>>({serie:'',correlativo:'',fecha:todayLima(),monto:'',observacion:''})
  const [error,setError]=useState(''),[review,setReview]=useState(false)
- const cycles=useRows<Cycle>(useCallback(()=>client.from('ciclo').select('id,codigo_ciclo,updated_at').in('estado_codigo',['PROGRAMADO','EN_CURSO','CERRADO']).ilike('codigo_ciclo','%'+search+'%').order('codigo_ciclo').order('id').range(cyclePage*30,cyclePage*30+29),[client,search,cyclePage]))
+ const cycles=useRows<Cycle>(useCallback(()=>client.from('ciclo').select('id,codigo_ciclo,updated_at').eq('empresa_patrocinadora_id',company).in('estado_codigo',['PROGRAMADO','EN_CURSO','CERRADO']).ilike('codigo_ciclo','%'+search+'%').order('codigo_ciclo').order('id').range(cyclePage*30,cyclePage*30+29),[client,company,search,cyclePage]))
  const candidates=useRows<Candidate>(useCallback(()=>client.from('matricula').select('id,codigo_matricula,updated_at,ciclo(updated_at),alumno(apellido_paterno,apellido_materno,nombres)').eq('empresa_patrocinadora_id',company).eq('ciclo_id',cycle||'00000000-0000-0000-0000-000000000000').eq('estado_codigo','ACTIVO').order('codigo_matricula').order('id').range(page*30,page*30+29),[client,company,cycle,page]))
  async function submit(){
   if(busy||review||!candidates.ready)return

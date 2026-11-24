@@ -20,7 +20,7 @@ const logs:{table:string;method:string;args:unknown[]}[]=[]
 const saved=vi.fn(),cancel=vi.fn(),call=vi.fn()
 beforeEach(()=>{
  cleanup();sessionStorage.clear();access.roles=['DIRECTOR_ACADEMICO'];access.userId='user';readError=null;logs.length=0;saved.mockReset();cancel.mockReset();call.mockReset().mockResolvedValue({id:'saved'});client.rpc.mockReset().mockResolvedValue({data:{id:'saved'},error:null})
- data={empresa_patrocinadora:[company],ciclo:[{id:'cycle',codigo_ciclo:'2026-MC',updated_at:'cv1',estado_codigo:'PROGRAMADO'}],matricula:structuredClone(candidates),orden_servicio_resumen:structuredClone(orders),factura_patrocinador_saldo:structuredClone(invoices),pago_patrocinador:[],orden_servicio_matricula:[],factura_orden_servicio:[],pago_patrocinador_aplicacion:[],matricula_saldo:[{matricula_id:'m1',base:'100',abonado:'20',pendiente:'80'}],matricula_cargo_saldo:[{id:'cargo',matricula_id:'m1',activo:true,nombre:'CURSO',pendiente:'80'}],pago:[],catalogo:[{id:'cat',codigo:'MEDIO_PAGO',activo:true}],catalogo_valor:[{id:'cash',catalogo_id:'cat',activo:true,nombre:'Efectivo'}]}
+ data={empresa_patrocinadora:[company],ciclo:[{id:'cycle',empresa_patrocinadora_id:'company',codigo_ciclo:'2026-MC',updated_at:'cv1',estado_codigo:'PROGRAMADO'}],matricula:structuredClone(candidates),orden_servicio_resumen:structuredClone(orders),factura_patrocinador_saldo:structuredClone(invoices),pago_patrocinador:[],orden_servicio_matricula:[],factura_orden_servicio:[],pago_patrocinador_aplicacion:[],matricula_saldo:[{matricula_id:'m1',base:'100',abonado:'20',pendiente:'80'}],matricula_cargo_saldo:[{id:'cargo',matricula_id:'m1',activo:true,nombre:'CURSO',pendiente:'80'}],pago:[],catalogo:[{id:'cat',codigo:'MEDIO_PAGO',activo:true}],catalogo_valor:[{id:'cash',catalogo_id:'cat',activo:true,nombre:'Efectivo'}]}
  client.from.mockImplementation((table:string)=>{
   const predicates:((r:Record<string,unknown>)=>boolean)[]=[],slice={start:0,end:9999}
   const result=(single=false,maybe=false)=>{const rows=(data[table]??[]).filter(r=>predicates.every(p=>p(r))).slice(slice.start,slice.end+1);if(table===readError)return {data:null,error:{code:'READ'}};return {data:single?(rows[0]??null):maybe?(rows[0]??null):rows,error:null}}
@@ -75,7 +75,12 @@ it('company billing has three keyboard tabs and no extra master, uploads or expo
  expect(screen.queryByRole('button',{name:/CSV|PDF|SUNAT|Subir/})).not.toBeInTheDocument()
 })
 it('OS candidates are filtered by company, cycle and active state; header supports mixed/all/none',async()=>{
+ data.ciclo.push({id:'foreign',codigo_ciclo:'OTHER COMPANY',empresa_patrocinadora_id:'other',estado_codigo:'PROGRAMADO'})
+ data.ciclo.push({id:'private',codigo_ciclo:'NO SPONSOR',empresa_patrocinadora_id:null,estado_codigo:'PROGRAMADO'})
  await orderForm()
+ expect(logs).toContainEqual({table:'ciclo',method:'eq',args:['empresa_patrocinadora_id','company']})
+ expect(screen.queryByRole('option',{name:'OTHER COMPANY'})).not.toBeInTheDocument()
+ expect(screen.queryByRole('option',{name:'NO SPONSOR'})).not.toBeInTheDocument()
  expect(logs).toContainEqual({table:'matricula',method:'eq',args:['empresa_patrocinadora_id','company']})
  expect(logs).toContainEqual({table:'matricula',method:'eq',args:['ciclo_id','cycle']})
  expect(logs).toContainEqual({table:'matricula',method:'eq',args:['estado_codigo','ACTIVO']})
