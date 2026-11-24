@@ -55,3 +55,17 @@ Base válida: `a0c4abfe88f21879672f491bf96f9347f21685af`, rama `feature/h7-spons
 - No se reescriben pagos/cargos ni OS/facturas históricas. Facturas, transferencias, workflow e idempotencia H7 no se modifican. Se adaptan exclusivamente fixtures de patrocinio en el runner core y en SQL H4/H5 para la futura CI; esas regresiones NO se ejecutan en este checkpoint.
 
 Pruebas focalizadas y límites en technical-results. Un único commit intermedio con `[skip ci]`; sin CI completa, Gate 2, acceptance, merge, PDF OS, reportes ni SUNAT.
+
+## 2026-11-24 — Enmienda humana MVP: OS por Ciclo completo y saldo por cubrir
+
+Base publicada: `cbec3bcaa7a03ad9cc1cbf6f3cc618f6549a9915`. Decisión humana: retirar la selección individual de alumnos; toda nueva OS incluye automáticamente las matrículas ACTIVO del Ciclo. La lista es referencial y paginada, sin reparto monetario por alumno.
+
+- Nueva proyección `ciclo_orden_servicio_saldo`, security_invoker: total = suma de base de cargos vigentes de matrículas activas (fuente H4); cubierto = suma de OS VIGENTE del Ciclo; saldo por cubrir = máximo entre total menos cubierto y cero. No se descuentan pagos particulares ni transferencias de facturas. También cuentan OS históricas de un patrocinador anterior del mismo Ciclo, sin reasignarlas.
+- Migración aditiva `20261123050000_h7_cycle_order_coverage.sql`: conserva firma/ACL de registrar_orden_servicio, deriva el roster íntegro en servidor y rechaza selección/totales enviados por cliente. Mantiene orden de locks Ciclo → alumnos UUID → matrículas UUID → empresa. Valida importe positivo y no superior al saldo actual, sin retries automáticos.
+- Correlativo nuevo normalizado a 10 dígitos, conservado como texto. No se renumeran OS existentes; se rechaza emitir el equivalente numérico de una referencia antigua con diferente cantidad de ceros, incluso anulada.
+- Formulario OS separado en OrderForm.tsx: selector único de Ciclos de la empresa con saldo disponible, Curso/Año/Capitanía y tres totales visibles. Datos Serie/Correlativo/Fecha/Monto agrupados; listado compacto con total por matrícula y subtotal de página; observación de ancho completo; Cancelar / Guardar orden de servicio. Facturas y transferencias mantienen sus componentes, etiquetas y reglas.
+- Historia de OS no se amplía al ingresar otro alumno. Anular una OS libera cobertura; anular/trasladar una matrícula cambia el total actual y conserva las asociaciones históricas.
+- Migración probada en base desechable y aplicada al entorno local con migration up --local --network-id perumar-h0-local. Ciclo de prueba patrocinado: total S/430.00, cubierto S/0.00 antes de aplicar. No se borraron OS, facturas ni otros datos.
+- Fixtures del runner core adaptados al nuevo contrato y saldo suficiente; NO se ejecutan sus 186 comprobaciones. Preparación del test anterior ajustada para clonar un esquema que ya tenga la nueva vista.
+
+Sin cambios de avatar/temas, navegación global, PDF, reportes, SUNAT, pagos H4 ni workflow/idempotencia/transferencias H7. Cuatro documentos históricos del Spec intactos. Publicación intermedia con [skip ci]; sin Gate 2, acceptance ni merge.

@@ -3,7 +3,7 @@ import { useSession } from '../security/SessionProvider'
 import { EditorHeading } from '../academic/AcademicUi'
 import { cents, decimal, pen } from '../payments/money'
 import { BillingForm, DocumentFields, Pager, Selection, useRows } from './BillingUi'
-import { billingError, isDefinite, maxCents, orderColumns, invoiceColumns, readRecovery, recoveryKey, reference, studentName, todayLima, type Candidate, type Cycle, type Order, type Invoice } from './contracts'
+import { billingError, isDefinite, maxCents, orderColumns, invoiceColumns, readRecovery, recoveryKey, reference, todayLima, type Order, type Invoice } from './contracts'
 export type Kind = 'order'|'invoice'|'payment'
 export type Call = (name:string,args:Record<string,unknown>)=>Promise<Record<string,unknown>|null>
 type Props={company:string;busy:boolean;call:Call;saved:(kind:Kind,id:string)=>void;cancel:()=>void}
@@ -11,33 +11,7 @@ const positive=(raw:string)=>{const n=cents(raw);return n!==null&&n>0n&&n<=maxCe
 const chosen=<T extends {id:string}>(ids:string[],rows:T[])=>rows.filter(r=>ids.includes(r.id))
 const readNotice=(error:string,loading:boolean)=><>{loading&&<p role="status">Consultando…</p>}{error&&<p role="alert">{error}</p>}</>
 
-export function OrderForm({company,busy,call,saved,cancel}:Props){
- const {client}=useSession()
- const [cycle,setCycle]=useState(''),[cyclePage,setCyclePage]=useState(0),[page,setPage]=useState(0),[search,setSearch]=useState('')
- const [selected,setSelected]=useState<string[]>([]),[draft,setDraft]=useState<Record<string,string>>({serie:'',correlativo:'',fecha:todayLima(),monto:'',observacion:''})
- const [error,setError]=useState(''),[review,setReview]=useState(false)
- const cycles=useRows<Cycle>(useCallback(()=>client.from('ciclo').select('id,codigo_ciclo,updated_at').eq('empresa_patrocinadora_id',company).in('estado_codigo',['PROGRAMADO','EN_CURSO','CERRADO']).ilike('codigo_ciclo','%'+search+'%').order('codigo_ciclo').order('id').range(cyclePage*30,cyclePage*30+29),[client,company,search,cyclePage]))
- const candidates=useRows<Candidate>(useCallback(()=>client.from('matricula').select('id,codigo_matricula,updated_at,ciclo(updated_at),alumno(apellido_paterno,apellido_materno,nombres)').eq('empresa_patrocinadora_id',company).eq('ciclo_id',cycle||'00000000-0000-0000-0000-000000000000').eq('estado_codigo','ACTIVO').order('codigo_matricula').order('id').range(page*30,page*30+29),[client,company,cycle,page]))
- async function submit(){
-  if(busy||review||!candidates.ready)return
-  const rows=chosen(selected,candidates.rows)
-  if(!cycle||!rows.length||rows.length!==selected.length||positive(draft.monto)===null){setError('Selecciona matrículas elegibles e indica un monto positivo de hasta dos decimales.');return}
-  try{
-   const r=await call('registrar_orden_servicio',{p:{...draft,serie:draft.serie.trim().toUpperCase(),correlativo:draft.correlativo.trim(),observacion:draft.observacion.trim()||null,empresa_patrocinadora_id:company,ciclo_id:cycle,expected_ciclo_updated_at:rows[0].ciclo.updated_at,matriculas:rows.map(r=>({id:r.id,expected_updated_at:r.updated_at}))}})
-   if(r)saved('order',String(r.id))
-  }catch(e){setError(billingError(e));setReview(true)}
- }
- return <section><EditorHeading>Nueva orden de servicio</EditorHeading><p>El monto es manual; no se calcula desde cargos ni cantidad de alumnos.</p>
- <BillingForm submit={()=>void submit()} busy={busy} cancel={cancel} error={error} blocked={review||!candidates.ready}>
- <label>Buscar Ciclo<input type="search" value={search} onChange={e=>{setSearch(e.target.value);setCyclePage(0)}}/></label>
- <label>Ciclo<select required value={cycle} onChange={e=>{setCycle(e.target.value);setSelected([]);setPage(0)}}><option value="">Seleccionar Ciclo</option>{cycle&&!cycles.rows.some(c=>c.id===cycle)&&<option value={cycle}>Ciclo seleccionado</option>}{cycles.rows.map(c=><option key={c.id} value={c.id}>{c.codigo_ciclo}</option>)}</select></label>
- {readNotice(cycles.error,cycles.loading)}<Pager page={cyclePage} count={cycles.rows.length} disabled={cycles.loading} onChange={setCyclePage}/>
- {cycle&&<>{readNotice(candidates.error,candidates.loading)}{candidates.ready&&<Selection rows={candidates.rows} selected={selected} change={setSelected} label="matrículas" name={r=>r.codigo_matricula+' · '+studentName(r)}>{r=><>{studentName(r)} · {r.codigo_matricula}</>}</Selection>}<Pager page={page} count={candidates.rows.length} disabled={candidates.loading} onChange={n=>{setPage(n);setSelected([])}}/></>}
- <DocumentFields draft={draft} change={(key,value)=>setDraft(d=>({...d,[key]:value}))}/>
- <p>PDF de la orden: No adjunto</p>
- <button type="button" className="secondary" onClick={()=>{candidates.reload();cycles.reload();setReview(false);setError('')}}>Volver a consultar matrículas</button>
- </BillingForm></section>
-}
+export { OrderForm } from './OrderForm'
 
 export function InvoiceForm({company,busy,call,saved,cancel}:Props){
  const {client}=useSession()

@@ -114,3 +114,15 @@ Validaciones frontend del checkpoint:
 - `npm run typecheck`: PASSED.
 - `node --check scripts/test-cycle-sponsor.mjs` y `node --check scripts/test-billing-core.mjs`: PASSED; el último es solo sintaxis, no ejecución de sus comprobaciones DB.
 - `git diff --check`: PASSED.
+
+## 2026-11-24 — OS del Ciclo completo / saldo por cubrir
+
+- `node scripts/test-cycle-order.mjs`: PASSED. Base desechable, solo esquema/referencias y fixtures sintéticos. Comprueba total/cobertura/saldo, 30% de cobertura, límite de nueva OS y rollback de rechazo, roster automático, rechazo de selección cliente, empresa correspondiente, correlativo de 10 dígitos y equivalencia de referencias antiguas, saldo cero, liberación al anular, cobertura de OS de patrocinador anterior, conservación de historia y no ampliación automática del roster histórico. Comprueba que los pagos H4 no se mezclan con cobertura y que la vista usa security_invoker. No es una ejecución hospedada ni una validación integral JWT/RLS.
+- `vitest run tests/Billing.test.tsx --maxWorkers=1`: **37/37 PASSED**. Incluye filtro empresa/saldo, detalles de Ciclo, ausencia de búsqueda/checks, subtotal referencial, contexto sin selección cliente, protección de doble envío, exceso de monto, conflicto sin retry, estado vacío y segunda página referencial.
+- Migración `20261123050000_h7_cycle_order_coverage.sql` aplicada al entorno local. No se borraron datos de prueba.
+- Revisión visual automatizada NO EJECUTADA: ambos mecanismos disponibles devolvieron fallo de inicialización «failed to write kernel assets». No se atribuye aprobación visual/humana al formulario.
+- No se ejecutaron suite completa, 186 core, concurrencia 70+60, regresión H1–H6 ni suites PDF/Expediente. Fixtures core ajustados sin atribuirles PASSED.
+
+CI completa diferida; commit [skip ci]. Residuales anteriores preservados: hosted Edge/PostgREST no probado directamente, CPU/memoria no medidas, forced-colors NO VERIFICADO, bundle >500kB, limpieza/conciliación manual y purga H9/release. Gate 2 H7 PENDIENTE; sin acceptance/merge.
+
+Comprobaciones de cierre de este checkpoint: lint PASSED; typecheck PASSED (incluido en build); build PASSED, chunk principal 797.17kB (advertencia >500kB preservada); diff-check PASSED. Un primer build detectó una opción inválida de Testing Library en el test nuevo; se corrigió sin modificar lógica productiva y el build posterior pasó. Los 37 tests focalizados ya habían pasado; no se atribuye ejecución a la suite completa.

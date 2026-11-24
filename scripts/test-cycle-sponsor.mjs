@@ -33,6 +33,7 @@ try {
     assert.ok(definition, 'missing pre-amendment function: ' + name)
     sql(definition.replace('create function ', 'create or replace function '))
   }
+  sql('drop view if exists public.ciclo_orden_servicio_saldo;')
   sql('alter table public.ciclo drop column if exists empresa_patrocinadora_id;')
   const referenceTables = ['app_roles', 'catalogo', 'catalogo_valor', 'departamento', 'provincia', 'distrito', 'capitania']
   const references = docker(['exec', container, 'pg_dump', '-U', 'postgres', '-d', 'postgres', '--data-only', ...referenceTables.map(t => '--table=public.' + t), '--no-owner', '--no-acl'])

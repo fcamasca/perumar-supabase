@@ -18,3 +18,15 @@
 .billing .billing-panel{min-width:0}
 .billing input[aria-invalid=true]{border:2px solid var(--danger,#b51c3c)}
 @media(max-width:640px){.billing .billing-actions>button{flex:1}.billing .billing-fields{grid-template-columns:1fr}}
+.billing .order-form form {max-width:none}
+.billing .order-form .order-context,.billing .order-form .order-totals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;margin:1rem 0}
+.billing .order-form dt{color:var(--text-secondary);font-size:.85rem}
+.billing .order-form dd{margin:.25rem 0 0;font-weight:650;overflow-wrap:anywhere}
+.billing .order-form .order-totals{padding:1rem;border:1px solid var(--border-soft);border-radius:.6rem;background:var(--surface)}
+.billing .order-form .order-totals dd{font-size:1.15rem;font-variant-numeric:tabular-nums}
+.billing .order-form .order-fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem;margin-block:1rem}
+.billing .order-form .order-roster{margin-block:1rem}
+.billing .order-form .order-roster th,.billing .order-form .order-roster td{padding:.45rem .7rem}
+.billing .order-form .order-observation{width:100%;max-width:none;display:flex;margin-block:1rem}
+.billing .order-form .order-observation textarea{width:100%;resize:vertical;min-height:6rem}
+@media(max-width:640px){.billing .order-form .order-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.billing .order-form .order-context,.billing .order-form .order-totals{grid-template-columns:1fr}}

@@ -22,6 +22,8 @@ export function billingError(error: unknown): string {
  if (e?.message === 'H7_OS_HAS_LIVE_INVOICE') return 'No se puede anular la orden: tiene facturas no anuladas. Regulariza primero las facturas; no hay anulación en cascada.'
  if (e?.message === 'H7_INVOICE_HAS_LIVE_PAYMENT') return 'No se puede anular la factura: tiene pagos confirmados. Regulariza primero los pagos; no hay anulación en cascada.'
  if (e?.message === 'H7_EXCEEDS_PENDING') return 'El importe supera el pendiente de una factura. Vuelve a consultar los saldos y decide nuevamente.'
+ if (e?.message === 'H7_OS_EXCEEDS_CYCLE_BALANCE') return 'El monto supera el saldo por cubrir del Ciclo. Actualiza los datos y revisa el monto antes de guardar.'
+ if (e?.message === 'H7_CYCLE_NO_ENROLLMENTS') return 'El Ciclo no tiene matrículas activas para incluir en la orden.'
  if (isDefinite(error)) return 'No se guardó la operación. Revisa los campos, estados y relaciones; se conserva el borrador.'
  return 'Resultado sin confirmar. Consulta el resultado antes de volver a registrar; no se reintentó automáticamente.'
 }

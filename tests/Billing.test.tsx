@@ -21,6 +21,8 @@ const saved=vi.fn(),cancel=vi.fn(),call=vi.fn()
 beforeEach(()=>{
  cleanup();sessionStorage.clear();access.roles=['DIRECTOR_ACADEMICO'];access.userId='user';readError=null;logs.length=0;saved.mockReset();cancel.mockReset();call.mockReset().mockResolvedValue({id:'saved'});client.rpc.mockReset().mockResolvedValue({data:{id:'saved'},error:null})
  data={empresa_patrocinadora:[company],ciclo:[{id:'cycle',empresa_patrocinadora_id:'company',codigo_ciclo:'2026-MC',updated_at:'cv1',estado_codigo:'PROGRAMADO'}],matricula:structuredClone(candidates),orden_servicio_resumen:structuredClone(orders),factura_patrocinador_saldo:structuredClone(invoices),pago_patrocinador:[],orden_servicio_matricula:[],factura_orden_servicio:[],pago_patrocinador_aplicacion:[],matricula_saldo:[{matricula_id:'m1',base:'100',abonado:'20',pendiente:'80'}],matricula_cargo_saldo:[{id:'cargo',matricula_id:'m1',activo:true,nombre:'CURSO',pendiente:'80'}],pago:[],catalogo:[{id:'cat',codigo:'MEDIO_PAGO',activo:true}],catalogo_valor:[{id:'cash',catalogo_id:'cat',activo:true,nombre:'Efectivo'}]}
+ data.ciclo_orden_servicio_saldo=[{...data.ciclo[0],anio:2026,curso_nombre:'CURSO MARINERO',capitania_nombre:'Pisco',total_matriculas:'15000',cubierto_os:'4500',saldo_por_cubrir:'10500',matriculas_activas:2}]
+ data.matricula_pago_listado=candidates.map((r,i)=>({matricula_id:r.id,ciclo_id:r.ciclo_id,matricula_estado:'ACTIVO',codigo_matricula:r.codigo_matricula,...r.alumno,base:i?'5000':'10000'}))
  client.from.mockImplementation((table:string)=>{
   const predicates:((r:Record<string,unknown>)=>boolean)[]=[],slice={start:0,end:9999}
   const result=(single=false,maybe=false)=>{const rows=(data[table]??[]).filter(r=>predicates.every(p=>p(r))).slice(slice.start,slice.end+1);if(table===readError)return {data:null,error:{code:'READ'}};return {data:single?(rows[0]??null):maybe?(rows[0]??null):rows,error:null}}
@@ -44,10 +46,10 @@ const props=()=>({company:'company',busy:false,call,saved,cancel})
 const set=(name:string,value:string)=>fireEvent.change(screen.getByLabelText(name,{exact:true}),{target:{value}})
 async function orderForm(){
  wrap(<OrderForm {...props()}/>)
- await screen.findByRole('option',{name:'2026-MC'})
+ await screen.findByRole('option',{name:/2026-MC · CURSO MARINERO/})
  fireEvent.change(screen.getByRole('combobox',{name:'Ciclo'}),{target:{value:'cycle'}})
- await screen.findByText('PEREZ PAZ, ANA · 2026-MC-001')
- set('Serie','OS01');set('Correlativo','000001');set('Monto manual (S/)','18450')
+ await screen.findByText('PEREZ PAZ, ANA')
+ set('Serie','OS01');set('Correlativo','1');fireEvent.blur(screen.getByLabelText('Correlativo'));set('Monto (S/)','4500')
 }
 async function invoiceForm(){
  wrap(<InvoiceForm {...props()}/>)
@@ -74,37 +76,45 @@ it('company billing has three keyboard tabs and no extra master, uploads or expo
  expect(screen.getByRole('tab',{name:'Facturas'})).toHaveFocus()
  expect(screen.queryByRole('button',{name:/CSV|PDF|SUNAT|Subir/})).not.toBeInTheDocument()
 })
-it('OS candidates are filtered by company, cycle and active state; header supports mixed/all/none',async()=>{
- data.ciclo.push({id:'foreign',codigo_ciclo:'OTHER COMPANY',empresa_patrocinadora_id:'other',estado_codigo:'PROGRAMADO'})
- data.ciclo.push({id:'private',codigo_ciclo:'NO SPONSOR',empresa_patrocinadora_id:null,estado_codigo:'PROGRAMADO'})
+it('OS shows only sponsored Cycles with coverage balance, contextual details and a read-only compact roster',async()=>{
+ data.ciclo_orden_servicio_saldo.push({...data.ciclo_orden_servicio_saldo[0],id:'foreign',codigo_ciclo:'OTHER COMPANY',empresa_patrocinadora_id:'other'})
+ data.ciclo_orden_servicio_saldo.push({...data.ciclo_orden_servicio_saldo[0],id:'covered',codigo_ciclo:'FULLY COVERED',saldo_por_cubrir:'0'})
  await orderForm()
- expect(logs).toContainEqual({table:'ciclo',method:'eq',args:['empresa_patrocinadora_id','company']})
- expect(screen.queryByRole('option',{name:'OTHER COMPANY'})).not.toBeInTheDocument()
- expect(screen.queryByRole('option',{name:'NO SPONSOR'})).not.toBeInTheDocument()
- expect(logs).toContainEqual({table:'matricula',method:'eq',args:['empresa_patrocinadora_id','company']})
- expect(logs).toContainEqual({table:'matricula',method:'eq',args:['ciclo_id','cycle']})
- expect(logs).toContainEqual({table:'matricula',method:'eq',args:['estado_codigo','ACTIVO']})
- fireEvent.click(screen.getByRole('checkbox',{name:/Seleccionar 2026-MC-001/}))
- expect(screen.getByRole('checkbox',{name:'Seleccionar todas las matrículas visibles'})).toBePartiallyChecked()
- fireEvent.click(screen.getByRole('checkbox',{name:'Seleccionar todas las matrículas visibles'}))
- expect(screen.getAllByRole('checkbox').every(c=>(c as HTMLInputElement).checked)).toBe(true)
- fireEvent.click(screen.getByRole('checkbox',{name:'Seleccionar todas las matrículas visibles'}))
- expect(screen.getAllByRole('checkbox').every(c=>!(c as HTMLInputElement).checked)).toBe(true)
+ expect(logs).toContainEqual({table:'ciclo_orden_servicio_saldo',method:'eq',args:['empresa_patrocinadora_id','company']})
+ expect(screen.queryByRole('option',{name:/OTHER COMPANY|FULLY COVERED/})).not.toBeInTheDocument()
+ expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
+ expect(screen.getByText('Pisco')).toBeVisible();expect(screen.getByText('2026',{exact:true})).toBeVisible()
+ expect(screen.getByRole('table',{name:'Alumnos del Ciclo'})).toHaveTextContent('S/ 15000.00')
+ expect(screen.getByRole('button',{name:'Cancelar'})).toBeVisible()
 })
-it('OS submits manual amount/zero-preserving correlativo and selected snapshots with no charge read',async()=>{
- await orderForm();fireEvent.click(screen.getByRole('checkbox',{name:/Seleccionar 2026-MC-001/}))
- fireEvent.click(screen.getByRole('button',{name:'Confirmar registro'}))
+it('OS submits only Cycle context, amount and ten-digit reference; server owns the entire roster',async()=>{
+ await orderForm();const button=screen.getByRole('button',{name:'Guardar orden de servicio'});fireEvent.click(button);fireEvent.click(button)
  await waitFor(()=>expect(call).toHaveBeenCalledTimes(1))
- expect(call).toHaveBeenCalledWith('registrar_orden_servicio',{p:expect.objectContaining({monto:'18450',correlativo:'000001',expected_ciclo_updated_at:'cv1',matriculas:[{id:'m1',expected_updated_at:'mv1'}]})})
- expect(saved).toHaveBeenCalledWith('order','saved');expect(client.from.mock.calls.some(([t])=>t==='matricula_cargo')).toBe(false)
+ expect(call.mock.calls[0][1].p).toMatchObject({monto:'4500',correlativo:'0000000001',expected_ciclo_updated_at:'cv1',ciclo_id:'cycle'})
+ expect(call.mock.calls[0][1].p).not.toHaveProperty('matriculas');expect(saved).toHaveBeenCalledWith('order','saved')
 })
-it('OS conflict preserves all draft fields, requires explicit reread and does not retry',async()=>{
- call.mockRejectedValue({code:'PT409'});await orderForm();fireEvent.click(screen.getByRole('checkbox',{name:/Seleccionar 2026-MC-001/}));fireEvent.click(screen.getByRole('button',{name:'Confirmar registro'}))
- await screen.findByRole('alert');expect(screen.getByLabelText('Monto manual (S/)')).toHaveValue('18450')
- expect(screen.getByLabelText('Correlativo')).toHaveValue('000001');expect(call).toHaveBeenCalledTimes(1)
- expect(screen.getByRole('button',{name:'Confirmar registro'})).toBeDisabled()
- fireEvent.click(screen.getByRole('button',{name:'Volver a consultar matrículas'}));await waitFor(()=>expect(screen.getByRole('button',{name:'Confirmar registro'})).toBeEnabled())
+it('OS rejects an amount beyond remaining coverage without a mutation',async()=>{
+ await orderForm();set('Monto (S/)','10500.01');fireEvent.click(screen.getByRole('button',{name:'Guardar orden de servicio'}))
+ expect(screen.getByRole('alert')).toHaveTextContent('no supere el saldo por cubrir');expect(call).not.toHaveBeenCalled()
+})
+it('OS conflict preserves draft and requires explicit refresh without retry',async()=>{
+ call.mockRejectedValue({code:'PT409'});await orderForm();fireEvent.click(screen.getByRole('button',{name:'Guardar orden de servicio'}))
+ await screen.findByRole('alert');expect(screen.getByLabelText('Monto (S/)')).toHaveValue('4500');expect(screen.getByLabelText('Correlativo')).toHaveValue('0000000001')
+ expect(screen.getByRole('button',{name:'Guardar orden de servicio'})).toBeDisabled();expect(call).toHaveBeenCalledTimes(1)
+ fireEvent.click(screen.getByRole('button',{name:'Actualizar datos del Ciclo'}));await waitFor(()=>expect(screen.getByRole('button',{name:'Guardar orden de servicio'})).toBeEnabled())
  expect(call).toHaveBeenCalledTimes(1)
+})
+it('empty eligible Cycles communicate a clear state and cannot save',async()=>{
+ data.ciclo_orden_servicio_saldo=[];wrap(<OrderForm {...props()}/>);
+ expect(await screen.findByText('No hay Ciclos de esta empresa con saldo por cubrir.')).toBeVisible()
+ expect(screen.getByRole('button',{name:'Guardar orden de servicio'})).toBeDisabled();expect(call).not.toHaveBeenCalled()
+})
+it('reference pagination never becomes an enrollment selection or limits the OS payload',async()=>{
+ data.ciclo_orden_servicio_saldo[0]={...data.ciclo_orden_servicio_saldo[0],matriculas_activas:31,total_matriculas:'31000',saldo_por_cubrir:'26500'}
+ data.matricula_pago_listado=Array.from({length:31},(_,i)=>({matricula_id:'ref'+i,ciclo_id:'cycle',matricula_estado:'ACTIVO',codigo_matricula:'M'+i,apellido_paterno:i===30?'ULTIMO':'PEREZ',apellido_materno:'PAZ',nombres:i===0?'ANA':'ALUMNO',base:'1000'}))
+ await orderForm();fireEvent.click(screen.getByRole('button',{name:'Siguiente página'}));await screen.findByText('ULTIMO PAZ, ALUMNO')
+ expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();fireEvent.click(screen.getByRole('button',{name:'Guardar orden de servicio'}))
+ await waitFor(()=>expect(call).toHaveBeenCalledTimes(1));expect(call.mock.calls[0][1].p).not.toHaveProperty('matriculas')
 })
 it('invoice sum uses exact cents; 15000 vs4500 requires explicit confirmation and sends no allocation',async()=>{
  await invoiceForm()
