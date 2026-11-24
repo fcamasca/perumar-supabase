@@ -76,6 +76,19 @@ Las consultas reales verificaron OS-resumen→Ciclo, factura-saldo con casts y f
 
 TEST-H7-014: **cobertura técnica parcial**, teclado/foco y DOM; pendiente revisión humana real de recorrido, ancho reducido y temas. TEST-H7-013 reportes/CSV, TEST-H7-015 SUNAT y TEST-H7-016 Storage/PDF completo: **NO EJECUTADOS / NO IMPLEMENTADOS EN ESTA FASE**. Sin screenshots producidos. No declarar pruebas humanas PASSED.
 
-Revisar humanamente: OS y cobertura histórica; diferencia de factura y fechas de etapas; transferencias/reemplazo de saldos, conflicto/recuperación; errores de anulación y permisos; matrícula patrocinada/historia; teclado/ancho reducido/temas. Si se abandona un intento incierto se conserva solo la clave: puede consultarse el resultado, pero no reconstruirse/reintentarse un payload financiero perdido. Si no hay resultado ni borrador original, se bloquea nuevo intento hasta aclararlo; no se ofrece “limpiar y volver a cobrar” a ciegas.
+Revisar humanamente: OS y cobertura histórica; diferencia de factura y fechas de etapas; transferencias/reemplazo de saldos, conflicto/recuperación; errores de anulación y permisos; matrícula patrocinada/historia; teclado/ancho reducido/temas. La limitación original de recuperación al perder el borrador tras remontar se corrige en el ajuste focalizado siguiente. No se ofrece “limpiar y volver a cobrar” a ciegas.
 
 Residuales anteriores íntegros: hosted no probado directamente; CPU/memoria no medidas; forced-colors real NO VERIFICADO; bundle >500kB; limpieza/conciliación manual, purga H9/release y demás límites documentados. Ninguno pasa a PASSED por estas pruebas. **Gate 2 H7 pendiente; no acceptance, no merge, sin iniciar TASK-H7-007/008/009.**
+
+## Fix focalizado posterior a 9c8ab2b — recuperación tras remount
+
+Solución mínima equivalente: consulta sin resultado → revisión/reconstrucción humana de los datos originales → confirmación explícita → RPC con la MISMA idempotency_key. Funciona también para referencias antiguas que solo conservaban la clave. No se crea otra clave, no hay reenvío automático y se mantiene la referencia tras errores de un intento anteriormente incierto, incluidos conflictos idempotentes y40001 de reenvío. El servidor aprobado sigue siendo autoridad para recuperar/rechazar contenido y garantizar unicidad.
+
+Validaciones de esta corrección exclusivamente:
+
+- `vitest run tests/Billing.test.tsx tests/EnrollmentPayments.test.tsx tests/PaymentAccess.test.tsx tests/payments.test.ts tests/conflictErrors.test.ts --maxWorkers=1`: **109/109 PASSED**, cinco archivos. Tres nuevos casos integrados, Billing pasa de31 a34. No se atribuye ejecución a toda la suite del repositorio.
+- Una primera pasada paralela registró un fallo de foco en un caso preexistente de tabs; se repitieron los mismos cinco archivos con un worker. No se cambió ese caso ni se relajaron aserciones.
+- Lint, typecheck, build y diff-check: PASSED. Advertencia de bundle >500kB preservada (principal792.23kB).
+- SQL/RPC/RLS, migraciones y tests DB: sin cambios. **No se ejecutaron de nuevo las186 comprobaciones DB ni la regresión completa H1–H6.**
+
+El commit utiliza `[skip ci]` para impedir que el workflow de push dispare las suites DB excluidas por instrucción humana. No se atribuye CI completa SUCCESS a este fix; los resultados son los chequeos focalizados locales anteriores. Sin pruebas humanas/capturas ni Gate 2; demás residuales permanecen.

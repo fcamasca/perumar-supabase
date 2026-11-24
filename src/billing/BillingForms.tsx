@@ -74,48 +74,57 @@ export function TransferForm({company,busy,call,saved,cancel}:Props){
  const [error,setError]=useState(''),[review,setReview]=useState(false),[consulting,setConsulting]=useState(false)
  const [pending,setPending]=useState<string|null>(()=>{try{return readRecovery(user,company)}catch{return 'unavailable'}})
  const flight=useRef(false),attempt=useRef<Record<string,unknown>|null>(null)
+ const uncertain=useRef(!!pending)
  const [lookedUp,setLookedUp]=useState(false)
+ const [reconstructing,setReconstructing]=useState(false),[confirmedReconstruction,setConfirmedReconstruction]=useState(false)
  const list=useRows<Invoice>(useCallback(()=>client.from('factura_patrocinador_saldo').select(invoiceColumns).eq('empresa_patrocinadora_id',company).eq('estado_codigo','PENDIENTE_DESEMBOLSO').is('anulado_at',null).gt('pendiente',0).order('fecha_emision').order('id').range(page*30,page*30+29),[client,company,page]))
  const rows=chosen(selected,list.rows),total=rows.reduce((n,r)=>n+(cents(amounts[r.id]??'')??0n),0n)
  async function consult(){
-  if(consulting||pending==='unavailable'||!pending)return
-  setConsulting(true)
+  if(busy||flight.current||consulting||pending==='unavailable'||!pending)return
+  setConsulting(true);setLookedUp(false)
   try{
    const r=await client.from('pago_patrocinador').select('id').eq('empresa_patrocinadora_id',company).eq('idempotency_key',pending).maybeSingle()
    if(r.error)throw r.error
    if(!r.data){setLookedUp(true);setError('Todavía no se encontró un pago con esa referencia. El resultado sigue sin confirmar; no se generará otra clave ni se reenviará el pago automáticamente.');return}
-   sessionStorage.removeItem(recoveryKey(user,company));setPending(null);saved('payment',r.data.id)
+   sessionStorage.removeItem(recoveryKey(user,company));setPending(null);uncertain.current=false;attempt.current=null;setReconstructing(false);saved('payment',r.data.id)
   }catch{setError('No se pudo confirmar el resultado. La referencia se conserva; no se reenvió el pago.')}
   finally{setConsulting(false)}
  }
  async function submit(){
-  if(busy||flight.current||review||pending||!list.ready)return
+  if(busy||flight.current||review||(pending&&!reconstructing)||!list.ready)return
+  if(reconstructing&&(!pending||!confirmedReconstruction)){setError('Confirma que los datos corresponden al mismo intento original.');return}
   if(!rows.length||rows.length!==selected.length||!bank.trim()||!date||date>todayLima()||total<=0n||total>maxCents){setError('Selecciona facturas, banco, fecha válida e importes positivos dentro del límite permitido.');return}
   const invalid=rows.find(r=>positive(amounts[r.id]??'')===null||(cents(amounts[r.id])??0n)>(cents(r.pendiente)??0n)||date<r.fecha_emision)
   if(invalid){setError('Revisa la fecha e importes: hasta dos decimales, sin superar el pendiente ni preceder la emisión de ninguna factura.');return}
   flight.current=true
-  const key=crypto.randomUUID(),payload={empresa_patrocinadora_id:company,idempotency_key:key,importe:decimal(total),fecha_efectiva:date,banco:bank.trim(),referencia_operacion:referenceOp.trim()||null,observacion:notes.trim()||null,aplicaciones:rows.map(r=>({factura_id:r.id,importe:decimal(cents(amounts[r.id])!),expected_updated_at:r.updated_at}))}
+  const key=pending??crypto.randomUUID(),payload={empresa_patrocinadora_id:company,idempotency_key:key,importe:decimal(total),fecha_efectiva:date,banco:bank.trim(),referencia_operacion:referenceOp.trim()||null,observacion:notes.trim()||null,aplicaciones:rows.map(r=>({factura_id:r.id,importe:decimal(cents(amounts[r.id])!),expected_updated_at:r.updated_at}))}
+  if(pending)uncertain.current=true
   try{sessionStorage.setItem(recoveryKey(user,company),key);setPending(key)}
   catch{setError('No se pudo conservar la referencia de recuperación. La transferencia no fue enviada.');flight.current=false;return}
-  attempt.current=payload;setLookedUp(false)
+  attempt.current=payload;setLookedUp(false);setReconstructing(false);setConfirmedReconstruction(false)
   await sendAttempt(payload)
  }
  async function sendAttempt(payload:Record<string,unknown>){
   try{
    const r=await call('registrar_pago_patrocinador',{p:payload})
-   if(r){sessionStorage.removeItem(recoveryKey(user,company));setPending(null);saved('payment',String(r.id))}
+   if(r){sessionStorage.removeItem(recoveryKey(user,company));setPending(null);uncertain.current=false;attempt.current=null;saved('payment',String(r.id))}
   }catch(e){
    setError(billingError(e))
-   if(isDefinite(e)){try{sessionStorage.removeItem(recoveryKey(user,company));setPending(null);setReview(true)}catch{/* Keep blocked if reference cannot be cleared. */}}
+   // A failure of this retry says nothing about an older, uncertain request.
+   // Keep its identity until an authoritative lookup or same-key success resolves it.
+   if(isDefinite(e)&&!uncertain.current&&(e as {message?:string})?.message!=='H7_IDEMPOTENCY_CONFLICT'){
+    try{sessionStorage.removeItem(recoveryKey(user,company));setPending(null);setReview(true)}catch{/* Keep blocked if reference cannot be cleared. */}
+   }else{uncertain.current=true;setReview(true)}
   }finally{flight.current=false}
  }
  return <section><EditorHeading>Registrar transferencia</EditorHeading><p>Transferencia bancaria</p>
- {pending&&<div className="billing-notice"><p role="status">Existe un intento sin confirmar. Se conserva la referencia para evitar duplicados.</p><button type="button" disabled={busy||consulting||pending==='unavailable'} onClick={()=>void consult()}>Consultar resultado del intento</button>{lookedUp&&attempt.current&&<button type="button" className="secondary" disabled={busy||consulting} onClick={()=>{if(flight.current)return;flight.current=true;setLookedUp(false);void sendAttempt(attempt.current!)}}>Reenviar el mismo intento con la misma clave</button>}{pending==='unavailable'&&<p role="alert">No se pudo leer la referencia de recuperación. Consulta el historial antes de operar.</p>}</div>}
- <BillingForm submit={()=>void submit()} busy={busy||!!pending||consulting} cancel={cancel} error={error} blocked={review||!list.ready}>
- {readNotice(list.error,list.loading)}{list.ready&&<Selection rows={list.rows} selected={selected} change={setSelected} label="facturas pendientes" name={reference}>{r=><><strong>{reference(r)}</strong><p>Importe {pen(r.importe)} · Abonado {pen(r.abonado)} · Pendiente {pen(r.pendiente)}</p><label>Aplicar a {reference(r)} (S/)<input type="text" inputMode="decimal" value={amounts[r.id]??''} aria-invalid={selected.includes(r.id)&&amounts[r.id]!==undefined&&(positive(amounts[r.id])===null||(cents(amounts[r.id])??0n)>(cents(r.pendiente)??0n))} onChange={e=>setAmounts(a=>({...a,[r.id]:e.target.value}))}/></label></>}</Selection>}
- <Pager page={page} count={list.rows.length} disabled={list.loading} onChange={n=>{setPage(n);setSelected([])}}/>
+ {pending&&<div className="billing-notice"><p role="status">Existe un intento sin confirmar. Se conserva la referencia para evitar duplicados.</p><button type="button" disabled={busy||consulting||pending==='unavailable'} onClick={()=>void consult()}>Consultar resultado del intento</button>{lookedUp&&attempt.current&&!reconstructing&&<button type="button" className="secondary" disabled={busy||consulting} onClick={()=>{if(flight.current)return;flight.current=true;setLookedUp(false);void sendAttempt(attempt.current!)}}>Reenviar el mismo intento con la misma clave</button>}{lookedUp&&!reconstructing&&<button type="button" className="secondary" disabled={busy||consulting} onClick={()=>{setReconstructing(true);setConfirmedReconstruction(false);setReview(false);setError('');list.reload()}}>Revisar el mismo intento con la misma clave</button>}{pending==='unavailable'&&<p role="alert">No se pudo leer la referencia de recuperación. Consulta el historial antes de operar.</p>}</div>}
+ <BillingForm submit={()=>void submit()} busy={busy||(!!pending&&!reconstructing)||consulting} cancel={cancel} error={error} blocked={review||!list.ready}>
+ {reconstructing&&<div className="billing-notice"><p role="status">Introduce los datos originales del intento. Se conserva la misma clave; si el pago ya existe, no se creará otro. Una diferencia será rechazada por el servidor.</p><label className="billing-check"><input type="checkbox" checked={confirmedReconstruction} onChange={e=>setConfirmedReconstruction(e.target.checked)}/>Confirmo que estos datos corresponden al mismo intento original</label></div>}
+ {readNotice(list.error,list.loading)}{list.ready&&<Selection rows={list.rows} selected={selected} change={ids=>{setSelected(ids);setConfirmedReconstruction(false)}} label="facturas pendientes" name={reference}>{r=><><strong>{reference(r)}</strong><p>Importe {pen(r.importe)} · Abonado {pen(r.abonado)} · Pendiente {pen(r.pendiente)}</p><label>Aplicar a {reference(r)} (S/)<input type="text" inputMode="decimal" value={amounts[r.id]??''} aria-invalid={selected.includes(r.id)&&amounts[r.id]!==undefined&&(positive(amounts[r.id])===null||(cents(amounts[r.id])??0n)>(cents(r.pendiente)??0n))} onChange={e=>{setAmounts(a=>({...a,[r.id]:e.target.value}));setConfirmedReconstruction(false)}}/></label></>}</Selection>}
+ <Pager page={page} count={list.rows.length} disabled={list.loading} onChange={n=>{setPage(n);setSelected([]);setConfirmedReconstruction(false)}}/>
  <p>Total de la transferencia: <strong>{pen(total)}</strong></p>
- <div className="billing-fields"><label>Banco<input required maxLength={150} value={bank} onChange={e=>setBank(e.target.value)}/></label><label>Fecha efectiva<input type="date" required max={todayLima()} value={date} onChange={e=>setDate(e.target.value)}/></label><label>Referencia de operación (opcional)<input maxLength={150} value={referenceOp} onChange={e=>setReference(e.target.value)}/></label><label>Observación (opcional)<textarea maxLength={500} value={notes} onChange={e=>setNotes(e.target.value)}/></label></div>
+ <div className="billing-fields"><label>Banco<input required maxLength={150} value={bank} onChange={e=>{setBank(e.target.value);setConfirmedReconstruction(false)}}/></label><label>Fecha efectiva<input type="date" required max={todayLima()} value={date} onChange={e=>{setDate(e.target.value);setConfirmedReconstruction(false)}}/></label><label>Referencia de operación (opcional)<input maxLength={150} value={referenceOp} onChange={e=>{setReference(e.target.value);setConfirmedReconstruction(false)}}/></label><label>Observación (opcional)<textarea maxLength={500} value={notes} onChange={e=>{setNotes(e.target.value);setConfirmedReconstruction(false)}}/></label></div>
  <button type="button" className="secondary" onClick={()=>{list.reload();setReview(false);setError('')}}>Volver a consultar facturas</button>
  </BillingForm>{pending&&<button type="button" className="secondary" disabled={busy||consulting} onClick={cancel}>Volver sin reenviar</button>}</section>
 }

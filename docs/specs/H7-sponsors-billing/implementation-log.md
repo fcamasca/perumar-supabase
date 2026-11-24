@@ -31,3 +31,13 @@ Núcleo aprobado humanamente para continuar: `83140cce4204fb0b8e3e61fab1164088d1
 - Nuevas pruebas React (31), fixtures existentes ajustados únicamente para el enlace de navegación y lectura de patrocinio. Núcleo, migraciones, siete RPC, RLS y las186 comprobaciones DB sin cambios. Verificadas además siete consultas concretas contra PostgREST desechable con JWT ordinario, sin modificar scripts de pruebas DB.
 
 Sin reportes/CSV, Storage/buckets, Edge H7, PDF real o SUNAT. Sin capturas ni ejecución humana; revisión visual/operativa pendiente. Sin Gate 2, acceptance o merge. Evidencia en technical-results; detenerse para revisión UX H7.
+
+## 2026-11-23 — Fix focalizado: recuperación de transferencia tras remount
+
+Base exacta UX: `9c8ab2b0b5019dde72e7ec8db18d143260a8c7bb`, misma rama UI. Solo TransferForm, pruebas focalizadas y evidencia; SQL/RPC/RLS intactos.
+
+Tras una consulta explícita sin resultado, se ofrece revisar/reconstruir los datos originales con la clave conservada, aunque el payload en memoria se haya perdido. Se requiere confirmación humana de correspondencia con el intento original. El envío reutiliza esa clave; el contrato DB vigente recupera el pago existente o rechaza diferencias, sin crear un duplicado. No se persiste payload financiero adicional ni se limpia la referencia para crear otro intento.
+
+La incertidumbre del intento anterior permanece tras remontar o fallar un reenvío: un error de la petición nueva no demuestra que la anterior no confirmó. La clave solo se libera por resultado positivo autorizado o por rechazo definitivo de un primer envío que nunca estuvo incierto. Sin generación de claves/reenvíos automáticos; guard síncrono de una mutación por decisión.
+
+Tres pruebas nuevas cubren pérdida de respuesta→remount→consulta vacía→reconstrucción confirmada con misma clave, conflicto idempotente con consulta posterior y error definitivo de reenvío sin liberar la referencia anterior. Checks limitados a Billing/Payments, lint/typecheck/build/diff-check. Publicación con `[skip ci]` para respetar la instrucción humana de no volver a ejecutar DB ni regresión H1–H6. No Gate 2/merge ni ampliación de alcance.
