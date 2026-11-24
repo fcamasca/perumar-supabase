@@ -1,0 +1,20 @@
+.billing .billing-toolbar,.billing .billing-actions{display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;margin-block:1rem}
+.billing .billing-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,13rem),1fr));gap:1rem}
+.billing label{display:flex;flex-direction:column;gap:.35rem}
+.billing .billing-check{display:flex;flex-direction:row;align-items:center;gap:.6rem}
+.billing .billing-check input{width:auto;flex:none}
+.billing .billing-selection{margin-block:1rem}
+.billing .billing-selection table input[type=checkbox]{width:auto}
+.billing .billing-selection table input[type=text]{min-width:6rem;max-width:10rem}
+.billing .billing-notice{border:1px solid currentColor;border-inline-start-width:4px;padding:1rem;border-radius:.5rem}
+.billing .billing-difference{padding:1rem;border:1px solid currentColor;border-radius:.5rem;margin-block:1rem}
+.billing .billing-difference dl{display:flex;flex-wrap:wrap;gap:1.5rem}
+.billing .billing-detail{margin-block:1rem}
+.billing .billing-money{white-space:nowrap;font-variant-numeric:tabular-nums}
+.billing th,.billing td{vertical-align:top}
+.billing .billing-pagination{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-block:.75rem}
+.billing .billing-pagination span{margin-inline-end:auto}
+.billing [role=alert]{margin-block:1rem}
+.billing .billing-panel{min-width:0}
+.billing input[aria-invalid=true]{border:2px solid var(--danger,#b51c3c)}
+@media(max-width:640px){.billing .billing-actions>button{flex:1}.billing .billing-fields{grid-template-columns:1fr}}

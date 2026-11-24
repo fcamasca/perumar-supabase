@@ -1,4 +1,5 @@
 import { DocumentTypes } from '../documents/DocumentTypes'
+import { SponsorBillingPage } from '../billing/CompanyBilling'
 import { PaymentsPage } from '../payments/PaymentAccess'
 import { Students, NewStudent, StudentDetail, EnrollmentDetail, Tariffs, Companies } from '../enrollment/EnrollmentPages'
 import { useEffect, useState, type FormEvent } from 'react'
@@ -108,6 +109,7 @@ export function SecurityRoutes() {
       <Route path="/documentos" element={<AcademicOnly><DocumentTypes /></AcademicOnly>} />
       <Route path="/tarifas" element={<AcademicOnly><Tariffs /></AcademicOnly>} />
       <Route path="/empresas" element={<AcademicOnly><Companies /></AcademicOnly>} />
+      <Route path="/empresas/:companyId/facturacion" element={<AcademicOnly><SponsorBillingPage /></AcademicOnly>} />
       <Route path="/academico/materias" element={<AcademicOnly><Materias /></AcademicOnly>} />
       <Route path="/academico/carreras" element={<AcademicOnly><Carreras /></AcademicOnly>} />
       <Route path="/academico/ciclos" element={<AcademicOnly><CycleRoute /></AcademicOnly>} />

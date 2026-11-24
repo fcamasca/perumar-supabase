@@ -56,3 +56,26 @@ TEST-H7-001..012: ejecutados los subcasos de núcleo descritos arriba mediante D
 Residuales preservados: Hosted Edge/PostgREST NO PROBADO DIRECTAMENTE; CPU NOT MEASURED; Memory NOT MEASURED; forced-colors NO VERIFICADO; bundle >500kB; limpieza/conciliación manual y purga H9/release; compatibilidad PDF conservadora y exportación sin snapshot/memoria proporcional al volumen en sus módulos existentes. Ninguno convertido en PASSED. Rendimiento/contención del lock por patrocinador no medidos; no benchmark inferido de la suite.
 
 No UX/CSV/reportes/Storage/Edge/SUNAT H7, aceptación, Gate 2 ni merge. Detenerse para revisión del núcleo.
+
+## 2026-11-23 — TASK-H7-006, candidato UX
+
+Base exacta aprobada para esta fase: núcleo `83140cce4204fb0b8e3e61fab1164088d11f26a5`, CI45287905957 SUCCESS. Rama `feature/h7-sponsors-billing-ui`. La evidencia anterior corresponde al núcleo; los resultados de esta sección corresponden a la continuación UX autorizada, no al cierre completo H7.
+
+| Comprobación | Resultado |
+| --- | --- |
+| Lint y typecheck | PASSED. |
+| `npm test` | **663/663 PASSED**,42 archivos.31 casos nuevos en Billing.test.tsx; sin atribuir ejecución humana. |
+| `npm run test:payments:isolated` | PASSED: regresión H3/H4, carreras académicas, cierre/snapshot,40001 y40P01 reales sin retry. Base humana sin reset/escrituras. |
+| Núcleo H7 y consultas UI reales | **186 comprobaciones originales PASSED**, sin modificar scripts/núcleo. Además siete consultas de relaciones/casts/paginación con PostgREST/JWT real PASSED. Se usó copia temporal ignorada `.cache/h7-ui-api.mjs` del runner intacto con probes exclusivamente de lectura. |
+| Build / build-safety | PASSED; se conserva advertencia de bundle principal >500kB. |
+| Diff-check / alcance | PASSED; cero cambios en supabase, SQL, RPC, RLS, dependencias o pruebas DB. Los cuatro documentos del Spec aprobado intactos. |
+
+Casos React: entrada Empresa→Facturación, filtros OS de empresa/Ciclo/ACTIVO, una/varias/todas, monto manual/correlativo con ceros, conflicto con borrador conservado y consulta explícita; factura15000→4500 confirmable, edición preservada y sin reparto; transferencia exacta30.03 multi-factura con banco/fecha/referencia/versiones, una llamada por decisión, respuesta incierta/consulta/reenvío explícito de la misma clave; workflow siguiente solamente, separación de estado operativo/financiero/condición anulada; anulación Director con motivo/foco/Escape y bloqueo dependiente, sin cascada, refresco de saldos; ADMIN denegado/Coordinador sin anular; H4 patrocinada sin nuevo formulario e historial conservado aun sin catálogo operativo; matrícula solo lectura con empresa actual e histórica separadas.
+
+Las consultas reales verificaron OS-resumen→Ciclo, factura-saldo con casts y filtros, pago→aplicaciones→factura, matrícula→Ciclo/Alumno, cobertura histórica→OS→facturas, factura→OS y aplicaciones→factura. No se alteró contrato DB para acomodar frontend; no se debilitaron las186 comprobaciones. Las suites H3/H4/H7 permanecen en la CI existente del SHA publicado, cuya referencia exacta se devuelve en la entrega.
+
+TEST-H7-014: **cobertura técnica parcial**, teclado/foco y DOM; pendiente revisión humana real de recorrido, ancho reducido y temas. TEST-H7-013 reportes/CSV, TEST-H7-015 SUNAT y TEST-H7-016 Storage/PDF completo: **NO EJECUTADOS / NO IMPLEMENTADOS EN ESTA FASE**. Sin screenshots producidos. No declarar pruebas humanas PASSED.
+
+Revisar humanamente: OS y cobertura histórica; diferencia de factura y fechas de etapas; transferencias/reemplazo de saldos, conflicto/recuperación; errores de anulación y permisos; matrícula patrocinada/historia; teclado/ancho reducido/temas. Si se abandona un intento incierto se conserva solo la clave: puede consultarse el resultado, pero no reconstruirse/reintentarse un payload financiero perdido. Si no hay resultado ni borrador original, se bloquea nuevo intento hasta aclararlo; no se ofrece “limpiar y volver a cobrar” a ciegas.
+
+Residuales anteriores íntegros: hosted no probado directamente; CPU/memoria no medidas; forced-colors real NO VERIFICADO; bundle >500kB; limpieza/conciliación manual, purga H9/release y demás límites documentados. Ninguno pasa a PASSED por estas pruebas. **Gate 2 H7 pendiente; no acceptance, no merge, sin iniciar TASK-H7-007/008/009.**

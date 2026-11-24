@@ -59,7 +59,7 @@ import { Companies } from '../src/enrollment/EnrollmentPages'
 it('uppercases typed and pasted company text in both controls and the saved request, preserving email', async () => {
   client.from.mockImplementation(() => resultQuery([]))
   client.rpc.mockResolvedValue({data:{id:'company',updated_at:'v1'},error:null})
-  render(<Companies />)
+  render(<MemoryRouter><Companies /></MemoryRouter>)
   fireEvent.click(screen.getByRole('button',{name:'Nueva empresa'}))
   fireEvent.change(screen.getByLabelText(/^RUC/),{target:{value:'20123456789'}})
   const name=screen.getByLabelText(/^Razón social/)
@@ -98,7 +98,7 @@ it('restricts document characters and length by selected type and clears the num
 })
 it('accepts only eleven RUC digits, including formatted paste, and blocks an incomplete RUC', async () => {
   client.from.mockImplementation(()=>resultQuery([]))
-  render(<Companies/>)
+  render(<MemoryRouter><Companies/></MemoryRouter>)
   fireEvent.click(screen.getByRole('button',{name:'Nueva empresa'}))
   const ruc=screen.getByRole('textbox',{name:/^RUC/}) as HTMLInputElement
   expect(ruc).toHaveAttribute('maxlength','11');expect(ruc).toHaveAttribute('inputmode','numeric')
@@ -547,7 +547,7 @@ function companyRows(count=1) { return Array.from({length:count},(_,i)=>({id:`co
 it('gives companies the pupil search toolbar, icon actions, grid and newest-first pagination',async()=>{
     const rows=companyRows(30),order=vi.fn(),range=vi.fn(),filter=vi.fn();
     const q={select:()=>q,order:(...args:unknown[])=>{order(...args);return q},range:(...args:unknown[])=>{range(...args);return q},ilike:(...args:unknown[])=>{filter(...args);return q},then:(resolve:(r:{data:unknown[];error:null})=>unknown)=>Promise.resolve({data:rows,error:null}).then(resolve)};
-    client.from.mockReturnValue(q);render(<Companies/>);
+    client.from.mockReturnValue(q);render(<MemoryRouter><Companies/></MemoryRouter>);
     expect(screen.getByRole('search',{name:'Búsqueda de empresas'})).toBeInTheDocument();
     const search=screen.getByRole('searchbox',{name:'Buscar empresas'});
     expect(search).toHaveAttribute('placeholder','RUC o razón social');
@@ -570,7 +570,7 @@ it('gives companies the pupil search toolbar, icon actions, grid and newest-firs
     expect(client.rpc).not.toHaveBeenCalled();
 });
 it('views company data read-only and edits through the existing command with its version',async()=>{
-    const row=companyRows()[0];client.from.mockReturnValue(resultQuery([row]));render(<Companies/>);
+    const row=companyRows()[0];client.from.mockReturnValue(resultQuery([row]));render(<MemoryRouter><Companies/></MemoryRouter>);
     fireEvent.click(await screen.findByRole('button',{name:'Ver empresa: EMPRESA 0'}));
     expect(screen.getByRole('textbox',{name:'RUC'})).toHaveValue(row.ruc);
     expect(screen.getByRole('textbox',{name:'RUC'})).toHaveAttribute('readonly');
@@ -586,7 +586,7 @@ it('views company data read-only and edits through the existing command with its
     expect(screen.getByRole('table',{name:'Empresas patrocinadoras por fecha de registro descendente'})).toBeVisible();
 });
 it('preserves choosing/no sponsor and auto-selects a newly saved company in enrollment',async()=>{
-    const row=companyRows()[0],choose=vi.fn();client.from.mockReturnValue(resultQuery([row]));render(<Companies choose={choose}/>);
+    const row=companyRows()[0],choose=vi.fn();client.from.mockReturnValue(resultQuery([row]));render(<MemoryRouter><Companies choose={choose}/></MemoryRouter>);
     fireEvent.click(await screen.findByRole('button',{name:'Elegir empresa: EMPRESA 0'}));expect(choose).toHaveBeenLastCalledWith(row);
     fireEvent.click(screen.getByRole('button',{name:'Sin patrocinador'}));expect(choose).toHaveBeenLastCalledWith(null);
     fireEvent.click(screen.getByRole('button',{name:'Nueva empresa'}));
@@ -597,13 +597,13 @@ it('preserves choosing/no sponsor and auto-selects a newly saved company in enro
     fireEvent.click(screen.getByRole('button',{name:'Guardar empresa'}));await waitFor(()=>expect(choose).toHaveBeenLastCalledWith(saved));
 });
 it('offers company consultation without new/edit actions if existing editing roles are absent',async()=>{
-    sessionState.roles=[];client.from.mockReturnValue(resultQuery(companyRows()));render(<Companies/>);
+    sessionState.roles=[];client.from.mockReturnValue(resultQuery(companyRows()));render(<MemoryRouter><Companies/></MemoryRouter>);
     await screen.findByRole('button',{name:'Ver empresa: EMPRESA 0'});
     expect(screen.queryByRole('button',{name:'Nueva empresa'})).not.toBeInTheDocument();
     expect(screen.queryByRole('button',{name:/Editar empresa/})).not.toBeInTheDocument();
 });
 it('retains the company draft on a version conflict and does not retry automatically',async()=>{
-    client.from.mockReturnValue(resultQuery(companyRows()));render(<Companies/>);
+    client.from.mockReturnValue(resultQuery(companyRows()));render(<MemoryRouter><Companies/></MemoryRouter>);
     fireEvent.click(await screen.findByRole('button',{name:'Editar empresa: EMPRESA 0'}));
     fireEvent.change(screen.getByRole('textbox',{name:/^Razón social/}),{target:{value:'borrador'}});
     client.rpc.mockResolvedValue({data:null,error:{code:'40001'}});
@@ -615,7 +615,7 @@ it('retains the company draft on a version conflict and does not retry automatic
 it('replaces the company grid with its record, puts Edit above fields and restores list search/page on return',async()=>{
     const rows=companyRows(30),range=vi.fn(),filter=vi.fn();
     const q={select:()=>q,order:()=>q,range:(...args:unknown[])=>{range(...args);return q},ilike:(...args:unknown[])=>{filter(...args);return q},then:(resolve:(r:{data:unknown[];error:null})=>unknown)=>Promise.resolve({data:rows,error:null}).then(resolve)};
-    client.from.mockReturnValue(q);render(<Companies/>);
+    client.from.mockReturnValue(q);render(<MemoryRouter><Companies/></MemoryRouter>);
     await screen.findByRole('button',{name:'Ver empresa: EMPRESA 0'});
     fireEvent.change(screen.getByRole('searchbox'),{target:{value:'empresa'}});
     await waitFor(()=>expect(filter).toHaveBeenCalledWith('razon_social','%EMPRESA%'));
