@@ -30,3 +30,70 @@
 .billing .order-form .order-observation{width:100%;max-width:none;display:flex;margin-block:1rem}
 .billing .order-form .order-observation textarea{width:100%;resize:vertical;min-height:6rem}
 @media(max-width:640px){.billing .order-form .order-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.billing .order-form .order-context,.billing .order-form .order-totals{grid-template-columns:1fr}}
+.billing .order-detail-header {display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-block:1.25rem}
+.billing .order-detail-header h2,.billing .order-detail-header h3 {margin-block:0 .6rem}
+.billing .order-detail-summary {padding:1.25rem;border:1px solid var(--border-soft);border-radius:.75rem;background:var(--surface-elevated);grid-template-columns:1.2fr 1fr 1fr;margin-block:1rem}
+.billing .order-detail-summary .order-detail-amount {grid-row:span 2}
+.billing .order-detail-amount dd {font-size:1.8rem;line-height:1.25;margin-block-start:.45rem;color:var(--primary);font-variant-numeric:tabular-nums}
+.billing .order-detail-course {grid-column:span 2}
+.billing .order-detail-students th,.billing .order-detail-students td {padding:.6rem .8rem}
+.billing .order-detail-students td:last-child {white-space:nowrap}
+.billing .order-detail-danger {margin-block-start:1.5rem;padding-block-start:1rem;border-block-start:1px solid var(--border-soft)}
+@media(max-width:640px){.billing .order-detail-summary {grid-template-columns:1fr}.billing .order-detail-summary .order-detail-amount {grid-row:auto}.billing .order-detail-course {grid-column:auto}}
+.billing .invoice-form form {max-width:none}
+.billing .invoice-form h4 {margin-block:0 .9rem}
+.billing .invoice-form .invoice-identity {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+.billing .invoice-form .invoice-orders {margin-block:1.5rem}
+.billing .invoice-orders-heading {display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-block-end:.5rem}
+.billing .invoice-orders-heading h4 {margin:0}
+.billing .invoice-form .invoice-selection {width:3rem}
+.billing .invoice-form table input[type=checkbox] {width:auto;min-height:auto}
+.billing .invoice-form th,.billing .invoice-form td {padding:.55rem .75rem}
+.billing .invoice-form .invoice-amount {padding:1rem;border:1px solid var(--border-soft);border-radius:.65rem;background:var(--surface)}
+.billing .invoice-form .invoice-amount-field {max-width:20rem}
+.billing .invoice-amount-field input {font-size:1.25rem;font-weight:650;font-variant-numeric:tabular-nums}
+.billing .invoice-form .invoice-observation {max-width:none;width:100%;margin-block-start:1rem}
+.billing .invoice-observation textarea {width:100%;min-height:6rem;resize:vertical}
+@media(max-width:640px){.billing .invoice-form .invoice-identity {grid-template-columns:1fr}.billing .invoice-form .invoice-amount-field {max-width:none}}
+.invoice-state-dialog .review-fields {grid-template-columns:1fr;gap:.9rem;margin-block:1rem}
+.invoice-state-dialog label {display:flex;flex-direction:column;gap:.4rem}
+.invoice-state-dialog form {padding:0;border:0;box-shadow:none;background:transparent;max-width:none}
+.billing .transfer-form form {max-width:none}
+.billing .transfer-form h4 {margin-block:0 .9rem}
+.billing .transfer-identity {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+.billing .transfer-reference {grid-column:1/-1}
+.billing .transfer-invoices {margin-block:1.5rem}
+.billing .transfer-invoices-heading {display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-block-end:.5rem}
+.billing .transfer-invoices-heading h4 {margin:0}
+.billing .transfer-form .transfer-selection {width:3rem}
+.billing .transfer-form table input[type=checkbox] {width:auto;min-height:auto}
+.billing .transfer-form table input[type=text] {min-width:6rem;max-width:9rem;min-height:2.25rem;padding:.4rem .5rem;text-align:right}
+.billing .transfer-form th,.billing .transfer-form td {padding:.55rem .7rem;vertical-align:middle}
+.billing .transfer-summary {padding:1rem;border:1px solid var(--border-soft);border-radius:.65rem;background:var(--surface)}
+.billing .transfer-summary dl {margin:0 0 1rem}
+.billing .transfer-summary dd {margin:.25rem 0 0;font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums}
+.billing .transfer-summary label {max-width:none;width:100%}
+.billing .transfer-summary textarea {width:100%;min-height:6rem;resize:vertical}
+@media(max-width:640px){.billing .transfer-identity {grid-template-columns:1fr}}
+
+.billing .transfer-detail-summary {padding:1.25rem;border:1px solid var(--border-soft);border-radius:.75rem;background:var(--surface-elevated);grid-template-columns:1.2fr 1fr 1fr;gap:1rem;margin-block:1rem}
+.billing .transfer-detail-amount {grid-row:span 2}
+.billing .transfer-detail-amount dd {font-size:1.8rem;line-height:1.25;margin-block-start:.45rem;font-variant-numeric:tabular-nums}
+.billing .transfer-detail-reference {grid-column:span 2}
+.billing .transfer-detail-summary dd {overflow-wrap:anywhere}
+.billing .transfer-detail-invoices th,.billing .transfer-detail-invoices td {padding:.6rem .8rem}
+.billing .transfer-detail-invoices td:last-child {white-space:nowrap}
+@media(max-width:640px){.billing .transfer-detail-summary {grid-template-columns:1fr}.billing .transfer-detail-amount {grid-row:auto}.billing .transfer-detail-reference {grid-column:auto}}
+
+.billing .invoice-detail-money {padding:1.25rem;border:1px solid var(--border-soft);border-radius:.75rem;background:var(--surface-elevated);grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem}
+.billing .invoice-detail-money dd {font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums}
+.billing .invoice-detail-balance {border-inline-start:3px solid var(--primary);padding-inline-start:1rem}
+.billing .invoice-detail-tracking {margin-block:1.5rem}
+.billing .invoice-detail-steps {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.75rem;padding:0;list-style:none}
+.billing .invoice-detail-steps li {display:flex;flex-direction:column;align-items:flex-start;gap:.5rem;padding:1rem;border:1px solid var(--border-soft);border-radius:.5rem;overflow-wrap:anywhere}
+.billing .invoice-detail-steps li[aria-current=step] {border:2px solid var(--primary);background:var(--surface-elevated)}
+.billing .invoice-step-marker {display:grid;place-items:center;width:1.75rem;height:1.75rem;border:1px solid currentColor;border-radius:50%}
+.billing .invoice-detail-steps span,.billing .invoice-detail-steps small {font-size:.875rem}
+.billing .invoice-detail-dates {grid-template-columns:repeat(2,minmax(0,1fr));margin-block:1.5rem}
+.billing .invoice-detail-orders th,.billing .invoice-detail-orders td {padding:.6rem .8rem}
+@media(max-width:640px){.billing .invoice-detail-money,.billing .invoice-detail-dates,.billing .invoice-detail-steps {grid-template-columns:1fr}}

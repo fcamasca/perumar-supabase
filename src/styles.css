@@ -611,3 +611,4 @@ form.enrollment-detail-form { max-width:none; margin:1rem 0 0; padding:1rem 0 0;
 }
 
 .report-toolbar-actions .icon-action > svg:has(.export-file-icon) { width: 2rem; height: 2rem; }
+.enrollment-sponsor-origin { display:block; margin-block-start:.3rem; font-size:.8125rem; font-weight:400; color:var(--text-secondary); }

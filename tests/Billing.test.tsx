@@ -11,7 +11,7 @@ import { recoveryKey } from '../src/billing/contracts'
 const {client,access}=vi.hoisted(()=>({client:{from:vi.fn(),rpc:vi.fn()},access:{phase:'authorized',userId:'user',roles:['DIRECTOR_ACADEMICO']}}))
 vi.mock('../src/security/SessionProvider',()=>({useSession:()=>({client,state:access})}))
 const company={id:'company',razon_social:'EMPRESA MAR',ruc:'20999999999'}
-const orders=[{id:'o1',empresa_patrocinadora_id:'company',ciclo_id:'cycle',serie:'OS01',correlativo:'000123',fecha:'2026-01-01',monto:'10000.00',estado_codigo:'VIGENTE',updated_at:'ov1',matriculas_cubiertas:2,ciclo:{codigo_ciclo:'2026-MC'}},{id:'o2',empresa_patrocinadora_id:'company',ciclo_id:'cycle',serie:'OS01',correlativo:'000124',fecha:'2026-01-01',monto:'5000.00',estado_codigo:'VIGENTE',updated_at:'ov2',matriculas_cubiertas:1,ciclo:{codigo_ciclo:'2026-MC'}}]
+const orders=[{id:'o1',empresa_patrocinadora_id:'company',ciclo_id:'cycle',serie:'OS01',correlativo:'000123',fecha:'2026-01-01',monto:'10000.00',estado_codigo:'VIGENTE',updated_at:'ov1',matriculas_cubiertas:2,facturas_vigentes:0,ciclo:{codigo_ciclo:'2026-MC'}},{id:'o2',empresa_patrocinadora_id:'company',ciclo_id:'cycle',serie:'OS01',correlativo:'000124',fecha:'2026-01-01',monto:'5000.00',estado_codigo:'VIGENTE',updated_at:'ov2',matriculas_cubiertas:1,facturas_vigentes:0,ciclo:{codigo_ciclo:'2026-MC'}}]
 const invoice=(id:string,n:string,pending='100.01',estado='PENDIENTE_DESEMBOLSO')=>({id,empresa_patrocinadora_id:'company',serie:'F001',correlativo:n,importe:pending,abonado:'0.00',pendiente:pending,fecha_emision:'2026-01-01',fecha_vencimiento:'2026-02-01',estado_codigo:estado,estado_financiero:'SIN_DESEMBOLSO',updated_at:'iv1',anulado_at:null})
 const invoices=[invoice('i1','000456'),invoice('i2','000457','200.02')]
 const candidates=[{id:'m1',empresa_patrocinadora_id:'company',ciclo_id:'cycle',estado_codigo:'ACTIVO',codigo_matricula:'2026-MC-001',updated_at:'mv1',ciclo:{updated_at:'cv1'},alumno:{apellido_paterno:'PEREZ',apellido_materno:'PAZ',nombres:'ANA'}},{id:'m2',empresa_patrocinadora_id:'company',ciclo_id:'cycle',estado_codigo:'ACTIVO',codigo_matricula:'2026-MC-002',updated_at:'mv2',ciclo:{updated_at:'cv1'},alumno:{apellido_paterno:'DIAZ',apellido_materno:'SOL',nombres:'LUIS'}}]
@@ -20,7 +20,7 @@ const logs:{table:string;method:string;args:unknown[]}[]=[]
 const saved=vi.fn(),cancel=vi.fn(),call=vi.fn()
 beforeEach(()=>{
  cleanup();sessionStorage.clear();access.roles=['DIRECTOR_ACADEMICO'];access.userId='user';readError=null;logs.length=0;saved.mockReset();cancel.mockReset();call.mockReset().mockResolvedValue({id:'saved'});client.rpc.mockReset().mockResolvedValue({data:{id:'saved'},error:null})
- data={empresa_patrocinadora:[company],ciclo:[{id:'cycle',empresa_patrocinadora_id:'company',codigo_ciclo:'2026-MC',updated_at:'cv1',estado_codigo:'PROGRAMADO'}],matricula:structuredClone(candidates),orden_servicio_resumen:structuredClone(orders),factura_patrocinador_saldo:structuredClone(invoices),pago_patrocinador:[],orden_servicio_matricula:[],factura_orden_servicio:[],pago_patrocinador_aplicacion:[],matricula_saldo:[{matricula_id:'m1',base:'100',abonado:'20',pendiente:'80'}],matricula_cargo_saldo:[{id:'cargo',matricula_id:'m1',activo:true,nombre:'CURSO',pendiente:'80'}],pago:[],catalogo:[{id:'cat',codigo:'MEDIO_PAGO',activo:true}],catalogo_valor:[{id:'cash',catalogo_id:'cat',activo:true,nombre:'Efectivo'}]}
+ data={empresa_patrocinadora:[company],ciclo:[{id:'cycle',empresa_patrocinadora_id:'company',codigo_ciclo:'2026-MC',updated_at:'cv1',estado_codigo:'PROGRAMADO'}],matricula:structuredClone(candidates),orden_servicio_resumen:structuredClone(orders),factura_patrocinador_saldo:structuredClone(invoices),pago_patrocinador:[],orden_servicio_matricula:[],factura_orden_servicio:[],pago_patrocinador_aplicacion:[],matricula_saldo:[{matricula_id:'m1',base:'100',abonado:'20',pendiente:'80'}],matricula_cargo_saldo:[{id:'cargo',matricula_id:'m1',activo:true,nombre:'CURSO',pendiente:'80'}],pago:[],catalogo:[{id:'cat',codigo:'MEDIO_PAGO',activo:true},{id:'banks',codigo:'BANCO',activo:true}],catalogo_valor:[{id:'cash',catalogo_id:'cat',activo:true,nombre:'Efectivo'},{id:'bcp',catalogo_id:'banks',codigo:'0002',nombre:'Banco de Crédito del Perú (BCP)',nombre_corto:'BCP',activo:true},{id:'old-bank',catalogo_id:'banks',codigo:'OLD',nombre:'Banco inactivo',activo:false}]}
  data.ciclo_orden_servicio_saldo=[{...data.ciclo[0],anio:2026,curso_nombre:'CURSO MARINERO',capitania_nombre:'Pisco',total_matriculas:'15000',cubierto_os:'4500',saldo_por_cubrir:'10500',matriculas_activas:2}]
  data.matricula_pago_listado=candidates.map((r,i)=>({matricula_id:r.id,ciclo_id:r.ciclo_id,matricula_estado:'ACTIVO',codigo_matricula:r.codigo_matricula,...r.alumno,base:i?'5000':'10000'}))
  client.from.mockImplementation((table:string)=>{
@@ -32,7 +32,7 @@ beforeEach(()=>{
    in:(key:string,values:unknown[])=>{predicates.push(r=>values.includes(r[key]));return q},
    is:(key:string,value:unknown)=>{predicates.push(r=>r[key]===value);return q},
    gt:(key:string,value:number)=>{predicates.push(r=>Number(r[key])>value);return q},
-   ilike:()=>q,order:()=>q,
+   ilike:()=>q,order:(...args:unknown[])=>{logs.push({table,method:'order',args});return q},
    range:(start:number,end:number)=>{slice.start=start;slice.end=end;return q},
    limit:(n:number,options?:unknown)=>{if(!options)slice.end=n-1;return q},
    single:()=>Promise.resolve(result(true)),maybeSingle:()=>Promise.resolve(result(false,true)),
@@ -60,8 +60,9 @@ async function invoiceForm(){
 async function transferForm(){
  wrap(<TransferForm {...props()}/>)
  await screen.findByRole('checkbox',{name:'Seleccionar F001-000456'})
+ await screen.findByRole('option',{name:'0002 — Banco de Crédito del Perú (BCP)'})
  fireEvent.click(screen.getByRole('checkbox',{name:'Seleccionar todas las facturas pendientes visibles'}))
- set('Aplicar a F001-000456 (S/)','10.01');set('Aplicar a F001-000457 (S/)','20.02');set('Banco','BCP');set('Referencia de operación (opcional)','00078')
+ set('Aplicar a F001-000456 (S/)','10.01');set('Aplicar a F001-000457 (S/)','20.02');set('Banco','Banco de Crédito del Perú (BCP)');set('Referencia de operación (opcional)','00078')
 }
 it('admin alone cannot enter billing or make any reads',()=>{
  access.roles=['ADMIN_SISTEMA'];wrap(<CompanyBilling companyId="company"/>)
@@ -121,10 +122,10 @@ it('invoice sum uses exact cents; 15000 vs4500 requires explicit confirmation an
  expect(screen.getByLabelText('Importe (S/)')).toHaveValue('15000.00')
  set('Importe (S/)','4500')
  expect(screen.getByText('El importe de la factura difiere del total de las órdenes seleccionadas.')).toBeVisible()
- fireEvent.click(screen.getByRole('button',{name:'Confirmar registro'}))
+ fireEvent.click(screen.getByRole('button',{name:'Guardar factura'}))
  expect(call).not.toHaveBeenCalled()
  fireEvent.click(screen.getByRole('checkbox',{name:'Confirmo registrar la factura con esta diferencia'}))
- fireEvent.click(screen.getByRole('button',{name:'Confirmar registro'}))
+ fireEvent.click(screen.getByRole('button',{name:'Guardar factura'}))
  await waitFor(()=>expect(call).toHaveBeenCalledTimes(1))
  const p=call.mock.calls[0][1].p
  expect(p).toMatchObject({importe:'4500',confirmar_diferencia:'true',ordenes:[{id:'o1',expected_updated_at:'ov1'},{id:'o2',expected_updated_at:'ov2'}]})
@@ -135,14 +136,54 @@ it('invoice amount remains edited and confirmation resets when selection changes
  fireEvent.click(screen.getByRole('checkbox',{name:'Seleccionar OS01-000124'}))
  expect(screen.getByLabelText('Importe (S/)')).toHaveValue('4500');expect(screen.getByRole('checkbox',{name:'Confirmo registrar la factura con esta diferencia'})).not.toBeChecked()
 })
+it('invoice selection is in the table header with mixed state and a clear selected total',async()=>{
+ await invoiceForm();
+ const all=screen.getByRole('checkbox',{name:'Seleccionar todas las órdenes de servicio visibles'});
+ expect(all.closest('thead')).not.toBeNull();expect(all).toBeChecked();
+ expect(screen.getByRole('table',{name:'órdenes de servicio'})).toHaveTextContent('2 órdenes seleccionadas · Total');
+ expect(screen.queryByRole('button',{name:'Siguiente página'})).not.toBeInTheDocument();
+ fireEvent.click(screen.getByRole('checkbox',{name:'Seleccionar OS01-000124'}));
+ expect(all).toBePartiallyChecked();expect(screen.getByLabelText('Importe (S/)')).toHaveValue('10000.00');
+ expect(screen.getByRole('button',{name:'Actualizar órdenes'})).toBeEnabled();
+ expect(screen.getByRole('button',{name:'Cancelar'})).toBeVisible();expect(call).not.toHaveBeenCalled();
+})
 it('transfer total is exact and submitted once with bank/date/reference and expected versions',async()=>{
- await transferForm();const button=screen.getByRole('button',{name:'Confirmar registro'});fireEvent.click(button);fireEvent.click(button)
+ await transferForm();const button=screen.getByRole('button',{name:'Guardar transferencia'});fireEvent.click(button);fireEvent.click(button)
  await waitFor(()=>expect(call).toHaveBeenCalledTimes(1))
- expect(call.mock.calls[0][1].p).toMatchObject({importe:'30.03',banco:'BCP',referencia_operacion:'00078',aplicaciones:[{factura_id:'i1',importe:'10.01',expected_updated_at:'iv1'},{factura_id:'i2',importe:'20.02',expected_updated_at:'iv1'}]})
+ expect(call.mock.calls[0][1].p).toMatchObject({importe:'30.03',banco:'Banco de Crédito del Perú (BCP)',referencia_operacion:'00078',aplicaciones:[{factura_id:'i1',importe:'10.01',expected_updated_at:'iv1'},{factura_id:'i2',importe:'20.02',expected_updated_at:'iv1'}]})
  expect(screen.queryByLabelText(/Medio de pago/)).not.toBeInTheDocument()
 })
+it('transfer suggests pending balances in the table but preserves partial amounts on reselection',async()=>{
+ wrap(<TransferForm {...props()}/>);
+ const first=await screen.findByRole('checkbox',{name:'Seleccionar F001-000456'});
+ const all=screen.getByRole('checkbox',{name:'Seleccionar todas las facturas pendientes visibles'});
+ expect(all.closest('thead')).not.toBeNull();fireEvent.click(first);
+ const amount=screen.getByLabelText('Aplicar a F001-000456 (S/)');expect(amount).toHaveValue('100.01');
+ set('Aplicar a F001-000456 (S/)','10.00');fireEvent.click(first);expect(amount).toBeDisabled();fireEvent.click(first);
+ expect(amount).toHaveValue('10.00');expect(all).toBePartiallyChecked();fireEvent.click(all);
+ expect(screen.getByLabelText('Aplicar a F001-000457 (S/)')).toHaveValue('200.02');
+ expect(screen.getByRole('region',{name:'Total y observación'})).toHaveTextContent('S/ 210.02');
+ expect(screen.queryByRole('button',{name:'Siguiente página'})).not.toBeInTheDocument();
+ expect(call).not.toHaveBeenCalled();expect(sessionStorage.getItem(recoveryKey('user','company'))).toBeNull();
+})
+it('bank selection comes from the active BANCO catalog and excludes inactive values',async()=>{
+ wrap(<TransferForm {...props()}/>);
+ const option=await screen.findByRole('option',{name:'0002 — Banco de Crédito del Perú (BCP)'});expect(option).toBeInTheDocument();
+ expect(screen.getByRole('combobox',{name:'Banco'})).toBeEnabled();
+ expect(screen.queryByRole('option',{name:'Banco inactivo'})).not.toBeInTheDocument();
+ expect(screen.queryByRole('option',{name:'Efectivo'})).not.toBeInTheDocument();
+ expect(logs).toContainEqual({table:'catalogo',method:'eq',args:['codigo','BANCO']});
+ expect(logs).toContainEqual({table:'catalogo_valor',method:'order',args:['codigo']});
+ expect(call).not.toHaveBeenCalled();
+})
+it('missing bank references block a new transfer without creating an attempt',async()=>{
+ readError='catalogo_valor';wrap(<TransferForm {...props()}/>);
+ expect(await screen.findByText('No se pudieron consultar bancos disponibles.')).toBeVisible();
+ expect(screen.getByRole('button',{name:'Guardar transferencia'})).toBeDisabled();
+ expect(sessionStorage.getItem(recoveryKey('user','company'))).toBeNull();expect(call).not.toHaveBeenCalled();
+})
 it('unknown transfer result keeps the same recovery key and explicit lookup, never resubmits',async()=>{
- call.mockRejectedValue(new TypeError('NETWORK SECRET'));await transferForm();fireEvent.click(screen.getByRole('button',{name:'Confirmar registro'}))
+ call.mockRejectedValue(new TypeError('NETWORK SECRET'));await transferForm();fireEvent.click(screen.getByRole('button',{name:'Guardar transferencia'}))
  await waitFor(()=>expect(screen.getByRole('button',{name:'Consultar resultado del intento'})).toBeEnabled())
  const key=sessionStorage.getItem(recoveryKey('user','company'));expect(key).toMatch(/^[a-f0-9-]{36}$/)
  fireEvent.click(screen.getByRole('button',{name:'Consultar resultado del intento'}))
@@ -160,28 +201,42 @@ it('recovering after remount is scoped to user/company and makes no mutation',as
  expect(sessionStorage.getItem(recoveryKey('other','company'))).toBeNull()
 })
 it('transfer overpayment/date errors keep the draft and never call RPC',async()=>{
- await transferForm();set('Aplicar a F001-000456 (S/)','150');fireEvent.click(screen.getByRole('button',{name:'Confirmar registro'}))
- expect(screen.getByRole('alert')).toHaveTextContent('Revisa la fecha e importes');expect(screen.getByLabelText('Banco')).toHaveValue('BCP');expect(call).not.toHaveBeenCalled()
+ await transferForm();set('Aplicar a F001-000456 (S/)','150');fireEvent.click(screen.getByRole('button',{name:'Guardar transferencia'}))
+ expect(screen.getByRole('alert')).toHaveTextContent('Revisa la fecha e importes');expect(screen.getByLabelText('Banco')).toHaveValue('Banco de Crédito del Perú (BCP)');expect(call).not.toHaveBeenCalled()
 })
 it('required bank focuses a real field before any transfer mutation',async()=>{
- await transferForm();const bank=screen.getByLabelText('Banco');set('Banco','');fireEvent.click(screen.getByRole('button',{name:'Confirmar registro'}))
+ await transferForm();const bank=screen.getByLabelText('Banco');set('Banco','');fireEvent.click(screen.getByRole('button',{name:'Guardar transferencia'}))
  await waitFor(()=>expect(bank).toHaveFocus());expect(call).not.toHaveBeenCalled()
 })
-it('invoice detail separates manual/financial states and only offers next workflow action',async()=>{
+it('invoice state changes use a dated modal, allow only the next stage and preserve financial state',async()=>{
  data.factura_patrocinador_saldo=[{...invoices[0],estado_codigo:'EMITIDA',estado_financiero:'PARCIAL'}]
  client.rpc.mockImplementation((_name:string,args:{destino:string})=>{data.factura_patrocinador_saldo[0].estado_codigo=args.destino;data.factura_patrocinador_saldo[0].updated_at='iv2';return Promise.resolve({data:{id:'i1'},error:null})})
  wrap(<CompanyBilling companyId="company"/>,'/?factura=i1')
- await screen.findByRole('button',{name:'Registrar en patrocinador'})
- expect(screen.getByText('Estado operativo')).toBeVisible();expect(screen.getByText('Estado financiero')).toBeVisible()
- expect(screen.getByText('PARCIAL')).toBeVisible();expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
- expect(screen.queryByRole('button',{name:'Marcar aprobada'})).not.toBeInTheDocument()
- fireEvent.click(screen.getByRole('button',{name:'Registrar en patrocinador'}))
- await waitFor(()=>expect(client.rpc).toHaveBeenCalledWith('avanzar_factura_patrocinador',expect.objectContaining({destino:'REGISTRADA_PATROCINADOR',expected_updated_at:'iv1'})))
- await screen.findByRole('button',{name:'Marcar aprobada'});expect(screen.queryByRole('button',{name:'Registrar en patrocinador'})).not.toBeInTheDocument();expect(client.rpc).toHaveBeenCalledTimes(1)
+ const trigger=await screen.findByRole('button',{name:'Cambiar estado'});trigger.focus();fireEvent.click(trigger)
+ const modal=screen.getByRole('dialog',{name:'Cambiar estado de la factura'})
+ expect(within(modal).getByRole('button',{name:'Cancelar'})).toHaveFocus()
+ expect(within(modal).getByText('Registrada en el sistema del patrocinador')).toBeVisible()
+ expect(within(modal).getByLabelText('Fecha de registro en el patrocinador')).toBeVisible()
+ expect(screen.getByText('Pago parcial')).toBeInTheDocument();expect(within(modal).queryByRole('combobox')).not.toBeInTheDocument()
+ expect(screen.queryByLabelText('Fecha de la siguiente etapa')).not.toBeInTheDocument()
+ fireEvent.click(within(modal).getByRole('button',{name:'Guardar cambio'}))
+ await waitFor(()=>expect(client.rpc).toHaveBeenCalledExactlyOnceWith('avanzar_factura_patrocinador',expect.objectContaining({destino:'REGISTRADA_PATROCINADOR',expected_updated_at:'iv1'})))
+ await waitFor(()=>expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+ const next=await screen.findByRole('button',{name:'Cambiar estado'});await waitFor(()=>expect(next).toBeEnabled());fireEvent.click(next)
+ expect(screen.getByLabelText('Fecha de aprobación')).toBeVisible();fireEvent.click(screen.getByRole('button',{name:'Cancelar'}))
+ expect(client.rpc).toHaveBeenCalledTimes(1)
+})
+it('invoice state modal cancels with Escape, restores focus and makes no mutation',async()=>{
+ data.factura_patrocinador_saldo=[{...invoices[0],estado_codigo:'EMITIDA'}]
+ wrap(<CompanyBilling companyId="company"/>,'/?factura=i1')
+ const trigger=await screen.findByRole('button',{name:'Cambiar estado'});trigger.focus();fireEvent.click(trigger)
+ const dialog=screen.getByRole('dialog',{name:'Cambiar estado de la factura'})
+ fireEvent.keyDown(dialog,{key:'Escape'})
+ expect(screen.queryByRole('dialog')).not.toBeInTheDocument();expect(trigger).toHaveFocus();expect(client.rpc).not.toHaveBeenCalled()
 })
 it('coordinator cannot see any annul action',async()=>{
  access.roles=['COORDINADOR_ACADEMICO'];wrap(<CompanyBilling companyId="company"/>,'/?orden=o1')
- await screen.findByText('OS01-000123');expect(screen.queryByRole('button',{name:/Anular orden/})).not.toBeInTheDocument()
+ await screen.findByRole('heading',{name:'Orden de servicio OS01-000123'});expect(screen.queryByRole('button',{name:/Anular orden/})).not.toBeInTheDocument()
 })
 it('Director cancellation asks for reason, uses accessible confirmation and shows dependent error without cascade',async()=>{
  client.rpc.mockResolvedValue({data:null,error:{code:'23514',message:'H7_OS_HAS_LIVE_INVOICE'}})
@@ -204,9 +259,23 @@ it('Director cancellation dialog closes with Escape without mutating',async()=>{
 it('historical coverage queries the original OS relation, not current company enrollments',async()=>{
  data.orden_servicio_matricula=[{matricula_id:'m1',orden_servicio_id:'o1',matricula:candidates[0]}]
  wrap(<CompanyBilling companyId="company"/>,'/?orden=o1')
- await screen.findByRole('link',{name:/PEREZ PAZ, ANA/})
+ await screen.findByText('PEREZ PAZ, ANA')
  expect(logs).toContainEqual({table:'orden_servicio_matricula',method:'eq',args:['orden_servicio_id','o1']})
- expect(screen.getByText(/aunque su patrocinador o Ciclo actual haya cambiado/)).toBeVisible()
+ expect(screen.getByText('Esta lista conserva los alumnos incluidos al registrar la orden.')).toBeVisible()
+})
+it('OS detail highlights its reference and amount with a compact roster and clear actions',async()=>{
+ data.orden_servicio_resumen[0]={...orders[0],ciclo:{codigo_ciclo:'2026-MC',carrera:{nombre:'CURSO MARINERO'}}};
+ data.orden_servicio_matricula=[{orden_servicio_id:'o1',matricula_id:'m1',matricula:candidates[0]}];
+ wrap(<CompanyBilling companyId="company"/>,'/?orden=o1');
+ expect(await screen.findByRole('heading',{name:'Orden de servicio OS01-000123'})).toBeVisible();
+ expect(screen.getByText('Monto de la orden')).toBeVisible();expect(screen.getByText('CURSO MARINERO')).toBeVisible();
+ expect(screen.getByText('01/01/2026')).toBeVisible();expect(screen.getByText('Vigente',{exact:true})).toBeVisible();
+ expect(await screen.findByRole('table',{name:'Alumnos incluidos en la orden'})).toHaveTextContent('PEREZ PAZ, ANA');
+ expect(screen.getByRole('link',{name:'Ver matrícula 2026-MC-001'})).toHaveAttribute('href','/matriculas/m1');
+ expect(screen.getByRole('button',{name:'Actualizar orden de servicio'})).toBeEnabled();
+ expect(screen.queryByText(/Monto manual|Ciclo histórico|PDF de la orden/)).not.toBeInTheDocument();
+ expect(screen.queryByRole('button',{name:'Siguiente página'})).not.toBeInTheDocument();
+ expect(screen.getByRole('button',{name:'Anular orden'})).toBeVisible();expect(client.rpc).not.toHaveBeenCalled();
 })
 it('matricula only shows historical links and never duplicates billing CRUD',async()=>{
  data.orden_servicio_matricula=[{matricula_id:'m1',orden_servicio_id:'o1',orden_servicio:{...orders[0],factura_orden_servicio:[{factura_patrocinador:invoices[0]}]}}]
@@ -214,6 +283,13 @@ it('matricula only shows historical links and never duplicates billing CRUD',asy
  expect(await screen.findByRole('link',{name:/OS OS01-000123/})).toHaveAttribute('href','/empresas/company/facturacion?orden=o1')
  expect(screen.getByRole('link',{name:'Factura F001-000456'})).toBeVisible()
  expect(screen.queryByRole('button',{name:/Nueva factura|Nueva orden|Registrar transferencia/})).not.toBeInTheDocument()
+})
+it('enrollment billing uses business wording and a quiet empty state',async()=>{
+ wrap(<EnrollmentBilling enrollment="m1" version="v1" sponsor="company"/>);
+ expect(await screen.findByText('No hay órdenes de servicio registradas que incluyan esta matrícula.')).toBeVisible();
+ expect(screen.getByRole('button',{name:'Actualizar facturación'})).toBeEnabled();
+ expect(screen.queryByText(/H4|cobertura comercial|Página 1/)).not.toBeInTheDocument();
+ expect(screen.queryByRole('button',{name:'Anterior'})).not.toBeInTheDocument();
 })
 it('sponsored H4 hides even an initially open form but keeps old payments',async()=>{
  data.pago=[{id:'old',matricula_id:'m1',importe:'20',estado_codigo:'CONFIRMADO',created_at:'2026-01-01',updated_at:'v1',medio_etiqueta:'Efectivo',observaciones:null,motivo_anulacion:null,anulado_por:null,anulado_at:null,pago_aplicacion:[]}]
@@ -250,7 +326,7 @@ it('coordinator can open all three registration flows',async()=>{
 })
 it('same-key resend is only offered after explicit lookup and repeats the identical payload once',async()=>{
  call.mockRejectedValueOnce(new TypeError('network')).mockResolvedValue({id:'saved'})
- await transferForm();fireEvent.click(screen.getByRole('button',{name:'Confirmar registro'}))
+ await transferForm();fireEvent.click(screen.getByRole('button',{name:'Guardar transferencia'}))
  await screen.findByRole('alert');expect(call).toHaveBeenCalledTimes(1)
  expect(screen.queryByRole('button',{name:'Reenviar el mismo intento con la misma clave'})).not.toBeInTheDocument()
  fireEvent.click(screen.getByRole('button',{name:'Consultar resultado del intento'}))
@@ -258,10 +334,10 @@ it('same-key resend is only offered after explicit lookup and repeats the identi
  await waitFor(()=>expect(call).toHaveBeenCalledTimes(2));expect(call.mock.calls[1]).toEqual(call.mock.calls[0]);expect(saved).toHaveBeenCalledWith('payment','saved')
 })
 it('definite transfer conflict preserves draft and requires reread without leaving a pending key',async()=>{
- call.mockRejectedValue({code:'PT409'});await transferForm();fireEvent.click(screen.getByRole('button',{name:'Confirmar registro'}))
- await screen.findByRole('alert');expect(screen.getByLabelText('Banco')).toHaveValue('BCP');expect(screen.getByLabelText('Aplicar a F001-000456 (S/)')).toHaveValue('10.01')
- expect(sessionStorage.getItem(recoveryKey('user','company'))).toBeNull();expect(screen.getByRole('button',{name:'Confirmar registro'})).toBeDisabled()
- fireEvent.click(screen.getByRole('button',{name:'Volver a consultar facturas'}));await waitFor(()=>expect(screen.getByRole('button',{name:'Confirmar registro'})).toBeEnabled());expect(call).toHaveBeenCalledTimes(1)
+ call.mockRejectedValue({code:'PT409'});await transferForm();fireEvent.click(screen.getByRole('button',{name:'Guardar transferencia'}))
+ await screen.findByRole('alert');expect(screen.getByLabelText('Banco')).toHaveValue('Banco de Crédito del Perú (BCP)');expect(screen.getByLabelText('Aplicar a F001-000456 (S/)')).toHaveValue('10.01')
+ expect(sessionStorage.getItem(recoveryKey('user','company'))).toBeNull();expect(screen.getByRole('button',{name:'Guardar transferencia'})).toBeDisabled()
+ fireEvent.click(screen.getByRole('button',{name:'Actualizar facturas'}));await waitFor(()=>expect(screen.getByRole('button',{name:'Guardar transferencia'})).toBeEnabled());expect(call).toHaveBeenCalledTimes(1)
 })
 it('invoice cancellation explains live payments without cascading',async()=>{
  client.rpc.mockResolvedValue({data:null,error:{code:'23514',message:'H7_INVOICE_HAS_LIVE_PAYMENT'}})
@@ -295,16 +371,17 @@ it('failed sponsorship reads never enable a new private payment',async()=>{
 it('invoice annulment is a condition, never a replacement for its manual workflow',async()=>{
  data.factura_patrocinador_saldo=[{...invoices[0],anulado_at:'2026-02-01T12:00:00Z'}]
  wrap(<CompanyBilling companyId="company"/>,'/?factura=i1')
- await screen.findByText('Condición')
- expect(screen.getByText('Condición').parentElement).toHaveTextContent('Anulada')
- expect(screen.getByText('Estado operativo').parentElement).toHaveTextContent('PENDIENTE DESEMBOLSO')
+ expect(await screen.findByText('Anulada',{exact:true})).toBeVisible()
+ expect(screen.getByText('Etapa actual').parentElement).toHaveTextContent('Pendiente de desembolso')
+ expect(screen.getByText('Última etapa registrada')).toBeVisible()
+ expect(screen.queryByRole('button',{name:'Cambiar estado'})).not.toBeInTheDocument()
  expect(screen.queryByRole('button',{name:'Anular factura'})).not.toBeInTheDocument()
 })
 it('uncertain transfer survives remount and explicit reconstruction uses the original key once',async()=>{
  const random=vi.spyOn(crypto,'randomUUID')
  try{
   call.mockRejectedValueOnce(new TypeError('network')).mockResolvedValue({id:'resolved'})
-  await transferForm();fireEvent.click(screen.getByRole('button',{name:'Confirmar registro'}))
+  await transferForm();fireEvent.click(screen.getByRole('button',{name:'Guardar transferencia'}))
   await screen.findByRole('alert')
   const original=structuredClone(call.mock.calls[0][1].p),generated=random.mock.calls.length
   expect(sessionStorage.getItem(recoveryKey('user','company'))).toBe(original.idempotency_key)
@@ -315,11 +392,11 @@ it('uncertain transfer survives remount and explicit reconstruction uses the ori
   fireEvent.click(await screen.findByRole('button',{name:'Revisar el mismo intento con la misma clave'}))
   await waitFor(()=>expect(screen.getByLabelText('Banco')).toBeEnabled())
   fireEvent.click(screen.getByRole('checkbox',{name:'Seleccionar todas las facturas pendientes visibles'}))
-  set('Aplicar a F001-000456 (S/)','10.01');set('Aplicar a F001-000457 (S/)','20.02');set('Banco','BCP');set('Referencia de operación (opcional)','00078');set('Fecha efectiva',original.fecha_efectiva)
-  fireEvent.click(screen.getByRole('button',{name:'Confirmar registro'}))
+  set('Aplicar a F001-000456 (S/)','10.01');set('Aplicar a F001-000457 (S/)','20.02');set('Banco',original.banco);set('Referencia de operación (opcional)','00078');set('Fecha de la transferencia',original.fecha_efectiva)
+  fireEvent.click(screen.getByRole('button',{name:'Guardar transferencia'}))
   expect(call).toHaveBeenCalledTimes(1)
   fireEvent.click(screen.getByRole('checkbox',{name:'Confirmo que estos datos corresponden al mismo intento original'}))
-  const submit=screen.getByRole('button',{name:'Confirmar registro'});fireEvent.click(submit);fireEvent.click(submit)
+  const submit=screen.getByRole('button',{name:'Guardar transferencia'});fireEvent.click(submit);fireEvent.click(submit)
   await waitFor(()=>expect(saved).toHaveBeenCalledWith('payment','resolved'))
   expect(call).toHaveBeenCalledTimes(2);expect(call.mock.calls[1][1].p).toEqual(original)
   expect(random.mock.calls.length).toBe(generated);expect(sessionStorage.getItem(recoveryKey('user','company'))).toBeNull()
@@ -333,7 +410,7 @@ it('legacy key-only recovery keeps its key after an idempotency conflict and res
  await waitFor(()=>expect(screen.getByLabelText('Banco')).toBeEnabled())
  fireEvent.click(screen.getByRole('checkbox',{name:'Seleccionar F001-000456'}));set('Aplicar a F001-000456 (S/)','10.01');set('Banco','BCP')
  fireEvent.click(screen.getByRole('checkbox',{name:'Confirmo que estos datos corresponden al mismo intento original'}))
- fireEvent.click(screen.getByRole('button',{name:'Confirmar registro'}))
+ fireEvent.click(screen.getByRole('button',{name:'Guardar transferencia'}))
  await waitFor(()=>expect(call).toHaveBeenCalledTimes(1))
  await waitFor(()=>expect(screen.getByRole('button',{name:'Consultar resultado del intento'})).toBeEnabled())
  expect(call.mock.calls[0][1].p.idempotency_key).toBe(key);expect(sessionStorage.getItem(recoveryKey('user','company'))).toBe(key)
@@ -343,7 +420,7 @@ it('legacy key-only recovery keeps its key after an idempotency conflict and res
 })
 it('a definite retry error cannot release the key of an earlier uncertain request',async()=>{
  call.mockRejectedValueOnce(new TypeError('network')).mockRejectedValueOnce({code:'40001'})
- await transferForm();fireEvent.click(screen.getByRole('button',{name:'Confirmar registro'}));await screen.findByRole('alert')
+ await transferForm();fireEvent.click(screen.getByRole('button',{name:'Guardar transferencia'}));await screen.findByRole('alert')
  const key=sessionStorage.getItem(recoveryKey('user','company'))
  fireEvent.click(screen.getByRole('button',{name:'Consultar resultado del intento'}))
  fireEvent.click(await screen.findByRole('button',{name:'Reenviar el mismo intento con la misma clave'}))
@@ -351,4 +428,74 @@ it('a definite retry error cannot release the key of an earlier uncertain reques
  await waitFor(()=>expect(screen.getByRole('button',{name:'Consultar resultado del intento'})).toBeEnabled())
  expect(sessionStorage.getItem(recoveryKey('user','company'))).toBe(key)
  expect(screen.getByLabelText('Banco')).toBeDisabled();expect(call.mock.calls[1][1].p.idempotency_key).toBe(key)
+})
+
+it('transfer detail highlights its amount and shows linked invoices without single-page controls',async()=>{
+ data.pago_patrocinador=[{id:'p1',empresa_patrocinadora_id:'company',importe:'70.00',fecha_efectiva:'2026-01-02',banco:'BCP',referencia_operacion:null,estado_codigo:'CONFIRMADO',updated_at:'pv1'}]
+ data.pago_patrocinador_aplicacion=[{pago_id:'p1',factura_id:'i1',importe:'70.00',factura_patrocinador:invoices[0]}]
+ wrap(<CompanyBilling companyId="company"/>,'/?pago=p1')
+ const table=await screen.findByRole('table',{name:'Facturas pagadas con esta transferencia'})
+ expect(screen.getByRole('heading',{name:'Transferencia bancaria'})).toBeVisible()
+ expect(screen.getByText('Confirmada',{exact:true})).toBeVisible()
+ expect(screen.getByText('02/01/2026')).toBeVisible()
+ expect(screen.getByText('No indicada')).toBeVisible()
+ expect(within(table).getByRole('link',{name:'Ver factura F001-000456'})).toHaveAttribute('href','/empresas/company/facturacion?factura=i1')
+ expect(within(table).getByRole('row',{name:/Total de la transferencia/})).toHaveTextContent('S/ 70.00')
+ expect(screen.queryByRole('button',{name:'Siguiente página'})).not.toBeInTheDocument()
+ fireEvent.click(screen.getByRole('button',{name:'Actualizar transferencia'}))
+ await screen.findByRole('table',{name:'Facturas pagadas con esta transferencia'})
+ expect(client.rpc).not.toHaveBeenCalled()
+})
+
+it('invoice detail separates financial totals, dated stages and included orders',async()=>{
+ data.factura_patrocinador_saldo=[{...invoices[0],importe:'15000.00',abonado:'0.00',pendiente:'15000.00',fecha_registrada_patrocinador:'2026-01-03',fecha_aprobada:'2026-01-05',fecha_pendiente_desembolso:'2026-01-06'}]
+ data.factura_orden_servicio=orders.map(o=>({factura_id:'i1',orden_servicio_id:o.id,orden_servicio:o}))
+ wrap(<CompanyBilling companyId="company"/>,'/?factura=i1')
+ const table=await screen.findByRole('table',{name:'Órdenes de servicio incluidas'})
+ expect(screen.getByRole('heading',{name:'Factura F001-000456'})).toBeVisible()
+ expect(screen.getByText('Vigente',{exact:true})).toBeVisible()
+ expect(screen.getByText('Saldo pendiente').parentElement).toHaveTextContent('S/ 15000.00')
+ expect(screen.getByText('Sin pagos registrados')).toBeVisible()
+ const tracking=screen.getByRole('region',{name:'Seguimiento de la factura'})
+ expect(within(tracking).getByText('03/01/2026')).toBeVisible()
+ expect(tracking.querySelector('[aria-current="step"]')).toHaveTextContent('Pendiente de desembolso')
+ expect(screen.getByText('Fecha de vencimiento').parentElement).toHaveTextContent('01/02/2026')
+ expect(within(table).getByRole('link',{name:'Ver orden OS01-000123'})).toHaveAttribute('href','/empresas/company/facturacion?orden=o1')
+ expect(within(table).getByRole('row',{name:/Total de las órdenes/})).toHaveTextContent('S/ 15000.00')
+ expect(screen.queryByRole('button',{name:'Siguiente página'})).not.toBeInTheDocument()
+ fireEvent.click(screen.getByRole('button',{name:'Actualizar factura'}))
+ await screen.findByRole('table',{name:'Órdenes de servicio incluidas'})
+ expect(client.rpc).not.toHaveBeenCalled()
+})
+
+it('fully paid invoices keep their administrative stage and show payment in business terms',async()=>{
+ data.factura_patrocinador_saldo=[{...invoices[0],importe:'100.01',abonado:'100.01',pendiente:'0.00',estado_financiero:'DESEMBOLSADA'}]
+ wrap(<CompanyBilling companyId="company"/>,'/?factura=i1')
+ expect(await screen.findByText('Pagada',{exact:true})).toBeVisible()
+ expect(screen.getByText('Saldo pendiente').parentElement).toHaveTextContent('S/ 0.00')
+ expect(screen.getByText('Etapa actual').parentElement).toHaveTextContent('Pendiente de desembolso')
+ expect(screen.queryByRole('button',{name:'Cambiar estado'})).not.toBeInTheDocument()
+})
+
+it('invoice selection excludes orders with a live invoice and restores orders with only annulled history',async()=>{
+ data.orden_servicio_resumen[0].facturas_vigentes=1
+ data.orden_servicio_resumen[1].facturas_relacionadas=1
+ data.orden_servicio_resumen[1].facturas_vigentes=0
+ wrap(<InvoiceForm {...props()}/>)
+ await screen.findByRole('checkbox',{name:'Seleccionar OS01-000124'})
+ expect(screen.queryByRole('checkbox',{name:'Seleccionar OS01-000123'})).not.toBeInTheDocument()
+ expect(logs).toContainEqual({table:'orden_servicio_resumen',method:'eq',args:['facturas_vigentes',0]})
+})
+it('an order invoiced by another operator blocks saving until explicit refresh without retry',async()=>{
+ call.mockRejectedValue({code:'23514',message:'H7_OS_ALREADY_INVOICED'})
+ await invoiceForm()
+ fireEvent.click(screen.getByRole('button',{name:'Guardar factura'}))
+ expect(await screen.findByRole('alert')).toHaveTextContent('ya tiene una factura vigente')
+ expect(call).toHaveBeenCalledTimes(1)
+ expect(screen.getByRole('button',{name:'Guardar factura'})).toBeDisabled()
+ data.orden_servicio_resumen.forEach(o=>{o.facturas_vigentes=1})
+ fireEvent.click(screen.getByRole('button',{name:'Actualizar órdenes'}))
+ await screen.findByText('No hay órdenes de servicio pendientes de facturar.')
+ fireEvent.click(screen.getByRole('button',{name:'Guardar factura'}))
+ expect(call).toHaveBeenCalledTimes(1)
 })

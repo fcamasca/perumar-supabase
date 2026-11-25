@@ -1,0 +1,148 @@
+{
+  "consultado_el": "2026-11-25",
+  "catalogo": "BANCO",
+  "alcance": "Entidades listadas bajo Banco en el directorio SBS; no incluye cajas, financieras, cooperativas ni billeteras digitales.",
+  "fuentes": [
+    {
+      "titulo": "SBS — Directorio de empresas bancarias",
+      "url": "https://www.sbs.gob.pe/app/sadel/Paginas/Redir/ListarFuncionarios.aspx?codTpEntidad=B"
+    },
+    {
+      "titulo": "SBS — Entidades autorizadas a captar depósitos (sección Bancos)",
+      "url": "https://www.sbs.gob.pe/app/pp/empresasweb/Paginas/EmpCaptarDep.aspx"
+    },
+    {
+      "titulo": "SBS — Autorización de funcionamiento Banco BTG Pactual Perú, 29/09/2026",
+      "url": "https://www.sbs.gob.pe/noticia/detallenoticia/idnoticia/4010"
+    }
+  ],
+  "notas": [
+    "Códigos internos del proyecto; no son códigos regulatorios SBS.",
+    "Nombres de presentación abreviados; denominación del directorio conservada en nombre_sbs.",
+    "Vigencia según publicación consultada. No se afirma disponibilidad de canales, cuentas o transferencias de cada banco.",
+    "No hay actualización automática; futuras altas/bajas requieren revisión.",
+    "La migración no reactiva ni cambia valores existentes y no reescribe pagos históricos."
+  ],
+  "bancos": [
+    {
+      "codigo": "AGROBANCO",
+      "nombre": "Agrobanco",
+      "nombre_sbs": "AGROBANCO"
+    },
+    {
+      "codigo": "ALFIN",
+      "nombre": "Alfin Banco",
+      "nombre_sbs": "ALFIN BANCO"
+    },
+    {
+      "codigo": "BANBIF",
+      "nombre": "BanBif",
+      "nombre_sbs": "BANBIF"
+    },
+    {
+      "codigo": "BANCOM",
+      "nombre": "Bancom",
+      "nombre_sbs": "BANCOM"
+    },
+    {
+      "codigo": "BCI",
+      "nombre": "Banco BCI",
+      "nombre_sbs": "BANCO BCI"
+    },
+    {
+      "codigo": "BCP",
+      "nombre": "BCP",
+      "nombre_sbs": "BANCO DE CREDITO"
+    },
+    {
+      "codigo": "BTG_PACTUAL",
+      "nombre": "Banco BTG Pactual Perú",
+      "nombre_sbs": "BANCO BTG PACTUAL"
+    },
+    {
+      "codigo": "EFECTIVA",
+      "nombre": "Banco Efectiva",
+      "nombre_sbs": "BANCO EFECTIVA"
+    },
+    {
+      "codigo": "FALABELLA",
+      "nombre": "Banco Falabella",
+      "nombre_sbs": "BANCO FALABELLA"
+    },
+    {
+      "codigo": "GNB",
+      "nombre": "Banco GNB Perú",
+      "nombre_sbs": "BANCO GNB"
+    },
+    {
+      "codigo": "NACION",
+      "nombre": "Banco de la Nación",
+      "nombre_sbs": "NACION"
+    },
+    {
+      "codigo": "PICHINCHA",
+      "nombre": "Banco Pichincha",
+      "nombre_sbs": "BANCO PICHINCHA"
+    },
+    {
+      "codigo": "RIPLEY",
+      "nombre": "Banco Ripley",
+      "nombre_sbs": "BANCO RIPLEY"
+    },
+    {
+      "codigo": "SANTANDER",
+      "nombre": "Banco Santander Perú",
+      "nombre_sbs": "SANTANDER PERU"
+    },
+    {
+      "codigo": "BANK_OF_CHINA",
+      "nombre": "Bank of China (Perú)",
+      "nombre_sbs": "BANK OF CHINA (PERU)"
+    },
+    {
+      "codigo": "BBVA",
+      "nombre": "BBVA Perú",
+      "nombre_sbs": "BBVA"
+    },
+    {
+      "codigo": "CITIBANK",
+      "nombre": "Citibank del Perú",
+      "nombre_sbs": "CITIBANK DEL PERU"
+    },
+    {
+      "codigo": "COFIDE",
+      "nombre": "COFIDE",
+      "nombre_sbs": "COFIDE"
+    },
+    {
+      "codigo": "COMPARTAMOS",
+      "nombre": "Compartamos Banco",
+      "nombre_sbs": "COMPARTAMOS BANCO"
+    },
+    {
+      "codigo": "ICBC",
+      "nombre": "ICBC Perú Bank",
+      "nombre_sbs": "ICBC PERU BANK S.A."
+    },
+    {
+      "codigo": "INTERBANK",
+      "nombre": "Interbank",
+      "nombre_sbs": "INTERBANK"
+    },
+    {
+      "codigo": "MIBANCO",
+      "nombre": "Mibanco",
+      "nombre_sbs": "MIBANCO"
+    },
+    {
+      "codigo": "SANTANDER_CONSUMER",
+      "nombre": "Santander Consumer Bank",
+      "nombre_sbs": "BN. SANTANDER CONS."
+    },
+    {
+      "codigo": "SCOTIABANK",
+      "nombre": "Scotiabank Perú",
+      "nombre_sbs": "SCOTIABANK PERU"
+    }
+  ]
+}
