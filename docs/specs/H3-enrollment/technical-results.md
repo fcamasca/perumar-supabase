@@ -93,3 +93,14 @@ Validación final CHG-H3-011: migración aplicada incrementalmente en Supabase l
 Nueve bloques del recorrido reportados OK por el usuario; ver [registro humano](human-test-results.md). Candidato de referencia 6f6ab0d; SHA efectivamente ensayado no reconfirmado. Pendiente precisión del entorno/forced-colors real y casos específicos CHG-H3-011. No equivale a TEST-H3-044 ni aprobación de Gate 2.
 
 Precisión humana del 09/11/2026: entorno Chrome / Windows 11 Pro. Contraste alto real de Windows NO VERIFICADO; el usuario acepta expresamente el riesgo residual («no, pero lo apruebo»). Se cierra la precisión pendiente de entorno/decisión sobre contraste, sin declarar PASSED ese subcaso ni aprobar Gate 2. Versiones exactas de Chrome/compilación Windows no informadas. Véase human-test-results.md.
+
+
+## Mejora puntual DNI / APIsPERU — 25/11/2026
+
+- 98/98 pruebas focalizadas PASSED: `DniEdge.test.ts`, `StudentDniLookup.test.tsx`, `EnrollmentPages.test.tsx`. Incluyen inactivo/existente sin consumo externo, fallo local que bloquea alta, formulario/nombres editables, DNI únicamente, respuesta normalizada Edge→UI, permisos, validación de entrada/respuesta, timeout de cinco segundos, ausencia de secreto y habilitación hospedada denegada por defecto, respuesta obsoleta y doble clic, captura manual tras fallo exclusivamente externo, reverificación al guardar y tratamiento de unicidad final rechazada por backend simulado.
+- No se reejecutó batería DB ni regresión integral de hitos: no cambió SQL/RPC/RLS. Prueba de carrera del formulario usa respuesta 23505 simulada; no se atribuye una nueva prueba concurrente real de BD.
+- ESLint del proyecto, TypeScript, comprobación Deno congelada de `consultar-dni` y build productivo ejecutados. Advertencia de bundle >500 kB preservada como residual; no se añadió dependencia.
+- Las pruebas automatizadas no hicieron consultas reales a APIsPERU; usan respuestas simuladas. Plantilla Edge sin valor publicada; secreto real local preparado en archivo ignorado. Diagnóstico de configuración y reinicio con `--env-file` comunicado; el usuario confirmó «ya está», sin aprobación global de pruebas humanas. Prueba humana completa con datos autorizados, despliegue y validación hospedada: PENDIENTES. Producción exige confirmar el uso autorizado y habilitación explícita del servidor.
+- CPU/memoria/forced-colors no medidos/verificados por esta mejora. No se transforma ningún residual previo en PASSED. Sin Spec separado, arquitectura ni cierre/merge H7; documento de arquitectura del usuario intacto.
+
+Detalles operativos y fuentes de condiciones de uso: sección «Mejora puntual — consulta DNI APIsPERU» de `implementation-log.md`.

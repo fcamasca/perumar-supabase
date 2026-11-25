@@ -3,9 +3,9 @@ import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ageAt, enrollmentError, StudentEditor, OccupationField } from '../src/enrollment/EnrollmentPages';
-const { client, sessionState } = vi.hoisted(() => ({ client: { from: vi.fn(), rpc: vi.fn() }, sessionState: { phase: 'authorized', roles: ['COORDINADOR_ACADEMICO'] } }));
+const { client, sessionState } = vi.hoisted(() => ({ client: { from: vi.fn(), rpc: vi.fn(), functions: {invoke: vi.fn()} }, sessionState: { phase: 'authorized', roles: ['COORDINADOR_ACADEMICO'] } }));
 vi.mock('../src/security/SessionProvider', () => ({ useSession: () => ({ client, state: sessionState }) }));
-beforeEach(() => { sessionState.roles = ['COORDINADOR_ACADEMICO']; client.from.mockImplementation(() => ({ select: () => ({ range: async () => ({ data: [], error: null }) }) })); client.rpc.mockReset(); });
+beforeEach(() => { sessionState.roles = ['COORDINADOR_ACADEMICO']; client.from.mockImplementation(() => ({ select: () => ({ range: async () => ({ data: [], error: null }) }) })); client.rpc.mockReset(); client.functions.invoke.mockReset(); });
 describe('H3 student flow and safe feedback', () => {
     it.each([['2000-10-23', '2026-10-22', '25'], ['2000-10-22', '2026-10-22', '26'], ['2000-10-21', '2026-10-22', '26'], ['', '2026-10-22', '']])('derives age without persistence for %s', (birth, today, expected) => expect(ageAt(birth, today)).toBe(expected));
     it('keeps business/SQL details out of errors and requires explicit reload', () => { expect(enrollmentError({ code: '40001' })).toContain('Recarga'); expect(enrollmentError({ code: '42501' })).toContain('permiso'); expect(enrollmentError({ code: '23505' })).toContain('registrado'); expect(enrollmentError(null)).not.toMatch(/SQL|JWT|token/); });
@@ -13,7 +13,7 @@ describe('H3 student flow and safe feedback', () => {
         render(<StudentEditor done={vi.fn()} cancel={vi.fn()}/>);
         await waitFor(() => expect(screen.getByRole('button', { name: 'Siguiente' })).toBeEnabled());
         fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
-        await waitFor(() => expect(screen.getByRole('textbox', { name: /^Apellido paterno/ })).toHaveFocus());
+        await waitFor(() => expect(screen.getByRole('combobox', { name: /^Tipo DI/ })).toHaveFocus());
         expect(screen.getByRole('alert')).toHaveTextContent('Revisa los campos');
         expect(document.querySelector('[aria-current="step"]')).toHaveTextContent('Identificación');
         expect(client.rpc).not.toHaveBeenCalled();
@@ -23,7 +23,7 @@ describe('H3 student flow and safe feedback', () => {
 import { Routes, Route, MemoryRouter } from 'react-router-dom';
 import { StudentDetail, NewEnrollment, EnrollmentDetail } from '../src/enrollment/EnrollmentPages';
 function resultQuery(data: unknown) {
-    const q = { select: () => q, or: () => q, eq: () => q, in: () => q, order: () => q, range: () => q, limit: () => q, single: () => q, maybeSingle: () => q,
+    const q = { select: () => q, abortSignal: () => q, or: () => q, eq: () => q, in: () => q, order: () => q, range: () => q, limit: () => q, single: () => q, maybeSingle: () => q,
         then: (resolve: (r: {
             data: unknown;
             error: null;
@@ -146,7 +146,7 @@ async function openFilledReview(editing=false) {
     catalogo_valor:[{id:'doc-dni',catalogo_id:'type-cat',codigo:'DNI',nombre:'DNI',activo:true},{id:'sex-f',catalogo_id:'sex-cat',codigo:'F',nombre:'FEMENINO',activo:true},{id:'rel-mother',catalogo_id:'parent-cat',codigo:'MADRE',nombre:'MADRE',activo:true},{id:'eyes-brown',catalogo_id:'eyes-cat',codigo:'MARRONES',nombre:'MARRONES',activo:true}],
     departamento:[{id:'geo-dep',nombre:'LIMA',active:true}],provincia:[{id:'geo-prov',departamento_id:'geo-dep',nombre:'LIMA',active:true}],distrito:[{id:'geo-dist',provincia_id:'geo-prov',nombre:'MIRAFLORES',active:true}]
   }
-  client.from.mockImplementation((table:string)=>table==='alumno_contacto_emergencia'?resultQuery([{id:'existing-contact',apellido:'PÉREZ',nombre:'ELENA',parentesco_id:'rel-mother',celular:'999111222',direccion:'AV. MAR',activo:true}]):{select:()=>({range:async(start:number)=>({data:start===0?references[table]??[]:[],error:null})})})
+  client.from.mockImplementation((table:string)=>table==='alumno'?resultQuery([]):table==='alumno_contacto_emergencia'?resultQuery([{id:'existing-contact',apellido:'PÉREZ',nombre:'ELENA',parentesco_id:'rel-mother',celular:'999111222',direccion:'AV. MAR',activo:true}]):{select:()=>({range:async(start:number)=>({data:start===0?references[table]??[]:[],error:null})})})
   const filled={apellido_paterno:'MUÑOZ',apellido_materno:'GÓMEZ',nombres:'ANA',tipo_di_id:'doc-dni',numero_di:'00123456',fecha_nacimiento:'2000-01-02',sexo_id:'sex-f',nacimiento_departamento_id:'geo-dep',nacimiento_provincia_id:'geo-prov',nacimiento_distrito_id:'geo-dist',celular:'999123456',email:'ana@example.invalid',domicilio:'AV. MAR',domicilio_departamento_id:'geo-dep',domicilio_provincia_id:'geo-prov',domicilio_distrito_id:'geo-dist',color_ojos_id:'eyes-brown',estatura_cm:'165',peso_kg:'60'}
   const done=vi.fn()
   render(<StudentEditor initial={editing?{id:'existing-student',updated_at:'version-1',...filled}:undefined} done={done} cancel={vi.fn()}/>)
@@ -156,6 +156,7 @@ async function openFilledReview(editing=false) {
     enter(/^Apellido paterno/,'muñoz');enter(/^Apellido materno/,'gómez');enter(/^Nombres/,'ana');enter(/^Tipo DI/,'doc-dni');enter(/^Número DI/,'00123456');enter(/^Fecha de nacimiento/,'2000-01-02');enter(/^Sexo/,'sex-f');enter(/^Departamento nacimiento/,'geo-dep');enter(/^Provincia nacimiento/,'geo-prov');enter(/^Distrito nacimiento/,'geo-dist')
   }
   fireEvent.click(screen.getByRole('button',{name:'Siguiente'}))
+  await screen.findByLabelText(/^Celular/);
   if(!editing){enter(/^Celular/,'999123456');enter(/^Email/,'ana@example.invalid');enter(/^Domicilio/,'av. mar');enter(/^Departamento domicilio/,'geo-dep');enter(/^Provincia domicilio/,'geo-prov');enter(/^Distrito domicilio/,'geo-dist')}
   fireEvent.click(screen.getByRole('button',{name:'Siguiente'}))
   if(!editing){enter(/^Color de ojos/,'eyes-brown');enter(/^Estatura/,'165');enter(/^Peso/,'60')}
@@ -864,3 +865,33 @@ it('keeps changed charge selections on conflict without claiming success or retr
  await screen.findByRole('button',{name:'Guardar código'});fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));const optional=await screen.findByRole('checkbox',{name:'Incluir CERTIFICADO'});await waitFor(()=>expect(optional).toBeEnabled());fireEvent.click(optional);
  client.rpc.mockResolvedValue({error:{code:'PT409'}});fireEvent.click(screen.getByRole('button',{name:'Guardar cargos'}));expect(await screen.findByRole('alert')).toHaveTextContent('La información cambió');expect(optional).not.toBeChecked();expect(screen.getByRole('button',{name:'Guardar cargos'})).toBeEnabled();expect(screen.queryByText('Cargos guardados correctamente.')).not.toBeInTheDocument();expect(client.rpc).toHaveBeenCalledTimes(1);
 });
+
+it.each(['duplicate','local-error'])('blocks guardar_alumno if DNI existence changes at the final save: %s',async(kind)=>{
+ await openFilledReview()
+ const original=client.from.getMockImplementation()!
+ client.from.mockImplementation((table:string)=>table==='alumno'?kind==='duplicate'?resultQuery([{id:'inactive-existing'}]):{select:()=>({abortSignal:()=>({eq:()=>({eq:()=>({limit:async()=>({data:null,error:{message:'private'}})})})})})}:original(table))
+ fireEvent.click(screen.getByRole('button',{name:'Guardar'}))
+ await screen.findByText(kind==='duplicate'?'El alumno ya se encuentra registrado':'No se pudo verificar si el alumno está registrado. Vuelve a verificar antes de continuar.')
+ expect(client.rpc).not.toHaveBeenCalled();expect(client.functions.invoke).not.toHaveBeenCalled()
+})
+it('consults DNI in new-student identification without requiring names first, fills only names and permits corrections',async()=>{
+ await openFilledReview()
+ fireEvent.click(screen.getByRole('button',{name:'Corregir identificación'}))
+ fireEvent.change(screen.getByLabelText(/^Nombres/),{target:{value:''}})
+ client.functions.invoke.mockResolvedValue({data:{dni:'00123456',nombres:'CONSULTADO',apellido_paterno:'PRUEBA',apellido_materno:'SINTÉTICA'},error:null})
+ fireEvent.click(screen.getByRole('button',{name:'Consultar DNI'}))
+ await waitFor(()=>expect(screen.getByLabelText(/^Nombres/)).toHaveValue('CONSULTADO'))
+ expect(screen.getByLabelText(/^Apellido paterno/)).toHaveValue('PRUEBA')
+ fireEvent.change(screen.getByLabelText(/^Nombres/),{target:{value:'CORREGIDO'}})
+ expect(screen.getByLabelText(/^Nombres/)).toHaveValue('CORREGIDO')
+ expect(client.rpc).not.toHaveBeenCalled()
+})
+
+it('keeps backend uniqueness authoritative if another registration wins after local verification',async()=>{
+ const {done}=await openFilledReview()
+ client.rpc.mockResolvedValue({data:null,error:{code:'23505'}})
+ fireEvent.click(screen.getByRole('button',{name:'Guardar'}))
+ await waitFor(()=>expect(client.rpc).toHaveBeenCalledTimes(1))
+ await screen.findByText(/registrado/)
+ expect(done).not.toHaveBeenCalled()
+})

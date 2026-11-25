@@ -633,3 +633,15 @@ form.enrollment-detail-form { max-width:none; margin:1rem 0 0; padding:1rem 0 0;
 @media(max-width:40rem){.company-identity {grid-template-columns:1fr}.company-ruc-reference .review-fields {grid-template-columns:1fr}.company-record .company-form {padding:1rem}}
 
 .company-form .form-grid > label[data-field="domicilio_fiscal"] {grid-column:1/-1}
+
+/* Alta de alumno: documento y consulta preceden a los datos personales. */
+.student-document-entry { display:flex; align-items:flex-start; gap:1.25rem; margin-bottom:1.25rem; }
+.student-document-entry > .form-grid { flex:1; max-width:32rem; min-width:0; }
+.student-document-entry > .form-grid > label[data-field] { grid-column:span 6; }
+.student-document-entry > button { margin-top:1.75rem; flex:none; }
+@media(max-width:40rem) {
+  .student-document-entry { flex-direction:column; gap:.75rem; }
+  .student-document-entry > .form-grid { width:100%; max-width:none; }
+  .student-document-entry > .form-grid > label[data-field] { grid-column:1 / -1; }
+  .student-document-entry > button { margin-top:0; }
+}

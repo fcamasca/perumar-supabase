@@ -1,3 +1,4 @@
+import { useDniLookup } from './useDniLookup'
 import { storedRucReference, type StoredRucReference } from '../../supabase/functions/_shared/ruc/contract'
 import { CompanyRucLookup } from './CompanyRucLookup'
 import { EnrollmentPhoto, StudentPhoto } from '../documents/EnrollmentPhoto'
@@ -167,6 +168,8 @@ export function StudentEditor({ initial, done, cancel }: {
     const { client } = useSession(), { refs, error } = useReferences();
     const [draft, setDraft] = useState<Draft>(() => studentDraft(initial));
     const [contact, setContact] = useState<Draft | null>(null), [draftContacts, setDraftContacts] = useState<Row[]>([]), [editingContactId, setEditingContactId] = useState<string | null>(null);
+    const dniEnabled = !initial && refs.catalogo_valor?.find(v => v.id === draft.tipo_di_id)?.codigo === 'DNI';
+    const dniLookup = useDniLookup(draft.numero_di ?? '', draft.tipo_di_id ?? '', !!dniEnabled, names => setDraft(d => ({...d, ...names})));
     const nextContactId = useRef(0);
     const [step, setStep] = useState(0), [saved, setSaved] = useState<Row | undefined>(initial);
     const [message, setMessage] = useState(''), [busy, setBusy] = useState(false);
@@ -186,6 +189,7 @@ export function StudentEditor({ initial, done, cancel }: {
     function correctReview(index: number) { setMessage(''); setReturnToReview(true); setStep(index); }
     function change(k: string, v: string) { setDraft(d => updateStudentDraft(d, k, v)); }
     async function save() {
+        if (busy || dniLookup.busy || !(await dniLookup.verify())) return;
         setBusy(true);
         setMessage('');
         try {
@@ -203,13 +207,21 @@ export function StudentEditor({ initial, done, cancel }: {
             setBusy(false);
         }
     }
-    return <section><EditorHeading>{initial ? 'Editar Alumno' : <NewStudentLabel/>}</EditorHeading><Steps names={['Identificación', 'Domicilio', 'Información adicional', 'Contacto de emergencia', 'Revisar']} step={step}/><Message>{error || message}</Message><InlineForm onSubmit={() => { if (step < 4) { setStep(returnToReview ? 4 : step + 1); setReturnToReview(false); } else void save(); }}>
-    <fieldset disabled={busy || !refs.catalogo}><legend>{['Identificación', 'Domicilio', 'Información adicional', 'Contacto de emergencia', 'Revisar'][step]}</legend>
-      {step < 3 && <Fields fields={studentGroups[step]} draft={draft} change={change} refs={refs}/>}
+    return <section><EditorHeading>{initial ? 'Editar Alumno' : <NewStudentLabel/>}</EditorHeading><Steps names={['Identificación', 'Domicilio', 'Información adicional', 'Contacto de emergencia', 'Revisar']} step={step}/><Message>{error || message}</Message><InlineForm onSubmit={() => { if (busy || dniLookup.busy) return; if (step < 4) { const advance = () => { setStep(returnToReview ? 4 : step + 1); setReturnToReview(false); }; if (step === 0 && dniEnabled) void dniLookup.verify().then(ok => { if (ok) advance(); }); else advance(); } else void save(); }}>
+    <fieldset disabled={busy || dniLookup.busy || !refs.catalogo}><legend>{['Identificación', 'Domicilio', 'Información adicional', 'Contacto de emergencia', 'Revisar'][step]}</legend>
+      {step === 0 && !initial ? <>
+        <div className="student-document-entry">
+          <Fields fields={studentGroups[0].filter(([key]) => ['tipo_di_id', 'numero_di'].includes(key))} draft={draft} change={change} refs={refs}/>
+          {dniEnabled && <button type="button" disabled={busy || dniLookup.busy} onClick={() => void dniLookup.consult()}>{dniLookup.busy ? 'Consultando DNI…' : 'Consultar DNI'}</button>}
+        </div>
+        <Fields fields={studentGroups[0].filter(([key]) => !['tipo_di_id', 'numero_di'].includes(key))} draft={draft} change={change} refs={refs}/>
+      </> : step < 3 && <Fields fields={studentGroups[step]} draft={draft} change={change} refs={refs}/>}
+
+      {!initial && dniEnabled && <div aria-label="Consulta de DNI">{dniLookup.message && <p role="status">{dniLookup.message}</p>}</div>}
       {step === 0 && <p>Edad calculada: {ageAt(draft.fecha_nacimiento ?? '') || '—'}</p>}
       {step === 3 && (initial ? <p>Los contactos se mantienen desde la pestaña Contactos de la ficha.</p> : <><div className="student-contacts-heading"><p>Puedes guardar una ficha sin contactos; para matricular se exige al menos uno activo y válido.</p><button type="button" onClick={() => { setEditingContactId(null); setContact({}); }}>Agregar contacto</button></div><ContactGrid contacts={draftContacts} refs={refs} draft onEdit={c => { setEditingContactId(c.id); setContact(Object.fromEntries(contactFields.map(([key]) => [key, value(c, key)]))); }} onRemove={c => setDraftContacts(list => list.filter(item => item.id !== c.id))}/><p className="help-text">Los contactos de esta lista se guardarán junto con el alumno al pulsar Guardar al final de Revisar.</p></>)}
       {step === 4 && <StudentReview studentCode={value(initial, 'codigo_alumno')} draft={draft} refs={refs} editing={!!initial} contacts={initial ? reviewContacts : draftContacts} contactsError={contactsError} busy={busy} correct={correctReview}/> }
-    </fieldset>{returnToReview && <p className="help-text">Al continuar conservarás lo corregido y volverás a Revisar. El alumno todavía no se guarda.</p>}<div className="form-actions"><button type="button" disabled={busy} onClick={cancel}>Cancelar</button>{step > 0 && <button type="button" disabled={busy} onClick={() => { setReturnToReview(false); setStep(step - 1); }}>Anterior</button>}<button disabled={busy || !refs.catalogo}>{step < 4 ? returnToReview ? 'Aplicar cambios y revisar' : 'Siguiente' : busy ? 'Guardando…' : 'Guardar'}</button></div></InlineForm>{contact && <ContactDialog close={() => setContact(null)}><InlineForm onSubmit={() => {
+    </fieldset>{returnToReview && <p className="help-text">Al continuar conservarás lo corregido y volverás a Revisar. El alumno todavía no se guarda.</p>}<div className="form-actions"><button type="button" disabled={busy || dniLookup.busy} onClick={cancel}>Cancelar</button>{step > 0 && <button type="button" disabled={busy || dniLookup.busy} onClick={() => { setReturnToReview(false); setStep(step - 1); }}>Anterior</button>}<button disabled={busy || dniLookup.busy || !refs.catalogo}>{step < 4 ? returnToReview ? 'Aplicar cambios y revisar' : 'Siguiente' : busy ? 'Guardando…' : 'Guardar'}</button></div></InlineForm>{contact && <ContactDialog close={() => setContact(null)}><InlineForm onSubmit={() => {
         const entry: Row = { ...contact, id: editingContactId ?? `draft-contact-${++nextContactId.current}`, activo: true };
         setDraftContacts(list => editingContactId ? list.map(c => c.id === editingContactId ? entry : c) : [...list, entry]);
         setContact(null); setEditingContactId(null);
