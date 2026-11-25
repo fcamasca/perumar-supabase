@@ -61,7 +61,7 @@ const messages: Record<string, string> = {
   DOCUMENT_RESERVATION_EXISTS:
     'Existe una operación pendiente. Consulta su resultado o cancela la reserva antes de volver a intentar.',
   DOCUMENT_FILE_INVALID:
-    'Archivo no admitido. Usa PDF simple sin cifrado, formularios, enlaces ni contenido activo, o una imagen JPEG/PNG válida.',
+    'Archivo no admitido. Usa PDF simple sin cifrado, formularios ni contenido activo, o una imagen JPEG/PNG válida.',
   DOCUMENT_PHOTO_FORMAT: 'Foto del alumno admite únicamente imágenes JPG/JPEG o PNG; no admite PDF.',
   DOCUMENT_IMAGE_INVALID: 'No se pudo validar la imagen. Vuelve a exportarla como JPG/JPEG o PNG e intenta cargar el nuevo archivo.',
   DOCUMENT_IMAGE_LIMIT: 'No se pudo procesar la imagen dentro de los recursos disponibles. Exporta una copia optimizada e intenta nuevamente.',

@@ -2,7 +2,7 @@ import { beforeEach, expect, it, vi } from 'vitest'
 import { webcrypto } from 'node:crypto'
 import { File as NodeFile } from 'node:buffer'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { PDFDocument, PDFName, PDFString } from 'pdf-lib'
+import { PDFDocument, PDFName, PDFString, PDFDict, PDFArray } from 'pdf-lib'
 import { uploadOrderFile, downloadOrderFile } from '../supabase/functions/_shared/os-files/operation'
 import { sha256 } from '../supabase/functions/_shared/expediente/contract'
 const upload=vi.fn(),remove=vi.fn(),download=vi.fn(),rpc=vi.fn()
@@ -76,4 +76,33 @@ it('missing OS access blocks reservation',async()=>{
  access=false
  await expect(uploadOrderFile(user,server,'actor',{os_id:'os',expected_updated_at:'v'},file)).rejects.toThrow('DOCUMENT_ACCESS')
  expect(rpc).not.toHaveBeenCalled()
+})
+
+it('accepts ordinary compressed PDF structure without rewriting uploaded bytes',async()=>{
+ const pdf=await PDFDocument.create();pdf.addPage();const compressed=await pdf.save({useObjectStreams:true})
+ const candidate=new NodeFile([Uint8Array.from(compressed)],'compressed.pdf',{type:'application/pdf'}) as unknown as File
+ await uploadOrderFile(user,server,'actor',{os_id:'os',expected_updated_at:'v'},candidate)
+ expect(upload.mock.calls[0][1]).toEqual(compressed)
+})
+
+it.each(['inflation','object-count','xref-count','compressed-active'])('rejects structural %s before any reservation',async(kind)=>{
+ const pdf=await PDFDocument.create();pdf.addPage()
+ if(kind==='compressed-active')pdf.catalog.set(PDFName.of('OpenAction'),PDFString.of('active'))
+ else {
+  const raw=kind==='inflation'?new Uint8Array(8*1024*1024+1):new Uint8Array([48,32,48,32])
+  pdf.context.register(pdf.context.flateStream(raw,kind==='xref-count'?{Type:'XRef',Size:1000000000,W:[1,1,1]}:{Type:'ObjStm',N:kind==='object-count'?1000000000:0,First:0}))
+ }
+ const candidate=new NodeFile([Uint8Array.from(await pdf.save({useObjectStreams:kind==='compressed-active'}))],'x.pdf',{type:'application/pdf'}) as unknown as File
+ await expect(uploadOrderFile(user,server,'actor',{os_id:'os',expected_updated_at:'v'},candidate)).rejects.toThrow('DOCUMENT_FILE_INVALID')
+ expect(rpc).not.toHaveBeenCalled();expect(upload).not.toHaveBeenCalled()
+})
+
+it.each(['https://example.com/profile','http://example.com','mailto:example@example.com','javascript:alert(1)','file:///private/file','data:text/html,test','https://user:password@example.com'])('validates ordinary link scheme %s',async(address)=>{
+ const pdf=await PDFDocument.create();const page=pdf.addPage()
+ const annotation=pdf.context.obj({Type:'Annot',Subtype:'Link',Rect:[0,0,10,10],A:PDFDict.withContext(pdf.context)})
+ const action=annotation.lookup(PDFName.of('A'),PDFDict);action.set(PDFName.of('S'),PDFName.of('URI'));action.set(PDFName.of('URI'),PDFString.of(address))
+ page.node.set(PDFName.of('Annots'),pdf.context.obj([annotation]) as PDFArray)
+ const candidate=new NodeFile([Uint8Array.from(await pdf.save())],'linked.pdf',{type:'application/pdf'}) as unknown as File
+ if(/^(https?:|mailto:)/.test(address)&&!address.includes('password'))await expect(uploadOrderFile(user,server,'actor',{os_id:'os',expected_updated_at:'v'},candidate)).resolves.toHaveProperty('archivo_id')
+ else {await expect(uploadOrderFile(user,server,'actor',{os_id:'os',expected_updated_at:'v'},candidate)).rejects.toThrow('DOCUMENT_FILE_INVALID');expect(upload).not.toHaveBeenCalled()}
 })

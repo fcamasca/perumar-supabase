@@ -79,3 +79,19 @@ Implementación limitada al contrato de [os-pdf.md](os-pdf.md): migración aditi
 Pruebas DB/RLS agrupadas en una sola ejecución aislada con esquema/referencias y actores sintéticos, sin copiar alumnos humanos ni resetear. Tests frontend/operaciones/HTTP focalizados; lint y tipos frontend/Edge. Los tests iniciales de selección de archivo del arnés jsdom no disparaban submit nativo por required; se corrigió el test para enviar el formulario tras seleccionar el File. Comprobación Edge vía npx falló por DNS de npm dentro del sandbox; el Deno ya instalado completó la comprobación con su caché normal y lockfile congelado. No se atribuyen esas fallas de entorno a un PASSED anterior.
 
 Migración aplicada también al entorno local habitual después de pasar la prueba SQL aislada. Documento de arquitectura preexistente intacto. Publicación en un único checkpoint [skip ci]; no CI completa ni Gate 2/acceptance/merge. Revisión humana de este bloque pendiente. Evidencia detallada y residuales preservados en technical-results.md.
+
+## 2026-11-25 — TASK-H7-008 / OpenRUC autorizado (etapa inicial)
+
+Decisión humana: proveedor externo OpenRUC explícito, botón Consultar RUC, autocompletado editable y referencias efímeras, sin modelo nuevo. Se actualizan puntualmente REQ-H7-014, DES-H7-008, TASK-H7-008 y TEST-H7-015, con trazabilidad/condiciones en openruc.md. No se reabre Gate1 ni cambia facturación/pagos ni arquitectura. Se conservan intactos el documento de arquitectura untracked y los ajustes PDF locales anteriores.
+
+Añadidos contrato/handler RUC compartidos, entrada Edge consultar-ruc y componente CompanyRucLookup integrado al formulario existente. Sin SQL ni credencial proveedor. Proveedor fijo, JWT/rol,5s, cuerpos acotados, respuesta normalizada, sin _more ni service_role; manual intacto. Las pruebas iniciales detectaron selección ambigua del alert preexistente del listado y una declaración Deno duplicada en el arnés; se corrigieron sin cambiar reglas funcionales.
+
+Validación final focalizada93/93, lint/tipos frontend y Deno correctos, proveedor real GET200. Sin CI completa, deploy hospedado, aceptación humana nueva, Gate2, cierre ni merge.
+
+## 2026-11-25 — TASK-H7-008 / ampliación humana de persistencia híbrida
+
+Se autoriza domicilio_fiscal operativo editable y datos_tributarios JSONB opcional como última referencia original normalizada confirmada por Guardar empresa. Se actualizan REQ-H7-014, DES-H7-008, TASK-H7-008 y TEST-H7-015; openruc.md documenta contrato de diez campos, compatibilidad y operación. La ampliación sustituye la restricción efímera de la etapa inicial, sin reabrir finanzas ni Gate1 histórico.
+
+Migración aditiva 20261125050000: dos columnas nullable en tabla existente, CHECK con lista cerrada/tipos/fechas/RUC coincidente y extensión de la RPC existente bajo autorización/control de versión. Se preservan RLS, grants y trigger de auditoría que almacena solo nombres de campos. Sin nuevas tablas/índices/historial/backfill. Edge agrega proveedor y fecha/hora de consulta de servidor, continúa sin escribir DB. React distingue referencia original y datos operativos, conserva correcciones durante I/O, invalida al cambiar RUC, conserva ante fallo y solo persiste al guardar; lectura/edición sin consulta automática. Interfaz compacta e indicador de espera preservados, domicilio editable a ancho completo.
+
+Validación final: 52/52 DB aislada, 104/104 frontend/Edge, lint/tipos/build/Deno frozen correctos. Evidencia y casos humanos pendientes en technical-results.md. Bundle >500 kB y demás residuales permanecen; sin nueva CI/humanos/hosted/CPU/memoria/forced-colors. No aplicada aún migración a DB habitual. Arquitectura untracked y cambios PDF anteriores intactos. Sin commit/push, acceptance, cierre ni merge.

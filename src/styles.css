@@ -612,3 +612,24 @@ form.enrollment-detail-form { max-width:none; margin:1rem 0 0; padding:1rem 0 0;
 
 .report-toolbar-actions .icon-action > svg:has(.export-file-icon) { width: 2rem; height: 2rem; }
 .enrollment-sponsor-origin { display:block; margin-block-start:.3rem; font-size:.8125rem; font-weight:400; color:var(--text-secondary); }
+
+.company-record .student-detail-header {margin-block:.65rem;gap:.65rem}
+.company-record .company-form {max-width:none;margin-block:.75rem;padding:1.25rem;gap:.8rem}
+.company-form > fieldset {gap:.8rem}
+.company-identity {display:grid;grid-template-columns:minmax(12rem,1fr) minmax(0,2.4fr);gap:1rem;align-items:start}
+.company-ruc-input {display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.4rem;min-width:0}
+.company-ruc-input > .toolbar-action {align-self:start;margin-block-start:1.65rem}
+.company-identity > .form-grid > label[data-field],.company-ruc-input > .form-grid > label[data-field] {grid-column:1/-1}
+.company-ruc-reference {padding:.75rem 1rem;border:1px solid var(--border-soft);border-radius:.6rem;background:var(--surface)}
+.company-ruc-reference summary {font-size:.875rem;font-weight:700;cursor:pointer}
+.company-ruc-reference details[open] > summary {margin-block-end:.65rem}
+.company-ruc-reference summary:focus-visible {outline:2px solid currentColor;outline-offset:4px}
+.company-ruc-reference .review-fields {gap:.5rem 1rem}
+.company-ruc-reference .company-fiscal-address {grid-column:1/-1}
+.company-ruc-reference .help-text {font-size:.8125rem;margin:0 0 .5rem}
+.company-ruc-reference .company-ruc-source {margin:.5rem 0 0}
+.company-ruc-reference .validation-errors {margin:0}
+.company-form > .form-actions {margin:0;padding-block-start:.75rem}
+@media(max-width:40rem){.company-identity {grid-template-columns:1fr}.company-ruc-reference .review-fields {grid-template-columns:1fr}.company-record .company-form {padding:1rem}}
+
+.company-form .form-grid > label[data-field="domicilio_fiscal"] {grid-column:1/-1}

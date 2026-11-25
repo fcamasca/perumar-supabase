@@ -140,3 +140,47 @@ Base `b770cadb9baed2be96e41222471eacbc95e0a6a2`. Contrato acotado: os-pdf.md. Re
 No se ejecutaron CI completa, suite H1–H7, 186 core, regresión financiera/Expediente H6 ni carreras masivas ajenas. Revisión funcional humana anterior reportada satisfactoria por el usuario; revisión humana de PDF OS nuevo PENDIENTE. Build no repetido (sin nuevas dependencias); no se atribuye medida nueva de bundle.
 
 Residuales preservados: Hosted Edge/PostgREST no probado directamente; CPU/memoria NO MEDIDAS; forced-colors NO VERIFICADO; bundle >500kB; compatibilidad PDF conservadora (no antivirus/CDR); conciliación/limpieza manual de archivos nunca confirmados y purga documental diferida a H9/release. Reserva incierta/expirada no se limpia automáticamente. Logs sin PII/secreto; no URL de Storage al navegador. Gate 2 H7 PENDIENTE; no acceptance, reportes/CSV/RUC/SUNAT ni merge. Publicación [skip ci].
+
+### Ajuste de compresión PDF — 25/11/2026
+
+Decisión humana posterior: suavizar compatibilidad de PDFs habituales. El archivo original local (no incorporado a Git) pasó validateFile con 468469 bytes, una página y sin modificar sus bytes. Se añadió preflight acotado ObjStm/XRef antes de la expansión interna del parser; filtros/contadores/presupuestos cerrados. Los controles de contenido activo, cifrado, páginas/tamaño e integridad continúan.
+
+Validación focalizada: OrderFileOperations + OrderFileHttp **25/25 PASSED**; prueba específica "parses safe PDF" de ExpedienteFiles **1 PASSED, 35 omitidas intencionalmente** (no regresión completa H6). Incluye estructura comprimida normal y rechazo de exceso de expansión, contador de objetos/referencias y acción activa comprimida. Tipos frontend/Edge, lint de archivos afectados y diff-check verificados. Sin SQL/migraciones nuevas, CI completa ni nueva prueba humana. Se mantienen los residuales anteriores.
+
+Segundo ajuste focalizado: PDF de tres páginas y 239079 bytes aportado por el usuario; rechazo reproducido por acción URI HTTPS. Original ahora aceptado sin transformación. OrderFileOperations/OrderFileHttp/OrderDocuments: **36/36 PASSED**; casos http/https/mailto permitidos, javascript/file/data y credenciales en URL rechazados. Tipos frontend y Edge comprobados. Lint corregido para expresar el bloqueo de controles mediante códigos de carácter. Sin migraciones/DB/regresión completa ni subida de documentos personales.
+
+## 2026-11-25 — TASK-H7-008 OpenRUC (etapa inicial, anterior al modelo híbrido)
+
+- Revisión de condiciones/contrato público y autorización humana trazadas en openruc.md. HTTP GET real aislado al RUC público20100047218:200/application-json, source SUNAT/as_of2026-11-25, ocho campos presentes; _more observado y no consumido. Sin API key ni cuenta. No se infieren SLA, cuotas o acreditación SUNAT.
+- vitest run tests/RucEdge.test.ts tests/CompanyRucLookup.test.tsx tests/EnrollmentPages.test.tsx --maxWorkers=1: **93/93 PASSED**. Entrada cerrada/RUC/verificador/prefijo, JWT/roles/perfil activo, reautorización, límites/JSON/esquema/fecha/RUC coincidente, redirect:error y origen fijo, 404/429/5xx/5s sin retry; proyección excluye _more. UI autocompleta nombre editable, conserva contactos y escritura manual, no persiste referencias ni llama RPC al consultar; mantiene texto editado durante espera y descarta resultado con RUC cambiado; doble consulta bloqueada; ADMIN sin acción.
+- SDK/Auth y upstream en tests son simulados. La consulta real directa al proveedor se reporta por separado. No se afirma PASSED para Auth/Edge hospedado ni recorrido humano real. No se ejecuta suite financiera/DB completa, H1–H7 ni CI integral.
+- Lint de componentes/Edge/tests afectados y tsc --noEmit PASSED. Deno2.1.4 check --frozen de consultar-ruc con lockfile existente PASSED. Diff-check PASSED.
+- Sin nuevas migraciones/columnas/tablas, nuevas dependencias, credenciales proveedor, cambios financieros ni documento de arquitectura. No hay migración pendiente para este bloque; reiniciar runtime local para reconocer la entrada nueva.
+
+Revisión humana de OpenRUC PENDIENTE. Se mantienen hosted Edge/PostgREST no probados directamente, CPU/memoria no medidas, forced-colors NO VERIFICADO, bundle >500kB, compatibilidad PDF/conciliación manual/purga H9 y demás residuales anteriores. OpenRUC añade disponibilidad/condiciones/cuotas no garantizadas y antigüedad de padrón visible; no son PASSED. Gate2 H7 PENDIENTE, sin acceptance/cierre/merge.
+
+## 2026-11-25 — TASK-H7-008 ampliado: datos tributarios híbridos
+
+La autorización humana posterior amplía la etapa inicial efímera: ahora se conservan domicilio_fiscal operativo y datos_tributarios JSONB opcionales en empresa_patrocinadora. Los resultados anteriores sin SQL describen la etapa inicial, no el estado actual. Spec/contrato en openruc.md y migración 20261125050000_h7_company_tax_reference.sql.
+
+Resultados ejecutados:
+
+- `node scripts/test-company-tax.mjs`: **52/52 comprobaciones PASSED** en base PostgreSQL temporal aislada; reconstrucción de migraciones, empresa creada antes de la nueva migración queda compatible con NULL, RPC bajo rol authenticated Director/Coordinador, persistencia de referencia original independiente de nombre/domicilio operativos, clientes anteriores omitiendo campos, rechazo de claves extra/_more/RUC distinto/tipos/fechas/tamaños inválidos, control de versión, ADMIN denegado y sin filas por RLS, DML directo rechazado, auditoría sin valores y cambio de RUC invalida referencia. Solo esquema de plataforma copiado; sin datos humanos; base temporal eliminada al finalizar. No equivale a prueba de PostgREST hospedado ni regresión financiera completa.
+- `vitest run tests/CompanyRucLookup.test.tsx tests/RucEdge.test.ts tests/EnrollmentPages.test.tsx --maxWorkers=1`: **104/104 PASSED**. Incluye recuperación de referencia guardada en consulta/edición sin red externa automática; persistencia solo Guardar, correcciones manuales conservan JSONB original, fallo explícito conserva referencia previa, cambio RUC invalida, cancelar restaura, edición durante I/O protegida, metadatos de proveedor/hora y lista cerrada, controles Edge previos y regresión de matrícula/empresas. SDK/Auth/upstream simulados, sin nueva consulta real ni afirmación E2E hospedada.
+- Lint de archivos afectados y script DB, `tsc --noEmit`, `vite build` y Deno2.1.4 `check --frozen` de consultar-ruc: **PASSED**. El primer intento Deno en sandbox no pudo resolver el registro; se repitió con acceso autorizado y lockfile congelado, sin cambiar dependencias. Build conserva warning >500 kB (chunk principal ~825.42 kB), residual vigente.
+- Diff-check y coherencia de REQ-H7-014 / DES-H7-008 / TASK-H7-008 / TEST-H7-015 revisados. La primera ejecución detectó una referencia React retirada y el validador genérico escalar del RPC rechazando JSONB; se corrigieron y las ejecuciones finales anteriores pasaron. No se cuenta ningún fallo inicial como PASSED.
+
+Operación local: la migración **aún no se aplica al entorno habitual**, solo al aislado de pruebas. Antes de probar: `node node_modules/supabase/dist/supabase.js migration up --local --network-id perumar-h0-local`; reiniciar `functions serve --network-id perumar-h0-local` para el retorno con proveedor/consultado_at, y recargar Vite. No requiere credenciales OpenRUC nuevas ni reset/borrado de empresas.
+
+Pendientes humanos específicos:
+
+1. Nueva empresa: consulta real, indicador de espera, razón social/domicilio editables y referencia compacta; modificar ambos, Guardar y volver a abrir tras recargar para confirmar separación operativo/original.
+2. Empresa anterior y registro totalmente manual sin consultar: guardar con referencia nula; consulta/edición posterior sin llamada externa automática.
+3. Empresa con referencia: nueva consulta explícita exitosa reemplaza solo al guardar; consulta fallida mantiene datos previos; cancelar descarta cambios; cambiar RUC elimina referencia anterior.
+4. Recorrido real Auth + Edge + RPC local con Director/Coordinador y revisión de foco, ancho reducido y preferencias visuales. No se marca nueva validación humana ni forced-colors por pruebas simuladas.
+
+Sin nuevas tablas, índices JSONB, historial, cambios de facturación, dependencias o documento de arquitectura. Ajustes PDF locales preexistentes preservados. Sin commit/push, CI integral, cierre, acceptance ni merge H7. Gate 2 sigue PENDIENTE. Residuales heredados (Hosted Edge/PostgREST, CPU/memoria, forced-colors, bundle, compatibilidad PDF/limpieza/conciliación/purga) y disponibilidad/antigüedad/condiciones de OpenRUC preservados sin convertirlos en PASSED.
+
+### Ajuste UX y publicación autorizada
+
+Datos tributarios al final del formulario en details/summary nativo, cerrado por defecto; consulta en curso y errores fuera del contenido colapsado. Regresión final CompanyRucLookup + EnrollmentPages: **74/74 PASSED**; lint, tsc y diff-check correctos. Persistencia/seguridad sin nuevos cambios por este ajuste UX. El usuario autoriza commit y push de los cambios pendientes en feature/h7-sponsors-billing-ui; se excluye arquitectura untracked y archivos personales/output. No se autoriza cierre H7 ni merge. Los resultados previos de DB/Edge/PDF conservan su alcance y no se presentan como una regresión integral nueva.

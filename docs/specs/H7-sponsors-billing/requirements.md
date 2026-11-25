@@ -50,7 +50,7 @@ Esta decisión congela estas reglas; no constituye aprobación global del Gate 1
 | REQ-H7-011 | Director/Coordinador consultan/registran/avanzan. Solo DIRECTOR_ACADEMICO anula OS/factura/pago con motivo. ADMIN solo/anónimo/rol inactivo/expirado denegados servidor. | HU14/HU15, decisión humana |
 | REQ-H7-012 | RLS/RPC acotadas/whitelist, numeric(12,2), locks deterministas, auditoría atómica sin PII, PT409 lógico y compatibilidad 40001/40P01 reales. Proyecciones security_invoker donde corresponde. | Seguridad vigente |
 | REQ-H7-013 | Reportes paginados/CSV de empresa, serie/correlativo, OS, facturas, Ciclos, beneficiarios, importes/abonado/pendiente factura, banco/fecha/referencia transferencia. Deduplicados, sin deuda por alumno ni prorrateo. | HU14/HU15 ajustadas |
-| REQ-H7-014 | RUC opcional/no bloqueante con servicio autorizado, confirmación humana y fallback manual. Secretos servidor; no scraping ni dependencia crítica. | Instrucción |
+| REQ-H7-014 | Consulta RUC opcional/no bloqueante mediante OpenRUC, proveedor externo autorizado por decisión humana del 25/11/2026; alcance de consulta RUC 20, otros RUC conservan registro manual. Completar razón social y domicilio fiscal editables sin guardar automáticamente; conservar última referencia normalizada en datos_tributarios JSONB opcional solo al Guardar empresa. Referencia original separada de correcciones operativas, sin historial ni modelo de facturación nuevo. JWT/rol vigente, validación de RUC/respuesta, timeout total 5 s y fallback manual. Sin scraping, enlaces _more, credenciales frontend ni dependencia crítica. | Instrucción / enmienda OpenRUC 25/11/2026 |
 | REQ-H7-015 | PDF OS opcional al registrar o después; privado, validación real, consulta/historia de reemplazos, key servidor sin PII. Límite técnico propuesto 5 MiB/20páginas, patrón mínimo separado de H6. Fallo no destruye versión previa ni OS ya creada. | OQ003 |
 
 ## Invariantes y cambio H3/H4
@@ -86,3 +86,9 @@ SUNAT, revisión oficial 2026-11-23: [consulta pública RUC](https://www.gob.pe/
 Residuales preservados: Hosted Edge/PostgREST no probado directamente; CPU/memoria no medidas; forced-colors no verificado; bundle >500 kB; limpieza/conciliación manual y purga H9/release; PDF conservador; exportación sin snapshot y memoria proporcional al volumen. Validación estructural PDF no equivale a antivirus/CDR. No convertirlos en PASSED.
 
 [Diseño](design.md), [tareas](tasks.md), [pruebas](test-plan.md). **Gate 1 pendiente; no construir.**
+
+## Enmienda puntual TASK-H7-008 — OpenRUC, 25/11/2026
+
+Decisión humana posterior a Gate 1: autorizar OpenRUC como proveedor externo específico de consulta RUC. Esta autorización sustituye exclusivamente la condición de acceso oficial directo/no ejecución de TASK-H7-008; no afirma que OpenRUC sea SUNAT, esté acreditado por SUNAT ni verifique datos en tiempo real. No reabre decisiones financieras. [Contrato y revisión de condiciones](openruc.md).
+
+Consultar es opcional. El alcance 20 corresponde al proveedor, no a una restricción nueva del registro manual de empresas. No se amplía empresa_patrocinadora: RUC/razón social permanecen editables; domicilio, ubigeo, estado, condición, source y as_of son referencias efímeras. Nunca consultar enlaces de _more ni otros servicios de Latinfo. Guardar empresa continúa por su RPC actual y exige decisión humana.

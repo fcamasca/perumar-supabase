@@ -7,7 +7,7 @@ Checkpoint autorizado el 25/11/2026 sobre `feature/h7-sponsors-billing-ui`, base
 - OS registrada sin PDF sigue siendo válida. Adjuntar/reemplazar es opcional y solo se permite para OS VIGENTE.
 - OS ANULADA conserva consulta y descarga de todos sus PDFs confirmados, sin nuevas cargas.
 - Director/Coordinador activos; ADMIN_SISTEMA solo no tiene acceso académico.
-- Exclusivamente PDF, hasta 5 MiB y 20 páginas. Se reutiliza exactamente `validateFile` de H6: firma/envoltura, estructura, presupuesto de descompresión y rechazo conservador de cifrado, formularios, enlaces/contenido activo y compresión estructural no verificable. No es antivirus/CDR.
+- Exclusivamente PDF, hasta 5 MiB y 20 páginas. Se reutiliza exactamente `validateFile` de H6: firma/envoltura, estructura, presupuesto de descompresión y rechazo conservador de cifrado, formularios y contenido activo y estructuras no verificables. No es antivirus/CDR.
 - `orden_servicio_archivo` ya existente conserva versiones. La última CONFIRMADA por numero_version es la actual; reemplazo crea fila y clave nuevas, nunca upsert. Intentos abortados pueden dejar saltos en la numeración.
 - Fallar un reemplazo no cambia ni elimina la versión anterior. Respuesta de confirmación perdida se resuelve por consulta explícita: la compensación no puede abortar ni eliminar un archivo confirmado.
 
@@ -39,3 +39,11 @@ Conciliación de intentos nunca confirmados exclusivamente manual, igual que H6.
 Migración aplicada al entorno local habitual el 25/11/2026. Para revisión, recargar la aplicación y mantener levantado `functions serve --network-id perumar-h0-local`; reiniciar ese proceso si no reconoce las dos funciones nuevas. No se hizo reset ni se reescribieron OS/facturas/pagos.
 
 Resultados y límites de prueba en technical-results.md. Gate 2 H7 PENDIENTE; sin acceptance, reportes, CSV, consulta RUC, SUNAT ni merge.
+
+## Ajuste humano de compatibilidad PDF — 25/11/2026
+
+El usuario pidió suavizar el rechazo de PDFs habituales tras reproducir el fallo de su archivo original: una página, 468469 bytes, sin cifrado, con ObjStm/XRef comprimidos. Se permite esa compresión sin reescribir los bytes subidos. Preflight por instancia de PDFParser (pdf-lib fijado 1.17.1), sin parches globales: hasta 8 MiB descomprimidos por stream estructural, 16 MiB acumulados, 10000 objetos comprimidos y 20000 entradas de referencias; filtros estructurales sin compresión o FlateDecode simple. Se validan N/First, Size/Index/W antes de los bucles internos. Después se mantienen la validación semántica y los controles originales. El validador compartido aplica esta mejora también a los PDFs de H6; no cambia imágenes ni renderers.
+
+Permanecen 5 MiB, 20 páginas, rechazo de cifrado/contenido activo y presupuestos de recursos. No se incorporan archivos del usuario ni copias de prueba al repositorio.
+
+El segundo archivo aportado por el usuario (CV, tres páginas, 239079 bytes) era rechazado por un enlace HTTPS normal. Se admiten acciones URI explícitas hacia http/https/mailto; se rechazan protocolos de ejecución/datos/archivos, controles/espacios crudos y credenciales embebidas. OpenAction/AA/JavaScript/Launch y demás acciones activas siguen bloqueadas. Archivo original probado y aceptado sin transformación; sin incorporar CV ni enlaces/datos del usuario a Git. Microcopy del validador compartido ajustado para no anunciar un bloqueo total de enlaces.

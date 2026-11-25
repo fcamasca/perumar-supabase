@@ -1,3 +1,5 @@
+import { storedRucReference, type StoredRucReference } from '../../supabase/functions/_shared/ruc/contract'
+import { CompanyRucLookup } from './CompanyRucLookup'
 import { EnrollmentPhoto, StudentPhoto } from '../documents/EnrollmentPhoto'
 import { EnrollmentDocuments } from '../documents/EnrollmentDocuments'
 import { EnrollmentPayments } from '../payments/EnrollmentPayments'
@@ -113,7 +115,7 @@ function Fields({ fields, draft, change, refs, readOnly = false }: {
             const geo = key.match(/^(nacimiento|domicilio)_(departamento|provincia|distrito)_id$/);
             if (geo)
                 options = (refs[geo[2]] ?? []).filter(r => geo[2] === 'departamento' || value(r, geo[2] === 'provincia' ? 'departamento_id' : 'provincia_id') === draft[`${geo[1]}_${geo[2] === 'provincia' ? 'departamento' : 'provincia'}_id`]);
-            const max = key === 'razon_social' ? 200 : key === 'codigo' ? 30 : key === 'descripcion' ? 500 : key === 'numero_di' ? 30 : /domicilio$|direccion|senas_particulares/.test(key) ? 500 : key === 'numero_mz_lt' ? 100 : key === 'email' ? 254 : /celular|telefono/.test(key) ? 30 : 150;
+            const max = key === 'razon_social' ? 200 : key === 'codigo' ? 30 : key === 'descripcion' ? 500 : key === 'numero_di' ? 30 : /domicilio$|domicilio_fiscal|direccion|senas_particulares/.test(key) ? 500 : key === 'numero_mz_lt' ? 100 : key === 'email' ? 254 : /celular|telefono/.test(key) ? 30 : 150;
             return <label key={key} data-field={key}><span className="field-label">{label}{required ? ' *' : ''}</span>{options ? <select required={required} value={draft[key] ?? ''} onChange={e => change(key, formTextValue(e.currentTarget))}><option value="">Seleccionar</option>{options.map(r => <option key={r.id} value={r.id} disabled={r.activo === false || r.active === false}>{value(r, 'nombre')}{r.activo === false || r.active === false ? ' (inactivo)' : ''}</option>)}</select> : <input required={required} type={kind === 'date' ? 'date' : kind === 'number' ? 'number' : kind === 'email' ? 'email' : 'text'} step={kind === 'number' ? 'any' : undefined} min={kind === 'number' ? '0.000001' : undefined} max={kind === 'date' ? new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' }) : undefined} id={rule ? `${id}-${key}` : undefined} aria-describedby={rule ? `${id}-${key}-help` : undefined} disabled={key === 'numero_di' && !rule} inputMode={rule?.numeric ? 'numeric' : undefined} minLength={rule?.minLength} maxLength={rule?.maxLength ?? max} data-pattern-error={key === 'ruc' ? 'El RUC debe tener exactamente 11 dígitos.' : key === 'numero_di' ? 'DNI: exactamente 8 dígitos. Carné de extranjería: 1 a 30 caracteres alfanuméricos.' : undefined} pattern={rule?.pattern} value={draft[key] ?? ''} onChange={e => change(key, rule ? documentInputValue(e.currentTarget, rule.kind) : formTextValue(e.currentTarget))} onPaste={rule ? e => { e.preventDefault(); change(key, pasteDocumentValue(e.currentTarget, e.clipboardData.getData('text'), rule.kind)); } : undefined}/>} {rule && <small id={`${id}-${key}-help`}>{rule.hint}</small>}{key === 'numero_di' && !rule && <small>Selecciona primero el tipo de documento.</small>}</label>;
         })}</div>;
 }
@@ -350,38 +352,51 @@ function CompanyAction({ action, name, disabled = false, onClick }: { action: 'n
 export function Companies({ choose }: { choose?: (r: Row | null) => void }) {
     const { client, state } = useSession(), [search, setSearch] = useState(''), [page, setPage] = useState(0), [rows, setRows] = useState<Row[]>([]);
     const [selected, setSelected] = useState<Row>(), [draft, setDraft] = useState<Draft>({}), [mode, setMode] = useState<'new' | 'view' | 'edit' | null>(null), [message, setMessage] = useState('Cargando…'), [revision, setRevision] = useState(0), [busy, setBusy] = useState(false);
+    const [tax,setTax] = useState<StoredRucReference|null>(null);
     const canEdit = state.roles?.some(role => ['DIRECTOR_ACADEMICO', 'COORDINADOR_ACADEMICO'].includes(role));
     useEffect(() => {
         let active = true;
-        let q = client.from('empresa_patrocinadora').select('id,ruc,razon_social,persona_contacto,telefono,email,created_at,updated_at').order('created_at', { ascending:false }).order('id', { ascending:false }).range(page * 30, page * 30 + 29);
+        let q = client.from('empresa_patrocinadora').select('id,ruc,razon_social,persona_contacto,telefono,email,domicilio_fiscal,datos_tributarios,created_at,updated_at').order('created_at', { ascending:false }).order('id', { ascending:false }).range(page * 30, page * 30 + 29);
         if (search) q = /^\d/.test(search) ? q.ilike('ruc', `%${search}%`) : q.ilike('razon_social', `%${search}%`);
         void q.then(r => { if (active) { setRows(r.error ? [] : r.data as Row[]); setMessage(r.error ? 'No se pudieron consultar empresas.' : !r.data.length ? 'No hay empresas para esta búsqueda.' : ''); } });
         return () => { active = false; };
     }, [client, search, page, revision]);
-    const fields = [['ruc','RUC','required'],['razon_social','Razón social','required'],['persona_contacto','Persona de contacto','optional'],['telefono','Teléfono / celular','optional'],['email','Email empresa','email']];
+    const fields = [['ruc','RUC','required'],['razon_social','Razón social','required'],['domicilio_fiscal','Domicilio fiscal','optional'],['persona_contacto','Persona de contacto','optional'],['telefono','Teléfono / celular','optional'],['email','Email empresa','email']];
     function open(next: 'new' | 'view' | 'edit', row?: Row) {
-        setSelected(row); setDraft(Object.fromEntries(fields.map(([key]) => [key,value(row,key)]))); setMode(next);
+        setTax(readTax(row)); setSelected(row); setDraft(Object.fromEntries(fields.map(([key]) => [key,value(row,key)]))); setMode(next);
+    }
+    function readTax(row?:Row):StoredRucReference|null {
+        if (!row?.datos_tributarios) return null;
+        try { return storedRucReference(row.datos_tributarios,String(row.ruc)); } catch { return null; }
+    }
+    function changeCompany(key:string,text:string) {
+        if (key === 'ruc' && text !== draft.ruc) setTax(null);
+        setDraft(d => ({...d,[key]:text}));
     }
     async function save() {
         if (!canEdit || mode === 'view') return;
         setBusy(true);
         try {
-            const r = await client.rpc('guardar_empresa_patrocinadora', { p: { ...Object.fromEntries(Object.entries(draft).map(([key,text]) => [key,text.trim() || null])), ...(selected ? { id:selected.id,expected_updated_at:selected.updated_at } : {}) } });
+            const r = await client.rpc('guardar_empresa_patrocinadora', { p: { datos_tributarios:tax, ...Object.fromEntries(Object.entries(draft).map(([key,text]) => [key,text.trim() || null])), ...(selected ? { id:selected.id,expected_updated_at:selected.updated_at } : {}) } });
             if (r.error) { setMessage(enrollmentError(r.error)); return; }
             const saved = r.data as Row;
-            setSelected(saved); setDraft(Object.fromEntries(fields.map(([key]) => [key,value(saved,key)])));
+            setTax(readTax(saved)); setSelected(saved); setDraft(Object.fromEntries(fields.map(([key]) => [key,value(saved,key)])));
             setMode(null); setMessage('Empresa guardada correctamente.'); setRevision(v => v + 1); choose?.(saved);
         } catch { setMessage(enrollmentError(null)); }
         finally { setBusy(false); }
     }
     function cancelEditing() {
         setMessage('');
-        if (selected) { setDraft(Object.fromEntries(fields.map(([key]) => [key,value(selected,key)]))); setMode('view'); }
+        if (selected) { setTax(readTax(selected)); setDraft(Object.fromEntries(fields.map(([key]) => [key,value(selected,key)]))); setMode('view'); }
         else setMode(null);
     }
     if (mode) return <section className="company-record"><EditorHeading>{mode === 'new' ? 'Nueva empresa' : 'Ficha de empresa patrocinadora'}</EditorHeading><Message>{message}</Message>
-        <header className="student-detail-header"><div>{selected && <><h3>{value(selected,'razon_social')}</h3><p>RUC · {value(selected,'ruc')}</p></>}<small>{mode === 'view' ? 'Consulta los datos registrados. Para modificarlos, selecciona Editar empresa.' : 'Los cambios se guardarán al confirmar Guardar empresa.'}</small></div><div className="record-header-actions">{mode === 'view' ? <><button type="button" className="secondary" onClick={() => { setMessage(''); setMode(null); }}>Volver a empresas</button>{canEdit && <button type="button" onClick={() => setMode('edit')}>Editar empresa</button>}{canEdit&&!choose&&<Link className="secondary" to={`/empresas/${selected?.id}/facturacion`}>Facturación</Link>}{choose && selected && <button type="button" onClick={() => choose(selected)}>Elegir empresa</button>}</> : <span className="student-edit-mode">{mode === 'new' ? 'Nueva empresa' : 'Editando empresa'}</span>}</div></header>
-        <InlineForm key={`${selected?.id ?? 'new'}-${mode}`} onSubmit={() => void save()}><fieldset disabled={busy}><Fields fields={fields} draft={draft} change={(key,text) => setDraft(d => ({...d,[key]:text}))} refs={{}} readOnly={mode === 'view'}/></fieldset>{mode !== 'view' && <div className="form-actions"><button type="button" disabled={busy} onClick={cancelEditing}>Cancelar</button><button disabled={busy}>{busy ? 'Guardando…' : 'Guardar empresa'}</button></div>}</InlineForm>
+        <header className="student-detail-header"><div>{selected && <><h3>{value(selected,'razon_social')}</h3><p>RUC · {value(selected,'ruc')}</p></>}<small>{mode === 'view' ? 'Consulta los datos registrados. Para modificarlos, selecciona Editar empresa.' : 'Los cambios se guardarán al confirmar Guardar empresa.'}</small></div><div className="record-header-actions">{mode === 'view' ? <><button type="button" className="secondary" onClick={() => { setMessage(''); setMode(null); }}>Volver a empresas</button>{canEdit && <button type="button" onClick={() => setMode('edit')}>Editar empresa</button>}{canEdit&&!choose&&<Link className="secondary" to={`/empresas/${selected?.id}/facturacion`}>Facturación</Link>}{choose && selected && <button type="button" onClick={() => choose(selected)}>Elegir empresa</button>}</> : mode === 'edit' ? <span className="student-edit-mode">Editando empresa</span> : null}</div></header>
+        <InlineForm className="company-form" key={`${selected?.id ?? 'new'}-${mode}`} onSubmit={() => void save()}><fieldset disabled={busy}>{<CompanyRucLookup ruc={draft.ruc ?? ''} name={draft.razon_social ?? ''} address={draft.domicilio_fiscal ?? ''} stored={tax} readOnly={mode === 'view' || !canEdit} disabled={busy} apply={(ruc,previousName,previousAddress,reference) => {
+            if (draft.ruc !== ruc) return;
+            setTax(reference);
+            setDraft(d => d.ruc === ruc ? {...d,razon_social:d.razon_social === previousName ? reference.razon_social.toUpperCase() : d.razon_social,domicilio_fiscal:d.domicilio_fiscal === previousAddress ? reference.direccion ?? '' : d.domicilio_fiscal} : d);
+        }}>{(action,reference) => <><div className="company-identity"><div className="company-ruc-input"><Fields fields={fields.slice(0,1)} draft={draft} change={changeCompany} refs={{}} readOnly={mode === 'view'}/>{action}</div><Fields fields={fields.slice(1,2)} draft={draft} change={changeCompany} refs={{}} readOnly={mode === 'view'}/></div><Fields fields={fields.slice(2)} draft={draft} change={changeCompany} refs={{}} readOnly={mode === 'view'}/>{reference}</>}</CompanyRucLookup>}</fieldset>{mode !== 'view' && <div className="form-actions"><button type="button" className="secondary" disabled={busy} onClick={cancelEditing}>Cancelar</button><button disabled={busy}>{busy ? 'Guardando…' : 'Guardar empresa'}</button></div>}</InlineForm>
     </section>;
     return <section><h2>Empresa patrocinadora</h2><div className="filters students-toolbar" role="search" aria-label="Búsqueda de empresas"><label className="student-search"><span className="field-label">Buscar empresas</span><span className="search-input"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input type="search" placeholder="RUC o razón social" value={search} onChange={e => { setSearch(formTextValue(e.currentTarget)); setPage(0); }}/></span></label>{canEdit && <CompanyAction action="new" disabled={busy} onClick={() => open('new')}/>}</div><Message>{message}</Message>{choose && <div className="company-selection-actions"><button type="button" className="secondary" disabled={busy} onClick={() => choose(null)}>Sin patrocinador</button></div>}
         <div className="students-grid companies-grid"><table aria-label="Empresas patrocinadoras por fecha de registro descendente"><thead><tr><th scope="col">Empresa</th><th scope="col">RUC</th><th scope="col" className="student-row-date">Registro ↓</th><th scope="col">Contacto</th><th scope="col">Teléfono</th><th scope="col">Email</th><th scope="col" className="student-actions-heading">Acciones</th></tr></thead><tbody>{rows.map(r => <tr key={r.id}><td><button type="button" className="student-row-name company-row-name" onClick={() => open('view',r)}>{value(r,'razon_social')}</button></td><td className="student-row-document">{value(r,'ruc')}</td><td className="student-row-date">{r.created_at ? new Date(String(r.created_at)).toLocaleString('es-PE',{timeZone:'America/Lima',dateStyle:'short',timeStyle:'short'}) : '—'}</td><td>{value(r,'persona_contacto') || 'No indicado'}</td><td>{value(r,'telefono') || 'No indicado'}</td><td>{value(r,'email') || 'No indicado'}</td><td><div className="student-row-actions"><CompanyAction action="view" name={value(r,'razon_social')} disabled={busy} onClick={() => open('view',r)}/>{canEdit && <CompanyAction action="edit" name={value(r,'razon_social')} disabled={busy} onClick={() => open('edit',r)}/>} {choose && <CompanyAction action="choose" name={value(r,'razon_social')} disabled={busy} onClick={() => choose(r)}/>}</div></td></tr>)}</tbody></table></div>
