@@ -895,3 +895,20 @@ it('keeps backend uniqueness authoritative if another registration wins after lo
  await screen.findByText(/registrado/)
  expect(done).not.toHaveBeenCalled()
 })
+
+it('places the duplicate alert beside DNI before names, blocks advancing and clears it for another document',async()=>{
+ await openFilledReview()
+ fireEvent.click(screen.getByRole('button',{name:'Corregir identificación'}))
+ const original=client.from.getMockImplementation()!
+ client.from.mockImplementation((table:string)=>table==='alumno'?resultQuery([{id:'existing'}]):original(table))
+ fireEvent.click(screen.getByRole('button',{name:'Consultar DNI'}))
+ const title=await screen.findByText('Alumno ya registrado')
+ const alert=title.closest('[role="alert"]')!
+ expect(alert).toHaveTextContent('El alumno ya se encuentra registrado')
+ expect(alert.compareDocumentPosition(screen.getByLabelText(/^Apellido paterno/)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+ expect(screen.getByRole('button',{name:'Aplicar cambios y revisar'})).toBeDisabled()
+ fireEvent.change(screen.getByLabelText(/^Número DI/),{target:{value:'87654321'}})
+ expect(screen.queryByText('Alumno ya registrado')).not.toBeInTheDocument()
+ expect(screen.getByRole('button',{name:'Aplicar cambios y revisar'})).toBeEnabled()
+ expect(client.functions.invoke).not.toHaveBeenCalled();expect(client.rpc).not.toHaveBeenCalled()
+})

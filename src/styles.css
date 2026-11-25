@@ -645,3 +645,11 @@ form.enrollment-detail-form { max-width:none; margin:1rem 0 0; padding:1rem 0 0;
   .student-document-entry > .form-grid > label[data-field] { grid-column:1 / -1; }
   .student-document-entry > button { margin-top:0; }
 }
+
+.dni-notice { display:flex; align-items:flex-start; gap:.75rem; border:1px solid currentColor; border-inline-start-width:4px; border-radius:.6rem; padding:1rem; margin:0 0 1.25rem; font-size:.9rem; overflow-wrap:anywhere; }
+.dni-notice[data-tone="error"] { color:var(--error); background:color-mix(in srgb,var(--error) 12%,var(--surface-elevated)); }
+.dni-notice[data-tone="warning"] { color:var(--warning); background:color-mix(in srgb,var(--warning) 12%,var(--surface-elevated)); }
+.dni-notice[data-tone="success"] { color:var(--success); background:color-mix(in srgb,var(--success) 12%,var(--surface-elevated)); }
+.dni-notice p { margin:.3rem 0 0; }
+.dni-notice-icon { display:inline-flex; align-items:center; justify-content:center; flex:none; border:2px solid currentColor; border-radius:50%; width:1.35rem; height:1.35rem; font-weight:700; line-height:1; }
+@media(forced-colors:active) { .dni-notice[data-tone] { color:CanvasText; background:Canvas; border-color:CanvasText; } }
