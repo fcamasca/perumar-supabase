@@ -69,3 +69,13 @@ Base publicada: `cbec3bcaa7a03ad9cc1cbf6f3cc618f6549a9915`. Decisión humana: re
 - Fixtures del runner core adaptados al nuevo contrato y saldo suficiente; NO se ejecutan sus 186 comprobaciones. Preparación del test anterior ajustada para clonar un esquema que ya tenga la nueva vista.
 
 Sin cambios de avatar/temas, navegación global, PDF, reportes, SUNAT, pagos H4 ni workflow/idempotencia/transferencias H7. Cuatro documentos históricos del Spec intactos. Publicación intermedia con [skip ci]; sin Gate 2, acceptance ni merge.
+
+## 2026-11-25 — Adjuntar/consultar PDF de OS
+
+Autorización humana adjunta específica, base `b770cadb9baed2be96e41222471eacbc95e0a6a2`. Preflight: rama feature/h7-sponsors-billing-ui, tracked limpio; se conserva sin tocar/excluir el documento de arquitectura untracked; migraciones locales hasta 20261125030000.
+
+Implementación limitada al contrato de [os-pdf.md](os-pdf.md): migración aditiva 20261125040000, bucket privado h7-os, cuatro RPC específicas service-only, guard de versiones, RLS/grants por columna; dos Edge Functions con validador H6 reutilizado y sección OrderDocuments integrada exclusivamente en detalle OS. No se editan migraciones antiguas, reglas financieras, contratos históricos de facturación ni los cuatro documentos históricos del Spec.
+
+Pruebas DB/RLS agrupadas en una sola ejecución aislada con esquema/referencias y actores sintéticos, sin copiar alumnos humanos ni resetear. Tests frontend/operaciones/HTTP focalizados; lint y tipos frontend/Edge. Los tests iniciales de selección de archivo del arnés jsdom no disparaban submit nativo por required; se corrigió el test para enviar el formulario tras seleccionar el File. Comprobación Edge vía npx falló por DNS de npm dentro del sandbox; el Deno ya instalado completó la comprobación con su caché normal y lockfile congelado. No se atribuyen esas fallas de entorno a un PASSED anterior.
+
+Migración aplicada también al entorno local habitual después de pasar la prueba SQL aislada. Documento de arquitectura preexistente intacto. Publicación en un único checkpoint [skip ci]; no CI completa ni Gate 2/acceptance/merge. Revisión humana de este bloque pendiente. Evidencia detallada y residuales preservados en technical-results.md.

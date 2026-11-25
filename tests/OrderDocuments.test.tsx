@@ -1,0 +1,57 @@
+import { beforeEach, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen, waitFor, within, cleanup } from '@testing-library/react'
+import { OrderDocuments } from '../src/billing/OrderDocuments'
+const {client}=vi.hoisted(()=>({client:{from:vi.fn(),functions:{invoke:vi.fn()}}}))
+vi.mock('../src/security/SessionProvider',()=>({useSession:()=>({client})}))
+vi.mock('../src/reports/ReportPdfPreview',()=>({ReportPdfPreview:({close}:{close:()=>void})=><div role="dialog" aria-label="Visor PDF"><button onClick={close}>Cerrar vista previa</button></div>}))
+let rows:{id:string;numero_version:number;confirmado_at:string;bytes:number}[]
+beforeEach(()=>{
+ cleanup();rows=[];client.functions.invoke.mockReset()
+ client.from.mockImplementation(()=>{let max=30;const q={select:()=>q,eq:()=>q,order:()=>q,limit:(n:number)=>{max=n;return q},range:()=>q,then:(resolve:(v:unknown)=>void)=>Promise.resolve({data:rows.slice(0,max),error:null}).then(resolve)};return q})
+})
+const show=(live=true)=>render(<OrderDocuments orderId="os" version="v1" live={live}/>)
+const version=(n:number)=>({id:'f'+n,numero_version:n,confirmado_at:'2026-11-25T12:00:00Z',bytes:200})
+it('empty OS can attach once, sends only OS/version/file and reloads confirmation',async()=>{
+ show();fireEvent.click(await screen.findByRole('button',{name:'Adjuntar PDF'}))
+ const dialog=screen.getByRole('dialog',{name:'Adjuntar PDF a la orden'})
+ const file=new File(['%PDF-'],'orden.pdf',{type:'application/pdf'})
+ fireEvent.change(within(dialog).getByLabelText('Archivo PDF (máximo 5 MiB)'),{target:{files:[file]}})
+ let finish:(v:unknown)=>void=()=>{}
+ client.functions.invoke.mockImplementation(()=>new Promise(r=>{finish=r}))
+ const save=within(dialog).getByRole('button',{name:'Guardar PDF'});fireEvent.submit(save.closest('form')!);fireEvent.submit(save.closest('form')!)
+ expect(client.functions.invoke).toHaveBeenCalledTimes(1)
+ const [name,args]=client.functions.invoke.mock.calls[0];expect(name).toBe('os-pdf-cargar');expect([...args.body.keys()]).toEqual(['os_id','expected_updated_at','archivo'])
+ expect(args.body.get('os_id')).toBe('os');expect(args.body.get('expected_updated_at')).toBe('v1')
+ rows=[version(1)];finish({data:{archivo_id:'f1'},error:null})
+ await screen.findByText('PDF adjunto · Versión 1')
+ expect(screen.getByRole('button',{name:'Ver PDF'})).toBeEnabled()
+})
+it('failed replacement preserves previous file and offers explicit consultation',async()=>{
+ rows=[version(1)];client.functions.invoke.mockResolvedValue({data:null,error:{context:{json:async()=>({code:'DOCUMENT_FILE_INVALID'})}}})
+ show();fireEvent.click(await screen.findByRole('button',{name:'Reemplazar PDF'}))
+ fireEvent.change(screen.getByLabelText('Archivo PDF (máximo 5 MiB)'),{target:{files:[new File(['bad'],'x.pdf',{type:'application/pdf'})]}})
+ fireEvent.submit(screen.getByRole('button',{name:'Guardar PDF'}).closest('form')!)
+ expect(await screen.findByRole('alert')).toHaveTextContent('Archivo no admitido')
+ fireEvent.click(screen.getByRole('button',{name:'Consultar documento de la orden'}))
+ await screen.findByText('PDF adjunto · Versión 1');expect(client.functions.invoke).toHaveBeenCalledTimes(1)
+})
+it('oversized file is identified without a request',async()=>{
+ show();fireEvent.click(await screen.findByRole('button',{name:'Adjuntar PDF'}))
+ fireEvent.change(screen.getByLabelText('Archivo PDF (máximo 5 MiB)'),{target:{files:[new File([new Uint8Array(5242881)],'x.pdf',{type:'application/pdf'})]}})
+ fireEvent.submit(screen.getByRole('button',{name:'Guardar PDF'}).closest('form')!)
+ expect(screen.getByRole('alert')).toHaveTextContent('supera el máximo');expect(client.functions.invoke).not.toHaveBeenCalled()
+})
+it('annulled OS permits preview/history and hides all modification controls',async()=>{
+ rows=[version(2),version(1)];client.functions.invoke.mockResolvedValue({data:new Blob(['%PDF-'],{type:'application/pdf'}),error:null})
+ show(false);await screen.findByText('PDF adjunto · Versión 2')
+ expect(screen.queryByRole('button',{name:/Reemplazar PDF|Adjuntar PDF/})).not.toBeInTheDocument()
+ fireEvent.click(screen.getByRole('button',{name:'Ver PDF'}));await screen.findByRole('dialog',{name:'Visor PDF'})
+ expect(client.functions.invoke).toHaveBeenCalledWith('os-pdf-descargar',{body:{os_id:'os',archivo_id:'f2'}})
+ fireEvent.click(screen.getByRole('button',{name:'Cerrar vista previa'}))
+ fireEvent.click(screen.getByRole('button',{name:'Historial de versiones'}))
+ await screen.findByRole('button',{name:'Ver PDF versión 1'})
+ fireEvent.click(screen.getByRole('button',{name:'Ver PDF versión 1'}));await screen.findByRole('dialog',{name:'Visor PDF'})
+ expect(client.functions.invoke).toHaveBeenLastCalledWith('os-pdf-descargar',{body:{os_id:'os',archivo_id:'f1'}})
+ fireEvent.click(screen.getByRole('button',{name:'Cerrar vista previa'}))
+ await waitFor(()=>expect(screen.getByRole('dialog',{name:'Historial de documentos de la orden'})).toBeVisible())
+})

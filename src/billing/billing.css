@@ -97,3 +97,6 @@
 .billing .invoice-detail-dates {grid-template-columns:repeat(2,minmax(0,1fr));margin-block:1.5rem}
 .billing .invoice-detail-orders th,.billing .invoice-detail-orders td {padding:.6rem .8rem}
 @media(max-width:640px){.billing .invoice-detail-money,.billing .invoice-detail-dates,.billing .invoice-detail-steps {grid-template-columns:1fr}}
+
+.billing .os-document {padding:1.25rem;margin-block:1.5rem;border:1px solid var(--border-soft);border-radius:.75rem;background:var(--surface-elevated)}
+.billing .os-document h4 {margin-block:0 .75rem}
