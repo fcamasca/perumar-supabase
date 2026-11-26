@@ -1,3 +1,5 @@
+import { FileTypeIcon } from '../academic/FileTypeIcon'
+import { AcademicAction } from '../academic/AcademicLayout'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSession } from '../security/SessionProvider'
 import { DocumentDialog } from '../documents/EnrollmentDocuments'
@@ -53,19 +55,21 @@ export function OrderDocuments({orderId,version,live}:{orderId:string;version:st
  }
  const current=latest.rows[0]
  const alert=error&&<p role="alert" className="validation-errors">{error}</p>
- return <section className="os-document" aria-label="Documento de orden de servicio"><h4>Documento de orden de servicio</h4>
+ return <section className="os-document" aria-label="Documento de orden de servicio"><div className="os-document-header"><h4>Documento de orden de servicio</h4><AcademicAction icon="refresh" label="Actualizar documento" disabled={busy||latest.loading} onClick={refresh}/></div>
  {!uploadOpen&&!history&&alert}{status&&<p role="status">{status}</p>}
  {latest.loading&&<p role="status">Consultando documento…</p>}{latest.error&&<p role="alert">No se pudo consultar el documento adjunto.</p>}
- {latest.ready&&<>{current?<p>PDF adjunto · Versión {current.numero_version}</p>:<p>Sin documento adjunto.</p>}
- <div className="billing-actions">{current&&<><button type="button" className="secondary" disabled={busy} onClick={()=>void download(current,true)}>Ver PDF</button><button type="button" className="secondary" disabled={busy} onClick={()=>void download(current,false)}>Descargar</button></>}
- {live&&<button type="button" disabled={busy} onClick={()=>{setFile(null);setError('');setStatus('');setUploadOpen(true)}}>{current?'Reemplazar PDF':'Adjuntar PDF'}</button>}
- {current&&<button type="button" className="secondary" disabled={busy} onClick={()=>{setHistory(true);setPage(0);setError('')}}>Historial de versiones</button>}</div></>}
- <button type="button" className="secondary" disabled={busy||latest.loading} onClick={refresh}>Actualizar documento</button>
+ {latest.ready&&<div className="table-scroll"><table aria-label="PDF adjunto a la orden"><thead><tr><th>Documento</th><th>Versión</th><th>Fecha de carga</th><th>Acciones</th></tr></thead><tbody><tr>
+ <td>{current?<span className="os-document-name"><FileTypeIcon kind="pdf"/>PDF de la orden de servicio</span>:'Sin PDF adjunto'}</td>
+ <td>{current?current.numero_version+' · Actual':'—'}</td><td>{current?new Date(current.confirmado_at).toLocaleString('es-PE',{timeZone:'America/Lima'}):'—'}</td>
+ <td><div className="os-document-actions">{current&&<><AcademicAction icon="pdf" label="Ver PDF" disabled={busy} onClick={()=>void download(current,true)}/><AcademicAction icon="download" label="Descargar" disabled={busy} onClick={()=>void download(current,false)}/></>}
+ {live&&<AcademicAction icon="upload" label={current?'Reemplazar PDF':'Adjuntar PDF'} disabled={busy} onClick={()=>{setFile(null);setError('');setStatus('');setUploadOpen(true)}}/>}
+ {current&&<AcademicAction icon="history" label="Historial de versiones" disabled={busy} onClick={()=>{setHistory(true);setPage(0);setError('')}}/>}{!current&&!live&&'—'}</div></td>
+ </tr></tbody></table></div>}
  {uploadOpen&&<DocumentDialog label={current?'Reemplazar PDF de la orden':'Adjuntar PDF a la orden'} busy={busy} close={()=>{if(!busy)setUploadOpen(false)}}><h2>{current?'Reemplazar PDF':'Adjuntar PDF'}</h2><p>La orden ya está registrada. Si la carga falla, se conservará el documento anterior.</p>{alert}{busy&&<p role="status">Cargando y comprobando el PDF…</p>}
  <form onSubmit={e=>{e.preventDefault();void upload()}}><label>Archivo PDF (máximo 5 MiB)<input type="file" accept="application/pdf,.pdf" required disabled={busy} onChange={e=>{setFile(e.target.files?.[0]??null);setError('')}}/></label><p className="help-text">Hasta 20 páginas. Sin cifrado, formularios ni contenido activo.</p><div className="billing-actions"><button type="button" className="secondary" disabled={busy} onClick={()=>setUploadOpen(false)}>Cancelar</button><button disabled={busy||!file||!live}>{busy?'Cargando…':'Guardar PDF'}</button></div></form>
  {error&&<button type="button" className="secondary" disabled={busy} onClick={()=>{setUploadOpen(false);refresh()}}>Consultar documento de la orden</button>}</DocumentDialog>}
  {history&&!preview&&<DocumentDialog wide label="Historial de documentos de la orden" busy={busy} close={()=>{if(!busy)setHistory(false)}}><h2>Historial de versiones</h2>{alert}{versions.loading&&<p role="status">Consultando versiones…</p>}{versions.error&&<p role="alert">No se pudieron consultar las versiones.</p>}
- {versions.ready&&<div className="table-scroll"><table aria-label="Versiones del PDF"><thead><tr><th>Versión</th><th>Fecha de carga</th><th>Acciones</th></tr></thead><tbody>{versions.rows.map(v=><tr key={v.id}><td>{v.numero_version}{v.id===current?.id?' · Actual':''}</td><td>{new Date(v.confirmado_at).toLocaleString('es-PE',{timeZone:'America/Lima'})}</td><td><button type="button" className="secondary" disabled={busy} aria-label={'Ver PDF versión '+v.numero_version} onClick={()=>void download(v,true)}>Ver PDF</button><button type="button" className="secondary" disabled={busy} aria-label={'Descargar versión '+v.numero_version} onClick={()=>void download(v,false)}>Descargar</button></td></tr>)}</tbody></table></div>}
+ {versions.ready&&<div className="table-scroll"><table aria-label="Versiones del PDF"><thead><tr><th>Versión</th><th>Fecha de carga</th><th>Acciones</th></tr></thead><tbody>{versions.rows.map(v=><tr key={v.id}><td>{v.numero_version}{v.id===current?.id?' · Actual':''}</td><td>{new Date(v.confirmado_at).toLocaleString('es-PE',{timeZone:'America/Lima'})}</td><td><div className="os-document-actions"><AcademicAction icon="pdf" label={'Ver PDF versión '+v.numero_version} disabled={busy} onClick={()=>void download(v,true)}/><AcademicAction icon="download" label={'Descargar versión '+v.numero_version} disabled={busy} onClick={()=>void download(v,false)}/></div></td></tr>)}</tbody></table></div>}
  {(page>0||versions.rows.length===30)&&<Pager page={page} count={versions.rows.length} disabled={busy||versions.loading} onChange={setPage}/>}<button type="button" className="secondary" disabled={busy} onClick={()=>setHistory(false)}>Cerrar historial</button></DocumentDialog>}
  {preview&&<ReportPdfPreview blob={preview} name="Orden de servicio" close={()=>setPreview(null)}/>}
  </section>

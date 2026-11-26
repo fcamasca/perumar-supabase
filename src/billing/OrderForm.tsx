@@ -9,7 +9,6 @@ import type { Call, Kind } from './BillingForms'
 type CycleBalance = { id:string; codigo_ciclo:string; anio:number; curso_nombre:string; capitania_nombre:string; updated_at:string; total_matriculas:string; cubierto_os:string; saldo_por_cubrir:string; matriculas_activas:number }
 type Student = { matricula_id:string; codigo_matricula:string; apellido_paterno:string; apellido_materno:string; nombres:string; base:string }
 const cycleColumns='id,codigo_ciclo,anio,curso_nombre,capitania_nombre,updated_at,total_matriculas::text,cubierto_os::text,saldo_por_cubrir::text,matriculas_activas'
-const padded = (value:string) => /^[0-9]{1,10}$/.test(value.trim()) ? value.trim().padStart(10,'0') : value
 
 export function OrderForm({company,busy,call,saved,cancel}:{company:string;busy:boolean;call:Call;saved:(kind:Kind,id:string)=>void;cancel:()=>void}) {
  const {client}=useSession(), flight=useRef(false), amountHint=useId()
@@ -35,7 +34,7 @@ export function OrderForm({company,busy,call,saved,cancel}:{company:string;busy:
   if(amount===null||amount<=0n||amount>maxCents||remaining===null||amount>remaining){setError('Indica un monto positivo, con hasta dos decimales, que no supere el saldo por cubrir.');return}
   flight.current=true
   try {
-   const r=await call('registrar_orden_servicio',{p:{...draft,serie:draft.serie.trim().toUpperCase(),correlativo:padded(draft.correlativo),observacion:draft.observacion.trim()||null,empresa_patrocinadora_id:company,ciclo_id:selected.id,expected_ciclo_updated_at:selected.updated_at}})
+   const r=await call('registrar_orden_servicio',{p:{...draft,serie:draft.serie.trim().toUpperCase(),correlativo:draft.correlativo.trim(),observacion:draft.observacion.trim()||null,empresa_patrocinadora_id:company,ciclo_id:selected.id,expected_ciclo_updated_at:selected.updated_at}})
    if(r)saved('order',String(r.id))
   }catch(e){setError(billingError(e));setReview(true)}finally{flight.current=false}
  }
@@ -51,7 +50,7 @@ export function OrderForm({company,busy,call,saved,cancel}:{company:string;busy:
   </>}
   <div className="order-fields">
    <label>Serie<input required maxLength={20} pattern="[a-zA-Z0-9]{1,20}" value={draft.serie} onChange={e=>change('serie',e.target.value)}/></label>
-   <label>Correlativo<input required inputMode="numeric" maxLength={10} pattern="[0-9]{1,10}" value={draft.correlativo} onChange={e=>change('correlativo',e.target.value)} onBlur={()=>change('correlativo',padded(draft.correlativo))}/></label>
+   <label>Correlativo<input required inputMode="numeric" maxLength={20} pattern="[0-9]{1,20}" value={draft.correlativo} onChange={e=>change('correlativo',e.target.value)}/></label>
    <label>Fecha<input required type="date" value={draft.fecha} onChange={e=>change('fecha',e.target.value)}/></label>
    <div><label>Monto (S/)<input required inputMode="decimal" aria-describedby={amountHint} value={draft.monto} onChange={e=>change('monto',e.target.value)}/></label><small id={amountHint}>{selected?`Saldo disponible: ${pen(selected.saldo_por_cubrir)}`:'Selecciona un Ciclo para consultar el saldo.'}</small></div>
   </div>

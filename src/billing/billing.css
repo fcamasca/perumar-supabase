@@ -100,3 +100,25 @@
 
 .billing .os-document {padding:1.25rem;margin-block:1.5rem;border:1px solid var(--border-soft);border-radius:.75rem;background:var(--surface-elevated)}
 .billing .os-document h4 {margin-block:0 .75rem}
+
+.billing-report-filters {display:grid;grid-template-columns:2fr repeat(3,minmax(8rem,1fr)) auto;gap:1rem;align-items:end;margin-block:1rem;padding:1rem;border:1px solid var(--border-soft);border-radius:.7rem;background:var(--surface-elevated)}
+.billing-report-filters label {display:flex;flex-direction:column;gap:.4rem;min-width:0;margin:0}
+.billing-report-filters input,.billing-report-filters select {width:100%;max-width:none}
+.billing-report-actions {display:flex;gap:.5rem;align-items:center}
+.billing-panel details {min-width:9rem;max-width:24rem}
+.billing-panel details ul {padding-inline-start:1rem}
+@media(max-width:70rem){.billing-report-filters {grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:40rem){.billing-report-filters {grid-template-columns:1fr}}
+
+.billing .billing-report-money {text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+
+.billing .os-document-header {display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-block-end:.75rem}
+.billing .os-document-header h4 {margin:0}
+.billing .os-document-name {display:inline-flex;align-items:center;gap:.6rem;font-weight:600;min-width:12rem}
+.billing .os-document-name svg {width:1.5rem;height:1.5rem;flex:none}
+.os-document-actions {display:flex;align-items:center;gap:.25rem;flex-wrap:nowrap}
+.billing .os-document table th,.billing .os-document table td {padding:.6rem .75rem;vertical-align:middle}
+.billing .os-document table th:last-child {width:1%}
+
+/* Keep tooltips above the single file row so they do not extend its scroll area. */
+.os-document-actions .toolbar-tooltip {top:auto;bottom:calc(100% + .3rem)}

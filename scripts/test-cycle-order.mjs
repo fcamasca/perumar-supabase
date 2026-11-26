@@ -34,6 +34,7 @@ try {
   // Repeatable against a local schema before or after this amendment.
   sql('drop view if exists public.ciclo_orden_servicio_saldo;')
   sql(readFileSync('supabase/migrations/20261123050000_h7_cycle_order_coverage.sql','utf8'))
+  sql(readFileSync('supabase/migrations/20261125070000_h7_document_number_as_entered.sql','utf8'))
   sql(readFileSync('tests/sql/cycle-order.sql','utf8'))
   console.log('Cycle OS: focused DB checks PASSED (total/coverage/cap, automatic roster, history, annulment, references, roles).')
 } finally {

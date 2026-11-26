@@ -653,3 +653,6 @@ form.enrollment-detail-form { max-width:none; margin:1rem 0 0; padding:1rem 0 0;
 .dni-notice p { margin:.3rem 0 0; }
 .dni-notice-icon { display:inline-flex; align-items:center; justify-content:center; flex:none; border:2px solid currentColor; border-radius:50%; width:1.35rem; height:1.35rem; font-weight:700; line-height:1; }
 @media(forced-colors:active) { .dni-notice[data-tone] { color:CanvasText; background:Canvas; border-color:CanvasText; } }
+
+.file-type-icon {width:1.8rem;height:1.8rem;flex:none}
+.ficha-pdf-action .icon-action > svg {width:1.8rem;height:1.8rem}

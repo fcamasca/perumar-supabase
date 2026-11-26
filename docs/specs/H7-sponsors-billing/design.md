@@ -107,3 +107,16 @@ TASK-H7-008, enmienda humana 25/11/2026: consultar-ruc usa exclusivamente GET ht
 ## Suficiencia y límites
 
 Divergencias H4/HU14/HU15 resueltas en requisitos, sin nuevas OQ. Well-Architected con autoridad servidor, transacciones/recuperación, índices/paginación, reutilización Supabase y trazabilidad mínima; sin AWS. Preservar residuales, sin mediciones ni pruebas ejecutadas ahora. Gate 1 previo a código/migraciones/Edge/tests.
+
+
+## Implementación acotada DES-H7-007 — 25/11/2026
+
+Una vista `facturacion_reporte` security_invoker une raíces OS/factura/transferencia mediante UNION ALL. Los importes proceden únicamente de la raíz; abonado/pendiente factura de factura_patrocinador_saldo. Subconsultas agregan órdenes, facturas/aplicaciones y beneficiarios deduplicados; nunca se suma dinero sobre joins de matrículas/OS. Los vínculos de pago deduplican la aplicación por factura antes de presentar su importe. RLS/grants originales se evalúan con el JWT lector en cada consulta, incluida exportación; vista sin DML ni funciones privilegiadas nuevas.
+
+La pertenencia usa orden_servicio_matricula y Ciclo histórico de la OS, incluso tras cambiar patrocinador/trasladar matrícula. La identificación presentada proviene de alumno_snapshot inicial inmutable, no del Alumno actual ni de snapshot_cierre. Se etiqueta «Identificación conservada al matricular»; no se afirma que sea una captura adicional de identidad al emitir OS. Código de matrícula/Ciclo son referencias actuales a los registros históricos, no un nuevo snapshot de esos códigos. Personas por alumno_id y matrículas por matricula_id; si una matrícula aparece vinculada a OS de distintos Ciclos históricos se conserva ese contexto y no se duplica su conteo como matrícula.
+
+Se reutilizan las tres pestañas y formularios existentes. Filtros servidor por empresa obligatoria, tipo, referencia/serie-correlativo, estado, fechas y código completo de Ciclo; orden fecha DESC/UUID DESC, 30 raíces por página. Cambiar filtro oculta inmediatamente datos anteriores y vuelve a la primera página. No se truncan relaciones a tres facturas. Cada documento permite consultar detalle mediante el flujo existente.
+
+CSV completo con las mismas consultas/filtros y lotes de 500, verificación count/IDs únicos/consistencia de saldos y aplicaciones. Relectura final bajo JWT/RLS antes de liberar bytes; error, cambio de count, pérdida de acceso o cancelación no descargan parcial. Reutiliza csvCell de H6.1 (BOM, UTF-8, comillas/saltos y fórmulas tras espacios/controles). Fila de totales monetarios no anulados, sumada en centavos BigInt; personas/matrículas únicas corresponden al conjunto completo filtrado, incluidos anulados visibles, y la fila lo rotula expresamente. Ningún monto se reparte entre beneficiarios/Ciclos ni se suma con H4. No PDF, dashboard, pantalla adicional, tabla, dependencia o cambio de arquitectura.
+
+Residual: lecturas por páginas sin snapshot transaccional; count/IDs no detectan todo cambio concurrente con la misma cardinalidad. Memoria del CSV y de relaciones proporcional al volumen; no se afirma benchmark, CPU/memoria o suficiencia hospedada. Una copia descargada no se revoca por cambios de permisos posteriores.

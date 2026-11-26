@@ -61,7 +61,7 @@ try {
  const osPayload=(correlativo,monto='18450')=>({empresa_patrocinadora_id:company.id,ciclo_id:f.cycle,expected_ciclo_updated_at:version('ciclo',f.cycle),serie:' os01 ',correlativo,monto,fecha:'2026-01-01'})
  const os1=await rpc('registrar_orden_servicio',{p:osPayload('000123')},f.coordinator)
  check(os1.monto,18450,'OS amount within Cycle coverage balance')
- check(os1.serie,'OS01');check(os1.correlativo,'0000000123')
+ check(os1.serie,'OS01');check(os1.correlativo,'000123')
  await fail('registrar_orden_servicio',{p:osPayload('000123')},'23505')
  await fail('registrar_orden_servicio',{p:{...osPayload('2'),matriculas:[]}},'22023')
  await fail('registrar_orden_servicio',{p:{...osPayload('2'),matriculas:[{id:f.enrollment},{id:f.enrollment}]}},'22023')

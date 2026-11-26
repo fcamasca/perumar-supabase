@@ -31,15 +31,16 @@ begin
  begin perform public.registrar_orden_servicio(pg_temp.order_input(c.id,other,'1','60'));raise exception 'Foreign sponsor accepted';exception when check_violation then if sqlerrm<>'H7_CYCLE_SPONSOR_MISMATCH' then raise;end if;end;
  perform set_config('request.jwt.claim.sub',ctx->>'coordinator',true);
  first_os:=public.registrar_orden_servicio(pg_temp.order_input(c.id,company,'1','60'));
- if first_os.correlativo<>'0000000001' or first_os.monto<>60 or (select count(*) from public.orden_servicio_matricula where orden_servicio_id=first_os.id)<>2 then raise exception 'Automatic roster or zero padding wrong';end if;
+ if first_os.correlativo<>'1' or first_os.monto<>60 or (select count(*) from public.orden_servicio_matricula where orden_servicio_id=first_os.id)<>2 then raise exception 'Automatic roster or entered reference wrong';end if;
  if not exists(select 1 from public.ciclo_orden_servicio_saldo where id=c.id and cubierto_os=60 and saldo_por_cubrir=140) then raise exception 'Coverage not derived';end if;
  -- Bounds and input precision; a rejected call leaves no order/audit residue.
  select count(*) into before_audit from public.auditoria;
  begin perform public.registrar_orden_servicio(pg_temp.order_input(c.id,company,'2','140.01'));raise exception 'Overcoverage accepted';exception when check_violation then if sqlerrm<>'H7_OS_EXCEEDS_CYCLE_BALANCE' then raise;end if;end;
  if (select count(*) from public.auditoria)<>before_audit then raise exception 'Rejected order leaked audit';end if;
  begin perform public.registrar_orden_servicio(pg_temp.order_input(c.id,company,'0000000001','1'));raise exception 'Equivalent reference accepted';exception when unique_violation then null;end;
- begin perform public.registrar_orden_servicio(pg_temp.order_input(c.id,company,'12345678901','1'));raise exception 'Long reference accepted';exception when invalid_parameter_value then null;end;
- second_os:=public.registrar_orden_servicio(pg_temp.order_input(c.id,company,'2','140'));
+ begin perform public.registrar_orden_servicio(pg_temp.order_input(c.id,company,'123456789012345678901','1'));raise exception 'Long reference accepted';exception when invalid_parameter_value then null;end;
+ second_os:=public.registrar_orden_servicio(pg_temp.order_input(c.id,company,'0002','140'));
+ if second_os.correlativo<>'0002' then raise exception 'Entered leading zeros were changed';end if;
  if not exists(select 1 from public.ciclo_orden_servicio_saldo where id=c.id and saldo_por_cubrir=0) then raise exception 'Full coverage not zero';end if;
  begin perform public.registrar_orden_servicio(pg_temp.order_input(c.id,company,'3','1'));raise exception 'Zero-balance order accepted';exception when check_violation then null;end;
  perform set_config('request.jwt.claim.sub',ctx->>'actor',true);

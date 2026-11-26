@@ -23,7 +23,7 @@ it('empty OS can attach once, sends only OS/version/file and reloads confirmatio
  const [name,args]=client.functions.invoke.mock.calls[0];expect(name).toBe('os-pdf-cargar');expect([...args.body.keys()]).toEqual(['os_id','expected_updated_at','archivo'])
  expect(args.body.get('os_id')).toBe('os');expect(args.body.get('expected_updated_at')).toBe('v1')
  rows=[version(1)];finish({data:{archivo_id:'f1'},error:null})
- await screen.findByText('PDF adjunto · Versión 1')
+ await screen.findByText('1 · Actual')
  expect(screen.getByRole('button',{name:'Ver PDF'})).toBeEnabled()
 })
 it('failed replacement preserves previous file and offers explicit consultation',async()=>{
@@ -33,7 +33,7 @@ it('failed replacement preserves previous file and offers explicit consultation'
  fireEvent.submit(screen.getByRole('button',{name:'Guardar PDF'}).closest('form')!)
  expect(await screen.findByRole('alert')).toHaveTextContent('Archivo no admitido')
  fireEvent.click(screen.getByRole('button',{name:'Consultar documento de la orden'}))
- await screen.findByText('PDF adjunto · Versión 1');expect(client.functions.invoke).toHaveBeenCalledTimes(1)
+ await screen.findByText('1 · Actual');expect(client.functions.invoke).toHaveBeenCalledTimes(1)
 })
 it('oversized file is identified without a request',async()=>{
  show();fireEvent.click(await screen.findByRole('button',{name:'Adjuntar PDF'}))
@@ -43,7 +43,7 @@ it('oversized file is identified without a request',async()=>{
 })
 it('annulled OS permits preview/history and hides all modification controls',async()=>{
  rows=[version(2),version(1)];client.functions.invoke.mockResolvedValue({data:new Blob(['%PDF-'],{type:'application/pdf'}),error:null})
- show(false);await screen.findByText('PDF adjunto · Versión 2')
+ show(false);await screen.findByText('2 · Actual')
  expect(screen.queryByRole('button',{name:/Reemplazar PDF|Adjuntar PDF/})).not.toBeInTheDocument()
  fireEvent.click(screen.getByRole('button',{name:'Ver PDF'}));await screen.findByRole('dialog',{name:'Visor PDF'})
  expect(client.functions.invoke).toHaveBeenCalledWith('os-pdf-descargar',{body:{os_id:'os',archivo_id:'f2'}})

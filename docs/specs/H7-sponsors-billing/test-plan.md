@@ -48,3 +48,13 @@ Solo tras Gate 1: fixtures aislados, barreras concurrentes y JWT ordinario. Lint
 Registrar comandos/cantidades/resultados y SHA/CI exactos. No tests ejecutables ahora ni aprobación humana H6.2 heredada. Gate 2 futuro verifica OS/facturas/transferencias/PDF privado/bloqueo H4/reportes/recuperación; acceptance/merge requieren autorización posterior.
 
 Preservar residuales [requisitos](requirements.md), sin inferir hosted/CPU/memoria/forced-colors. PDF conservador y conciliación manual no prometen antivirus ni atomicidad DB+Storage.
+
+
+## Revisión funcional pendiente — TASK-H7-007, 25/11/2026
+
+1. Empresa→Facturación: comprobar los mismos tres listados, acciones de alta/detalle y filtros por referencia/serie-correlativo, estado, fechas y código completo de Ciclo. Cambio de filtro vuelve a primera página y no presenta datos de otro filtro.
+2. Comparar OS, factura (importe/abonado/pendiente) y transferencia (importe/aplicaciones) con sus detalles. Varias OS/beneficiarios no multiplican importes. Una persona en dos matrículas/Ciclos se cuenta una vez como persona y dos como matrículas. Revisar el desplegable de identificación histórica de beneficiarios.
+3. Exportar CSV en las tres pestañas; comprobar que respeta filtros e incluye todas las páginas, conserva ñ/tildes/comillas y abre correctamente en Excel. Totales monetarios excluyen anulados; conteos únicos abarcan todos los resultados filtrados, conforme al rótulo.
+4. Director/Coordinador autorizados, ADMIN solo denegado; error de consulta/exportación no deja descargar parcial. Revisar teclado, foco, ancho reducido y temas. Forced-colors real continúa NO VERIFICADO salvo prueba explícita posterior.
+
+No marcar estos casos humanos PASSED por las pruebas automatizadas. La confirmación funcional previa de OpenRUC/DNI no aprueba automáticamente los reportes nuevos. Sin cierre/merge H7 ni inicio H8.

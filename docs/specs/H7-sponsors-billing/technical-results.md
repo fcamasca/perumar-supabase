@@ -184,3 +184,24 @@ Sin nuevas tablas, índices JSONB, historial, cambios de facturación, dependenc
 ### Ajuste UX y publicación autorizada
 
 Datos tributarios al final del formulario en details/summary nativo, cerrado por defecto; consulta en curso y errores fuera del contenido colapsado. Regresión final CompanyRucLookup + EnrollmentPages: **74/74 PASSED**; lint, tsc y diff-check correctos. Persistencia/seguridad sin nuevos cambios por este ajuste UX. El usuario autoriza commit y push de los cambios pendientes en feature/h7-sponsors-billing-ui; se excluye arquitectura untracked y archivos personales/output. No se autoriza cierre H7 ni merge. Los resultados previos de DB/Edge/PDF conservan su alcance y no se presentan como una regresión integral nueva.
+
+
+## TASK-H7-007 — resultado técnico final, 25/11/2026
+
+- `vitest run --maxWorkers=1`: **825/825 PASSED, 50 archivos**. Incluye regresión existente y 25 nuevos casos focalizados de reportes; `BillingReports.test.tsx` + `Billing.test.tsx`: 74/74. Se conservan sin editar las pruebas/producto de DNI H3. No se suman comprobaciones SQL como casos Vitest.
+- `node scripts/test-billing-reports.mjs`: **41/41 PASSED**, reconstrucción de todas las migraciones + seed en base desechable. PostgREST local real/JWT ordinarios, Director/Coordinador, ADMIN solo/anónimo/inactivo denegados; sin grants DML y vista no actualizable, security_invoker. Una factura con dos OS no multiplica 50.00/abonado15.00/pendiente35.00; pago15.00 conserva una aplicación pese a dos OS; beneficiario deduplicado, alumno en dos Ciclos=una persona/dos matrículas; cambios de nombre/patrocinador no alteran identidad inicial/pertenencia histórica. 501 documentos reales, páginas500+1 sin duplicados, filtros servidor por estado/fecha/Ciclo/empresa. Sin filas humanas ni reset del stack.
+- Exportador probado con 501 filas y totales exactos en centavos, scope/tipo, count cambiante, ID repetido, error de página, rechazo final de acceso, cancelación/unmount y ningún archivo parcial. Fórmulas tras blancos/control, BOM/ñ/tildes/comillas/saltos preservados/neutralizados; saldos y aplicaciones inconsistentes rechazados.
+- ESLint completo, TypeScript, sintaxis runner, build y git diff --check: PASSED. Bundle >500 kB permanece como advertencia. No dependencias nuevas.
+- Migración `20261125060000_h7_read_reports.sql` aplicada incrementalmente en local, solo vista/revoke/grant/comment; no tablas, RPC, cambios de estado o escritura de datos de negocio. Pruebas de casos financieros aquí verifican consultas, no sustituyen la batería core186 de comandos/concurrencia ni una ejecución hospedada.
+- Workflow existente incorpora `npm run test:billing:reports` en ambos pases. CI remota del nuevo candidato: NO EJECUTADA en esta entrega local. No se hereda SUCCESS de candidatos anteriores.
+
+Revisión humana TASK-H7-007/Excel PENDIENTE. Hosted Edge/PostgREST no probado directamente; CPU/memoria no medidas; forced-colors real NO VERIFICADO; bundle >500 kB; CSV sin snapshot transaccional y memoria proporcional al volumen; OpenRUC externo/RUC20/fallback manual; limpieza/conciliación manual y purga H9/release y demás residuales preservados. H7 sigue abierto; sin acceptance/Gate 2/merge ni H8.
+
+
+## Publicación consolidada para revisión — 26/11/2026
+
+Candidato incorpora TASK-H7-007 y los ajustes humanos posteriores: columnas compactas en OS/facturas/pagos, Estado de factura unificado derivado y Ocultar anuladas inicial (con filtros iguales en CSV), numeración OS sin relleno automático (migración0700), tabla de PDF OS con acciones por iconos/tooltips y visor/historial conservados, icono PDF compartido con reportes y acción de ficha, y aviso simple de responsabilidad del patrocinador en matrícula sin consultar documentos comerciales. No cambia la integración DNI de H3 ni sus commits; el documento de arquitectura del usuario no se incorpora.
+
+Validación final del conjunto: 218/218 PASSED en BillingReports, Billing, OrderDocuments, FichaPdfAction, CycleReports y EnrollmentPages; ESLint del proyecto, TypeScript, build y diff-check correctos. Es una regresión focalizada final, no una nueva ejecución de las 825 pruebas históricas del primer bloque. Se preservan la evidencia DB/API/JWT aislada 41/41 de reportes y la prueba SQL focalizada de ciclo/OS que confirmó preservación de 1/0002, duplicado equivalente, roles, historia y cobertura. Migraciones0600/0700 aplicadas incrementalmente en desarrollo; registros anteriores no reformateados. Bundle >500 kB permanece como advertencia.
+
+Publicación sin skip ci; la CI remota del commit debe evaluarse por su propio SHA y no se declara SUCCESS anticipado. H7 permanece abierto, revisión humana de reportes y Excel pendiente; sin Gate2/acceptance, PR/merge ni H8. Los residuales de hosted, CPU, memoria, forced-colors, exportación sin snapshot y memoria proporcional, dependencia OpenRUC/RUC20 y conciliación/limpieza manual permanecen.

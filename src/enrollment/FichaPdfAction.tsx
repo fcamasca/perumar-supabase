@@ -1,3 +1,4 @@
+import { AcademicAction } from '../academic/AcademicLayout'
 import { useEffect, useRef, useState } from 'react'
 import { useSession } from '../security/SessionProvider'
 
@@ -77,5 +78,5 @@ export function FichaPdfAction({ enrollment, version, enrollmentState, cycleStat
     } finally { if (current === epoch.current) { lock.current = false; setBusy(false) } }
   }
   if (!allowed) return null
-  return <div className="ficha-pdf-action"><div className="record-header-actions"><button type="button" className="secondary" disabled={disabled || busy || checking || !eligible} onClick={() => void run(false)}>{busy ? 'Procesando ficha…' : checking && eligible ? 'Consultando ficha…' : hasGenerated === true ? 'Regenerar ficha PDF' : hasGenerated === false || !eligible ? 'Generar ficha PDF' : 'Generar nueva ficha PDF'}</button>{artifact && <button type="button" className="secondary" disabled={disabled || busy || checking || !eligible} onClick={() => void run(true)}>Descargar ficha PDF</button>}</div>{!eligible && <p className="help-text">Ficha PDF disponible solo para matrícula activa y Ciclo programado, en curso o cerrado.</p>}{message && <p ref={focus} tabIndex={-1} role={error ? 'alert' : 'status'} className={error ? 'validation-message' : 'help-text'}>{message}</p>}</div>
+  return <div className="ficha-pdf-action"><div className="record-header-actions"><AcademicAction icon="pdf" disabled={disabled || busy || checking || !eligible} onClick={() => void run(false)} label={busy ? 'Procesando ficha…' : checking && eligible ? 'Consultando ficha…' : hasGenerated === true ? 'Regenerar ficha PDF' : hasGenerated === false || !eligible ? 'Generar ficha PDF' : 'Generar nueva ficha PDF'}/>{artifact && <AcademicAction icon="download" disabled={disabled || busy || checking || !eligible} onClick={() => void run(true)} label="Descargar ficha PDF"/>}</div>{!eligible && <p className="help-text">Ficha PDF disponible solo para matrícula activa y Ciclo programado, en curso o cerrado.</p>}{message && <p ref={focus} tabIndex={-1} role={error ? 'alert' : 'status'} className={error ? 'validation-message' : 'help-text'}>{message}</p>}</div>
 }

@@ -63,7 +63,9 @@ jobs:
       - name: Expediente isolated DB API locks and history
         run: npm run test:expediente:isolated
       - name: H7 core full rebuild ordinary JWT and real concurrency
-        run: npm run test:billing:core
+        run: |
+          npm run test:billing:core
+          npm run test:billing:reports
       - name: Enrollment PDF real Edge, private Storage and actor matrix
         run: |
           sudo apt-get update -qq
@@ -113,6 +115,7 @@ jobs:
           npm run test:payments:isolated
           npm run test:payments
           npm run test:billing:core
+          npm run test:billing:reports
           npm run test:pdf:rollback
           npm run test:pdf
           node scripts/test-pdf-layout.mjs

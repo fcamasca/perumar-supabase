@@ -25,14 +25,18 @@ beforeEach(()=>{
  data.matricula_pago_listado=candidates.map((r,i)=>({matricula_id:r.id,ciclo_id:r.ciclo_id,matricula_estado:'ACTIVO',codigo_matricula:r.codigo_matricula,...r.alumno,base:i?'5000':'10000'}))
  client.from.mockImplementation((table:string)=>{
   const predicates:((r:Record<string,unknown>)=>boolean)[]=[],slice={start:0,end:9999}
-  const result=(single=false,maybe=false)=>{const rows=(data[table]??[]).filter(r=>predicates.every(p=>p(r))).slice(slice.start,slice.end+1);if(table===readError)return {data:null,error:{code:'READ'}};return {data:single?(rows[0]??null):maybe?(rows[0]??null):rows,error:null}}
+  const result=(single=false,maybe=false)=>{const source=table==='facturacion_reporte'?[
+   ...(data.orden_servicio_resumen??[]).map(r=>({...r,tipo:'order',documento:r.serie+'-'+r.correlativo,importe:r.monto,fecha:r.fecha,estado:r.estado_codigo,estado_operativo:r.estado_codigo,anulado:r.estado_codigo==='ANULADA'})),
+   ...(data.factura_patrocinador_saldo??[]).map(r=>({...r,tipo:'invoice',documento:r.serie+'-'+r.correlativo,fecha:r.fecha_emision,vencimiento:r.fecha_vencimiento,estado:r.anulado_at?'ANULADA':r.estado_codigo,estado_operativo:r.estado_codigo,anulado:!!r.anulado_at})),
+   ...(data.pago_patrocinador??[]).map(r=>({...r,tipo:'payment',documento:null,fecha:r.fecha_efectiva,estado:r.estado_codigo,estado_operativo:r.estado_codigo,anulado:r.estado_codigo==='ANULADO'}))
+  ].map(r=>({...r,ruc:company.ruc,razon_social:company.razon_social,ciclo_ids:[],ordenes:[],facturas:[],beneficiarios:[]})):data[table]??[];const rows=source.filter(r=>predicates.every(p=>p(r))).slice(slice.start,slice.end+1);if(table===readError||(table==='facturacion_reporte'&&readError==='orden_servicio_resumen'))return {data:null,error:{code:'READ'}};return {data:single?(rows[0]??null):maybe?(rows[0]??null):rows,error:null,count:source.filter(r=>predicates.every(p=>p(r))).length}}
   const q={
    select:(...args:unknown[])=>{logs.push({table,method:'select',args});return q},
    eq:(key:string,value:unknown)=>{logs.push({table,method:'eq',args:[key,value]});predicates.push(r=>r[key]===value);return q},
    in:(key:string,values:unknown[])=>{predicates.push(r=>values.includes(r[key]));return q},
    is:(key:string,value:unknown)=>{predicates.push(r=>r[key]===value);return q},
    gt:(key:string,value:number)=>{predicates.push(r=>Number(r[key])>value);return q},
-   ilike:()=>q,order:(...args:unknown[])=>{logs.push({table,method:'order',args});return q},
+   abortSignal:()=>q,gte:()=>q,lte:()=>q,contains:()=>q,ilike:()=>q,order:(...args:unknown[])=>{logs.push({table,method:'order',args});return q},
    range:(start:number,end:number)=>{slice.start=start;slice.end=end;return q},
    limit:(n:number,options?:unknown)=>{if(!options)slice.end=n-1;return q},
    single:()=>Promise.resolve(result(true)),maybeSingle:()=>Promise.resolve(result(false,true)),
@@ -68,14 +72,14 @@ it('admin alone cannot enter billing or make any reads',()=>{
  access.roles=['ADMIN_SISTEMA'];wrap(<CompanyBilling companyId="company"/>)
  expect(screen.getByRole('alert')).toHaveTextContent('Acceso no autorizado');expect(client.from).not.toHaveBeenCalled()
 })
-it('company billing has three keyboard tabs and no extra master, uploads or exports',async()=>{
+it('company billing reuses three keyboard tabs with CSV and no PDF or extra master',async()=>{
  wrap(<CompanyBilling companyId="company"/>)
  await screen.findByRole('button',{name:'Nueva orden de servicio'})
  expect(screen.getAllByRole('tab').map(r=>r.textContent)).toEqual(['Órdenes de servicio','Facturas','Pagos'])
  fireEvent.keyDown(screen.getByRole('tab',{name:'Órdenes de servicio'}),{key:'ArrowRight'})
  await screen.findByRole('button',{name:'Nueva factura'})
  expect(screen.getByRole('tab',{name:'Facturas'})).toHaveFocus()
- expect(screen.queryByRole('button',{name:/CSV|PDF|SUNAT|Subir/})).not.toBeInTheDocument()
+ expect(screen.queryByRole('button',{name:/PDF|SUNAT|Subir/})).not.toBeInTheDocument()
 })
 it('OS shows only sponsored Cycles with coverage balance, contextual details and a read-only compact roster',async()=>{
  data.ciclo_orden_servicio_saldo.push({...data.ciclo_orden_servicio_saldo[0],id:'foreign',codigo_ciclo:'OTHER COMPANY',empresa_patrocinadora_id:'other'})
@@ -91,7 +95,7 @@ it('OS shows only sponsored Cycles with coverage balance, contextual details and
 it('OS submits only Cycle context, amount and ten-digit reference; server owns the entire roster',async()=>{
  await orderForm();const button=screen.getByRole('button',{name:'Guardar orden de servicio'});fireEvent.click(button);fireEvent.click(button)
  await waitFor(()=>expect(call).toHaveBeenCalledTimes(1))
- expect(call.mock.calls[0][1].p).toMatchObject({monto:'4500',correlativo:'0000000001',expected_ciclo_updated_at:'cv1',ciclo_id:'cycle'})
+ expect(call.mock.calls[0][1].p).toMatchObject({monto:'4500',correlativo:'1',expected_ciclo_updated_at:'cv1',ciclo_id:'cycle'})
  expect(call.mock.calls[0][1].p).not.toHaveProperty('matriculas');expect(saved).toHaveBeenCalledWith('order','saved')
 })
 it('OS rejects an amount beyond remaining coverage without a mutation',async()=>{
@@ -100,7 +104,7 @@ it('OS rejects an amount beyond remaining coverage without a mutation',async()=>
 })
 it('OS conflict preserves draft and requires explicit refresh without retry',async()=>{
  call.mockRejectedValue({code:'PT409'});await orderForm();fireEvent.click(screen.getByRole('button',{name:'Guardar orden de servicio'}))
- await screen.findByRole('alert');expect(screen.getByLabelText('Monto (S/)')).toHaveValue('4500');expect(screen.getByLabelText('Correlativo')).toHaveValue('0000000001')
+ await screen.findByRole('alert');expect(screen.getByLabelText('Monto (S/)')).toHaveValue('4500');expect(screen.getByLabelText('Correlativo')).toHaveValue('1')
  expect(screen.getByRole('button',{name:'Guardar orden de servicio'})).toBeDisabled();expect(call).toHaveBeenCalledTimes(1)
  fireEvent.click(screen.getByRole('button',{name:'Actualizar datos del Ciclo'}));await waitFor(()=>expect(screen.getByRole('button',{name:'Guardar orden de servicio'})).toBeEnabled())
  expect(call).toHaveBeenCalledTimes(1)
@@ -277,19 +281,15 @@ it('OS detail highlights its reference and amount with a compact roster and clea
  expect(screen.queryByRole('button',{name:'Siguiente página'})).not.toBeInTheDocument();
  expect(screen.getByRole('button',{name:'Anular orden'})).toBeVisible();expect(client.rpc).not.toHaveBeenCalled();
 })
-it('matricula only shows historical links and never duplicates billing CRUD',async()=>{
- data.orden_servicio_matricula=[{matricula_id:'m1',orden_servicio_id:'o1',orden_servicio:{...orders[0],factura_orden_servicio:[{factura_patrocinador:invoices[0]}]}}]
- wrap(<EnrollmentBilling enrollment="m1" version="v1" sponsor="company"/>)
- expect(await screen.findByRole('link',{name:/OS OS01-000123/})).toHaveAttribute('href','/empresas/company/facturacion?orden=o1')
- expect(screen.getByRole('link',{name:'Factura F001-000456'})).toBeVisible()
- expect(screen.queryByRole('button',{name:/Nueva factura|Nueva orden|Registrar transferencia/})).not.toBeInTheDocument()
+it('matricula only indicates the sponsor responsibility without querying commercial documents',()=>{
+ wrap(<EnrollmentBilling sponsor="company"/>)
+ expect(screen.getByText('La facturación de esta matrícula es asumida por el patrocinador del Ciclo.')).toBeVisible()
+ expect(client.from).not.toHaveBeenCalled();expect(client.rpc).not.toHaveBeenCalled()
+ expect(screen.queryByRole('link')).not.toBeInTheDocument();expect(screen.queryByRole('button')).not.toBeInTheDocument()
 })
-it('enrollment billing uses business wording and a quiet empty state',async()=>{
- wrap(<EnrollmentBilling enrollment="m1" version="v1" sponsor="company"/>);
- expect(await screen.findByText('No hay órdenes de servicio registradas que incluyan esta matrícula.')).toBeVisible();
- expect(screen.getByRole('button',{name:'Actualizar facturación'})).toBeEnabled();
- expect(screen.queryByText(/H4|cobertura comercial|Página 1/)).not.toBeInTheDocument();
- expect(screen.queryByRole('button',{name:'Anterior'})).not.toBeInTheDocument();
+it('unsponsored enrollment does not show sponsor responsibility or query billing',()=>{
+ const {container}=wrap(<EnrollmentBilling sponsor={null}/>);
+ expect(container).toBeEmptyDOMElement();expect(client.from).not.toHaveBeenCalled()
 })
 it('sponsored H4 hides even an initially open form but keeps old payments',async()=>{
  data.pago=[{id:'old',matricula_id:'m1',importe:'20',estado_codigo:'CONFIRMADO',created_at:'2026-01-01',updated_at:'v1',medio_etiqueta:'Efectivo',observaciones:null,motivo_anulacion:null,anulado_por:null,anulado_at:null,pago_aplicacion:[]}]
@@ -351,18 +351,16 @@ it('annulling a transfer rereads its state and the invoice balances',async()=>{
  client.rpc.mockImplementation(()=>{data.pago_patrocinador[0].estado_codigo='ANULADO';data.factura_patrocinador_saldo[0]={...invoices[0]};return Promise.resolve({data:{id:'p1'},error:null})})
  wrap(<CompanyBilling companyId="company"/>,'/?pago=p1');fireEvent.click(await screen.findByRole('button',{name:'Anular transferencia'}));set('Motivo obligatorio','Corrección')
  fireEvent.click(screen.getByRole('button',{name:'Revisar anulación'}));fireEvent.click(await screen.findByRole('button',{name:'Confirmar anulación'}));await screen.findByText('ANULADO')
- fireEvent.click(screen.getByRole('tab',{name:'Facturas'}));const table=await screen.findByRole('table',{name:'Facturas del patrocinador'});expect(within(table).getByRole('row',{name:/F001-000456/})).toHaveTextContent('SIN DESEMBOLSO');expect(client.rpc).toHaveBeenCalledTimes(1)
+ fireEvent.click(screen.getByRole('tab',{name:'Facturas'}));const table=await screen.findByRole('table',{name:'Facturas del patrocinador'});expect(within(table).getByRole('row',{name:/F001-000456/})).toHaveTextContent('Pendiente de desembolso');expect(client.rpc).toHaveBeenCalledTimes(1)
 })
 it('sponsored history is still visible if the private payment catalog is unavailable',async()=>{
  readError='catalogo';data.pago=[{id:'old',matricula_id:'m1',importe:'20',estado_codigo:'CONFIRMADO',created_at:'2026-01-01',updated_at:'v1',medio_etiqueta:'Efectivo histórico',pago_aplicacion:[]}]
  wrap(<EnrollmentPayments enrollment="m1" version="v1" enrollmentState="ACTIVO" cycleState="PROGRAMADO" sponsorId="company" initialRegister onChanged={vi.fn()}/>)
  await screen.findByText('Efectivo histórico');expect(screen.queryByRole('button',{name:/Confirmar pago/})).not.toBeInTheDocument()
 })
-it('matricula keeps historical company links apart from the current sponsor',async()=>{
- data.orden_servicio_matricula=[{matricula_id:'m1',orden_servicio_id:'o1',orden_servicio:{...orders[0],factura_orden_servicio:[]}}]
- wrap(<EnrollmentBilling enrollment="m1" version="v1" sponsor="new-company"/>)
- expect(await screen.findByRole('link',{name:/OS OS01-000123/})).toHaveAttribute('href','/empresas/company/facturacion?orden=o1')
- expect(screen.getByRole('link',{name:'Consultar facturación del patrocinador actual'})).toHaveAttribute('href','/empresas/new-company/facturacion')
+it('ADMIN alone does not display the academic sponsorship notice or query billing',()=>{
+ access.roles=['ADMIN_SISTEMA'];const {container}=wrap(<EnrollmentBilling sponsor="company"/>);
+ expect(container).toBeEmptyDOMElement();expect(client.from).not.toHaveBeenCalled()
 })
 it('failed sponsorship reads never enable a new private payment',async()=>{
  readError='matricula';wrap(<EnrollmentPayments enrollment="m1" version="v1" enrollmentState="ACTIVO" cycleState="PROGRAMADO" initialRegister onChanged={vi.fn()}/>)
