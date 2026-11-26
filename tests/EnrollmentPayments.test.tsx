@@ -11,7 +11,7 @@ const props = { enrollment:'m', version:'v1', enrollmentState:'ACTIVO', cycleSta
 beforeEach(() => {
   sessionStorage.clear(); identity.roles=['DIRECTOR_ACADEMICO']; recovery=null; history=[]; client.rpc.mockReset(); changed.mockReset()
   client.from.mockImplementation((table:string) => {
-    const data = table==='matricula_saldo'?{base:120,abonado:0,pendiente:120}:table==='matricula_cargo_saldo'?[{id:'c1',nombre:'CURSO',pendiente:100},{id:'c2',nombre:'OTRO',pendiente:20}]:table==='catalogo'?{id:'cat'}:table==='catalogo_valor'?[{id:'cash',nombre:'Efectivo'}]:history
+    const data = table==='matricula'?{empresa_patrocinadora_id:null}:table==='matricula_saldo'?{base:120,abonado:0,pendiente:120}:table==='matricula_cargo_saldo'?[{id:'c1',nombre:'CURSO',pendiente:100},{id:'c2',nombre:'OTRO',pendiente:20}]:table==='catalogo'?{id:'cat'}:table==='catalogo_valor'?[{id:'cash',nombre:'Efectivo'}]:history
     const q = {select:()=>q,eq:()=>q,order:()=>q,range:()=>q,single:()=>Promise.resolve({data,error:null}),maybeSingle:()=>Promise.resolve({data:recovery,error:null}),then:(resolve:(r:unknown)=>unknown)=>Promise.resolve({data,error:null}).then(resolve)}
     return q
   })

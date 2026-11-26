@@ -24,7 +24,10 @@
  update public.ciclo set nombre_promocion='PROMOCION VIGENTE' where id=c.id returning * into c;
  if field=(select source_fingerprint from public.matricula_ficha_fuente where id=e.id) then raise exception 'Context edit did not invalidate';end if;
  payload:=to_jsonb(public.guardar_empresa_patrocinadora(jsonb_build_object('ruc','2'||lpad((floor(random()*10000000000)::bigint)::text,10,'0'),'razon_social','H5 COMPANY','telefono','999111222')));
- e:=public.editar_matricula(jsonb_build_object('id',e.id,'expected_updated_at',e.updated_at,'empresa_patrocinadora_id',payload->>'id'));
+ -- Sponsor setup now follows Cycle authority; financial/source assertions below stay unchanged.
+ perform public.guardar_ciclo(jsonb_build_object('id',cy.id,'expected_updated_at',cy.updated_at,'carrera_id',cy.carrera_id,'fecha_inicio',cy.fecha_inicio,'fecha_fin',cy.fecha_fin,'nombre_promocion',cy.nombre_promocion,'departamento_id',cy.departamento_id,'provincia_id',cy.provincia_id,'distrito_id',cy.distrito_id,'capitania_id',cy.capitania_id,'empresa_patrocinadora_id',payload->>'id')) from public.ciclo cy where cy.id=e.ciclo_id;
+ select * into e from public.matricula where id=e.id;
+ select * into c from public.ciclo where id=c.id;
  select source_fingerprint into field from public.matricula_ficha_fuente where id=e.id;
  update public.empresa_patrocinadora set telefono='999222333' where id=(payload->>'id')::uuid;
  if field=(select source_fingerprint from public.matricula_ficha_fuente where id=e.id) then raise exception 'Sponsor edit did not invalidate';end if;

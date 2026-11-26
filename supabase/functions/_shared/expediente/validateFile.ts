@@ -1,9 +1,10 @@
-import { PDFArray, PDFDict, PDFDocument, PDFName, PDFRawStream } from 'pdf-lib'
+import { PDFArray, PDFDict, PDFDocument, PDFName, PDFRawStream, PDFString, PDFHexString } from 'pdf-lib'
 import { PNG } from 'pngjs'
 import jpeg from 'jpeg-js'
 import { Buffer } from 'node:buffer'
 import { inflateSync } from 'node:zlib'
 import { DocumentoError, MAX_FILE } from './contract.ts'
+import { checkStructuralPdf } from './boundedPdf.ts'
 const DECODE_BUDGET_BYTES = 96 * 1024 * 1024
 
 export async function validateFile(
@@ -32,8 +33,8 @@ export async function validateFile(
         !/%%EOF\s*$/.test(b.subarray(-1024).toString('latin1'))
       )
         throw Error('PDF envelope')
-      // Fail closed on structural compression whose inflation cannot be budgeted here.
-      // This is a conservative supported-subset limit, NOT an antivirus/CDR guarantee.
+      // Ordinary structural compression is accepted only after bounded preflight.
+      // This supported-subset validation is not an antivirus/CDR guarantee.
       const names = b
         .toString('latin1')
         .replace(/#([0-9a-f]{2})/gi, (_, h) => String.fromCharCode(parseInt(h, 16)))
@@ -43,7 +44,7 @@ export async function validateFile(
       }
       if ((names.match(/\b\d+\s+\d+\s+obj\b/g)?.length ?? 0) > 10000)
         throw Error('PDF object budget')
-      if (/\/(ObjStm|XRef)\b/.test(names)) throw Error('Unverifiable structural compression')
+      if (/\/(ObjStm|XRef)\b/.test(names)) await checkStructuralPdf(bytes)
       const pdf = await PDFDocument.load(bytes, {
         ignoreEncryption: false,
         throwOnInvalidObject: true,
@@ -61,7 +62,6 @@ export async function validateFile(
         'RichMedia',
         'XFA',
         'AcroForm',
-        'URI',
         'EF',
       ])
       const queue = pdf.context.enumerateIndirectObjects().map(([, entry]) => entry),
@@ -100,6 +100,14 @@ export async function validateFile(
           }
         if (!dict) continue
         if (dict.keys().some((k) => forbidden.has(k.decodeText()))) throw Error('Active PDF')
+        if (dict.has(PDFName.of('URI'))) {
+          const target = pdf.context.lookup(dict.get(PDFName.of('URI')))
+          if (dict.get(PDFName.of('S')) !== PDFName.of('URI') || !(target instanceof PDFString || target instanceof PDFHexString)) throw Error('Invalid PDF link')
+          const address = target.decodeText()
+          if (address.length > 4096 || [...address].some(c => c.charCodeAt(0) <= 32 || c.charCodeAt(0) === 127)) throw Error('Invalid PDF link')
+          const url = new URL(address)
+          if (!['https:', 'http:', 'mailto:'].includes(url.protocol) || url.username || url.password) throw Error('Unsafe PDF link')
+        }
         const action = dict.get(PDFName.of('S'))?.toString()
         if (
           action &&

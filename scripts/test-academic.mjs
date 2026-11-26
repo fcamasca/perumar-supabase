@@ -25,7 +25,7 @@ try {
   const clients = {}
   for (const [actor, entry] of Object.entries(fixture.entries)) {
     clients[actor] = publicClient(fixture.config)
-    checked(await clients[actor].auth.signInWithPassword({ email: entry.email, password: entry.password }), 'login académico')
+    checked(await clients[actor].auth.signInWithPassword({ email: entry.email, password: entry.password }), 'login acadÃ©mico')
   }
   const { D, O, A } = clients
   const tag = randomUUID().slice(0, 8)
@@ -50,8 +50,12 @@ try {
     for (const source of sources.sources) assert.equal(createHash('sha256').update(readFileSync(`supabase/reference/${source.file}`)).digest('hex'), source.sha256)
     assert.equal(inspectDatabase('select count(*) from public.distrito;'), '1891')
     assert.equal(capitanias.length, 19)
-    assert.equal((await rows(D, 'catalogo')).length, 12)
-    assert.equal(motivos.filter(x=>x.activo).length, 72)
+    const catalogs = await rows(D, 'catalogo')
+    assert.equal(catalogs.length, 13)
+    const banks = catalogs.find(c => c.codigo === 'BANCO')
+    assert.ok(banks)
+    assert.equal(motivos.filter(x => x.activo && x.catalogo_id === banks.id).length, 21)
+    assert.equal(motivos.filter(x => x.activo && x.catalogo_id !== banks.id).length, 72)
   })
   await scenario('TEST-H2-003/024 normalization-uuid-uniqueness', async () => {
     m1 = await materia('1'); m2 = await materia('2'); m3 = await materia('3'); m4 = await materia('4')

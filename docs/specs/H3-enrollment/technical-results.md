@@ -93,3 +93,27 @@ Validación final CHG-H3-011: migración aplicada incrementalmente en Supabase l
 Nueve bloques del recorrido reportados OK por el usuario; ver [registro humano](human-test-results.md). Candidato de referencia 6f6ab0d; SHA efectivamente ensayado no reconfirmado. Pendiente precisión del entorno/forced-colors real y casos específicos CHG-H3-011. No equivale a TEST-H3-044 ni aprobación de Gate 2.
 
 Precisión humana del 09/11/2026: entorno Chrome / Windows 11 Pro. Contraste alto real de Windows NO VERIFICADO; el usuario acepta expresamente el riesgo residual («no, pero lo apruebo»). Se cierra la precisión pendiente de entorno/decisión sobre contraste, sin declarar PASSED ese subcaso ni aprobar Gate 2. Versiones exactas de Chrome/compilación Windows no informadas. Véase human-test-results.md.
+
+
+## Mejora puntual DNI / APIsPERU — 25/11/2026
+
+- 98/98 pruebas focalizadas PASSED: `DniEdge.test.ts`, `StudentDniLookup.test.tsx`, `EnrollmentPages.test.tsx`. Incluyen inactivo/existente sin consumo externo, fallo local que bloquea alta, formulario/nombres editables, DNI únicamente, respuesta normalizada Edge→UI, permisos, validación de entrada/respuesta, timeout de cinco segundos, ausencia de secreto y habilitación hospedada denegada por defecto, respuesta obsoleta y doble clic, captura manual tras fallo exclusivamente externo, reverificación al guardar y tratamiento de unicidad final rechazada por backend simulado.
+- No se reejecutó batería DB ni regresión integral de hitos: no cambió SQL/RPC/RLS. Prueba de carrera del formulario usa respuesta 23505 simulada; no se atribuye una nueva prueba concurrente real de BD.
+- ESLint del proyecto, TypeScript, comprobación Deno congelada de `consultar-dni` y build productivo ejecutados. Advertencia de bundle >500 kB preservada como residual; no se añadió dependencia.
+- Las pruebas automatizadas no hicieron consultas reales a APIsPERU; usan respuestas simuladas. Plantilla Edge sin valor publicada; secreto real local preparado en archivo ignorado. Diagnóstico de configuración y reinicio con `--env-file` comunicado; el usuario confirmó «ya está», sin aprobación global de pruebas humanas. Prueba humana completa con datos autorizados, despliegue y validación hospedada: PENDIENTES. Producción exige confirmar el uso autorizado y habilitación explícita del servidor.
+- CPU/memoria/forced-colors no medidos/verificados por esta mejora. No se transforma ningún residual previo en PASSED. Sin Spec separado, arquitectura ni cierre/merge H7; documento de arquitectura del usuario intacto.
+
+Detalles operativos y fuentes de condiciones de uso: sección «Mejora puntual — consulta DNI APIsPERU» de `implementation-log.md`.
+
+
+## Consolidación autorizada de la mejora DNI — 26/11/2026
+
+El usuario confirma validación funcional satisfactoria de APIsPERU y aprueba el candidato integrado `44d60b12fa9f932b48e00e4d7720d0a1bb424b89`. Esta declaración sustituye los pendientes humanos globales del checkpoint anterior; no se repiten las pruebas ni se inventan resultados humanos por subcaso. H3 conserva su cierre histórico. Los commits independientes `7e3a505cea299b72834738eef76695a5916acefa` y `01f4fe980e59276120c637b1ce3418426e8cab7d` mantienen la trazabilidad de producto y alertas.
+
+La evidencia automatizada previa de 98/98 casos focalizados cubre DNI existente e inactivo sin llamada externa, fallo de consulta local bloqueante, solo DNI, autocompletado editable, respuesta tardía, timeout, permisos y captura manual tras fallo externo. La unicidad final permanece en `guardar_alumno` y su restricción de BD; la simulación de conflicto de UI no se presenta como nueva carrera real de DNI. El cierre integral añade comprobación Deno congelada de `consultar-dni` y la suite CI del paquete H7, cuya referencia final se registra en [acceptance H7](../H7-sponsors-billing/acceptance.md).
+
+**Producción BLOQUEADA para consumo externo de DNI** hasta confirmar propósito y uso autorizado, cuenta/plan, aceptación de condiciones y cuota vigente del proveedor. La referencia comercial revisada anunciaba 1000 consultas gratuitas mensuales; no constituye una garantía ni sustituye el plan real de la cuenta. Verificar límites en [APIsPERU](https://apisperu.com/servicios/dniruc) y [términos](https://apisperu.com/terminos) antes de habilitar. No hay contadores/caché locales ni promesa de disponibilidad. Autorización funcional humana no equivale a autorización del proveedor para producción.
+
+`APISPERU_TOKEN` se configura solo como secreto Edge: local en `supabase/functions/.env.local` ignorado, con `--env-file`; hospedado mediante secretos privados. Nunca en variables VITE_, repositorio, logs ni frontend. Mantener `APISPERU_PRODUCTION_AUTHORIZED` sin habilitar hasta completar la autorización y configurar `DNI_ALLOWED_ORIGINS`. No se despliega ni revela el valor del secreto.
+
+Eldni queda concluido como alternativa investigada y no seleccionada, sin integración. Hosted Edge/PostgREST, CPU/memoria y forced-colors siguen sin verificar/medir; no se convierten en PASSED. Ningún pendiente exclusivo de DNI bloquea la aceptación de H7.

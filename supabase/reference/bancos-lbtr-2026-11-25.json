@@ -1,0 +1,158 @@
+{
+  "consultado_el": "2026-11-25",
+  "catalogo": "BANCO",
+  "decision": "Tabla de 21 entidades y códigos aprobada por el usuario. codigo es texto LBTR de cuatro dígitos; nombre_corto opcional en catalogo_valor. Selector ordenado por codigo.",
+  "fuentes": [
+    {
+      "titulo": "BCRP — Códigos de entidades participantes LBTR",
+      "url": "https://www.bcrp.gob.pe/docs/Transparencia/Normas-Legales/Circulares/2011/Circular-026-2011-BCRP-Listado.pdf"
+    },
+    {
+      "titulo": "BCRP — Tabla 2, códigos y nombres de entidades",
+      "url": "https://www.bcrp.gob.pe/docs/Transparencia/Normas-Legales/Circulares/2024/circular-0009-2024-bcrp-guia.pdf"
+    },
+    {
+      "titulo": "Santander Consumer Bank — Memoria 2025 (cambio de denominación de CrediScotia)",
+      "url": "https://www.santanderconsumer.com.pe/wp-content/uploads/2026/04/Memoria-Anual-2025-SCB.pdf"
+    },
+    {
+      "titulo": "J.P. Morgan — Banco de Inversión en Perú",
+      "url": "https://www.jpmorgan.com/PE/es/about-us"
+    }
+  ],
+  "notas": [
+    "El listado BCRP usa nombres anteriores para algunos códigos; la tabla humana utiliza nombres actuales.",
+    "Solo BCP, IBK y BBVA tienen nombre_corto explícitamente definido. Los restantes son NULL.",
+    "Se conservan los IDs de los valores existentes; Agrobanco, COFIDE, Efectiva y BTG quedan inactivos por no estar en la tabla humana. No se borran.",
+    "Los textos de banco en pagos ya registrados y en intentos inciertos no se convierten ni reescriben.",
+    "No se convierte el código LBTR a número: los ceros iniciales son significativos."
+  ],
+  "bancos": [
+    {
+      "codigo_anterior": "BCP",
+      "codigo": "0002",
+      "nombre": "Banco de Crédito del Perú (BCP)",
+      "nombre_corto": "BCP"
+    },
+    {
+      "codigo_anterior": "INTERBANK",
+      "codigo": "0003",
+      "nombre": "Interbank",
+      "nombre_corto": "IBK"
+    },
+    {
+      "codigo_anterior": "CITIBANK",
+      "codigo": "0007",
+      "nombre": "Citibank Perú",
+      "nombre_corto": null
+    },
+    {
+      "codigo_anterior": "SCOTIABANK",
+      "codigo": "0009",
+      "nombre": "Scotiabank Perú",
+      "nombre_corto": null
+    },
+    {
+      "codigo_anterior": "BBVA",
+      "codigo": "0011",
+      "nombre": "BBVA Perú",
+      "nombre_corto": "BBVA"
+    },
+    {
+      "codigo_anterior": "NACION",
+      "codigo": "0018",
+      "nombre": "Banco de la Nación",
+      "nombre_corto": null
+    },
+    {
+      "codigo_anterior": "BANCOM",
+      "codigo": "0023",
+      "nombre": "Banco de Comercio",
+      "nombre_corto": null
+    },
+    {
+      "codigo_anterior": "PICHINCHA",
+      "codigo": "0035",
+      "nombre": "Banco Pichincha",
+      "nombre_corto": null
+    },
+    {
+      "codigo_anterior": "BANBIF",
+      "codigo": "0038",
+      "nombre": "BanBif",
+      "nombre_corto": null
+    },
+    {
+      "codigo_anterior": "SANTANDER_CONSUMER",
+      "codigo": "0043",
+      "nombre": "Santander Consumer Bank",
+      "nombre_corto": null
+    },
+    {
+      "codigo_anterior": "MIBANCO",
+      "codigo": "0049",
+      "nombre": "Mibanco",
+      "nombre_corto": null
+    },
+    {
+      "codigo_anterior": "GNB",
+      "codigo": "0053",
+      "nombre": "Banco GNB Perú",
+      "nombre_corto": null
+    },
+    {
+      "codigo_anterior": "FALABELLA",
+      "codigo": "0054",
+      "nombre": "Banco Falabella",
+      "nombre_corto": null
+    },
+    {
+      "codigo_anterior": "RIPLEY",
+      "codigo": "0055",
+      "nombre": "Banco Ripley",
+      "nombre_corto": null
+    },
+    {
+      "codigo_anterior": "SANTANDER",
+      "codigo": "0056",
+      "nombre": "Banco Santander Perú",
+      "nombre_corto": null
+    },
+    {
+      "codigo_anterior": "ALFIN",
+      "codigo": "0058",
+      "nombre": "Alfin Banco",
+      "nombre_corto": null
+    },
+    {
+      "codigo_anterior": "ICBC",
+      "codigo": "0060",
+      "nombre": "ICBC Peru Bank",
+      "nombre_corto": null
+    },
+    {
+      "codigo_anterior": "JP_MORGAN",
+      "codigo": "0061",
+      "nombre": "J.P. Morgan Banco de Inversión",
+      "nombre_corto": null
+    },
+    {
+      "codigo_anterior": "BANK_OF_CHINA",
+      "codigo": "0062",
+      "nombre": "Bank of China (Perú)",
+      "nombre_corto": null
+    },
+    {
+      "codigo_anterior": "BCI",
+      "codigo": "0063",
+      "nombre": "Banco BCI Perú",
+      "nombre_corto": null
+    },
+    {
+      "codigo_anterior": "COMPARTAMOS",
+      "codigo": "0091",
+      "nombre": "Compartamos Banco",
+      "nombre_corto": null
+    }
+  ]
+}

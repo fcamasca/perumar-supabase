@@ -1,0 +1,160 @@
+# H7 — Construcción por bloques
+
+## 2026-11-23 — Núcleo DB autorizado tras Gate 1
+
+Spec aprobado: `08d8a7a6e3279ff8f36344247de4c270b44f19f0`; rama núcleo creada desde ese SHA. [Gate 1](gate-1.md).
+
+Implementación acotada TASK-H7-002..005:
+
+- Migración `20261123010000_h7_billing_model.sql`: seis tablas de negocio, una técnica sin protocolo de bytes; constraints, índices, historia inmutable, validación diferida por raíces afectadas, auditoría mínima, RLS/grants y dos proyecciones invoker.
+- Migración `20261123020000_h7_billing_commands.sql`: siete RPC específicas. Selección OS histórica y manual; factura n:m con diferencia confirmable; workflow adyacente; transferencia con banco/fecha; idempotencia; dependencias de anulación sin cascadas.
+- Migración `20261123030000_h7_private_payment_eligibility.sql`: reemplazo aditivo de registrar_pago H4 con una comprobación nueva después de versión/locks y de recuperación idempotente. Migraciones históricas, fórmulas, aplicaciones e importes H4 sin cambios.
+- RPC JSON siguen convención de campos escalares string/null. OS: matriculas con id/expected_updated_at y expected_ciclo_updated_at. Factura: ordenes con id/expected_updated_at y confirmar_diferencia explícito. Pago: aplicaciones con factura_id/importe/expected_updated_at; la versión es contexto de validación, no contenido económico canónico. Recuperar clave existente precede a reevaluar versiones/elegibilidad actuales.
+- Locks académicos Ciclo→Alumno→Matrícula; después empresa→OS→facturas→pago, UUID ordenados, sin locks H7 nuevos dentro de H3/H4. El lock de empresa serializa comandos comerciales del mismo patrocinador; no es lock global. PostgreSQL40001/40P01 reales se propagan, PT409 lógico, ningún retry.
+- Suite aislada nueva reconstruye todas las migraciones y seed desde cero en una base aleatoria, copia solo esquema de plataforma y levanta PostgREST desechable con JWT ordinarios. No copia usuarios/datos humanos ni resetea el stack humano.
+- Regresión H4 distingue pago anterior a patrocinio, nuevo pago rechazado, recuperación histórica y anulación intacta; conserva todos los escenarios concurrentes anteriores. Inventario de seguridad/CI adaptado a nuevos objetos.
+
+Fallos encontrados durante desarrollo: alias SQL ambiguo en guard de anulación; expectativa de prueba HTTP que no contemplaba serialización nativa; fixture H4 que sobrescribía el payload de recuperación histórica. Corregidos y repetidos los bloques afectados; no se cambiaron políticas aprobadas para hacer pasar pruebas.
+
+Sin cambios React, reportes/CSV, buckets, Edge, SUNAT ni archivos reales. Sin modificaciones de los cuatro documentos aprobados. Resultados y límites en [technical-results.md](technical-results.md). No declarar H7 completo ni iniciar bloques posteriores sin revisión.
+
+## 2026-11-23 — TASK-H7-006: UX autorizada tras aprobación del núcleo
+
+Núcleo aprobado humanamente para continuar: `83140cce4204fb0b8e3e61fab1164088d11f26a5`, CI `45287905957` SUCCESS. Rama `feature/h7-sponsors-billing-ui` creada exactamente desde ese SHA. La nueva autorización cubre solo UX; no es Gate 2 H7.
+
+- Entrada desde la ficha existente de Empresa, sin segundo maestro. Ruta `/empresas/:companyId/facturacion`, con órdenes, facturas y pagos paginados. Bloqueo de acceso UI para ADMIN solo y autoridad DB inalterada.
+- OS: Ciclo elegible → matrículas ACTIVO del patrocinador; selección individual/múltiple/todas las visibles, monto manual, correlativo textual y snapshots de versión. Cobertura histórica consultada por relación OS, no por patrocinador actual. PDF solo texto “No adjunto”, sin botón de subida simulado.
+- Facturas: OS VIGENTE propias, sugerencia exacta con BigInt, importe editable, advertencia/diferencia y confirmación explícita; sin reparto. Workflow solo siguiente etapa con fecha; estado financiero derivado y condición de anulación separados. Anulación Director/motivo/confirmación y errores de dependencias sin cascadas.
+- Transferencias: banco/fecha/referencia y aplicaciones a facturas pendientes, total exacto y versiones esperadas. Una decisión de envío, una RPC. Referencia UUID conservada antes de enviar, por usuario/empresa; sin payload financiero persistido. Consulta explícita por clave; un reenvío idéntico solo se ofrece después de consulta sin resultado, con el borrador original aún en memoria y decisión humana adicional. Nunca nueva clave/retry automático ante respuesta incierta.
+- Matrícula: consulta comercial y enlaces históricos, sin CRUD duplicado ni suma H4+H7. H4 oculta formulario nuevo incluso con apertura inicial solicitada si está patrocinada, preserva historial y anulación autorizada. Acceso directo desde Pagos consulta patrocinio y falla cerrado ante lectura incierta. Historial no depende de que el catálogo de medios para pagos nuevos siga disponible.
+- Reutilizados InlineForm, confirmación/modal con foco y teclado, tabs y estilos por variables de tema. Paginación/selección explícita de página; cambiar de página reinicia selección según aviso visible. Sin nueva dependencia.
+- Nuevas pruebas React (31), fixtures existentes ajustados únicamente para el enlace de navegación y lectura de patrocinio. Núcleo, migraciones, siete RPC, RLS y las186 comprobaciones DB sin cambios. Verificadas además siete consultas concretas contra PostgREST desechable con JWT ordinario, sin modificar scripts de pruebas DB.
+
+Sin reportes/CSV, Storage/buckets, Edge H7, PDF real o SUNAT. Sin capturas ni ejecución humana; revisión visual/operativa pendiente. Sin Gate 2, acceptance o merge. Evidencia en technical-results; detenerse para revisión UX H7.
+
+## 2026-11-23 — Fix focalizado: recuperación de transferencia tras remount
+
+Base exacta UX: `9c8ab2b0b5019dde72e7ec8db18d143260a8c7bb`, misma rama UI. Solo TransferForm, pruebas focalizadas y evidencia; SQL/RPC/RLS intactos.
+
+Tras una consulta explícita sin resultado, se ofrece revisar/reconstruir los datos originales con la clave conservada, aunque el payload en memoria se haya perdido. Se requiere confirmación humana de correspondencia con el intento original. El envío reutiliza esa clave; el contrato DB vigente recupera el pago existente o rechaza diferencias, sin crear un duplicado. No se persiste payload financiero adicional ni se limpia la referencia para crear otro intento.
+
+La incertidumbre del intento anterior permanece tras remontar o fallar un reenvío: un error de la petición nueva no demuestra que la anterior no confirmó. La clave solo se libera por resultado positivo autorizado o por rechazo definitivo de un primer envío que nunca estuvo incierto. Sin generación de claves/reenvíos automáticos; guard síncrono de una mutación por decisión.
+
+Tres pruebas nuevas cubren pérdida de respuesta→remount→consulta vacía→reconstrucción confirmada con misma clave, conflicto idempotente con consulta posterior y error definitivo de reenvío sin liberar la referencia anterior. Checks limitados a Billing/Payments, lint/typecheck/build/diff-check. Publicación con `[skip ci]` para respetar la instrucción humana de no volver a ejecutar DB ni regresión H1–H6. No Gate 2/merge ni ampliación de alcance.
+
+## 2026-11-23 — Enmienda humana MVP: patrocinador único por Ciclo
+
+Base válida: `a0c4abfe88f21879672f491bf96f9347f21685af`, rama `feature/h7-sponsors-billing-ui`. Autorización humana posterior al Spec: Ciclo con cero o una empresa; todas sus matrículas heredan esa referencia. Sin patrocinio individual ni escenario multiempresa por Ciclo. Los cuatro documentos históricos aprobados no se reescriben.
+
+- Migración aditiva `20261123040000_h7_cycle_sponsor.sql`: FK nullable en Ciclo e índice. Mantiene la columna de matrícula como dato derivado.
+- RPC existentes `guardar_ciclo`, `registrar_matricula`, `editar_matricula` y `registrar_orden_servicio`: alta/traslado heredan; una clave de empresa enviada por un cliente antiguo se ignora para matrícula; sincronización del Ciclo transaccional y OS nueva solo para la empresa actual del Ciclo. Se preservan ACL, firmas y SQLSTATE existentes mediante sustituciones verificadas de las definiciones instaladas.
+- Orden de locks de sincronización: Ciclo → Alumnos por UUID → Matrículas por UUID. Sin retries automáticos. Se amplía el guard existente, sin nuevos triggers: rechaza referencias de matrícula contradictorias. Las anuladas únicamente pueden sincronizar la referencia derivada y updated_at; no cambian su estado, snapshots ni restantes campos. Permisos y estados editables del mantenimiento de Ciclo se mantienen, incluido Director cuando existen matrículas activas.
+- Backfill: una empresa distinta no nula se hereda; ausencia de empresa permanece NULL. Varias empresas detienen toda la migración con códigos de Ciclo para decisión humana, incluyendo historia anulada por precaución. Normalización administrativa bajo locks y transacción, sin inventar actor de aplicación: los guards/auditorías de filas afectados se suspenden solo en ese bloque y se restauran antes del commit. La migración versionada documenta esa normalización; las mutaciones normales conservan auditoría con actor.
+- Preflight local de solo lectura: `2026-1001-MA` tenía una empresa y dos matrículas activas sin patrocinador; `2026-1002-MC`, ninguna empresa y dos sin patrocinador. Ningún Ciclo con varias empresas distintas, tampoco contando anuladas. Los datos son de prueba según el usuario. No se aplicó la migración al entorno habitual ni se reseteó el stack.
+- UI: selector de empresa existente/Sin patrocinador en Ciclo; alta y consulta de matrícula muestran patrocinador heredado, sin editor individual; OS filtra Ciclos por empresa. No hay cambios en avatar, temas, navegación global, reportes o PDF.
+- No se reescriben pagos/cargos ni OS/facturas históricas. Facturas, transferencias, workflow e idempotencia H7 no se modifican. Se adaptan exclusivamente fixtures de patrocinio en el runner core y en SQL H4/H5 para la futura CI; esas regresiones NO se ejecutan en este checkpoint.
+
+Pruebas focalizadas y límites en technical-results. Un único commit intermedio con `[skip ci]`; sin CI completa, Gate 2, acceptance, merge, PDF OS, reportes ni SUNAT.
+
+## 2026-11-24 — Enmienda humana MVP: OS por Ciclo completo y saldo por cubrir
+
+Base publicada: `cbec3bcaa7a03ad9cc1cbf6f3cc618f6549a9915`. Decisión humana: retirar la selección individual de alumnos; toda nueva OS incluye automáticamente las matrículas ACTIVO del Ciclo. La lista es referencial y paginada, sin reparto monetario por alumno.
+
+- Nueva proyección `ciclo_orden_servicio_saldo`, security_invoker: total = suma de base de cargos vigentes de matrículas activas (fuente H4); cubierto = suma de OS VIGENTE del Ciclo; saldo por cubrir = máximo entre total menos cubierto y cero. No se descuentan pagos particulares ni transferencias de facturas. También cuentan OS históricas de un patrocinador anterior del mismo Ciclo, sin reasignarlas.
+- Migración aditiva `20261123050000_h7_cycle_order_coverage.sql`: conserva firma/ACL de registrar_orden_servicio, deriva el roster íntegro en servidor y rechaza selección/totales enviados por cliente. Mantiene orden de locks Ciclo → alumnos UUID → matrículas UUID → empresa. Valida importe positivo y no superior al saldo actual, sin retries automáticos.
+- Correlativo nuevo normalizado a 10 dígitos, conservado como texto. No se renumeran OS existentes; se rechaza emitir el equivalente numérico de una referencia antigua con diferente cantidad de ceros, incluso anulada.
+- Formulario OS separado en OrderForm.tsx: selector único de Ciclos de la empresa con saldo disponible, Curso/Año/Capitanía y tres totales visibles. Datos Serie/Correlativo/Fecha/Monto agrupados; listado compacto con total por matrícula y subtotal de página; observación de ancho completo; Cancelar / Guardar orden de servicio. Facturas y transferencias mantienen sus componentes, etiquetas y reglas.
+- Historia de OS no se amplía al ingresar otro alumno. Anular una OS libera cobertura; anular/trasladar una matrícula cambia el total actual y conserva las asociaciones históricas.
+- Migración probada en base desechable y aplicada al entorno local con migration up --local --network-id perumar-h0-local. Ciclo de prueba patrocinado: total S/430.00, cubierto S/0.00 antes de aplicar. No se borraron OS, facturas ni otros datos.
+- Fixtures del runner core adaptados al nuevo contrato y saldo suficiente; NO se ejecutan sus 186 comprobaciones. Preparación del test anterior ajustada para clonar un esquema que ya tenga la nueva vista.
+
+Sin cambios de avatar/temas, navegación global, PDF, reportes, SUNAT, pagos H4 ni workflow/idempotencia/transferencias H7. Cuatro documentos históricos del Spec intactos. Publicación intermedia con [skip ci]; sin Gate 2, acceptance ni merge.
+
+## 2026-11-25 — Adjuntar/consultar PDF de OS
+
+Autorización humana adjunta específica, base `b770cadb9baed2be96e41222471eacbc95e0a6a2`. Preflight: rama feature/h7-sponsors-billing-ui, tracked limpio; se conserva sin tocar/excluir el documento de arquitectura untracked; migraciones locales hasta 20261125030000.
+
+Implementación limitada al contrato de [os-pdf.md](os-pdf.md): migración aditiva 20261125040000, bucket privado h7-os, cuatro RPC específicas service-only, guard de versiones, RLS/grants por columna; dos Edge Functions con validador H6 reutilizado y sección OrderDocuments integrada exclusivamente en detalle OS. No se editan migraciones antiguas, reglas financieras, contratos históricos de facturación ni los cuatro documentos históricos del Spec.
+
+Pruebas DB/RLS agrupadas en una sola ejecución aislada con esquema/referencias y actores sintéticos, sin copiar alumnos humanos ni resetear. Tests frontend/operaciones/HTTP focalizados; lint y tipos frontend/Edge. Los tests iniciales de selección de archivo del arnés jsdom no disparaban submit nativo por required; se corrigió el test para enviar el formulario tras seleccionar el File. Comprobación Edge vía npx falló por DNS de npm dentro del sandbox; el Deno ya instalado completó la comprobación con su caché normal y lockfile congelado. No se atribuyen esas fallas de entorno a un PASSED anterior.
+
+Migración aplicada también al entorno local habitual después de pasar la prueba SQL aislada. Documento de arquitectura preexistente intacto. Publicación en un único checkpoint [skip ci]; no CI completa ni Gate 2/acceptance/merge. Revisión humana de este bloque pendiente. Evidencia detallada y residuales preservados en technical-results.md.
+
+## 2026-11-25 — TASK-H7-008 / OpenRUC autorizado (etapa inicial)
+
+Decisión humana: proveedor externo OpenRUC explícito, botón Consultar RUC, autocompletado editable y referencias efímeras, sin modelo nuevo. Se actualizan puntualmente REQ-H7-014, DES-H7-008, TASK-H7-008 y TEST-H7-015, con trazabilidad/condiciones en openruc.md. No se reabre Gate1 ni cambia facturación/pagos ni arquitectura. Se conservan intactos el documento de arquitectura untracked y los ajustes PDF locales anteriores.
+
+Añadidos contrato/handler RUC compartidos, entrada Edge consultar-ruc y componente CompanyRucLookup integrado al formulario existente. Sin SQL ni credencial proveedor. Proveedor fijo, JWT/rol,5s, cuerpos acotados, respuesta normalizada, sin _more ni service_role; manual intacto. Las pruebas iniciales detectaron selección ambigua del alert preexistente del listado y una declaración Deno duplicada en el arnés; se corrigieron sin cambiar reglas funcionales.
+
+Validación final focalizada93/93, lint/tipos frontend y Deno correctos, proveedor real GET200. Sin CI completa, deploy hospedado, aceptación humana nueva, Gate2, cierre ni merge.
+
+## 2026-11-25 — TASK-H7-008 / ampliación humana de persistencia híbrida
+
+Se autoriza domicilio_fiscal operativo editable y datos_tributarios JSONB opcional como última referencia original normalizada confirmada por Guardar empresa. Se actualizan REQ-H7-014, DES-H7-008, TASK-H7-008 y TEST-H7-015; openruc.md documenta contrato de diez campos, compatibilidad y operación. La ampliación sustituye la restricción efímera de la etapa inicial, sin reabrir finanzas ni Gate1 histórico.
+
+Migración aditiva 20261125050000: dos columnas nullable en tabla existente, CHECK con lista cerrada/tipos/fechas/RUC coincidente y extensión de la RPC existente bajo autorización/control de versión. Se preservan RLS, grants y trigger de auditoría que almacena solo nombres de campos. Sin nuevas tablas/índices/historial/backfill. Edge agrega proveedor y fecha/hora de consulta de servidor, continúa sin escribir DB. React distingue referencia original y datos operativos, conserva correcciones durante I/O, invalida al cambiar RUC, conserva ante fallo y solo persiste al guardar; lectura/edición sin consulta automática. Interfaz compacta e indicador de espera preservados, domicilio editable a ancho completo.
+
+Validación final: 52/52 DB aislada, 104/104 frontend/Edge, lint/tipos/build/Deno frozen correctos. Evidencia y casos humanos pendientes en technical-results.md. Bundle >500 kB y demás residuales permanecen; sin nueva CI/humanos/hosted/CPU/memoria/forced-colors. No aplicada aún migración a DB habitual. Arquitectura untracked y cambios PDF anteriores intactos. Sin commit/push, acceptance, cierre ni merge.
+
+
+## 25/11/2026 — TASK-H7-007: reportes/CSV del alcance aprobado
+
+La revisión de cierre detectó REQ-H7-013 no implementado. El usuario ordenó mantener H7 abierto, rechazó diferir el alcance y autorizó la propuesta mínima antes de implementación. Se completa exclusivamente ese bloque: BillingReportList/reportData integrados en los tres listados existentes de Empresa→Facturación, vista SQL de lectura y pruebas. Se conservan las operaciones de registro/detalle, estados y autoridad financiera. No se edita H3/DNI, arquitectura, Gate 1 ni se crean acceptance/Gate 2.
+
+Migración nueva `20261125060000_h7_read_reports.sql`; una vista, cero tablas/RPC/Edge/dependencias nuevas. Lector ordinario con security_invoker/RLS, relaciones históricas y agregación monetaria por raíz. Una sola prueba aislada final reconstruye todas las migraciones y referencias en DB temporal, usa PostgREST temporal y JWTs sintéticos, elimina sus recursos y no copia datos humanos. Los fallos iniciales fueron del fixture (tarifa faltante/tipos JSON de tarifas/registrado_por en lote) y de la expectativa HTTP del rechazo de una UNION no actualizable; se corrigieron arnés/aserción para comprobar SQLSTATE55000, ausencia de grants de escritura e invariancia de raíces, sin relajar reglas productivas.
+
+Resultados finales: 825/825 pruebas en 50 archivos; 41/41 comprobaciones DB/API/JWT de reportes. Lint, typecheck, build y diff-check correctos. CI ampliada para incluir test:billing:reports en ejecución inicial y reconstrucción; no se declara ejecución remota de esta versión. Migración aplicada incrementalmente en local para revisión humana, sin reset ni cambios a registros financieros/alumnos. TASK-H7-007 lista técnicamente; validación humana de reportes/Excel pendiente. H7 no cerrado, sin merge ni H8.
+
+
+Ajustes visuales posteriores autorizados (25/11/2026): se retiran beneficiarios de las grillas OS/facturas, OS/Ciclos y vencimiento de la grilla de facturas, y Código de Ciclo del formulario de filtros; los datos completos permanecen disponibles en detalle/CSV según su contrato. Facturas muestran una sola columna y filtro Estado: Anulada prevalece; con pago confirmado total muestra Pagada, parcial Pago parcial y sin pagos la etapa del trámite. Es una proyección de presentación, no nuevos estados persistidos ni cambios de workflow/saldos. El CSV de facturas usa también el estado unificado. Check Ocultar anuladas activo inicialmente solo en Facturas, aplicado en servidor y a todas las páginas de exportación; elegir Anulada lo desactiva y activarlo limpia ese filtro contradictorio. Los estados internos e historia permanecen intactos.
+
+
+Decisión humana posterior de numeración (25/11/2026): OS y factura conservan los dígitos del correlativo escrito según el documento, sin completar ni quitar ceros automáticamente. Se elimina padStart/onBlur en OS y lpad de su RPC mediante migración aditiva 20261125070000; límite vuelve a 1–20 dígitos como el contrato original/factura. Serie continúa con trim/mayúsculas existentes, sin completar prefijo ni longitud. No se reescriben referencias guardadas, snapshots, relaciones ni historia. Permanece el bloqueo de OS numéricamente equivalente con diferente relleno de ceros bajo el mismo lock de empresa. Factura ya preservaba el correlativo y no cambia su RPC ni unicidad.
+
+
+Simplificación humana posterior de la ficha de matrícula (25/11/2026): se retira íntegramente el bloque de consultas comerciales OS/facturas, enlaces, actualización y paginación. Bajo el patrocinador actual se muestra únicamente «La facturación de esta matrícula es asumida por el patrocinador del Ciclo». Sin patrocinador no se afirma cobertura. Ya no se hacen lecturas de orden_servicio_matricula desde el Resumen. El detalle comercial/historia permanece en Empresas→Facturación, sin cambios de DB/RLS/reglas ni de cargos/pagos históricos H4. Esta decisión sustituye la presentación histórica/enlaces de REQ-H7-010 solo en esa pantalla, sin eliminar vínculos almacenados ni abrir edición individual del patrocinador.
+
+
+## Publicación consolidada para revisión — 26/11/2026
+
+Candidato incorpora TASK-H7-007 y los ajustes humanos posteriores: columnas compactas en OS/facturas/pagos, Estado de factura unificado derivado y Ocultar anuladas inicial (con filtros iguales en CSV), numeración OS sin relleno automático (migración0700), tabla de PDF OS con acciones por iconos/tooltips y visor/historial conservados, icono PDF compartido con reportes y acción de ficha, y aviso simple de responsabilidad del patrocinador en matrícula sin consultar documentos comerciales. No cambia la integración DNI de H3 ni sus commits; el documento de arquitectura del usuario no se incorpora.
+
+Validación final del conjunto: 218/218 PASSED en BillingReports, Billing, OrderDocuments, FichaPdfAction, CycleReports y EnrollmentPages; ESLint del proyecto, TypeScript, build y diff-check correctos. Es una regresión focalizada final, no una nueva ejecución de las 825 pruebas históricas del primer bloque. Se preservan la evidencia DB/API/JWT aislada 41/41 de reportes y la prueba SQL focalizada de ciclo/OS que confirmó preservación de 1/0002, duplicado equivalente, roles, historia y cobertura. Migraciones0600/0700 aplicadas incrementalmente en desarrollo; registros anteriores no reformateados. Bundle >500 kB permanece como advertencia.
+
+Publicación sin skip ci; la CI remota del commit debe evaluarse por su propio SHA y no se declara SUCCESS anticipado. H7 permanece abierto, revisión humana de reportes y Excel pendiente; sin Gate2/acceptance, PR/merge ni H8. Los residuales de hosted, CPU, memoria, forced-colors, exportación sin snapshot y memoria proporcional, dependencia OpenRUC/RUC20 y conciliación/limpieza manual permanecen.
+
+
+## Cierre autorizado y validación integral — 26/11/2026
+
+Candidato funcional aprobado humanamente: `44d60b12fa9f932b48e00e4d7720d0a1bb424b89`; Spec Gate1 `08d8a7a6e3279ff8f36344247de4c270b44f19f0`. El usuario autoriza cerrar e integrar H7, DNI H3 y arquitectura con ocho diagramas, sin repetir pruebas humanas, desplegar ni iniciar H8. [Gate2](gate-2.md) y [acceptance/checklist](acceptance.md) sustituyen los pendientes globales de checkpoints anteriores, sin borrar su historia.
+
+Correcciones técnicas de cierre:
+
+- `accf422561593de13d5a25f645d5212b73935ad7`: inventario exacto actualizado a 45 relaciones públicas (35 tablas/10 vistas), 39 funciones públicas, 41 migraciones y tres buckets privados. Conserva RLS, security_invoker, ausencia de DML directo/CREATE/bypass/execute público, propietarios/search_path y restricciones de comandos serializables. Añade contrato de bucket h7-os, cuatro RPC reservadas a service_role y lectura por columnas de metadatos: object_key/hash no accesibles al cliente. Fixture sintético de metadatos sin filas, secretos ni cuerpos de funciones; ocho pruebas negativas impiden exposiciones, junto al caso positivo y las dos guardas de destino.
+- Regresión del núcleo financiero ajustada al contrato vigente: una OS por factura no anulada, rechazo de reutilización, fixtures distintos para pagos concurrentes y bucket OS privado. No se cambia SQL/producto para conseguir verde.
+- `64ee409afd91d44f3bb5e6e076fa60e20f94ba55`: conserva las 72 referencias académicas activas y exige adicionalmente BANCO / 21 bancos activos; el catálogo total es 13. El runner PDF OS aplica el protocolo solo si no existe en su clon aislado, sin eludir sus pruebas de ACL/RLS/roles/historia.
+- Workflow añade el typecheck Deno congelado de OS/RUC/DNI y las baterías existentes de patrocinio, cobertura OS, disponibilidad, datos tributarios y archivos OS en ambos pases. No se elimina ningún control anterior, ni se usa skip ci.
+
+Resultados locales efectivamente ejecutados en esta ejecución:
+
+| Comprobación | Resultado |
+| --- | --- |
+| Suite Vitest completa, 50 archivos | **839/839 PASSED** |
+| Núcleo H7, reconstrucción de todas las migraciones, JWT ordinario/PostgREST, rollback y barreras concurrentes, regresión H4 | **192/192 PASSED** |
+| Reportes, 501 documentos/paginación/filtros/RLS/dinero/historia | **41/41 PASSED** |
+| Referencia tributaria, compatibilidad/RPC/RLS/auditoría/versiones | **52/52 PASSED** |
+| Patrocinio por Ciclo | **PASSED**, 12 escenarios más invariantes/rollback/backfill ambiguo |
+| Cobertura OS y roster completo, historia/anulación/roles/numeración | **PASSED** |
+| OS facturada: exclusión/rollback/anulación y reutilización/historia/concurrencia | **PASSED** |
+| Archivos OS: protocolo/roles/RLS/grants/versiones/fallos/anulación/historia/OS ajena | **PASSED** |
+| Inventario real local y tests focalizados | **PASSED**,11/11 pruebas |
+| ESLint completo, tsc, Deno congelado OS/RUC/DNI, build y diff-check | **PASSED** |
+| Ocho diagramas Mermaid | **8/8 sintaxis válida**, no se atribuye renderizado visual |
+
+Las bases DB adicionales son temporales y aisladas, con esquemas y referencias/sintéticos; no se reseteó ni copió el conjunto humano local. El workflow de GitHub sí reconstruye su propio stack efímero y repite las regresiones H1–H7, incluido Edge/Storage reales H5/H6, expiración, build-safety y reconstrucción final.
+
+Fallos iniciales conservados como evidencia: CI45856759852 del candidato humano falló por inventario antiguo; CI45858934026 pasó 839/839 y la nueva comprobación del inventario, pero falló al esperar 12 catálogos en H2 (13 reales). No se declaran SUCCESS ni se ocultan. La siguiente CI se evalúa por su SHA exacto y es condición de integración. Los fallos locales iniciales de fixture de facturas/protocolo OS se corrigieron y se repitieron satisfactoriamente.
+
+La aprobación humana es global del candidato; OpenRUC con persistencia y consulta DNI tienen confirmación funcional explícita. No se fabrican subresultados humanos ni nuevas pruebas de Excel/forced-colors. DNI se consolida por separado en H3, sin reabrirlo; Eldni concluye no seleccionado.
+
+Riesgos y configuración pendientes en acceptance: hosted no probado, CPU/memoria no medidas, forced-colors NO VERIFICADO, bundle principal 837.77 kB, CSV sin snapshot/memoria proporcional, OpenRUC externo/RUC20, autorización APIsPERU previa a producción, PDF conservador, conciliación/limpieza manual y purga H9/release. Ninguno se convierte en PASSED.

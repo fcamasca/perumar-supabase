@@ -1,0 +1,124 @@
+.billing .billing-toolbar,.billing .billing-actions{display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;margin-block:1rem}
+.billing .billing-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,13rem),1fr));gap:1rem}
+.billing label{display:flex;flex-direction:column;gap:.35rem}
+.billing .billing-check{display:flex;flex-direction:row;align-items:center;gap:.6rem}
+.billing .billing-check input{width:auto;flex:none}
+.billing .billing-selection{margin-block:1rem}
+.billing .billing-selection table input[type=checkbox]{width:auto}
+.billing .billing-selection table input[type=text]{min-width:6rem;max-width:10rem}
+.billing .billing-notice{border:1px solid currentColor;border-inline-start-width:4px;padding:1rem;border-radius:.5rem}
+.billing .billing-difference{padding:1rem;border:1px solid currentColor;border-radius:.5rem;margin-block:1rem}
+.billing .billing-difference dl{display:flex;flex-wrap:wrap;gap:1.5rem}
+.billing .billing-detail{margin-block:1rem}
+.billing .billing-money{white-space:nowrap;font-variant-numeric:tabular-nums}
+.billing th,.billing td{vertical-align:top}
+.billing .billing-pagination{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-block:.75rem}
+.billing .billing-pagination span{margin-inline-end:auto}
+.billing [role=alert]{margin-block:1rem}
+.billing .billing-panel{min-width:0}
+.billing input[aria-invalid=true]{border:2px solid var(--danger,#b51c3c)}
+@media(max-width:640px){.billing .billing-actions>button{flex:1}.billing .billing-fields{grid-template-columns:1fr}}
+.billing .order-form form {max-width:none}
+.billing .order-form .order-context,.billing .order-form .order-totals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;margin:1rem 0}
+.billing .order-form dt{color:var(--text-secondary);font-size:.85rem}
+.billing .order-form dd{margin:.25rem 0 0;font-weight:650;overflow-wrap:anywhere}
+.billing .order-form .order-totals{padding:1rem;border:1px solid var(--border-soft);border-radius:.6rem;background:var(--surface)}
+.billing .order-form .order-totals dd{font-size:1.15rem;font-variant-numeric:tabular-nums}
+.billing .order-form .order-fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem;margin-block:1rem}
+.billing .order-form .order-roster{margin-block:1rem}
+.billing .order-form .order-roster th,.billing .order-form .order-roster td{padding:.45rem .7rem}
+.billing .order-form .order-observation{width:100%;max-width:none;display:flex;margin-block:1rem}
+.billing .order-form .order-observation textarea{width:100%;resize:vertical;min-height:6rem}
+@media(max-width:640px){.billing .order-form .order-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.billing .order-form .order-context,.billing .order-form .order-totals{grid-template-columns:1fr}}
+.billing .order-detail-header {display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-block:1.25rem}
+.billing .order-detail-header h2,.billing .order-detail-header h3 {margin-block:0 .6rem}
+.billing .order-detail-summary {padding:1.25rem;border:1px solid var(--border-soft);border-radius:.75rem;background:var(--surface-elevated);grid-template-columns:1.2fr 1fr 1fr;margin-block:1rem}
+.billing .order-detail-summary .order-detail-amount {grid-row:span 2}
+.billing .order-detail-amount dd {font-size:1.8rem;line-height:1.25;margin-block-start:.45rem;color:var(--primary);font-variant-numeric:tabular-nums}
+.billing .order-detail-course {grid-column:span 2}
+.billing .order-detail-students th,.billing .order-detail-students td {padding:.6rem .8rem}
+.billing .order-detail-students td:last-child {white-space:nowrap}
+.billing .order-detail-danger {margin-block-start:1.5rem;padding-block-start:1rem;border-block-start:1px solid var(--border-soft)}
+@media(max-width:640px){.billing .order-detail-summary {grid-template-columns:1fr}.billing .order-detail-summary .order-detail-amount {grid-row:auto}.billing .order-detail-course {grid-column:auto}}
+.billing .invoice-form form {max-width:none}
+.billing .invoice-form h4 {margin-block:0 .9rem}
+.billing .invoice-form .invoice-identity {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+.billing .invoice-form .invoice-orders {margin-block:1.5rem}
+.billing .invoice-orders-heading {display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-block-end:.5rem}
+.billing .invoice-orders-heading h4 {margin:0}
+.billing .invoice-form .invoice-selection {width:3rem}
+.billing .invoice-form table input[type=checkbox] {width:auto;min-height:auto}
+.billing .invoice-form th,.billing .invoice-form td {padding:.55rem .75rem}
+.billing .invoice-form .invoice-amount {padding:1rem;border:1px solid var(--border-soft);border-radius:.65rem;background:var(--surface)}
+.billing .invoice-form .invoice-amount-field {max-width:20rem}
+.billing .invoice-amount-field input {font-size:1.25rem;font-weight:650;font-variant-numeric:tabular-nums}
+.billing .invoice-form .invoice-observation {max-width:none;width:100%;margin-block-start:1rem}
+.billing .invoice-observation textarea {width:100%;min-height:6rem;resize:vertical}
+@media(max-width:640px){.billing .invoice-form .invoice-identity {grid-template-columns:1fr}.billing .invoice-form .invoice-amount-field {max-width:none}}
+.invoice-state-dialog .review-fields {grid-template-columns:1fr;gap:.9rem;margin-block:1rem}
+.invoice-state-dialog label {display:flex;flex-direction:column;gap:.4rem}
+.invoice-state-dialog form {padding:0;border:0;box-shadow:none;background:transparent;max-width:none}
+.billing .transfer-form form {max-width:none}
+.billing .transfer-form h4 {margin-block:0 .9rem}
+.billing .transfer-identity {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+.billing .transfer-reference {grid-column:1/-1}
+.billing .transfer-invoices {margin-block:1.5rem}
+.billing .transfer-invoices-heading {display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-block-end:.5rem}
+.billing .transfer-invoices-heading h4 {margin:0}
+.billing .transfer-form .transfer-selection {width:3rem}
+.billing .transfer-form table input[type=checkbox] {width:auto;min-height:auto}
+.billing .transfer-form table input[type=text] {min-width:6rem;max-width:9rem;min-height:2.25rem;padding:.4rem .5rem;text-align:right}
+.billing .transfer-form th,.billing .transfer-form td {padding:.55rem .7rem;vertical-align:middle}
+.billing .transfer-summary {padding:1rem;border:1px solid var(--border-soft);border-radius:.65rem;background:var(--surface)}
+.billing .transfer-summary dl {margin:0 0 1rem}
+.billing .transfer-summary dd {margin:.25rem 0 0;font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums}
+.billing .transfer-summary label {max-width:none;width:100%}
+.billing .transfer-summary textarea {width:100%;min-height:6rem;resize:vertical}
+@media(max-width:640px){.billing .transfer-identity {grid-template-columns:1fr}}
+
+.billing .transfer-detail-summary {padding:1.25rem;border:1px solid var(--border-soft);border-radius:.75rem;background:var(--surface-elevated);grid-template-columns:1.2fr 1fr 1fr;gap:1rem;margin-block:1rem}
+.billing .transfer-detail-amount {grid-row:span 2}
+.billing .transfer-detail-amount dd {font-size:1.8rem;line-height:1.25;margin-block-start:.45rem;font-variant-numeric:tabular-nums}
+.billing .transfer-detail-reference {grid-column:span 2}
+.billing .transfer-detail-summary dd {overflow-wrap:anywhere}
+.billing .transfer-detail-invoices th,.billing .transfer-detail-invoices td {padding:.6rem .8rem}
+.billing .transfer-detail-invoices td:last-child {white-space:nowrap}
+@media(max-width:640px){.billing .transfer-detail-summary {grid-template-columns:1fr}.billing .transfer-detail-amount {grid-row:auto}.billing .transfer-detail-reference {grid-column:auto}}
+
+.billing .invoice-detail-money {padding:1.25rem;border:1px solid var(--border-soft);border-radius:.75rem;background:var(--surface-elevated);grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem}
+.billing .invoice-detail-money dd {font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums}
+.billing .invoice-detail-balance {border-inline-start:3px solid var(--primary);padding-inline-start:1rem}
+.billing .invoice-detail-tracking {margin-block:1.5rem}
+.billing .invoice-detail-steps {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.75rem;padding:0;list-style:none}
+.billing .invoice-detail-steps li {display:flex;flex-direction:column;align-items:flex-start;gap:.5rem;padding:1rem;border:1px solid var(--border-soft);border-radius:.5rem;overflow-wrap:anywhere}
+.billing .invoice-detail-steps li[aria-current=step] {border:2px solid var(--primary);background:var(--surface-elevated)}
+.billing .invoice-step-marker {display:grid;place-items:center;width:1.75rem;height:1.75rem;border:1px solid currentColor;border-radius:50%}
+.billing .invoice-detail-steps span,.billing .invoice-detail-steps small {font-size:.875rem}
+.billing .invoice-detail-dates {grid-template-columns:repeat(2,minmax(0,1fr));margin-block:1.5rem}
+.billing .invoice-detail-orders th,.billing .invoice-detail-orders td {padding:.6rem .8rem}
+@media(max-width:640px){.billing .invoice-detail-money,.billing .invoice-detail-dates,.billing .invoice-detail-steps {grid-template-columns:1fr}}
+
+.billing .os-document {padding:1.25rem;margin-block:1.5rem;border:1px solid var(--border-soft);border-radius:.75rem;background:var(--surface-elevated)}
+.billing .os-document h4 {margin-block:0 .75rem}
+
+.billing-report-filters {display:grid;grid-template-columns:2fr repeat(3,minmax(8rem,1fr)) auto;gap:1rem;align-items:end;margin-block:1rem;padding:1rem;border:1px solid var(--border-soft);border-radius:.7rem;background:var(--surface-elevated)}
+.billing-report-filters label {display:flex;flex-direction:column;gap:.4rem;min-width:0;margin:0}
+.billing-report-filters input,.billing-report-filters select {width:100%;max-width:none}
+.billing-report-actions {display:flex;gap:.5rem;align-items:center}
+.billing-panel details {min-width:9rem;max-width:24rem}
+.billing-panel details ul {padding-inline-start:1rem}
+@media(max-width:70rem){.billing-report-filters {grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:40rem){.billing-report-filters {grid-template-columns:1fr}}
+
+.billing .billing-report-money {text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+
+.billing .os-document-header {display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-block-end:.75rem}
+.billing .os-document-header h4 {margin:0}
+.billing .os-document-name {display:inline-flex;align-items:center;gap:.6rem;font-weight:600;min-width:12rem}
+.billing .os-document-name svg {width:1.5rem;height:1.5rem;flex:none}
+.os-document-actions {display:flex;align-items:center;gap:.25rem;flex-wrap:nowrap}
+.billing .os-document table th,.billing .os-document table td {padding:.6rem .75rem;vertical-align:middle}
+.billing .os-document table th:last-child {width:1%}
+
+/* Keep tooltips above the single file row so they do not extend its scroll area. */
+.os-document-actions .toolbar-tooltip {top:auto;bottom:calc(100% + .3rem)}

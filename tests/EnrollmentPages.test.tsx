@@ -3,9 +3,9 @@ import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ageAt, enrollmentError, StudentEditor, OccupationField } from '../src/enrollment/EnrollmentPages';
-const { client, sessionState } = vi.hoisted(() => ({ client: { from: vi.fn(), rpc: vi.fn() }, sessionState: { phase: 'authorized', roles: ['COORDINADOR_ACADEMICO'] } }));
+const { client, sessionState } = vi.hoisted(() => ({ client: { from: vi.fn(), rpc: vi.fn(), functions: {invoke: vi.fn()} }, sessionState: { phase: 'authorized', roles: ['COORDINADOR_ACADEMICO'] } }));
 vi.mock('../src/security/SessionProvider', () => ({ useSession: () => ({ client, state: sessionState }) }));
-beforeEach(() => { sessionState.roles = ['COORDINADOR_ACADEMICO']; client.from.mockImplementation(() => ({ select: () => ({ range: async () => ({ data: [], error: null }) }) })); client.rpc.mockReset(); });
+beforeEach(() => { sessionState.roles = ['COORDINADOR_ACADEMICO']; client.from.mockImplementation(() => ({ select: () => ({ range: async () => ({ data: [], error: null }) }) })); client.rpc.mockReset(); client.functions.invoke.mockReset(); });
 describe('H3 student flow and safe feedback', () => {
     it.each([['2000-10-23', '2026-10-22', '25'], ['2000-10-22', '2026-10-22', '26'], ['2000-10-21', '2026-10-22', '26'], ['', '2026-10-22', '']])('derives age without persistence for %s', (birth, today, expected) => expect(ageAt(birth, today)).toBe(expected));
     it('keeps business/SQL details out of errors and requires explicit reload', () => { expect(enrollmentError({ code: '40001' })).toContain('Recarga'); expect(enrollmentError({ code: '42501' })).toContain('permiso'); expect(enrollmentError({ code: '23505' })).toContain('registrado'); expect(enrollmentError(null)).not.toMatch(/SQL|JWT|token/); });
@@ -13,7 +13,7 @@ describe('H3 student flow and safe feedback', () => {
         render(<StudentEditor done={vi.fn()} cancel={vi.fn()}/>);
         await waitFor(() => expect(screen.getByRole('button', { name: 'Siguiente' })).toBeEnabled());
         fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
-        await waitFor(() => expect(screen.getByRole('textbox', { name: /^Apellido paterno/ })).toHaveFocus());
+        await waitFor(() => expect(screen.getByRole('combobox', { name: /^Tipo DI/ })).toHaveFocus());
         expect(screen.getByRole('alert')).toHaveTextContent('Revisa los campos');
         expect(document.querySelector('[aria-current="step"]')).toHaveTextContent('Identificación');
         expect(client.rpc).not.toHaveBeenCalled();
@@ -23,7 +23,7 @@ describe('H3 student flow and safe feedback', () => {
 import { Routes, Route, MemoryRouter } from 'react-router-dom';
 import { StudentDetail, NewEnrollment, EnrollmentDetail } from '../src/enrollment/EnrollmentPages';
 function resultQuery(data: unknown) {
-    const q = { select: () => q, or: () => q, eq: () => q, in: () => q, order: () => q, range: () => q, limit: () => q, single: () => q, maybeSingle: () => q,
+    const q = { select: () => q, abortSignal: () => q, or: () => q, eq: () => q, in: () => q, order: () => q, range: () => q, limit: () => q, single: () => q, maybeSingle: () => q,
         then: (resolve: (r: {
             data: unknown;
             error: null;
@@ -59,7 +59,7 @@ import { Companies } from '../src/enrollment/EnrollmentPages'
 it('uppercases typed and pasted company text in both controls and the saved request, preserving email', async () => {
   client.from.mockImplementation(() => resultQuery([]))
   client.rpc.mockResolvedValue({data:{id:'company',updated_at:'v1'},error:null})
-  render(<Companies />)
+  render(<MemoryRouter><Companies /></MemoryRouter>)
   fireEvent.click(screen.getByRole('button',{name:'Nueva empresa'}))
   fireEvent.change(screen.getByLabelText(/^RUC/),{target:{value:'20123456789'}})
   const name=screen.getByLabelText(/^Razón social/)
@@ -98,7 +98,7 @@ it('restricts document characters and length by selected type and clears the num
 })
 it('accepts only eleven RUC digits, including formatted paste, and blocks an incomplete RUC', async () => {
   client.from.mockImplementation(()=>resultQuery([]))
-  render(<Companies/>)
+  render(<MemoryRouter><Companies/></MemoryRouter>)
   fireEvent.click(screen.getByRole('button',{name:'Nueva empresa'}))
   const ruc=screen.getByRole('textbox',{name:/^RUC/}) as HTMLInputElement
   expect(ruc).toHaveAttribute('maxlength','11');expect(ruc).toHaveAttribute('inputmode','numeric')
@@ -146,7 +146,7 @@ async function openFilledReview(editing=false) {
     catalogo_valor:[{id:'doc-dni',catalogo_id:'type-cat',codigo:'DNI',nombre:'DNI',activo:true},{id:'sex-f',catalogo_id:'sex-cat',codigo:'F',nombre:'FEMENINO',activo:true},{id:'rel-mother',catalogo_id:'parent-cat',codigo:'MADRE',nombre:'MADRE',activo:true},{id:'eyes-brown',catalogo_id:'eyes-cat',codigo:'MARRONES',nombre:'MARRONES',activo:true}],
     departamento:[{id:'geo-dep',nombre:'LIMA',active:true}],provincia:[{id:'geo-prov',departamento_id:'geo-dep',nombre:'LIMA',active:true}],distrito:[{id:'geo-dist',provincia_id:'geo-prov',nombre:'MIRAFLORES',active:true}]
   }
-  client.from.mockImplementation((table:string)=>table==='alumno_contacto_emergencia'?resultQuery([{id:'existing-contact',apellido:'PÉREZ',nombre:'ELENA',parentesco_id:'rel-mother',celular:'999111222',direccion:'AV. MAR',activo:true}]):{select:()=>({range:async(start:number)=>({data:start===0?references[table]??[]:[],error:null})})})
+  client.from.mockImplementation((table:string)=>table==='alumno'?resultQuery([]):table==='alumno_contacto_emergencia'?resultQuery([{id:'existing-contact',apellido:'PÉREZ',nombre:'ELENA',parentesco_id:'rel-mother',celular:'999111222',direccion:'AV. MAR',activo:true}]):{select:()=>({range:async(start:number)=>({data:start===0?references[table]??[]:[],error:null})})})
   const filled={apellido_paterno:'MUÑOZ',apellido_materno:'GÓMEZ',nombres:'ANA',tipo_di_id:'doc-dni',numero_di:'00123456',fecha_nacimiento:'2000-01-02',sexo_id:'sex-f',nacimiento_departamento_id:'geo-dep',nacimiento_provincia_id:'geo-prov',nacimiento_distrito_id:'geo-dist',celular:'999123456',email:'ana@example.invalid',domicilio:'AV. MAR',domicilio_departamento_id:'geo-dep',domicilio_provincia_id:'geo-prov',domicilio_distrito_id:'geo-dist',color_ojos_id:'eyes-brown',estatura_cm:'165',peso_kg:'60'}
   const done=vi.fn()
   render(<StudentEditor initial={editing?{id:'existing-student',updated_at:'version-1',...filled}:undefined} done={done} cancel={vi.fn()}/>)
@@ -156,6 +156,7 @@ async function openFilledReview(editing=false) {
     enter(/^Apellido paterno/,'muñoz');enter(/^Apellido materno/,'gómez');enter(/^Nombres/,'ana');enter(/^Tipo DI/,'doc-dni');enter(/^Número DI/,'00123456');enter(/^Fecha de nacimiento/,'2000-01-02');enter(/^Sexo/,'sex-f');enter(/^Departamento nacimiento/,'geo-dep');enter(/^Provincia nacimiento/,'geo-prov');enter(/^Distrito nacimiento/,'geo-dist')
   }
   fireEvent.click(screen.getByRole('button',{name:'Siguiente'}))
+  await screen.findByLabelText(/^Celular/);
   if(!editing){enter(/^Celular/,'999123456');enter(/^Email/,'ana@example.invalid');enter(/^Domicilio/,'av. mar');enter(/^Departamento domicilio/,'geo-dep');enter(/^Provincia domicilio/,'geo-prov');enter(/^Distrito domicilio/,'geo-dist')}
   fireEvent.click(screen.getByRole('button',{name:'Siguiente'}))
   if(!editing){enter(/^Color de ojos/,'eyes-brown');enter(/^Estatura/,'165');enter(/^Peso/,'60')}
@@ -547,7 +548,7 @@ function companyRows(count=1) { return Array.from({length:count},(_,i)=>({id:`co
 it('gives companies the pupil search toolbar, icon actions, grid and newest-first pagination',async()=>{
     const rows=companyRows(30),order=vi.fn(),range=vi.fn(),filter=vi.fn();
     const q={select:()=>q,order:(...args:unknown[])=>{order(...args);return q},range:(...args:unknown[])=>{range(...args);return q},ilike:(...args:unknown[])=>{filter(...args);return q},then:(resolve:(r:{data:unknown[];error:null})=>unknown)=>Promise.resolve({data:rows,error:null}).then(resolve)};
-    client.from.mockReturnValue(q);render(<Companies/>);
+    client.from.mockReturnValue(q);render(<MemoryRouter><Companies/></MemoryRouter>);
     expect(screen.getByRole('search',{name:'Búsqueda de empresas'})).toBeInTheDocument();
     const search=screen.getByRole('searchbox',{name:'Buscar empresas'});
     expect(search).toHaveAttribute('placeholder','RUC o razón social');
@@ -570,7 +571,7 @@ it('gives companies the pupil search toolbar, icon actions, grid and newest-firs
     expect(client.rpc).not.toHaveBeenCalled();
 });
 it('views company data read-only and edits through the existing command with its version',async()=>{
-    const row=companyRows()[0];client.from.mockReturnValue(resultQuery([row]));render(<Companies/>);
+    const row=companyRows()[0];client.from.mockReturnValue(resultQuery([row]));render(<MemoryRouter><Companies/></MemoryRouter>);
     fireEvent.click(await screen.findByRole('button',{name:'Ver empresa: EMPRESA 0'}));
     expect(screen.getByRole('textbox',{name:'RUC'})).toHaveValue(row.ruc);
     expect(screen.getByRole('textbox',{name:'RUC'})).toHaveAttribute('readonly');
@@ -586,7 +587,7 @@ it('views company data read-only and edits through the existing command with its
     expect(screen.getByRole('table',{name:'Empresas patrocinadoras por fecha de registro descendente'})).toBeVisible();
 });
 it('preserves choosing/no sponsor and auto-selects a newly saved company in enrollment',async()=>{
-    const row=companyRows()[0],choose=vi.fn();client.from.mockReturnValue(resultQuery([row]));render(<Companies choose={choose}/>);
+    const row=companyRows()[0],choose=vi.fn();client.from.mockReturnValue(resultQuery([row]));render(<MemoryRouter><Companies choose={choose}/></MemoryRouter>);
     fireEvent.click(await screen.findByRole('button',{name:'Elegir empresa: EMPRESA 0'}));expect(choose).toHaveBeenLastCalledWith(row);
     fireEvent.click(screen.getByRole('button',{name:'Sin patrocinador'}));expect(choose).toHaveBeenLastCalledWith(null);
     fireEvent.click(screen.getByRole('button',{name:'Nueva empresa'}));
@@ -597,13 +598,13 @@ it('preserves choosing/no sponsor and auto-selects a newly saved company in enro
     fireEvent.click(screen.getByRole('button',{name:'Guardar empresa'}));await waitFor(()=>expect(choose).toHaveBeenLastCalledWith(saved));
 });
 it('offers company consultation without new/edit actions if existing editing roles are absent',async()=>{
-    sessionState.roles=[];client.from.mockReturnValue(resultQuery(companyRows()));render(<Companies/>);
+    sessionState.roles=[];client.from.mockReturnValue(resultQuery(companyRows()));render(<MemoryRouter><Companies/></MemoryRouter>);
     await screen.findByRole('button',{name:'Ver empresa: EMPRESA 0'});
     expect(screen.queryByRole('button',{name:'Nueva empresa'})).not.toBeInTheDocument();
     expect(screen.queryByRole('button',{name:/Editar empresa/})).not.toBeInTheDocument();
 });
 it('retains the company draft on a version conflict and does not retry automatically',async()=>{
-    client.from.mockReturnValue(resultQuery(companyRows()));render(<Companies/>);
+    client.from.mockReturnValue(resultQuery(companyRows()));render(<MemoryRouter><Companies/></MemoryRouter>);
     fireEvent.click(await screen.findByRole('button',{name:'Editar empresa: EMPRESA 0'}));
     fireEvent.change(screen.getByRole('textbox',{name:/^Razón social/}),{target:{value:'borrador'}});
     client.rpc.mockResolvedValue({data:null,error:{code:'40001'}});
@@ -615,7 +616,7 @@ it('retains the company draft on a version conflict and does not retry automatic
 it('replaces the company grid with its record, puts Edit above fields and restores list search/page on return',async()=>{
     const rows=companyRows(30),range=vi.fn(),filter=vi.fn();
     const q={select:()=>q,order:()=>q,range:(...args:unknown[])=>{range(...args);return q},ilike:(...args:unknown[])=>{filter(...args);return q},then:(resolve:(r:{data:unknown[];error:null})=>unknown)=>Promise.resolve({data:rows,error:null}).then(resolve)};
-    client.from.mockReturnValue(q);render(<Companies/>);
+    client.from.mockReturnValue(q);render(<MemoryRouter><Companies/></MemoryRouter>);
     await screen.findByRole('button',{name:'Ver empresa: EMPRESA 0'});
     fireEvent.change(screen.getByRole('searchbox'),{target:{value:'empresa'}});
     await waitFor(()=>expect(filter).toHaveBeenCalledWith('razon_social','%EMPRESA%'));
@@ -637,19 +638,31 @@ it('replaces the company grid with its record, puts Edit above fields and restor
     expect(screen.getByRole('table')).toBeVisible();expect(client.rpc).not.toHaveBeenCalled();
 });
 
-function enrollmentFixture() {
-    const cycles=[{id:'c1',codigo_ciclo:'2026-001-NAV',estado_codigo:'PROGRAMADO',updated_at:'cv1'},{id:'c2',codigo_ciclo:'2026-002-NAV',estado_codigo:'EN_CURSO',updated_at:'cv2'}];
+function enrollmentFixture(sponsored=false) {
+    const cycles=[{id:'c1',codigo_ciclo:'2026-001-NAV',estado_codigo:'PROGRAMADO',updated_at:'cv1',empresa_patrocinadora_id:sponsored?'company':null},{id:'c2',codigo_ciclo:'2026-002-NAV',estado_codigo:'EN_CURSO',updated_at:'cv2',empresa_patrocinadora_id:null}];
     const pupil={id:'s1',codigo_alumno:'A-0000001',apellido_paterno:'MUÑOZ',apellido_materno:'PEREZ',nombres:'ANA MARIA',numero_di:'00123456',updated_at:'sv1',domicilio:'AV. MAR'};
     const tariffs=[{id:'fee',importe:'100',obligatorio:true,tarifa:{nombre:'CARRERA',activo:true}},{id:'extra',importe:'20',obligatorio:false,tarifa:{nombre:'SEGURO',activo:true}}];
     const searches=vi.fn();
     client.from.mockImplementation((table:string)=>{
         let single=false;const filters:Record<string,unknown>={};
-        const q={select:()=>q,eq:(key:string,val:unknown)=>{filters[key]=val;return q},in:()=>q,order:()=>q,limit:()=>q,single:()=>{single=true;return q},or:(expression:string)=>{searches(expression);return q},then:(resolve:(r:unknown)=>unknown)=>Promise.resolve({data:table==='ciclo'?single?cycles.find(c=>c.id===filters.id):cycles:table==='ciclo_tarifa'?tariffs:table==='alumno'?single?pupil:[pupil]:[],error:null}).then(resolve)};return q;
+        const q={select:()=>q,eq:(key:string,val:unknown)=>{filters[key]=val;return q},in:()=>q,order:()=>q,limit:()=>q,single:()=>{single=true;return q},or:(expression:string)=>{searches(expression);return q},then:(resolve:(r:unknown)=>unknown)=>Promise.resolve({data:table==='ciclo'?single?cycles.find(c=>c.id===filters.id):cycles:table==='ciclo_tarifa'?tariffs:table==='alumno'?single?pupil:[pupil]:table==='empresa_patrocinadora'?{id:'company',razon_social:'EMPRESA MVP'}:[],error:null}).then(resolve)};return q;
     });
     return {cycles,pupil,searches};
 }
+it('shows the inherited Cycle sponsor without individual assignment controls',async()=>{
+ const {cycles}=enrollmentFixture(true);
+ render(<MemoryRouter><NewEnrollment cycleContext={cycles[0]}/></MemoryRouter>);
+ expect(await screen.findByText(/Patrocinador: EMPRESA MVP/)).toBeVisible();
+ expect(screen.getByText('Definido por el Ciclo')).toBeVisible();
+ expect(screen.queryByRole('button',{name:'Elegir empresa'})).not.toBeInTheDocument();
+ expect(screen.queryByRole('button',{name:'Sin patrocinador'})).not.toBeInTheDocument();
+ expect(client.rpc).not.toHaveBeenCalled();
+})
 it('enrollment uses freely navigable tabs, preserves data and registers only on final confirmation',async()=>{
  const {pupil,searches}=enrollmentFixture();render(<MemoryRouter><NewEnrollment/></MemoryRouter>);
+ expect(screen.queryByRole('button',{name:'Elegir empresa'})).not.toBeInTheDocument();
+ expect(screen.queryByRole('button',{name:'Sin patrocinador'})).not.toBeInTheDocument();
+ expect(screen.getByText('Definido por el Ciclo')).toBeVisible();
  expect(screen.queryByRole('button',{name:'Siguiente'})).not.toBeInTheDocument();
  fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));expect(screen.getByText(/Selecciona un Ciclo en Datos/)).toBeVisible();
  fireEvent.keyDown(screen.getByRole('tab',{name:'Cargos'}),{key:'Home'});expect(screen.getByRole('tab',{name:'Datos de matrícula'})).toHaveFocus();
@@ -662,7 +675,7 @@ it('enrollment uses freely navigable tabs, preserves data and registers only on 
  fireEvent.click(screen.getByRole('tab',{name:'Datos de matrícula'}));expect(screen.getByRole('combobox',{name:'Ciclo'})).toHaveValue('c1');
  fireEvent.click(screen.getByRole('tab',{name:'Resumen'}));expect(screen.getByRole('table',{name:'Resumen de cargos'})).toHaveTextContent('SEGURO');expect(client.rpc).not.toHaveBeenCalled();
  client.rpc.mockResolvedValue({data:{id:'m1',codigo_matricula:'2026-NAV-001'},error:null});fireEvent.click(screen.getByRole('button',{name:'Confirmar matrícula'}));
- await waitFor(()=>expect(client.rpc).toHaveBeenCalledExactlyOnceWith('registrar_matricula',{p:{ciclo_id:'c1',expected_ciclo_updated_at:'cv1',alumno_id:pupil.id,expected_alumno_updated_at:'sv1',empresa_patrocinadora_id:null},opcionales:[]}));
+ await waitFor(()=>expect(client.rpc).toHaveBeenCalledExactlyOnceWith('registrar_matricula',{p:{ciclo_id:'c1',expected_ciclo_updated_at:'cv1',alumno_id:pupil.id,expected_alumno_updated_at:'sv1'},opcionales:[]}));
  expect(await screen.findByRole('heading',{name:'Matrícula registrada'})).toBeVisible();
 });
 it('changing enrollment Cycle includes all charges and resets Director discount without dropping the pupil',async()=>{
@@ -852,3 +865,50 @@ it('keeps changed charge selections on conflict without claiming success or retr
  await screen.findByRole('button',{name:'Guardar código'});fireEvent.click(screen.getByRole('tab',{name:'Cargos'}));const optional=await screen.findByRole('checkbox',{name:'Incluir CERTIFICADO'});await waitFor(()=>expect(optional).toBeEnabled());fireEvent.click(optional);
  client.rpc.mockResolvedValue({error:{code:'PT409'}});fireEvent.click(screen.getByRole('button',{name:'Guardar cargos'}));expect(await screen.findByRole('alert')).toHaveTextContent('La información cambió');expect(optional).not.toBeChecked();expect(screen.getByRole('button',{name:'Guardar cargos'})).toBeEnabled();expect(screen.queryByText('Cargos guardados correctamente.')).not.toBeInTheDocument();expect(client.rpc).toHaveBeenCalledTimes(1);
 });
+
+it.each(['duplicate','local-error'])('blocks guardar_alumno if DNI existence changes at the final save: %s',async(kind)=>{
+ await openFilledReview()
+ const original=client.from.getMockImplementation()!
+ client.from.mockImplementation((table:string)=>table==='alumno'?kind==='duplicate'?resultQuery([{id:'inactive-existing'}]):{select:()=>({abortSignal:()=>({eq:()=>({eq:()=>({limit:async()=>({data:null,error:{message:'private'}})})})})})}:original(table))
+ fireEvent.click(screen.getByRole('button',{name:'Guardar'}))
+ await screen.findByText(kind==='duplicate'?'El alumno ya se encuentra registrado':'No se pudo verificar si el alumno está registrado. Vuelve a verificar antes de continuar.')
+ expect(client.rpc).not.toHaveBeenCalled();expect(client.functions.invoke).not.toHaveBeenCalled()
+})
+it('consults DNI in new-student identification without requiring names first, fills only names and permits corrections',async()=>{
+ await openFilledReview()
+ fireEvent.click(screen.getByRole('button',{name:'Corregir identificación'}))
+ fireEvent.change(screen.getByLabelText(/^Nombres/),{target:{value:''}})
+ client.functions.invoke.mockResolvedValue({data:{dni:'00123456',nombres:'CONSULTADO',apellido_paterno:'PRUEBA',apellido_materno:'SINTÉTICA'},error:null})
+ fireEvent.click(screen.getByRole('button',{name:'Consultar DNI'}))
+ await waitFor(()=>expect(screen.getByLabelText(/^Nombres/)).toHaveValue('CONSULTADO'))
+ expect(screen.getByLabelText(/^Apellido paterno/)).toHaveValue('PRUEBA')
+ fireEvent.change(screen.getByLabelText(/^Nombres/),{target:{value:'CORREGIDO'}})
+ expect(screen.getByLabelText(/^Nombres/)).toHaveValue('CORREGIDO')
+ expect(client.rpc).not.toHaveBeenCalled()
+})
+
+it('keeps backend uniqueness authoritative if another registration wins after local verification',async()=>{
+ const {done}=await openFilledReview()
+ client.rpc.mockResolvedValue({data:null,error:{code:'23505'}})
+ fireEvent.click(screen.getByRole('button',{name:'Guardar'}))
+ await waitFor(()=>expect(client.rpc).toHaveBeenCalledTimes(1))
+ await screen.findByText(/registrado/)
+ expect(done).not.toHaveBeenCalled()
+})
+
+it('places the duplicate alert beside DNI before names, blocks advancing and clears it for another document',async()=>{
+ await openFilledReview()
+ fireEvent.click(screen.getByRole('button',{name:'Corregir identificación'}))
+ const original=client.from.getMockImplementation()!
+ client.from.mockImplementation((table:string)=>table==='alumno'?resultQuery([{id:'existing'}]):original(table))
+ fireEvent.click(screen.getByRole('button',{name:'Consultar DNI'}))
+ const title=await screen.findByText('Alumno ya registrado')
+ const alert=title.closest('[role="alert"]')!
+ expect(alert).toHaveTextContent('El alumno ya se encuentra registrado')
+ expect(alert.compareDocumentPosition(screen.getByLabelText(/^Apellido paterno/)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+ expect(screen.getByRole('button',{name:'Aplicar cambios y revisar'})).toBeDisabled()
+ fireEvent.change(screen.getByLabelText(/^Número DI/),{target:{value:'87654321'}})
+ expect(screen.queryByText('Alumno ya registrado')).not.toBeInTheDocument()
+ expect(screen.getByRole('button',{name:'Aplicar cambios y revisar'})).toBeEnabled()
+ expect(client.functions.invoke).not.toHaveBeenCalled();expect(client.rpc).not.toHaveBeenCalled()
+})

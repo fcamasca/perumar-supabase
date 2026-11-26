@@ -1,4 +1,4 @@
-name: H6 expediente PDF payments academic and security verification
+name: H7 billing DNI expediente and security verification
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       security-failure:
-        description: 'Ensayo temporal: detectar una asignación ADMIN_SISTEMA indebida a Coordinador'
+        description: 'Ensayo temporal: detectar una asignaciÃ³n ADMIN_SISTEMA indebida a Coordinador'
         type: boolean
         default: false
 
@@ -39,6 +39,8 @@ jobs:
           npm run typecheck
           npm run typecheck:edge
           npm run typecheck:edge:expediente
+          npm run typecheck:edge:h7
+          npm run typecheck:edge:dni
           npm test
       - name: Start isolated local platform
         run: npm run supabase:start
@@ -62,6 +64,15 @@ jobs:
           npm run test:payments
       - name: Expediente isolated DB API locks and history
         run: npm run test:expediente:isolated
+      - name: H7 core full rebuild ordinary JWT and real concurrency
+        run: |
+          npm run test:billing:core
+          npm run test:billing:reports
+          node scripts/test-cycle-sponsor.mjs
+          node scripts/test-cycle-order.mjs
+          node scripts/test-order-invoice-availability.mjs
+          node scripts/test-company-tax.mjs
+          node scripts/test-order-files.mjs
       - name: Enrollment PDF real Edge, private Storage and actor matrix
         run: |
           sudo apt-get update -qq
@@ -110,6 +121,13 @@ jobs:
           npm run test:payments:rollback
           npm run test:payments:isolated
           npm run test:payments
+          npm run test:billing:core
+          npm run test:billing:reports
+          node scripts/test-cycle-sponsor.mjs
+          node scripts/test-cycle-order.mjs
+          node scripts/test-order-invoice-availability.mjs
+          node scripts/test-company-tax.mjs
+          node scripts/test-order-files.mjs
           npm run test:pdf:rollback
           npm run test:pdf
           node scripts/test-pdf-layout.mjs

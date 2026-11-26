@@ -1,6 +1,10 @@
+import { useDniLookup } from './useDniLookup'
+import { storedRucReference, type StoredRucReference } from '../../supabase/functions/_shared/ruc/contract'
+import { CompanyRucLookup } from './CompanyRucLookup'
 import { EnrollmentPhoto, StudentPhoto } from '../documents/EnrollmentPhoto'
 import { EnrollmentDocuments } from '../documents/EnrollmentDocuments'
 import { EnrollmentPayments } from '../payments/EnrollmentPayments'
+import { EnrollmentBilling } from '../billing/EnrollmentBilling'
 import { FichaPdfAction } from './FichaPdfAction'
 import { enrollmentError } from '../lib/enrollmentError'
 export { enrollmentError } from '../lib/enrollmentError'
@@ -112,7 +116,7 @@ function Fields({ fields, draft, change, refs, readOnly = false }: {
             const geo = key.match(/^(nacimiento|domicilio)_(departamento|provincia|distrito)_id$/);
             if (geo)
                 options = (refs[geo[2]] ?? []).filter(r => geo[2] === 'departamento' || value(r, geo[2] === 'provincia' ? 'departamento_id' : 'provincia_id') === draft[`${geo[1]}_${geo[2] === 'provincia' ? 'departamento' : 'provincia'}_id`]);
-            const max = key === 'razon_social' ? 200 : key === 'codigo' ? 30 : key === 'descripcion' ? 500 : key === 'numero_di' ? 30 : /domicilio$|direccion|senas_particulares/.test(key) ? 500 : key === 'numero_mz_lt' ? 100 : key === 'email' ? 254 : /celular|telefono/.test(key) ? 30 : 150;
+            const max = key === 'razon_social' ? 200 : key === 'codigo' ? 30 : key === 'descripcion' ? 500 : key === 'numero_di' ? 30 : /domicilio$|domicilio_fiscal|direccion|senas_particulares/.test(key) ? 500 : key === 'numero_mz_lt' ? 100 : key === 'email' ? 254 : /celular|telefono/.test(key) ? 30 : 150;
             return <label key={key} data-field={key}><span className="field-label">{label}{required ? ' *' : ''}</span>{options ? <select required={required} value={draft[key] ?? ''} onChange={e => change(key, formTextValue(e.currentTarget))}><option value="">Seleccionar</option>{options.map(r => <option key={r.id} value={r.id} disabled={r.activo === false || r.active === false}>{value(r, 'nombre')}{r.activo === false || r.active === false ? ' (inactivo)' : ''}</option>)}</select> : <input required={required} type={kind === 'date' ? 'date' : kind === 'number' ? 'number' : kind === 'email' ? 'email' : 'text'} step={kind === 'number' ? 'any' : undefined} min={kind === 'number' ? '0.000001' : undefined} max={kind === 'date' ? new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' }) : undefined} id={rule ? `${id}-${key}` : undefined} aria-describedby={rule ? `${id}-${key}-help` : undefined} disabled={key === 'numero_di' && !rule} inputMode={rule?.numeric ? 'numeric' : undefined} minLength={rule?.minLength} maxLength={rule?.maxLength ?? max} data-pattern-error={key === 'ruc' ? 'El RUC debe tener exactamente 11 dígitos.' : key === 'numero_di' ? 'DNI: exactamente 8 dígitos. Carné de extranjería: 1 a 30 caracteres alfanuméricos.' : undefined} pattern={rule?.pattern} value={draft[key] ?? ''} onChange={e => change(key, rule ? documentInputValue(e.currentTarget, rule.kind) : formTextValue(e.currentTarget))} onPaste={rule ? e => { e.preventDefault(); change(key, pasteDocumentValue(e.currentTarget, e.clipboardData.getData('text'), rule.kind)); } : undefined}/>} {rule && <small id={`${id}-${key}-help`}>{rule.hint}</small>}{key === 'numero_di' && !rule && <small>Selecciona primero el tipo de documento.</small>}</label>;
         })}</div>;
 }
@@ -164,6 +168,8 @@ export function StudentEditor({ initial, done, cancel }: {
     const { client } = useSession(), { refs, error } = useReferences();
     const [draft, setDraft] = useState<Draft>(() => studentDraft(initial));
     const [contact, setContact] = useState<Draft | null>(null), [draftContacts, setDraftContacts] = useState<Row[]>([]), [editingContactId, setEditingContactId] = useState<string | null>(null);
+    const dniEnabled = !initial && refs.catalogo_valor?.find(v => v.id === draft.tipo_di_id)?.codigo === 'DNI';
+    const dniLookup = useDniLookup(draft.numero_di ?? '', draft.tipo_di_id ?? '', !!dniEnabled, names => setDraft(d => ({...d, ...names})));
     const nextContactId = useRef(0);
     const [step, setStep] = useState(0), [saved, setSaved] = useState<Row | undefined>(initial);
     const [message, setMessage] = useState(''), [busy, setBusy] = useState(false);
@@ -183,6 +189,7 @@ export function StudentEditor({ initial, done, cancel }: {
     function correctReview(index: number) { setMessage(''); setReturnToReview(true); setStep(index); }
     function change(k: string, v: string) { setDraft(d => updateStudentDraft(d, k, v)); }
     async function save() {
+        if (busy || dniLookup.busy || !(await dniLookup.verify())) return;
         setBusy(true);
         setMessage('');
         try {
@@ -200,13 +207,26 @@ export function StudentEditor({ initial, done, cancel }: {
             setBusy(false);
         }
     }
-    return <section><EditorHeading>{initial ? 'Editar Alumno' : <NewStudentLabel/>}</EditorHeading><Steps names={['Identificación', 'Domicilio', 'Información adicional', 'Contacto de emergencia', 'Revisar']} step={step}/><Message>{error || message}</Message><InlineForm onSubmit={() => { if (step < 4) { setStep(returnToReview ? 4 : step + 1); setReturnToReview(false); } else void save(); }}>
-    <fieldset disabled={busy || !refs.catalogo}><legend>{['Identificación', 'Domicilio', 'Información adicional', 'Contacto de emergencia', 'Revisar'][step]}</legend>
-      {step < 3 && <Fields fields={studentGroups[step]} draft={draft} change={change} refs={refs}/>}
+    const dniNotice = !initial && dniEnabled && dniLookup.message ? <div className="dni-notice" data-tone={dniLookup.tone} role={dniLookup.tone === 'error' ? 'alert' : 'status'} aria-atomic="true">
+      <span className="dni-notice-icon" aria-hidden="true">{dniLookup.tone === 'success' ? '✓' : '!'}</span>
+      <div><strong>{dniLookup.title}</strong><p>{dniLookup.message}</p>{dniLookup.blocked && <p>No puedes crear otro registro con este DNI.</p>}</div>
+    </div> : null;
+    return <section><EditorHeading>{initial ? 'Editar Alumno' : <NewStudentLabel/>}</EditorHeading><Steps names={['Identificación', 'Domicilio', 'Información adicional', 'Contacto de emergencia', 'Revisar']} step={step}/><Message>{error || message}</Message><InlineForm onSubmit={() => { if (busy || dniLookup.busy || dniLookup.blocked) return; if (step < 4) { const advance = () => { setStep(returnToReview ? 4 : step + 1); setReturnToReview(false); }; if (step === 0 && dniEnabled) void dniLookup.verify().then(ok => { if (ok) advance(); }); else advance(); } else void save(); }}>
+    <fieldset disabled={busy || dniLookup.busy || !refs.catalogo}><legend>{['Identificación', 'Domicilio', 'Información adicional', 'Contacto de emergencia', 'Revisar'][step]}</legend>
+      {step === 0 && !initial ? <>
+        <div className="student-document-entry">
+          <Fields fields={studentGroups[0].filter(([key]) => ['tipo_di_id', 'numero_di'].includes(key))} draft={draft} change={change} refs={refs}/>
+          {dniEnabled && <button type="button" disabled={busy || dniLookup.busy} onClick={() => void dniLookup.consult()}>{dniLookup.busy ? 'Consultando DNI…' : 'Consultar DNI'}</button>}
+        </div>
+        {dniNotice}
+        <Fields fields={studentGroups[0].filter(([key]) => !['tipo_di_id', 'numero_di'].includes(key))} draft={draft} change={change} refs={refs}/>
+      </> : step < 3 && <Fields fields={studentGroups[step]} draft={draft} change={change} refs={refs}/>}
+
+      {step !== 0 && dniNotice}
       {step === 0 && <p>Edad calculada: {ageAt(draft.fecha_nacimiento ?? '') || '—'}</p>}
       {step === 3 && (initial ? <p>Los contactos se mantienen desde la pestaña Contactos de la ficha.</p> : <><div className="student-contacts-heading"><p>Puedes guardar una ficha sin contactos; para matricular se exige al menos uno activo y válido.</p><button type="button" onClick={() => { setEditingContactId(null); setContact({}); }}>Agregar contacto</button></div><ContactGrid contacts={draftContacts} refs={refs} draft onEdit={c => { setEditingContactId(c.id); setContact(Object.fromEntries(contactFields.map(([key]) => [key, value(c, key)]))); }} onRemove={c => setDraftContacts(list => list.filter(item => item.id !== c.id))}/><p className="help-text">Los contactos de esta lista se guardarán junto con el alumno al pulsar Guardar al final de Revisar.</p></>)}
       {step === 4 && <StudentReview studentCode={value(initial, 'codigo_alumno')} draft={draft} refs={refs} editing={!!initial} contacts={initial ? reviewContacts : draftContacts} contactsError={contactsError} busy={busy} correct={correctReview}/> }
-    </fieldset>{returnToReview && <p className="help-text">Al continuar conservarás lo corregido y volverás a Revisar. El alumno todavía no se guarda.</p>}<div className="form-actions"><button type="button" disabled={busy} onClick={cancel}>Cancelar</button>{step > 0 && <button type="button" disabled={busy} onClick={() => { setReturnToReview(false); setStep(step - 1); }}>Anterior</button>}<button disabled={busy || !refs.catalogo}>{step < 4 ? returnToReview ? 'Aplicar cambios y revisar' : 'Siguiente' : busy ? 'Guardando…' : 'Guardar'}</button></div></InlineForm>{contact && <ContactDialog close={() => setContact(null)}><InlineForm onSubmit={() => {
+    </fieldset>{returnToReview && <p className="help-text">Al continuar conservarás lo corregido y volverás a Revisar. El alumno todavía no se guarda.</p>}<div className="form-actions"><button type="button" disabled={busy || dniLookup.busy} onClick={cancel}>Cancelar</button>{step > 0 && <button type="button" disabled={busy || dniLookup.busy} onClick={() => { setReturnToReview(false); setStep(step - 1); }}>Anterior</button>}<button disabled={busy || dniLookup.busy || dniLookup.blocked || !refs.catalogo}>{step < 4 ? returnToReview ? 'Aplicar cambios y revisar' : 'Siguiente' : busy ? 'Guardando…' : 'Guardar'}</button></div></InlineForm>{contact && <ContactDialog close={() => setContact(null)}><InlineForm onSubmit={() => {
         const entry: Row = { ...contact, id: editingContactId ?? `draft-contact-${++nextContactId.current}`, activo: true };
         setDraftContacts(list => editingContactId ? list.map(c => c.id === editingContactId ? entry : c) : [...list, entry]);
         setContact(null); setEditingContactId(null);
@@ -349,38 +369,51 @@ function CompanyAction({ action, name, disabled = false, onClick }: { action: 'n
 export function Companies({ choose }: { choose?: (r: Row | null) => void }) {
     const { client, state } = useSession(), [search, setSearch] = useState(''), [page, setPage] = useState(0), [rows, setRows] = useState<Row[]>([]);
     const [selected, setSelected] = useState<Row>(), [draft, setDraft] = useState<Draft>({}), [mode, setMode] = useState<'new' | 'view' | 'edit' | null>(null), [message, setMessage] = useState('Cargando…'), [revision, setRevision] = useState(0), [busy, setBusy] = useState(false);
+    const [tax,setTax] = useState<StoredRucReference|null>(null);
     const canEdit = state.roles?.some(role => ['DIRECTOR_ACADEMICO', 'COORDINADOR_ACADEMICO'].includes(role));
     useEffect(() => {
         let active = true;
-        let q = client.from('empresa_patrocinadora').select('id,ruc,razon_social,persona_contacto,telefono,email,created_at,updated_at').order('created_at', { ascending:false }).order('id', { ascending:false }).range(page * 30, page * 30 + 29);
+        let q = client.from('empresa_patrocinadora').select('id,ruc,razon_social,persona_contacto,telefono,email,domicilio_fiscal,datos_tributarios,created_at,updated_at').order('created_at', { ascending:false }).order('id', { ascending:false }).range(page * 30, page * 30 + 29);
         if (search) q = /^\d/.test(search) ? q.ilike('ruc', `%${search}%`) : q.ilike('razon_social', `%${search}%`);
         void q.then(r => { if (active) { setRows(r.error ? [] : r.data as Row[]); setMessage(r.error ? 'No se pudieron consultar empresas.' : !r.data.length ? 'No hay empresas para esta búsqueda.' : ''); } });
         return () => { active = false; };
     }, [client, search, page, revision]);
-    const fields = [['ruc','RUC','required'],['razon_social','Razón social','required'],['persona_contacto','Persona de contacto','optional'],['telefono','Teléfono / celular','optional'],['email','Email empresa','email']];
+    const fields = [['ruc','RUC','required'],['razon_social','Razón social','required'],['domicilio_fiscal','Domicilio fiscal','optional'],['persona_contacto','Persona de contacto','optional'],['telefono','Teléfono / celular','optional'],['email','Email empresa','email']];
     function open(next: 'new' | 'view' | 'edit', row?: Row) {
-        setSelected(row); setDraft(Object.fromEntries(fields.map(([key]) => [key,value(row,key)]))); setMode(next);
+        setTax(readTax(row)); setSelected(row); setDraft(Object.fromEntries(fields.map(([key]) => [key,value(row,key)]))); setMode(next);
+    }
+    function readTax(row?:Row):StoredRucReference|null {
+        if (!row?.datos_tributarios) return null;
+        try { return storedRucReference(row.datos_tributarios,String(row.ruc)); } catch { return null; }
+    }
+    function changeCompany(key:string,text:string) {
+        if (key === 'ruc' && text !== draft.ruc) setTax(null);
+        setDraft(d => ({...d,[key]:text}));
     }
     async function save() {
         if (!canEdit || mode === 'view') return;
         setBusy(true);
         try {
-            const r = await client.rpc('guardar_empresa_patrocinadora', { p: { ...Object.fromEntries(Object.entries(draft).map(([key,text]) => [key,text.trim() || null])), ...(selected ? { id:selected.id,expected_updated_at:selected.updated_at } : {}) } });
+            const r = await client.rpc('guardar_empresa_patrocinadora', { p: { datos_tributarios:tax, ...Object.fromEntries(Object.entries(draft).map(([key,text]) => [key,text.trim() || null])), ...(selected ? { id:selected.id,expected_updated_at:selected.updated_at } : {}) } });
             if (r.error) { setMessage(enrollmentError(r.error)); return; }
             const saved = r.data as Row;
-            setSelected(saved); setDraft(Object.fromEntries(fields.map(([key]) => [key,value(saved,key)])));
+            setTax(readTax(saved)); setSelected(saved); setDraft(Object.fromEntries(fields.map(([key]) => [key,value(saved,key)])));
             setMode(null); setMessage('Empresa guardada correctamente.'); setRevision(v => v + 1); choose?.(saved);
         } catch { setMessage(enrollmentError(null)); }
         finally { setBusy(false); }
     }
     function cancelEditing() {
         setMessage('');
-        if (selected) { setDraft(Object.fromEntries(fields.map(([key]) => [key,value(selected,key)]))); setMode('view'); }
+        if (selected) { setTax(readTax(selected)); setDraft(Object.fromEntries(fields.map(([key]) => [key,value(selected,key)]))); setMode('view'); }
         else setMode(null);
     }
     if (mode) return <section className="company-record"><EditorHeading>{mode === 'new' ? 'Nueva empresa' : 'Ficha de empresa patrocinadora'}</EditorHeading><Message>{message}</Message>
-        <header className="student-detail-header"><div>{selected && <><h3>{value(selected,'razon_social')}</h3><p>RUC · {value(selected,'ruc')}</p></>}<small>{mode === 'view' ? 'Consulta los datos registrados. Para modificarlos, selecciona Editar empresa.' : 'Los cambios se guardarán al confirmar Guardar empresa.'}</small></div><div className="record-header-actions">{mode === 'view' ? <><button type="button" className="secondary" onClick={() => { setMessage(''); setMode(null); }}>Volver a empresas</button>{canEdit && <button type="button" onClick={() => setMode('edit')}>Editar empresa</button>}{choose && selected && <button type="button" onClick={() => choose(selected)}>Elegir empresa</button>}</> : <span className="student-edit-mode">{mode === 'new' ? 'Nueva empresa' : 'Editando empresa'}</span>}</div></header>
-        <InlineForm key={`${selected?.id ?? 'new'}-${mode}`} onSubmit={() => void save()}><fieldset disabled={busy}><Fields fields={fields} draft={draft} change={(key,text) => setDraft(d => ({...d,[key]:text}))} refs={{}} readOnly={mode === 'view'}/></fieldset>{mode !== 'view' && <div className="form-actions"><button type="button" disabled={busy} onClick={cancelEditing}>Cancelar</button><button disabled={busy}>{busy ? 'Guardando…' : 'Guardar empresa'}</button></div>}</InlineForm>
+        <header className="student-detail-header"><div>{selected && <><h3>{value(selected,'razon_social')}</h3><p>RUC · {value(selected,'ruc')}</p></>}<small>{mode === 'view' ? 'Consulta los datos registrados. Para modificarlos, selecciona Editar empresa.' : 'Los cambios se guardarán al confirmar Guardar empresa.'}</small></div><div className="record-header-actions">{mode === 'view' ? <><button type="button" className="secondary" onClick={() => { setMessage(''); setMode(null); }}>Volver a empresas</button>{canEdit && <button type="button" onClick={() => setMode('edit')}>Editar empresa</button>}{canEdit&&!choose&&<Link className="secondary" to={`/empresas/${selected?.id}/facturacion`}>Facturación</Link>}{choose && selected && <button type="button" onClick={() => choose(selected)}>Elegir empresa</button>}</> : mode === 'edit' ? <span className="student-edit-mode">Editando empresa</span> : null}</div></header>
+        <InlineForm className="company-form" key={`${selected?.id ?? 'new'}-${mode}`} onSubmit={() => void save()}><fieldset disabled={busy}>{<CompanyRucLookup ruc={draft.ruc ?? ''} name={draft.razon_social ?? ''} address={draft.domicilio_fiscal ?? ''} stored={tax} readOnly={mode === 'view' || !canEdit} disabled={busy} apply={(ruc,previousName,previousAddress,reference) => {
+            if (draft.ruc !== ruc) return;
+            setTax(reference);
+            setDraft(d => d.ruc === ruc ? {...d,razon_social:d.razon_social === previousName ? reference.razon_social.toUpperCase() : d.razon_social,domicilio_fiscal:d.domicilio_fiscal === previousAddress ? reference.direccion ?? '' : d.domicilio_fiscal} : d);
+        }}>{(action,reference) => <><div className="company-identity"><div className="company-ruc-input"><Fields fields={fields.slice(0,1)} draft={draft} change={changeCompany} refs={{}} readOnly={mode === 'view'}/>{action}</div><Fields fields={fields.slice(1,2)} draft={draft} change={changeCompany} refs={{}} readOnly={mode === 'view'}/></div><Fields fields={fields.slice(2)} draft={draft} change={changeCompany} refs={{}} readOnly={mode === 'view'}/>{reference}</>}</CompanyRucLookup>}</fieldset>{mode !== 'view' && <div className="form-actions"><button type="button" className="secondary" disabled={busy} onClick={cancelEditing}>Cancelar</button><button disabled={busy}>{busy ? 'Guardando…' : 'Guardar empresa'}</button></div>}</InlineForm>
     </section>;
     return <section><h2>Empresa patrocinadora</h2><div className="filters students-toolbar" role="search" aria-label="Búsqueda de empresas"><label className="student-search"><span className="field-label">Buscar empresas</span><span className="search-input"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input type="search" placeholder="RUC o razón social" value={search} onChange={e => { setSearch(formTextValue(e.currentTarget)); setPage(0); }}/></span></label>{canEdit && <CompanyAction action="new" disabled={busy} onClick={() => open('new')}/>}</div><Message>{message}</Message>{choose && <div className="company-selection-actions"><button type="button" className="secondary" disabled={busy} onClick={() => choose(null)}>Sin patrocinador</button></div>}
         <div className="students-grid companies-grid"><table aria-label="Empresas patrocinadoras por fecha de registro descendente"><thead><tr><th scope="col">Empresa</th><th scope="col">RUC</th><th scope="col" className="student-row-date">Registro ↓</th><th scope="col">Contacto</th><th scope="col">Teléfono</th><th scope="col">Email</th><th scope="col" className="student-actions-heading">Acciones</th></tr></thead><tbody>{rows.map(r => <tr key={r.id}><td><button type="button" className="student-row-name company-row-name" onClick={() => open('view',r)}>{value(r,'razon_social')}</button></td><td className="student-row-document">{value(r,'ruc')}</td><td className="student-row-date">{r.created_at ? new Date(String(r.created_at)).toLocaleString('es-PE',{timeZone:'America/Lima',dateStyle:'short',timeStyle:'short'}) : '—'}</td><td>{value(r,'persona_contacto') || 'No indicado'}</td><td>{value(r,'telefono') || 'No indicado'}</td><td>{value(r,'email') || 'No indicado'}</td><td><div className="student-row-actions"><CompanyAction action="view" name={value(r,'razon_social')} disabled={busy} onClick={() => open('view',r)}/>{canEdit && <CompanyAction action="edit" name={value(r,'razon_social')} disabled={busy} onClick={() => open('edit',r)}/>} {choose && <CompanyAction action="choose" name={value(r,'razon_social')} disabled={busy} onClick={() => choose(r)}/>}</div></td></tr>)}</tbody></table></div>
@@ -392,12 +425,17 @@ export function NewEnrollment({cycleContext,onComplete,onCancel,onEditorChange}:
     const { client, state }=useSession(), navigate=useNavigate();
     const [cycles,setCycles]=useState<Row[]>([]),[cycle,setCycle]=useState<Row|undefined>(cycleContext),[student,setStudent]=useState<Row>(),[company,setCompany]=useState<Row|null>(null),[charges,setCharges]=useState<Row[]>([]);
     const [tab,setTab]=useState(0),[search,setSearch]=useState(''),[found,setFound]=useState<Row[]>([]),[searchStatus,setSearchStatus]=useState<'idle'|'loading'|'ready'|'error'>('idle');
-    const [editor,setEditor]=useState(false),[editing,setEditing]=useState(false),[choosingCompany,setChoosingCompany]=useState(false),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[registered,setRegistered]=useState<Row>(),[discount,setDiscount]=useState('0'),[reason,setReason]=useState(''),[code,setCode]=useState('');
+    const [editor,setEditor]=useState(false),[editing,setEditing]=useState(false),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[registered,setRegistered]=useState<Row>(),[discount,setDiscount]=useState('0'),[reason,setReason]=useState(''),[code,setCode]=useState('');
     const [tariffsStatus,setTariffsStatus]=useState<'idle'|'loading'|'ready'|'error'>('idle');
     const studentSearch=useRef<HTMLInputElement>(null);
     const director=state.roles?.includes('DIRECTOR_ACADEMICO');
+    useEffect(()=>{
+        let active=true;setCompany(null);
+        if(cycle?.empresa_patrocinadora_id)void client.from('empresa_patrocinadora').select('id,razon_social').eq('id',String(cycle.empresa_patrocinadora_id)).single().then(r=>{if(active)setCompany(r.error?null:r.data as Row)});
+        return()=>{active=false};
+    },[client,cycle]);
     useEffect(()=>{onEditorChange?.(editor);return()=>onEditorChange?.(false)},[editor,onEditorChange]);
-    useEffect(()=>{if(cycleContext)return;let active=true;void client.from('ciclo').select('id,codigo_ciclo,carrera_id,estado_codigo,updated_at').in('estado_codigo',['PROGRAMADO','EN_CURSO']).order('codigo_ciclo').then(r=>{if(active){setCycles(r.error?[]:r.data as Row[]);if(r.error)setMessage('No se pudieron cargar Ciclos.')}});return()=>{active=false}},[client,cycleContext]);
+    useEffect(()=>{if(cycleContext)return;let active=true;void client.from('ciclo').select('id,codigo_ciclo,carrera_id,estado_codigo,updated_at,empresa_patrocinadora_id').in('estado_codigo',['PROGRAMADO','EN_CURSO']).order('codigo_ciclo').then(r=>{if(active){setCycles(r.error?[]:r.data as Row[]);if(r.error)setMessage('No se pudieron cargar Ciclos.')}});return()=>{active=false}},[client,cycleContext]);
     useEffect(()=>{
         let active=true;
         if(!cycle)return;
@@ -418,7 +456,7 @@ export function NewEnrollment({cycleContext,onComplete,onCancel,onEditorChange}:
     },[client,search]);
     async function chooseStudent(id:string){
         setBusy(true);
-        try{if(cycleContext){const existing=await client.from('matricula').select('id').eq('ciclo_id',cycleContext.id).eq('alumno_id',id).limit(1);if(existing.error){setMessage('No se pudo comprobar la matrícula del Alumno. Vuelve a seleccionarlo.');return}if(existing.data.length){setMessage('El Alumno ya tiene una matrícula en este Ciclo, incluso si está anulada. Consulta la grilla de matriculados.');return}}const r=await client.from('alumno').select('*').eq('id',id).single();if(r.error)setMessage('No se pudo cargar la ficha del Alumno. Vuelve a seleccionarlo.');else{setStudent(r.data as Row);setSearch('');setFound([]);setCompany(null);setDiscount('0');setReason('');setCode('')}}
+        try{if(cycleContext){const existing=await client.from('matricula').select('id').eq('ciclo_id',cycleContext.id).eq('alumno_id',id).limit(1);if(existing.error){setMessage('No se pudo comprobar la matrícula del Alumno. Vuelve a seleccionarlo.');return}if(existing.data.length){setMessage('El Alumno ya tiene una matrícula en este Ciclo, incluso si está anulada. Consulta la grilla de matriculados.');return}}const r=await client.from('alumno').select('*').eq('id',id).single();if(r.error)setMessage('No se pudo cargar la ficha del Alumno. Vuelve a seleccionarlo.');else{setStudent(r.data as Row);setSearch('');setFound([]);setDiscount('0');setReason('');setCode('')}}
         catch{setMessage('No se pudo cargar la ficha del Alumno. Vuelve a seleccionarlo.')}
         finally{setBusy(false)}
     }
@@ -430,17 +468,17 @@ export function NewEnrollment({cycleContext,onComplete,onCancel,onEditorChange}:
     async function confirm(){
         if(!cycle || !student){setMessage('Selecciona el Ciclo y el Alumno antes de confirmar.');setTab(0);setTimeout(()=>studentSearch.current?.focus(),0);return}
         if(tariffsStatus!=='ready' || !charges.length){setMessage('Revisa los cargos del Ciclo antes de confirmar.');setTab(1);return}
-        setBusy(true);const p={ciclo_id:cycle.id,expected_ciclo_updated_at:cycle.updated_at,alumno_id:student.id,expected_alumno_updated_at:student.updated_at,empresa_patrocinadora_id:company?.id??null,...(code?{codigo_matricula:code}:{}),...(director?{descuento:discount,motivo_descuento:reason}:{})};
+        setBusy(true);const p={ciclo_id:cycle.id,expected_ciclo_updated_at:cycle.updated_at,alumno_id:student.id,expected_alumno_updated_at:student.updated_at,...(code?{codigo_matricula:code}:{}),...(director?{descuento:discount,motivo_descuento:reason}:{})};
         try{const r=await client.rpc('registrar_matricula',{p,opcionales:[]});if(r.error)setMessage(enrollmentError(r.error));else{if(onComplete)onComplete(r.data as Row);else{setRegistered(r.data as Row);setMessage('Matrícula registrada correctamente.')}}}
         catch{setMessage('Respuesta no confirmada. Consulta el historial del Alumno antes de reintentar.')}
         finally{setBusy(false)}
     }
     async function another(){
         if(!cycle)return;
-        const r=await client.from('ciclo').select('id,codigo_ciclo,carrera_id,estado_codigo,updated_at').eq('id',cycle.id).single();
+        const r=await client.from('ciclo').select('id,codigo_ciclo,carrera_id,estado_codigo,updated_at,empresa_patrocinadora_id').eq('id',cycle.id).single();
         if(r.error || !['PROGRAMADO','EN_CURSO'].includes(r.data.estado_codigo)){setMessage('El Ciclo ya no permite matrícula. Selecciona otro.');setCycle(undefined);setCharges([]);setTariffsStatus('idle')}
         else{setCycle(r.data as Row);setCharges([]);setTariffsStatus('loading')}
-        setTab(0);setStudent(undefined);setCompany(null);setDiscount('0');setReason('');setCode('');setSearch('');setFound([]);setRegistered(undefined);setChoosingCompany(false);
+        setTab(0);setStudent(undefined);setDiscount('0');setReason('');setCode('');setSearch('');setFound([]);setRegistered(undefined);
     }
     const studentName=(a:Row)=>`${value(a,'apellido_paterno')} ${value(a,'apellido_materno')}, ${value(a,'nombres')}`;
     const chosenCharges=charges;
@@ -460,8 +498,8 @@ export function NewEnrollment({cycleContext,onComplete,onCancel,onEditorChange}:
                         {searchStatus==='ready' && <>{cycleContext ? <ul className="enrollment-pupil-matches" aria-label="Coincidencias de alumnos">{found.map(a=><li key={a.id}><div><strong>{studentName(a)}</strong><small>{value(a,'codigo_alumno')} · {value(a,'numero_di')}</small></div><button type="button" className="secondary" onClick={()=>void chooseStudent(a.id)}>Seleccionar</button></li>)}{!found.length && <li>No hay alumnos que coincidan. Puedes registrar uno nuevo.</li>}</ul> : <div className="table-scroll"><table aria-label="Resultados de alumnos"><thead><tr><th>Alumno</th><th>Documento</th><th>Acción</th></tr></thead><tbody>{found.map(a=><tr key={a.id}><td>{studentName(a)}<small className="secondary-text">{value(a,'codigo_alumno')}</small></td><td>{value(a,'numero_di')}</td><td><button type="button" onClick={()=>void chooseStudent(a.id)}>Seleccionar Alumno</button></td></tr>)}{!found.length && <tr><td colSpan={3}>No hay alumnos que coincidan. Puedes registrar uno nuevo.</td></tr>}</tbody></table></div>}{found.length===20 && <small>Se muestran hasta 20 coincidencias. Escribe más para precisar la búsqueda.</small>}</>}
                     </div>}
                     {(!cycleContext || !student) && <button type="button" className="secondary" onClick={()=>{setEditing(false);setEditor(true)}}><NewStudentLabel/></button>}
-                    {student && <div className="enrollment-selected-student"><strong>{value(student,'codigo_alumno')} · {studentName(student)}</strong><span>{value(student,'numero_di')}</span><div className="record-header-actions">{cycleContext && <button type="button" className="secondary" onClick={()=>{setStudent(undefined);setCompany(null);setDiscount('0');setReason('');setCode('');setSearch('')}}>Cambiar alumno</button>}<button type="button" className="secondary" onClick={()=>{setEditing(true);setEditor(true)}}>Completar / editar ficha</button><Link to={`/alumnos/${student.id}`}>Ver ficha y contactos</Link></div></div>}
-                    {(!cycleContext || student) && <div><h3>Empresa patrocinadora (opcional)</h3><p>{company?value(company,'razon_social'):'Sin patrocinador'}</p><div className="record-header-actions"><button type="button" className="secondary" onClick={()=>setChoosingCompany(true)}>Elegir empresa</button>{company && <button type="button" className="secondary" onClick={()=>setCompany(null)}>Quitar patrocinador</button>}</div></div>}
+                    {student && <div className="enrollment-selected-student"><strong>{value(student,'codigo_alumno')} · {studentName(student)}</strong><span>{value(student,'numero_di')}</span><div className="record-header-actions">{cycleContext && <button type="button" className="secondary" onClick={()=>{setStudent(undefined);setDiscount('0');setReason('');setCode('');setSearch('')}}>Cambiar alumno</button>}<button type="button" className="secondary" onClick={()=>{setEditing(true);setEditor(true)}}>Completar / editar ficha</button><Link to={`/alumnos/${student.id}`}>Ver ficha y contactos</Link></div></div>}
+                    <p>Patrocinador: {company?value(company,'razon_social'):cycle?.empresa_patrocinadora_id?'No disponible':'Sin patrocinador'} <small className="enrollment-sponsor-origin">Definido por el Ciclo</small></p>
                 </fieldset>
             </div>
             <div hidden={cycleContext?!student:tab!==1} data-enrollment-tab="1" role={cycleContext?'region':'tabpanel'} id="enrollment-sections-panel-1" aria-label={cycleContext?'Cargos':undefined} aria-labelledby={cycleContext?undefined:'enrollment-sections-tab-1'} tabIndex={0} className="student-section-panel"><h3>Cargos</h3>
@@ -474,14 +512,14 @@ export function NewEnrollment({cycleContext,onComplete,onCancel,onEditorChange}:
                 </fieldset>
             </div>
             <div hidden={cycleContext?!student:tab!==2} data-enrollment-tab="2" role={cycleContext?'region':'tabpanel'} id="enrollment-sections-panel-2" aria-label={cycleContext?'Confirmación':undefined} aria-labelledby={cycleContext?undefined:'enrollment-sections-tab-2'} tabIndex={0} className="student-section-panel"><h3>{cycleContext?'Confirmación':'Resumen'}</h3>
-                {!cycleContext && <><dl className="review-fields"><div><dt>Ciclo</dt><dd>{cycle?value(cycle,'codigo_ciclo'):'Sin seleccionar'}</dd></div><div><dt>Alumno</dt><dd>{student?`${studentName(student)} · ${value(student,'numero_di')}`:'Sin seleccionar'}</dd></div><div><dt>Patrocinador</dt><dd>{company?value(company,'razon_social'):'Sin patrocinador'}</dd></div></dl>
+                {!cycleContext && <><dl className="review-fields"><div><dt>Ciclo</dt><dd>{cycle?value(cycle,'codigo_ciclo'):'Sin seleccionar'}</dd></div><div><dt>Alumno</dt><dd>{student?`${studentName(student)} · ${value(student,'numero_di')}`:'Sin seleccionar'}</dd></div><div><dt>Patrocinador</dt><dd>{company?value(company,'razon_social'):cycle?.empresa_patrocinadora_id?'No disponible':'Sin patrocinador'}</dd></div></dl>
                 <div className="table-scroll"><table aria-label="Resumen de cargos"><thead><tr><th>Concepto</th><th>Importe</th></tr></thead><tbody>{chosenCharges.map(c=><tr key={c.id}><td>{value(c.tarifa as Record<string,unknown>,'nombre')}</td><td>S/{value(c,'importe')}</td></tr>)}</tbody></table></div></>}
                 <p>Descuento solicitado: S/{discount}. Total de referencia: S/{(chosenCharges.reduce((sum,c)=>sum+Number(c.importe),0)-Number(discount)).toFixed(2)}.</p><p className="help-text">El servidor valida y calcula los cargos definitivos al confirmar. Todavía no se ha registrado una matrícula.</p>
                 <label>Código manual opcional<input value={code} pattern="[0-9]{4}-[A-Za-z0-9]{2,10}-[0-9]{3,}" data-pattern-error="Usa YYYY-SIGLA-CORRELATIVO, sigla alfanumérica de 2 a 10 y correlativo de al menos 3 dígitos." onChange={e=>setCode(formTextValue(e.currentTarget))}/></label>
             </div>
             <div className="form-actions"><button type="button" className="secondary" disabled={busy} onClick={()=>onCancel?onCancel():navigate('/alumnos')}>Cancelar</button>{(cycleContext?!!student:tab===2) && <button disabled={busy || tariffsStatus==='loading'}>{busy?'Registrando…':'Confirmar matrícula'}</button>}</div>
         </InlineForm>
-        {(cycleContext || tab===0) && choosingCompany && <section><div className="record-header-actions"><button type="button" className="secondary" onClick={()=>setChoosingCompany(false)}>Cerrar selección de empresa</button></div><Companies choose={r=>{setCompany(r);setChoosingCompany(false)}}/></section>}
+
     </section>;
     return cycleContext && onCancel ? <EnrollmentDrawer title={`Matricular alumno en ${value(cycleContext,'codigo_ciclo')}`} busy={busy} close={onCancel}>{content}</EnrollmentDrawer> : content;
 }
@@ -489,7 +527,7 @@ export function EnrollmentDetail() {
     const navigate=useNavigate();
     const [discountOpen,setDiscountOpen]=useState(false);
     const [chargeNotice,setChargeNotice]=useState('');
-    const { id } = useParams(), { client, state } = useSession(), [row, setRow] = useState<Row>(), [student, setStudent] = useState<Row>(), [cycle, setCycle] = useState<Row>(), [charges, setCharges] = useState<Row[]>([]), [tariffs, setTariffs] = useState<Row[]>([]), [options, setOptions] = useState<string[]>([]), [target, setTarget] = useState(''), [code, setCode] = useState(''), [discount, setDiscount] = useState(''), [reason, setReason] = useState(''), [message, setMessage] = useState('Cargando…'), [revision, setRevision] = useState(0), [busy, setBusy] = useState(false), [tab,setTab]=useState(0),[choosingCompany,setChoosingCompany]=useState(false),[sponsor,setSponsor]=useState<Row|null>(null),[detailsReady,setDetailsReady]=useState(false),[tariffStatus,setTariffStatus]=useState<'idle'|'loading'|'ready'|'error'>('idle');
+    const { id } = useParams(), { client, state } = useSession(), [row, setRow] = useState<Row>(), [student, setStudent] = useState<Row>(), [cycle, setCycle] = useState<Row>(), [charges, setCharges] = useState<Row[]>([]), [tariffs, setTariffs] = useState<Row[]>([]), [options, setOptions] = useState<string[]>([]), [target, setTarget] = useState(''), [code, setCode] = useState(''), [discount, setDiscount] = useState(''), [reason, setReason] = useState(''), [message, setMessage] = useState('Cargando…'), [revision, setRevision] = useState(0), [busy, setBusy] = useState(false), [tab,setTab]=useState(0),[sponsor,setSponsor]=useState<Row|null>(null),[detailsReady,setDetailsReady]=useState(false),[tariffStatus,setTariffStatus]=useState<'idle'|'loading'|'ready'|'error'>('idle');
     const [searchParams,setSearchParams]=useSearchParams(),[editing,setEditing]=useState(searchParams.get('editar')==='1');
     const { ask, dialog } = useConfirmation(busy), director = state.roles?.includes('DIRECTOR_ACADEMICO');
     useEffect(() => { let active = true; void (async () => { const r = await client.from('matricula').select('*').eq('id', id).single(); if (!active)
@@ -510,7 +548,7 @@ export function EnrollmentDetail() {
         return; setBusy(true); const destination = cycle; const p = { id: row.id, expected_updated_at: row.updated_at, ...extra, ...(selected ? { ciclo_id: target, expected_ciclo_updated_at: destination?.updated_at } : {}) }; const r = await client.rpc('editar_matricula', { p, ...(selected ? { opcionales: selected } : {}) }); setBusy(false); if (r.error)
         setMessage(enrollmentError(r.error));
     else {
-        if('empresa_patrocinadora_id' in extra)setChoosingCompany(false);if('descuento' in extra)setDiscountOpen(false);setRevision(revision + 1);
+        if('descuento' in extra)setDiscountOpen(false);setRevision(revision + 1);
         if(selected){setTariffStatus('loading');setChargeNotice('Cargos guardados correctamente.')}
         setMessage('Matrícula actualizada.');
     } }
@@ -520,7 +558,7 @@ export function EnrollmentDetail() {
         setMessage(enrollmentError(r.error));
     else
         setRevision(revision + 1); }
-    function leaveEdit(){setChargeNotice('');setDiscountOpen(false);setEditing(false);setChoosingCompany(false);setCode(value(row,'codigo_matricula'));setTarget(value(row,'ciclo_id'));setDiscount('');setReason('');setOptions(charges.filter(c=>c.activo).map(c=>String(c.ciclo_tarifa_id)));const next=new URLSearchParams(searchParams);next.delete('editar');setSearchParams(next,{replace:true})}
+    function leaveEdit(){setChargeNotice('');setDiscountOpen(false);setEditing(false);setCode(value(row,'codigo_matricula'));setTarget(value(row,'ciclo_id'));setDiscount('');setReason('');setOptions(charges.filter(c=>c.activo).map(c=>String(c.ciclo_tarifa_id)));const next=new URLSearchParams(searchParams);next.delete('editar');setSearchParams(next,{replace:true})}
     const back=()=>navigate(row?`/academico/ciclos?ciclo=${String(row.ciclo_id)}&seccion=matriculas`:'/academico/ciclos');
     const careerCharge=charges.find(c=>c.activo&&c.tipo==='CARRERA');
     function closeDiscount(){setDiscountOpen(false);setDiscount('');setReason('')}
@@ -543,9 +581,9 @@ export function EnrollmentDetail() {
       {row&&<><div className="enrollment-context"><span><strong>Ciclo:</strong> {value(cycle,'codigo_ciclo')}</span><span><strong>Alumno:</strong> {value(student,'apellido_paterno')} {value(student,'apellido_materno')}, {value(student,'nombres')} · {value(student,'numero_di')}</span></div>
       <AcademicTabs id="enrollment-detail" names={['Resumen','Cargos','Historial','Pagos','Expediente']} active={tab} disabled={busy} onChange={setTab}/>
       <div hidden={tab!==0} role="tabpanel" id="enrollment-detail-panel-0" aria-labelledby="enrollment-detail-tab-0" tabIndex={0} className="student-section-panel">
-        <h3>Resumen</h3><div className="enrollment-summary-with-photo"><dl className="review-fields"><div><dt>Ciclo</dt><dd>{value(cycle,'codigo_ciclo')}</dd></div><div><dt>Alumno</dt><dd>{value(student,'apellido_paterno')} {value(student,'apellido_materno')}, {value(student,'nombres')} <Link to={`/alumnos/${String(row.alumno_id)}`}>Ver Alumno</Link></dd></div><div><dt>Documento</dt><dd>{value(student,'numero_di')}</dd></div><div><dt>Patrocinador</dt><dd>{sponsor?value(sponsor,'razon_social'):row.empresa_patrocinadora_id?'No disponible':'Sin patrocinador'}</dd></div><div><dt>Total vigente</dt><dd>{detailsReady?money(charges.filter(c=>c.activo).reduce((sum,c)=>sum+Number(c.importe_final),0)):'Sin consultar'}</dd></div><div><dt>Estado</dt><dd>{row.estado_codigo==='ACTIVO'?'Activa':'Anulada'}</dd></div></dl>{tab===0&&<EnrollmentPhoto key={`${state.userId}:${row.id}`} enrollment={String(row.id)} enrollmentState={value(row,'estado_codigo')} cycleState={value(cycle,'estado_codigo')}/>}</div>
+        <h3>Resumen</h3><div className="enrollment-summary-with-photo"><dl className="review-fields"><div><dt>Ciclo</dt><dd>{value(cycle,'codigo_ciclo')}</dd></div><div><dt>Alumno</dt><dd>{value(student,'apellido_paterno')} {value(student,'apellido_materno')}, {value(student,'nombres')} <Link to={`/alumnos/${String(row.alumno_id)}`}>Ver Alumno</Link></dd></div><div><dt>Documento</dt><dd>{value(student,'numero_di')}</dd></div><div><dt>Patrocinador</dt><dd>{sponsor?value(sponsor,'razon_social'):row.empresa_patrocinadora_id?'No disponible':'Sin patrocinador'}<EnrollmentBilling sponsor={row.empresa_patrocinadora_id?String(row.empresa_patrocinadora_id):null}/></dd></div><div><dt>Total vigente</dt><dd>{detailsReady?money(charges.filter(c=>c.activo).reduce((sum,c)=>sum+Number(c.importe_final),0)):'Sin consultar'}</dd></div><div><dt>Estado</dt><dd>{row.estado_codigo==='ACTIVO'?'Activa':'Anulada'}</dd></div></dl>{tab===0&&<EnrollmentPhoto key={`${state.userId}:${row.id}`} enrollment={String(row.id)} enrollmentState={value(row,'estado_codigo')} cycleState={value(cycle,'estado_codigo')}/>}</div>
         {editable&&editing&&<><InlineForm className="enrollment-detail-form" onSubmit={()=>void save({codigo_matricula:code})}><fieldset disabled={busy}><legend>Código de matrícula</legend><label>Código visible<input required value={code} pattern="[0-9]{4}-[A-Za-z0-9]{2,10}-[0-9]{3,}" data-pattern-error="Usa YYYY-SIGLA-CORRELATIVO." onChange={e=>setCode(formTextValue(e.currentTarget))}/></label></fieldset><div className="form-actions"><button disabled={busy}>Guardar código</button></div></InlineForm>
-        <div className="enrollment-sponsor"><h3>Patrocinador</h3><button type="button" className="secondary" disabled={busy} onClick={()=>setChoosingCompany(!choosingCompany)}>{choosingCompany?'Cerrar selección':'Elegir empresa'}</button>{sponsor&&<button type="button" className="secondary" disabled={busy} onClick={()=>void save({empresa_patrocinadora_id:''})}>Quitar patrocinador</button>}{choosingCompany&&<Companies choose={c=>void save({empresa_patrocinadora_id:c?.id??''})}/>}</div></>}
+</>}
       </div>
       <div hidden={tab!==1} role="tabpanel" id="enrollment-detail-panel-1" aria-labelledby="enrollment-detail-tab-1" tabIndex={0} className="student-section-panel"><h3>Cargos</h3>
         {editable&&editing?<><InlineForm className="enrollment-detail-form enrollment-charge-form" onSubmit={()=>void save({},options.filter(id=>tariffs.find(t=>t.id===id)?.obligatorio===false))}>
@@ -565,7 +603,7 @@ export function EnrollmentDetail() {
         </>:<>{chargeTable(charges.filter(c=>c.activo))}<dl className="enrollment-charge-totals"><div><dt>Subtotal</dt><dd>{money(charges.filter(c=>c.activo).reduce((n,c)=>n+Number(c.importe_original),0))}</dd></div><div><dt>Descuento</dt><dd>{money(charges.filter(c=>c.activo).reduce((n,c)=>n+Number(c.descuento),0))}</dd></div><div><dt>Total</dt><dd>{money(charges.filter(c=>c.activo).reduce((n,c)=>n+Number(c.importe_final),0))}</dd></div></dl></>}
       </div>
       <div hidden={tab!==2} role="tabpanel" id="enrollment-detail-panel-2" aria-labelledby="enrollment-detail-tab-2" tabIndex={0} className="student-section-panel"><h3>Historial</h3><p className="help-text">Datos conservados al matricular y cargos retirados. Los cambios posteriores de la ficha no modifican esta información.</p><details><summary>Datos del alumno al matricular</summary><HistoricalStudent snapshot={row.alumno_snapshot}/></details><h3>Cargos retirados</h3>{chargeTable(charges.filter(c=>!c.activo),true)}{row.estado_codigo==='ANULADO'&&<p>Motivo de anulación: {value(row,'motivo_anulacion')||'No registrado'}</p>}</div>
-      <div hidden={tab!==3} role="tabpanel" id="enrollment-detail-panel-3" aria-labelledby="enrollment-detail-tab-3" tabIndex={0} className="student-section-panel">{tab===3&&<EnrollmentPayments key={`${state.userId}:${row.id}`} enrollment={row.id} version={value(row,'updated_at')} enrollmentState={value(row,'estado_codigo')} cycleState={value(cycle,'estado_codigo')} onChanged={()=>setRevision(x=>x+1)}/>}</div>
+      <div hidden={tab!==3} role="tabpanel" id="enrollment-detail-panel-3" aria-labelledby="enrollment-detail-tab-3" tabIndex={0} className="student-section-panel">{tab===3&&<EnrollmentPayments key={`${state.userId}:${row.id}`} enrollment={row.id} version={value(row,'updated_at')} enrollmentState={value(row,'estado_codigo')} cycleState={value(cycle,'estado_codigo')} sponsorId={row.empresa_patrocinadora_id?String(row.empresa_patrocinadora_id):null} onChanged={()=>setRevision(x=>x+1)}/>}</div>
       <div hidden={tab!==4} role="tabpanel" id="enrollment-detail-panel-4" aria-labelledby="enrollment-detail-tab-4" tabIndex={0} className="student-section-panel">{tab===4&&<EnrollmentDocuments key={`${state.userId}:${row.id}`} allowWord={!editing} enrollment={String(row.id)} cycleId={String(row.ciclo_id)} enrollmentState={value(row,'estado_codigo')} cycleState={value(cycle,'estado_codigo')} blocked={busy||(editing&&pendingCharges)} onBusyChange={setBusy}/>}</div>
       <div className="form-actions enrollment-detail-actions">{editing&&editable&&<button type="button" className="secondary" disabled={busy} onClick={leaveEdit}>Cancelar edición</button>}{row.estado_codigo==='ACTIVO'&&<button type="button" className="sensitive" disabled={busy} onClick={()=>void annul()}>Anular matrícula</button>}</div>
       {!editable&&tab!==3&&<p className="help-text">Solo consulta.{row.estado_codigo==='ACTIVO'?' Puedes anular esta matrícula con motivo.':''}</p>}</>}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { InlineForm, StatusBadge, useConfirmation } from '../academic/AcademicUi'
 import { useSession } from '../security/SessionProvider'
 import { cents, decimal, pen } from './money'
@@ -14,7 +15,7 @@ type Payload = Record<string, unknown>
 type MessageKind = 'info' | 'success' | 'warning' | 'error' | 'validation'
 const unknownResult = 'Resultado sin confirmar. Consulta el estado antes de registrar otro pago. No se ha realizado ningún reintento automático.'
 
-export function EnrollmentPayments({ enrollment, version, enrollmentState, cycleState, onChanged, initialRegister = false }: { enrollment: string; version: string; enrollmentState: string; cycleState: string; onChanged: () => void; initialRegister?: boolean }) {
+export function EnrollmentPayments({ enrollment, version, enrollmentState, cycleState, onChanged, initialRegister = false, sponsorId }: { enrollment: string; version: string; enrollmentState: string; cycleState: string; onChanged: () => void; initialRegister?: boolean; sponsorId?: string | null }) {
   const { client, state } = useSession(), user = state.userId ?? ''
   const [summary, setSummary] = useState<Summary>(), [charges, setCharges] = useState<Charge[]>([]), [history, setHistory] = useState<Payment[]>([]), [media, setMedia] = useState<Medium[]>([])
   const [amounts, setAmounts] = useState<Record<string, string>>({}), [medium, setMedium] = useState(''), [notes, setNotes] = useState('')
@@ -24,7 +25,19 @@ export function EnrollmentPayments({ enrollment, version, enrollmentState, cycle
   const formId=useId(), amountInputs=useRef<Record<string,HTMLInputElement|null>>({}), selectAll=useRef<HTMLInputElement>(null)
   const attempt = useRef<{ key: string; payload: Payload } | null>(null), alive = useRef(true), saving = useRef(false)
   const { ask, dialog } = useConfirmation(busy)
-  const director = state.roles?.includes('DIRECTOR_ACADEMICO'), canRegister = enrollmentState === 'ACTIVO' && ['PROGRAMADO', 'EN_CURSO', 'CERRADO'].includes(cycleState)
+  const context = user + ':' + enrollment + ':' + version + ':' + revision
+  const [sponsorship,setSponsorship] = useState<{context:string;id:string|null}>()
+  const effectiveSponsor = sponsorId !== undefined ? sponsorId : sponsorship?.context === context ? sponsorship.id : undefined
+  const director = state.roles?.includes('DIRECTOR_ACADEMICO'), canRegister = effectiveSponsor === null && media.length > 0 && enrollmentState === 'ACTIVO' && ['PROGRAMADO', 'EN_CURSO', 'CERRADO'].includes(cycleState)
+  useEffect(()=>{
+    if(sponsorId!==undefined)return
+    let active=true
+    void Promise.resolve(client.from('matricula').select('empresa_patrocinadora_id').eq('id',enrollment).single()).then(r=>{
+      if(r.error||!r.data||!('empresa_patrocinadora_id' in r.data)||(r.data.empresa_patrocinadora_id!==null&&typeof r.data.empresa_patrocinadora_id!=='string'))throw Error('sponsor')
+      if(active)setSponsorship({context,id:r.data.empresa_patrocinadora_id})
+    }).catch(()=>{if(active)notify('No se pudo confirmar el patrocinador. Vuelve a consultar antes de registrar un pago.')})
+    return()=>{active=false}
+  },[client,context,enrollment,sponsorId,revision,notify])
   const loadRevision = useCallback(() => { setRevision(x => x + 1); onChanged() }, [onChanged])
   useEffect(() => { alive.current = true; return () => { alive.current = false } }, [])
   useEffect(() => {
@@ -33,7 +46,7 @@ export function EnrollmentPayments({ enrollment, version, enrollmentState, cycle
   }, [user, enrollment])
   useEffect(() => {
     let active = true
-    setReady(false)
+    setReady(false);setMedia([])
     void (async () => {
       const [s, c, h, cat] = await Promise.all([
         client.from('matricula_saldo').select('base::text,abonado::text,pendiente::text').eq('matricula_id', enrollment).single(),
@@ -42,11 +55,10 @@ export function EnrollmentPayments({ enrollment, version, enrollmentState, cycle
         client.from('catalogo').select('id').eq('codigo', 'MEDIO_PAGO').eq('activo', true).single(),
       ])
       if (!active) return
-      if (s.error || c.error || h.error || cat.error) throw new Error('read')
-      const m = await client.from('catalogo_valor').select('id,nombre').eq('catalogo_id', cat.data.id).eq('activo', true).order('nombre')
+      if (s.error || c.error || h.error) throw new Error('read')
+      const m = cat.error||!cat.data ? {data:[],error:null} : await client.from('catalogo_valor').select('id,nombre').eq('catalogo_id', cat.data.id).eq('activo', true).order('nombre')
       if (!active) return
-      if (m.error) throw new Error('catalog')
-      setSummary(s.data as Summary); setCharges(c.data as Charge[]); setHistory(h.data as unknown as Payment[]); setMedia(m.data); setReady(true)
+      setSummary(s.data as Summary); setCharges(c.data as Charge[]); setHistory(h.data as unknown as Payment[]); setMedia(m.error?[]:m.data); setReady(true)
     })().catch(() => { if (active) { setSummary(undefined); setCharges([]); setHistory([]); notify('No se pudo consultar el saldo e historial completos. Vuelve a consultar antes de operar.') } })
     return () => { active = false }
   }, [client, enrollment, version, page, revision, user])
@@ -139,16 +151,18 @@ export function EnrollmentPayments({ enrollment, version, enrollmentState, cycle
     <div className="payment-overview">{summary && <dl className="payment-summary"><div><dt>Base</dt><dd>{pen(summary.base)}</dd></div><div><dt>Abonado</dt><dd>{pen(summary.abonado)}</dd></div><div><dt>Pendiente</dt><dd><strong>{pen(summary.pendiente)}</strong></dd></div></dl>}<button type="button" className="secondary payment-refresh" aria-label="Consultar saldo e historial" title="Consultar saldo e historial" disabled={busy} onClick={loadRevision}><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6 7a7 7 0 0 1 12-1l2 3M18 17a7 7 0 0 1-12 1l-2-3"/></svg>Actualizar</button></div>
     {message && <p role={messageKind==='error'||messageKind==='validation'?'alert':'status'} id={`${formId}-message`} className={`payment-message ${messageKind==='error'||messageKind==='validation'?'validation-errors':messageKind}`}>{message}</p>}
     {!ready && <p role="status">Saldo no disponible para operar.</p>}
-    {pending && <div className="payment-recovery"><p>Hay un intento pendiente de confirmar. La clave se conserva para evitar duplicados.</p><button type="button" disabled={busy} onClick={() => void recover(pending)}>Consultar resultado del intento</button>{attempt.current && <button type="button" className="secondary" disabled={busy} onClick={() => void send(attempt.current!.payload)}>Reenviar el mismo intento</button>}</div>}
+    {pending && <div className="payment-recovery"><p>Hay un intento pendiente de confirmar. La clave se conserva para evitar duplicados.</p><button type="button" disabled={busy} onClick={() => void recover(pending)}>Consultar resultado del intento</button>{attempt.current && canRegister && <button type="button" className="secondary" disabled={busy} onClick={() => void send(attempt.current!.payload)}>Reenviar el mismo intento</button>}</div>}
     {uncertainCancellation && <button type="button" disabled={busy} onClick={() => void queryCancellation()}>Consultar estado de anulación</button>}
     {canRegister && !open && <button type="button" disabled={busy || !ready || !!pending || !!uncertainCancellation} onClick={() => { setOpen(true); notify('') }}>Registrar pago</button>}
-    {open && <InlineForm className="payment-form" onSubmit={() => void register()}><fieldset disabled={busy || !!pending || !!uncertainCancellation || !ready}><legend>Registrar pago</legend>
+    {open && canRegister && <InlineForm className="payment-form" onSubmit={() => void register()}><fieldset disabled={busy || !!pending || !!uncertainCancellation || !ready}><legend>Registrar pago</legend>
       <p className="help-text">Selecciona los cargos e indica cuánto pagar.</p>
       <div className="table-scroll payment-allocation"><table aria-label="Cargos pendientes de pago"><thead><tr><th><input ref={selectAll} type="checkbox" aria-label="Seleccionar todos los pendientes" checked={allSelected} disabled={!selectable.length} onChange={e=>{if(messageKind==='validation')notify('');setAmounts(Object.fromEntries(charges.map(c=>[c.id,e.target.checked?String(c.pendiente):'0'])))}}/></th><th>Concepto</th><th className="payment-money">Pendiente</th><th className="payment-money">Pagar (S/)</th></tr></thead><tbody>{charges.map(c => <tr key={c.id}><td><input type="checkbox" aria-label={`Pagar ${c.nombre}`} disabled={cents(String(c.pendiente)) === 0n} checked={(cents(amounts[c.id] || '0') ?? 0n) > 0n} onChange={e => {if(messageKind==='validation')notify('');setAmounts({ ...amounts, [c.id]: e.target.checked ? String(c.pendiente) : '0' })}}/></td><td>{c.nombre}</td><td className="payment-money">{pen(c.pendiente)}</td><td className="payment-money"><input ref={element=>{amountInputs.current[c.id]=element}} aria-invalid={!!amountErrors[c.id]} aria-describedby={amountErrors[c.id]?`${formId}-${c.id}-error`:message?`${formId}-message`:undefined} aria-label={`Importe para ${c.nombre}`} inputMode="decimal" type="text" maxLength={13} value={amounts[c.id] ?? ''} onChange={e => {if(messageKind==='validation')notify('');setAmounts({ ...amounts, [c.id]: e.target.value })}}/>{amountErrors[c.id]&&<span id={`${formId}-${c.id}-error`} className="payment-field-error">{amountErrors[c.id]}</span>}</td></tr>)}</tbody><tfoot><tr><th colSpan={3}>Total a pagar</th><td className="payment-money"><strong>{pen(total)}</strong></td></tr></tfoot></table></div>
       <div className="payment-fields"><label>Medio de pago *<select required value={medium} onChange={e => setMedium(e.target.value)}><option value="">Seleccionar</option>{media.map(m => <option key={m.id} value={m.id}>{m.nombre}</option>)}</select></label><label>Observaciones (opcional)<textarea rows={2} maxLength={500} value={notes} onChange={e => setNotes(e.target.value)}/></label></div>
       <div className="form-actions payment-actions"><button type="button" className="secondary" onClick={() => setOpen(false)}>Cancelar registro</button><button>Confirmar pago · {pen(total)}</button></div>
     </fieldset></InlineForm>}
-    {!canRegister && <p className="help-text">Solo consulta: no se registran pagos para esta matrícula o estado del Ciclo.</p>}
+    {typeof effectiveSponsor==='string'&&<p role="status" className="payment-message info">Matrícula patrocinada. Los pagos se gestionan desde Facturación del patrocinador. <Link to={'/empresas/'+effectiveSponsor+'/facturacion'}>Ir a Facturación del patrocinador</Link></p>}
+    {effectiveSponsor===undefined&&<p role="status">Confirmando patrocinador antes de habilitar nuevos pagos…</p>}
+    {!canRegister && effectiveSponsor===null && <p className="help-text">Solo consulta: no se registran pagos para esta matrícula o estado del Ciclo.</p>}
     <h3>Historial de pagos</h3><div className="table-scroll"><table aria-label="Historial de pagos"><thead><tr><th>Fecha de registro</th><th>Medio</th><th className="payment-money">Importe</th><th>Estado</th><th>Detalle</th><th>Acciones</th></tr></thead><tbody>{history.map(p => <tr key={p.id}><td>{new Date(p.created_at).toLocaleString('es-PE', { timeZone: 'America/Lima' })}</td><td>{p.medio_etiqueta}</td><td className="payment-money">{pen(p.importe)}</td><td><StatusBadge value={p.estado_codigo === 'ANULADO' ? 'ANULADO' : 'Confirmado'}/></td><td><details><summary>Ver aplicaciones</summary><ul>{p.pago_aplicacion.map(a => <li key={a.id}>{a.matricula_cargo.nombre}: {pen(a.importe)}</li>)}</ul>{p.observaciones && <p>Observaciones: {p.observaciones}</p>}{p.motivo_anulacion && <><p>Motivo de anulación: {p.motivo_anulacion}</p><p>Anulado el {p.anulado_at ? new Date(p.anulado_at).toLocaleString('es-PE',{timeZone:'America/Lima'}) : 'No disponible'} · Usuario: {p.anulado_por}</p></>}</details></td><td>{director && enrollmentState === 'ACTIVO' && p.estado_codigo === 'CONFIRMADO' && <button type="button" className="sensitive" disabled={busy || !!pending || !!uncertainCancellation} onClick={() => void annul(p)}>Anular</button>}</td></tr>)}{ready && !history.length && <tr><td colSpan={6}>No hay pagos en esta página.</td></tr>}</tbody></table></div>
     <div className="form-actions"><span>Página {page + 1}</span><button type="button" className="secondary" disabled={busy || page === 0} onClick={() => setPage(page - 1)}>Página anterior</button><button type="button" className="secondary" disabled={busy || !ready || history.length < 20} onClick={() => setPage(page + 1)}>Página siguiente</button></div>
   </section>

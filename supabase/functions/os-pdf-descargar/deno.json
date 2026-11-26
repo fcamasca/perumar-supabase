@@ -1,0 +1,13 @@
+{
+  "imports": {
+    "pdf-lib": "npm:pdf-lib@1.17.1",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2.118.0",
+    "jpeg-js": "npm:jpeg-js@0.4.4",
+    "pngjs": "npm:pngjs@7.0.0"
+  },
+  "compilerOptions": {
+    "types": [
+      "npm:@types/pngjs@6.0.5"
+    ]
+  }
+}
