@@ -64,16 +64,18 @@ Configurar en Cloud Site URL HTTPS del dominio aprobado, redirect allowlist exac
 
 | Función | Origen autorizado | Credenciales del runtime |
 | --- | --- | --- |
-| ficha-matricula | FICHA_ALLOWED_ORIGINS | SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY |
+| ficha-matricula | FICHA_ALLOWED_ORIGINS | SUPABASE_URL, SUPABASE_PUBLISHABLE_KEYS, SUPABASE_SECRET_KEYS |
 | expediente-cargar | EXPEDIENTE_ALLOWED_ORIGINS | las tres anteriores |
 | expediente-generar | EXPEDIENTE_ALLOWED_ORIGINS | las tres anteriores |
 | expediente-descargar | EXPEDIENTE_ALLOWED_ORIGINS | las tres anteriores |
 | os-pdf-cargar | H7_OS_ALLOWED_ORIGINS | las tres anteriores |
 | os-pdf-descargar | H7_OS_ALLOWED_ORIGINS | las tres anteriores |
-| consultar-ruc | RUC_ALLOWED_ORIGINS | SUPABASE_URL, SUPABASE_ANON_KEY |
-| consultar-dni | DNI_ALLOWED_ORIGINS | SUPABASE_URL, SUPABASE_ANON_KEY; APIsPERU bloqueado |
+| consultar-ruc | RUC_ALLOWED_ORIGINS | SUPABASE_URL, SUPABASE_PUBLISHABLE_KEYS |
+| consultar-dni | DNI_ALLOWED_ORIGINS | SUPABASE_URL, SUPABASE_PUBLISHABLE_KEYS; APIsPERU bloqueado |
 
-Supabase proporciona las claves de runtime que utiliza el código actual; confirmar disponibilidad sin imprimirlas ni sobrescribir variables reservadas. Mantener compatibilidad con esas claves legacy, sin migrar SDK/arquitectura en esta fase. Las claves de operador (PAT/SQL/Cloudflare) no son secretos del frontend ni de las funciones.
+Supabase proporciona las variables de runtime. En hospedado se requieren SUPABASE_PUBLISHABLE_KEYS y, para las seis funciones documentales, SUPABASE_SECRET_KEYS: objetos JSON con una clave `default` de formato `sb_publishable_...` y `sb_secret_...`, respectivamente. Confirmar disponibilidad sin imprimirlas ni sobrescribir variables reservadas. Ausencia, JSON incorrecto, default ausente o tipo/formato incorrecto rechazan la solicitud; nunca hay fallback legacy en Cloud. El formato no demuestra pertenencia: comprobar cada clave contra el proyecto sin registrar credenciales. Solo el runtime HTTP local conocido (kong/supabase_kong_perumar-supabase) conserva SUPABASE_ANON_KEY y SUPABASE_SERVICE_ROLE_KEY. Se mantienen dependencias y arquitectura.
+
+El transporte compartido conserva apikey y elimina el fallback Bearer cuando contiene esa misma clave nueva; conserva intacto el JWT de usuario en Authorization. Los handlers mantienen getUser(), perfil activo, roles y acceso al recurso. La clave administrativa nunca sustituye la identidad de la persona. Las claves de operador (PAT/SQL/Cloudflare) no son secretos del frontend ni de las funciones.
 
 Configurar los cinco *_ALLOWED_ORIGINS con el mismo origen HTTPS de Pages/dominio aprobado (lista separada por comas para varios orígenes explícitos). Sin rutas, slash final, comodines, localhost ni previews no aprobadas. Ausencia en hosted rechaza solicitudes de navegador; peticiones sin Origin siguen requiriendo sesión y rol. CORS no sustituye autorización.
 
@@ -82,6 +84,14 @@ Configurar los cinco *_ALLOWED_ORIGINS con el mismo origen HTTPS de Pages/domini
 Desplegar posteriormente cada nombre de la tabla usando `node node_modules/supabase/dist/supabase.js functions deploy NOMBRE --project-ref REF_APROBADA`, conservando deno.json/deno.lock de cada función. No usar --no-verify-jwt por conveniencia: esta preparación conserva la verificación JWT predeterminada; verificar compatibilidad del gateway con los JWT de sesión/firma Cloud y preflight OPTIONS antes de liberar acceso. Si hay incompatibilidad, detener y preparar un cambio revisado; no retirar autenticación. El handler también verifica getUser, perfil y roles.
 
 Storage: fichas-matricula privado PDF/2MiB, h6-expediente privado PDF/JPEG/PNG/5MiB y h7-os privado PDF/5MiB. No añadir policies de objetos para anon/authenticated ni convertir buckets en públicos. Verificar acceso directo/listado/firma denegados, acceso por Edge permitido solo a roles académicos, versiones y auditoría. Mantener limpieza/conciliación manual existente y nunca borrar bytes históricos confirmados por conveniencia de despliegue.
+
+### Nuevas claves y gateway (26/11/2026)
+
+La referencia oficial [Authorization headers](https://supabase.com/docs/guides/functions/auth-headers) indica conservar verify_jwt para llamadas con JWT de usuario y soporte de JWT HS256 y asimétricos. Se mantiene activado por defecto; no se cambia config.toml. La [guía de migración](https://supabase.com/docs/guides/getting-started/migrating-to-new-api-keys) contiene una recomendación general de desactivarlo para llamadas por API key: ese contrato no corresponde a estas ocho funciones. La aceptación de una API key por el gateway nunca autentica a una persona; getUser() sigue siendo obligatorio.
+
+Antes de liberar acceso comprobar en Cloud OPTIONS desde origen permitido/rechazado, JWT válido/ausente/inválido/expirado, API key sin sesión y ADMIN_SISTEMA sin rol académico. Si el gateway real no admite el contrato, detenerse y presentar justificación y controles compensatorios antes de cambiar verify_jwt. No usar --no-verify-jwt automáticamente.
+
+Las pruebas de claves y transporte forman parte de npm test y de la CI integral. La matriz real de Auth/RLS/documentos se ejecuta en Supabase local aislado de CI. Nunca dirigir fixtures o pruebas de escritura a Cloud.
 
 ## 6. Cloudflare Pages
 

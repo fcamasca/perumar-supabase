@@ -1,3 +1,4 @@
+import { runtimeKey, supabaseFetch } from '../_shared/runtime-keys.ts'
 import { createClient } from '@supabase/supabase-js'
 import { FichaError, parseRequest } from '../_shared/ficha/contract.ts'
 import { operateFicha } from '../_shared/ficha/operation.ts'
@@ -28,11 +29,11 @@ Deno.serve(async (req: Request) => {
     const request = parseRequest(body)
     const authorization = req.headers.get('Authorization')
     if (!authorization?.startsWith('Bearer ')) throw new FichaError(401, 'SESSION')
-    const key = Deno.env.get('SUPABASE_ANON_KEY')!, deadline = AbortSignal.timeout(15000)
-    const transport = { fetch: (input: RequestInfo | URL, init?: RequestInit) => fetch(input, { ...init, signal: deadline }) }
+    const key = runtimeKey(apiUrl, 'publishable', (name) => Deno.env.get(name)), deadline = AbortSignal.timeout(15000)
+    const transport = { fetch: (input: RequestInfo | URL, init?: RequestInit) => supabaseFetch(input, init, deadline) }
     const user = createClient(apiUrl, key, { db: { retry: false }, global: { ...transport, headers: { Authorization: authorization } }, auth: { persistSession: false, autoRefreshToken: false } })
     // This client is used only by the closed operation for Storage and the bounded audit command.
-    const server = createClient(apiUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { db: { retry: false }, global: transport, auth: { persistSession: false, autoRefreshToken: false } })
+    const server = createClient(apiUrl, runtimeKey(apiUrl, 'secret', (name) => Deno.env.get(name)), { db: { retry: false }, global: transport, auth: { persistSession: false, autoRefreshToken: false } })
     const result = await operateFicha(user, server, request)
     if ('bytes' in result && result.bytes) {
       headers.set('Content-Type', 'application/pdf'); headers.set('Content-Disposition', 'attachment; filename="ficha-matricula.pdf"')
