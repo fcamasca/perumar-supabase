@@ -74,8 +74,10 @@ try {
  check(inv.importe,4500)
  await fail('registrar_factura_patrocinador',{p:invoicePayload('000456')},'23505')
  const i1=await rpc('registrar_factura_patrocinador',{p:invoicePayload('000457')})
- const i2=await rpc('registrar_factura_patrocinador',{p:invoicePayload('000458')})
- check(sql(`select count(*) from public.factura_orden_servicio where orden_servicio_id='${os1.id}'`),'2','same OS in multiple invoices')
+ await fail('registrar_factura_patrocinador',{p:invoicePayload('000458')},'23514')
+ const os3=await rpc('registrar_orden_servicio',{p:osPayload('000126','100')})
+ const i2=await rpc('registrar_factura_patrocinador',{p:invoicePayload('000458','100',[os3])})
+ check(sql(`select count(*) from public.factura_orden_servicio where orden_servicio_id='${os1.id}'`),'1','one live invoice per OS')
  await fail('anular_orden_servicio',{id:os1.id,expected_updated_at:os1.updated_at,motivo:'TEST'},'23514')
  await fail('avanzar_factura_patrocinador',{id:i1.id,expected_updated_at:i1.updated_at,destino:'APROBADA',fecha:'2026-01-02'},'23514')
  const ready=async(invoice)=>{let r=invoice;for(const destino of ['REGISTRADA_PATROCINADOR','APROBADA','PENDIENTE_DESEMBOLSO'])r=await rpc('avanzar_factura_patrocinador',{id:r.id,expected_updated_at:r.updated_at,destino,fecha:'2026-01-02'},f.coordinator);return r}
@@ -122,15 +124,17 @@ try {
  for(const table of ['orden_servicio','orden_servicio_matricula','factura_patrocinador','factura_orden_servicio','pago_patrocinador','pago_patrocinador_aplicacion','orden_servicio_archivo']){
    const r=await api('/'+table,f.actor,{});check(r.data.code,'42501','DML denied '+table)
  }
- check((await api('/orden_servicio_archivo')).data,[],'technical keys unavailable')
+ check((await api('/orden_servicio_archivo')).data.code,'42501','technical keys unavailable')
  const h7Names=['registrar_orden_servicio','anular_orden_servicio','registrar_factura_patrocinador','avanzar_factura_patrocinador','anular_factura_patrocinador','registrar_pago_patrocinador','anular_pago_patrocinador']
  for(const actor of [admin,inactive,null])for(const name of h7Names){
    const args=name.startsWith('registrar_')?{p:{}}:name==='avanzar_factura_patrocinador'?{id:i1.id,expected_updated_at:i1.updated_at,destino:'APROBADA',fecha:'2026-01-02'}:{id:i1.id,expected_updated_at:i1.updated_at,motivo:'DENIED'}
    check((await api('/rpc/'+name,actor,args)).data.code,'42501',name+' authorization precedes inputs')
  }
  check(Number(sql("select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname in ("+h7Names.map(n=>"'"+n+"'").join(',')+") and p.prosecdef and 'search_path=\"\"'=any(p.proconfig) and has_function_privilege('authenticated',p.oid,'EXECUTE') and not has_function_privilege('anon',p.oid,'EXECUTE')")),7)
- const invR=await rpc('registrar_factura_patrocinador',{p:invoicePayload('100098','100',[os10])})
- const invR2=await rpc('registrar_factura_patrocinador',{p:invoicePayload('100099','100',[os2])})
+ const osR=await rpc('registrar_orden_servicio',{p:osPayload('000127','100')})
+ const osR2=await rpc('registrar_orden_servicio',{p:osPayload('000128','100')})
+ const invR=await rpc('registrar_factura_patrocinador',{p:invoicePayload('100098','100',[osR])})
+ const invR2=await rpc('registrar_factura_patrocinador',{p:invoicePayload('100099','100',[osR2])})
  await ready(invR);await ready(invR2)
  const stalePayment=payPayload([[invR,'1']],'1')
  stalePayment.aplicaciones[0].expected_updated_at='2000-01-01T00:00:00Z'
@@ -186,7 +190,8 @@ try {
  check((await api('/factura_patrocinador_saldo?id=eq.'+invR2.id)).data[0].estado_financiero,'DESEMBOLSADA')
  await fail('registrar_pago_patrocinador',{p:payPayload([[invR2,'1']],'1')},'23514')
  // Two overlapping real HTTP requests have their own no-overpay oracle.
- const httpInvoice=await rpc('registrar_factura_patrocinador',{p:invoicePayload('100102','100',[os10])});await ready(httpInvoice)
+ const httpOS=await rpc('registrar_orden_servicio',{p:osPayload('000129','100')})
+ const httpInvoice=await rpc('registrar_factura_patrocinador',{p:invoicePayload('100102','100',[httpOS])});await ready(httpInvoice)
  const httpRace=await Promise.all(['70','60'].map(amount=>api('/rpc/registrar_pago_patrocinador',f.actor,{p:payPayload([[httpInvoice,amount]],amount)})))
  check(httpRace.filter(r=>r.status===200).length,1)
  assert.ok(['23514','PT409','40001'].includes(httpRace.find(r=>r.status!==200).data.code));checks++
@@ -205,7 +210,7 @@ try {
  check(sql(`select estado_codigo from public.pago where id='${oldPayment.id}'`),'ANULADO')
  // Historic coverage remains despite later sponsor removal.
  sponsor(null)
- check(sql(`select count(*) from public.orden_servicio_matricula where matricula_id='${f.enrollment}'`),'3')
+ check(sql(`select count(*) from public.orden_servicio_matricula where matricula_id='${f.enrollment}'`),'7')
  // Invoice uniqueness is global, OS uniqueness is scoped to sponsor; historical coverage is not repriced.
  const f2=fixture()
  const company2=json(asActor(f2.actor,`select to_jsonb(public.guardar_empresa_patrocinadora('{"ruc":"20666666666","razon_social":"H7 SECOND"}'::jsonb))`))
@@ -226,11 +231,11 @@ try {
  for(const command of [`update public.orden_servicio set monto=1 where id='${os2.id}'`,`delete from public.orden_servicio_matricula where orden_servicio_id='${os2.id}'`]){
    assert.throws(()=>runActor(command),/H7_HISTORY_IMMUTABLE/);checks++
  }
- check(sql("select count(*) from storage.buckets where id like 'h7%'"),'0','no H7 Storage infrastructure')
+ check(sql("select count(*) from storage.buckets where id='h7-os' and not public and file_size_limit=5242880 and allowed_mime_types=array['application/pdf']::text[]"),'1','private bounded H7 OS bucket')
  check(sql(`select count(*) from public.auditoria where entidad in ('orden_servicio','factura_patrocinador','pago_patrocinador') and (new_values::text ~ 'domicilio|snapshot|20999999999|BANCO|token')`),'0')
  sql(readFileSync('tests/sql/h4-payments.sql','utf8'))
  sql(readFileSync('tests/sql/h4-regression.sql','utf8'))
- console.log('H7 JWT negative roles/DML, rollback, native concurrency, same-key race, H3↔H4 race and H4 regression PASSED')
+ console.log('H7 JWT negative roles/DML, rollback, native concurrency, same-key race, H3â†”H4 race and H4 regression PASSED')
  console.log('H7 assertions PASSED:',checks)
 } finally {
  if(restStarted)docker(['rm','-f',rest])

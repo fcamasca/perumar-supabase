@@ -1,0 +1,2283 @@
+{
+  "tables": [
+    {
+      "name": "alumno",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "alumno_contacto_emergencia",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "app_roles",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "app_user_roles",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "app_users",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "auditoria",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "capitania",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "carrera",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "carrera_materia",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "catalogo",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "catalogo_valor",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "ciclo",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "ciclo_documento",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "ciclo_materia",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "ciclo_orden_servicio_saldo",
+      "rls": false,
+      "forced": false,
+      "kind": "v",
+      "options": [
+        "security_invoker=true"
+      ]
+    },
+    {
+      "name": "ciclo_tarifa",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "departamento",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "distrito",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "empresa_patrocinadora",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "factura_orden_servicio",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "factura_patrocinador",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "factura_patrocinador_saldo",
+      "rls": false,
+      "forced": false,
+      "kind": "v",
+      "options": [
+        "security_invoker=true"
+      ]
+    },
+    {
+      "name": "facturacion_reporte",
+      "rls": false,
+      "forced": false,
+      "kind": "v",
+      "options": [
+        "security_invoker=true"
+      ]
+    },
+    {
+      "name": "materia",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "matricula",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "matricula_cargo",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "matricula_cargo_saldo",
+      "rls": false,
+      "forced": false,
+      "kind": "v",
+      "options": [
+        "security_invoker=true"
+      ]
+    },
+    {
+      "name": "matricula_documento",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "matricula_documento_archivo",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "matricula_expediente_resumen",
+      "rls": false,
+      "forced": false,
+      "kind": "v",
+      "options": [
+        "security_invoker=true"
+      ]
+    },
+    {
+      "name": "matricula_ficha_fuente",
+      "rls": false,
+      "forced": false,
+      "kind": "v",
+      "options": [
+        "security_invoker=true"
+      ]
+    },
+    {
+      "name": "matricula_pago_listado",
+      "rls": false,
+      "forced": false,
+      "kind": "v",
+      "options": [
+        "security_invoker=true"
+      ]
+    },
+    {
+      "name": "matricula_reporte_ciclo",
+      "rls": false,
+      "forced": false,
+      "kind": "v",
+      "options": [
+        "security_invoker=true"
+      ]
+    },
+    {
+      "name": "matricula_saldo",
+      "rls": false,
+      "forced": false,
+      "kind": "v",
+      "options": [
+        "security_invoker=true"
+      ]
+    },
+    {
+      "name": "orden_servicio",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "orden_servicio_archivo",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "orden_servicio_matricula",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "orden_servicio_resumen",
+      "rls": false,
+      "forced": false,
+      "kind": "v",
+      "options": [
+        "security_invoker=true"
+      ]
+    },
+    {
+      "name": "pago",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "pago_aplicacion",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "pago_patrocinador",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "pago_patrocinador_aplicacion",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "provincia",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "tarifa",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    },
+    {
+      "name": "tipo_documento",
+      "rls": true,
+      "forced": false,
+      "kind": "r",
+      "options": null
+    }
+  ],
+  "policies": [
+    {
+      "table": "matricula",
+      "name": "academic_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.academic_user()",
+      "check": null
+    },
+    {
+      "table": "matricula_cargo",
+      "name": "academic_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.academic_user()",
+      "check": null
+    },
+    {
+      "table": "catalogo",
+      "name": "academic_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.academic_user()",
+      "check": null
+    },
+    {
+      "table": "catalogo_valor",
+      "name": "academic_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.academic_user()",
+      "check": null
+    },
+    {
+      "table": "departamento",
+      "name": "academic_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.academic_user()",
+      "check": null
+    },
+    {
+      "table": "provincia",
+      "name": "academic_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.academic_user()",
+      "check": null
+    },
+    {
+      "table": "distrito",
+      "name": "academic_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.academic_user()",
+      "check": null
+    },
+    {
+      "table": "capitania",
+      "name": "academic_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.academic_user()",
+      "check": null
+    },
+    {
+      "table": "materia",
+      "name": "academic_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.academic_user()",
+      "check": null
+    },
+    {
+      "table": "carrera",
+      "name": "academic_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.academic_user()",
+      "check": null
+    },
+    {
+      "table": "carrera_materia",
+      "name": "academic_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.academic_user()",
+      "check": null
+    },
+    {
+      "table": "ciclo",
+      "name": "academic_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.academic_user()",
+      "check": null
+    },
+    {
+      "table": "ciclo_materia",
+      "name": "academic_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.academic_user()",
+      "check": null
+    },
+    {
+      "table": "alumno",
+      "name": "academic_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.academic_user()",
+      "check": null
+    },
+    {
+      "table": "alumno_contacto_emergencia",
+      "name": "academic_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.academic_user()",
+      "check": null
+    },
+    {
+      "table": "empresa_patrocinadora",
+      "name": "academic_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.academic_user()",
+      "check": null
+    },
+    {
+      "table": "tarifa",
+      "name": "academic_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.academic_user()",
+      "check": null
+    },
+    {
+      "table": "ciclo_tarifa",
+      "name": "academic_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.academic_user()",
+      "check": null
+    },
+    {
+      "table": "app_roles",
+      "name": "app_roles_active_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "(active AND private.functional_user())",
+      "check": null
+    },
+    {
+      "table": "app_roles",
+      "name": "app_roles_admin_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.has_active_role('ADMIN_SISTEMA'::text)",
+      "check": null
+    },
+    {
+      "table": "app_user_roles",
+      "name": "app_user_roles_admin_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.has_active_role('ADMIN_SISTEMA'::text)",
+      "check": null
+    },
+    {
+      "table": "app_user_roles",
+      "name": "app_user_roles_self_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "((user_id = auth.uid()) AND private.functional_user())",
+      "check": null
+    },
+    {
+      "table": "app_users",
+      "name": "app_users_admin_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.has_active_role('ADMIN_SISTEMA'::text)",
+      "check": null
+    },
+    {
+      "table": "app_users",
+      "name": "app_users_self_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "((id = auth.uid()) AND private.functional_user())",
+      "check": null
+    },
+    {
+      "table": "auditoria",
+      "name": "audit_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.functional_user()",
+      "check": null
+    },
+    {
+      "table": "ciclo_documento",
+      "name": "document_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.academic_user()",
+      "check": null
+    },
+    {
+      "table": "tipo_documento",
+      "name": "document_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.academic_user()",
+      "check": null
+    },
+    {
+      "table": "matricula_documento",
+      "name": "document_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.academic_user()",
+      "check": null
+    },
+    {
+      "table": "matricula_documento_archivo",
+      "name": "document_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.academic_user()",
+      "check": null
+    },
+    {
+      "table": "orden_servicio_archivo",
+      "name": "h7_os_file_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "(private.academic_user() AND (estado_tecnico = 'CONFIRMADO'::text) AND (EXISTS ( SELECT 1\n   FROM orden_servicio o\n  WHERE (o.id = orden_servicio_archivo.orden_servicio_id))))",
+      "check": null
+    },
+    {
+      "table": "pago_patrocinador_aplicacion",
+      "name": "h7_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.academic_user()",
+      "check": null
+    },
+    {
+      "table": "factura_orden_servicio",
+      "name": "h7_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.academic_user()",
+      "check": null
+    },
+    {
+      "table": "pago_patrocinador",
+      "name": "h7_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.academic_user()",
+      "check": null
+    },
+    {
+      "table": "orden_servicio_matricula",
+      "name": "h7_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.academic_user()",
+      "check": null
+    },
+    {
+      "table": "orden_servicio",
+      "name": "h7_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.academic_user()",
+      "check": null
+    },
+    {
+      "table": "factura_patrocinador",
+      "name": "h7_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.academic_user()",
+      "check": null
+    },
+    {
+      "table": "pago",
+      "name": "payment_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.academic_user()",
+      "check": null
+    },
+    {
+      "table": "pago_aplicacion",
+      "name": "payment_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "private.academic_user()",
+      "check": null
+    }
+  ],
+  "helpers": [
+    {
+      "name": "academic_user",
+      "owner": "postgres",
+      "definer": true,
+      "volatility": "s",
+      "config": [
+        "search_path=\"\""
+      ],
+      "args": "",
+      "definition": "",
+      "authenticated": true,
+      "anon": false
+    },
+    {
+      "name": "apply_enrollment_charges",
+      "owner": "postgres",
+      "definer": false,
+      "volatility": "v",
+      "config": [
+        "search_path=\"\""
+      ],
+      "args": "enrollment uuid, cycle uuid, options uuid[], cycle_change boolean",
+      "definition": "",
+      "authenticated": false,
+      "anon": false
+    },
+    {
+      "name": "assert_fields",
+      "owner": "postgres",
+      "definer": false,
+      "volatility": "v",
+      "config": [
+        "search_path=\"\""
+      ],
+      "args": "p jsonb, allowed text[]",
+      "definition": "",
+      "authenticated": false,
+      "anon": false
+    },
+    {
+      "name": "audit_change",
+      "owner": "postgres",
+      "definer": true,
+      "volatility": "v",
+      "config": [
+        "search_path=\"\""
+      ],
+      "args": "",
+      "definition": "",
+      "authenticated": false,
+      "anon": false
+    },
+    {
+      "name": "audit_enrollment",
+      "owner": "postgres",
+      "definer": true,
+      "volatility": "v",
+      "config": [
+        "search_path=\"\""
+      ],
+      "args": "",
+      "definition": "",
+      "authenticated": false,
+      "anon": false
+    },
+    {
+      "name": "audit_h7",
+      "owner": "postgres",
+      "definer": false,
+      "volatility": "v",
+      "config": [
+        "search_path=\"\""
+      ],
+      "args": "",
+      "definition": "",
+      "authenticated": false,
+      "anon": false
+    },
+    {
+      "name": "authorize",
+      "owner": "postgres",
+      "definer": true,
+      "volatility": "v",
+      "config": [
+        "search_path=\"\""
+      ],
+      "args": "director_only boolean",
+      "definition": "",
+      "authenticated": false,
+      "anon": false
+    },
+    {
+      "name": "carrera_minimum",
+      "owner": "postgres",
+      "definer": true,
+      "volatility": "v",
+      "config": [
+        "search_path=\"\""
+      ],
+      "args": "",
+      "definition": "",
+      "authenticated": false,
+      "anon": false
+    },
+    {
+      "name": "enrollment_snapshot",
+      "owner": "postgres",
+      "definer": false,
+      "volatility": "v",
+      "config": [
+        "search_path=\"\""
+      ],
+      "args": "subject uuid",
+      "definition": "",
+      "authenticated": false,
+      "anon": false
+    },
+    {
+      "name": "freeze_cycle_students",
+      "owner": "postgres",
+      "definer": true,
+      "volatility": "v",
+      "config": [
+        "search_path=\"\""
+      ],
+      "args": "",
+      "definition": "",
+      "authenticated": false,
+      "anon": false
+    },
+    {
+      "name": "functional_user",
+      "owner": "postgres",
+      "definer": true,
+      "volatility": "s",
+      "config": [
+        "search_path=\"\""
+      ],
+      "args": "",
+      "definition": "",
+      "authenticated": true,
+      "anon": false
+    },
+    {
+      "name": "guard_document_history",
+      "owner": "postgres",
+      "definer": false,
+      "volatility": "v",
+      "config": [
+        "search_path=\"\""
+      ],
+      "args": "",
+      "definition": "",
+      "authenticated": false,
+      "anon": false
+    },
+    {
+      "name": "guard_enrollment_history",
+      "owner": "postgres",
+      "definer": false,
+      "volatility": "v",
+      "config": [
+        "search_path=\"\""
+      ],
+      "args": "",
+      "definition": "",
+      "authenticated": false,
+      "anon": false
+    },
+    {
+      "name": "guard_h7_history",
+      "owner": "postgres",
+      "definer": false,
+      "volatility": "v",
+      "config": [
+        "search_path=\"\""
+      ],
+      "args": "",
+      "definition": "",
+      "authenticated": false,
+      "anon": false
+    },
+    {
+      "name": "guard_os_file",
+      "owner": "postgres",
+      "definer": false,
+      "volatility": "v",
+      "config": [
+        "search_path=\"\""
+      ],
+      "args": "",
+      "definition": "",
+      "authenticated": false,
+      "anon": false
+    },
+    {
+      "name": "guard_payment_history",
+      "owner": "postgres",
+      "definer": false,
+      "volatility": "v",
+      "config": [
+        "search_path=\"\""
+      ],
+      "args": "",
+      "definition": "",
+      "authenticated": false,
+      "anon": false
+    },
+    {
+      "name": "has_active_role",
+      "owner": "postgres",
+      "definer": true,
+      "volatility": "s",
+      "config": [
+        "search_path=\"\""
+      ],
+      "args": "role_code text",
+      "definition": "select auth.uid()",
+      "authenticated": true,
+      "anon": false
+    },
+    {
+      "name": "require_catalog",
+      "owner": "postgres",
+      "definer": false,
+      "volatility": "v",
+      "config": [
+        "search_path=\"\""
+      ],
+      "args": "value_id uuid, catalog_code text",
+      "definition": "",
+      "authenticated": false,
+      "anon": false
+    },
+    {
+      "name": "require_os_file_actor",
+      "owner": "postgres",
+      "definer": false,
+      "volatility": "v",
+      "config": [
+        "search_path=\"\""
+      ],
+      "args": "p_actor uuid",
+      "definition": "",
+      "authenticated": false,
+      "anon": false
+    },
+    {
+      "name": "require_version",
+      "owner": "postgres",
+      "definer": false,
+      "volatility": "v",
+      "config": [
+        "search_path=\"\""
+      ],
+      "args": "actual timestamp with time zone, expected timestamp with time zone",
+      "definition": "",
+      "authenticated": false,
+      "anon": false
+    },
+    {
+      "name": "stamp_update",
+      "owner": "postgres",
+      "definer": false,
+      "volatility": "v",
+      "config": [
+        "search_path=\"\""
+      ],
+      "args": "",
+      "definition": "",
+      "authenticated": false,
+      "anon": false
+    },
+    {
+      "name": "sync_document_context",
+      "owner": "postgres",
+      "definer": false,
+      "volatility": "v",
+      "config": [
+        "search_path=\"\""
+      ],
+      "args": "enrollment_id uuid, new_context boolean, reactivated uuid[]",
+      "definition": "",
+      "authenticated": false,
+      "anon": false
+    },
+    {
+      "name": "sync_missing",
+      "owner": "postgres",
+      "definer": false,
+      "volatility": "v",
+      "config": [
+        "search_path=\"\""
+      ],
+      "args": "target_carrera uuid",
+      "definition": "",
+      "authenticated": false,
+      "anon": false
+    },
+    {
+      "name": "valid_company_tax",
+      "owner": "postgres",
+      "definer": false,
+      "volatility": "s",
+      "config": [
+        "search_path=\"\""
+      ],
+      "args": "v jsonb, company_ruc text",
+      "definition": "",
+      "authenticated": false,
+      "anon": false
+    },
+    {
+      "name": "validate_alumno",
+      "owner": "postgres",
+      "definer": false,
+      "volatility": "v",
+      "config": [
+        "search_path=\"\""
+      ],
+      "args": "",
+      "definition": "",
+      "authenticated": false,
+      "anon": false
+    },
+    {
+      "name": "validate_h7_integrity",
+      "owner": "postgres",
+      "definer": false,
+      "volatility": "v",
+      "config": [
+        "search_path=\"\""
+      ],
+      "args": "",
+      "definition": "",
+      "authenticated": false,
+      "anon": false
+    },
+    {
+      "name": "validate_payment_applications",
+      "owner": "postgres",
+      "definer": false,
+      "volatility": "v",
+      "config": [
+        "search_path=\"\""
+      ],
+      "args": "",
+      "definition": "",
+      "authenticated": false,
+      "anon": false
+    }
+  ],
+  "grants": [
+    {
+      "table": "alumno",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "alumno",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "alumno_contacto_emergencia",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "alumno_contacto_emergencia",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "app_roles",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "app_roles",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "app_user_roles",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "app_user_roles",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "app_users",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "app_users",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "auditoria",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "auditoria",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "capitania",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "capitania",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "carrera",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "carrera",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "carrera_materia",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "carrera_materia",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "catalogo",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "catalogo",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "catalogo_valor",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "catalogo_valor",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "ciclo",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "ciclo",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "ciclo_documento",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "ciclo_documento",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "ciclo_materia",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "ciclo_materia",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "ciclo_orden_servicio_saldo",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "ciclo_orden_servicio_saldo",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "ciclo_tarifa",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "ciclo_tarifa",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "departamento",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "departamento",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "distrito",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "distrito",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "empresa_patrocinadora",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "empresa_patrocinadora",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "factura_orden_servicio",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "factura_orden_servicio",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "factura_patrocinador",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "factura_patrocinador",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "factura_patrocinador_saldo",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "factura_patrocinador_saldo",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "facturacion_reporte",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "facturacion_reporte",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "materia",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "materia",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "matricula",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "matricula",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "matricula_cargo",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "matricula_cargo",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "matricula_cargo_saldo",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "matricula_cargo_saldo",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "matricula_documento",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "matricula_documento",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "matricula_documento_archivo",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "matricula_documento_archivo",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "matricula_expediente_resumen",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "matricula_expediente_resumen",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "matricula_ficha_fuente",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "matricula_ficha_fuente",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "matricula_pago_listado",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "matricula_pago_listado",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "matricula_reporte_ciclo",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "matricula_reporte_ciclo",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "matricula_saldo",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "matricula_saldo",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "orden_servicio",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "orden_servicio",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "orden_servicio_archivo",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "orden_servicio_archivo",
+      "role": "authenticated",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "orden_servicio_matricula",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "orden_servicio_matricula",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "orden_servicio_resumen",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "orden_servicio_resumen",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "pago",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "pago",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "pago_aplicacion",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "pago_aplicacion",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "pago_patrocinador",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "pago_patrocinador",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "pago_patrocinador_aplicacion",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "pago_patrocinador_aplicacion",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "provincia",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "provincia",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "tarifa",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "tarifa",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "tipo_documento",
+      "role": "anon",
+      "select": false,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    },
+    {
+      "table": "tipo_documento",
+      "role": "authenticated",
+      "select": true,
+      "insert": false,
+      "update": false,
+      "delete": false,
+      "truncate": false
+    }
+  ],
+  "sequences": [
+    {
+      "name": "alumno_codigo_seq",
+      "authenticated": false,
+      "anon": false
+    }
+  ],
+  "paymentCommands": [
+    {
+      "name": "anular_pago",
+      "owner": "postgres",
+      "definer": true,
+      "config": [
+        "search_path=\"\"",
+        "default_transaction_isolation=serializable"
+      ],
+      "authenticated": true,
+      "anon": false,
+      "definition": ""
+    },
+    {
+      "name": "registrar_pago",
+      "owner": "postgres",
+      "definer": true,
+      "config": [
+        "search_path=\"\"",
+        "default_transaction_isolation=serializable"
+      ],
+      "authenticated": true,
+      "anon": false,
+      "definition": ""
+    }
+  ],
+  "billingCommands": [
+    {
+      "name": "anular_factura_patrocinador",
+      "owner": "postgres",
+      "definer": true,
+      "config": [
+        "search_path=\"\"",
+        "default_transaction_isolation=serializable"
+      ],
+      "authenticated": true,
+      "anon": false,
+      "definition": ""
+    },
+    {
+      "name": "anular_orden_servicio",
+      "owner": "postgres",
+      "definer": true,
+      "config": [
+        "search_path=\"\"",
+        "default_transaction_isolation=serializable"
+      ],
+      "authenticated": true,
+      "anon": false,
+      "definition": ""
+    },
+    {
+      "name": "anular_pago_patrocinador",
+      "owner": "postgres",
+      "definer": true,
+      "config": [
+        "search_path=\"\"",
+        "default_transaction_isolation=serializable"
+      ],
+      "authenticated": true,
+      "anon": false,
+      "definition": ""
+    },
+    {
+      "name": "avanzar_factura_patrocinador",
+      "owner": "postgres",
+      "definer": true,
+      "config": [
+        "search_path=\"\"",
+        "default_transaction_isolation=serializable"
+      ],
+      "authenticated": true,
+      "anon": false,
+      "definition": ""
+    },
+    {
+      "name": "registrar_factura_patrocinador",
+      "owner": "postgres",
+      "definer": true,
+      "config": [
+        "search_path=\"\"",
+        "default_transaction_isolation=serializable"
+      ],
+      "authenticated": true,
+      "anon": false,
+      "definition": ""
+    },
+    {
+      "name": "registrar_orden_servicio",
+      "owner": "postgres",
+      "definer": true,
+      "config": [
+        "search_path=\"\"",
+        "default_transaction_isolation=serializable"
+      ],
+      "authenticated": true,
+      "anon": false,
+      "definition": ""
+    },
+    {
+      "name": "registrar_pago_patrocinador",
+      "owner": "postgres",
+      "definer": true,
+      "config": [
+        "search_path=\"\"",
+        "default_transaction_isolation=serializable"
+      ],
+      "authenticated": true,
+      "anon": false,
+      "definition": ""
+    }
+  ],
+  "publicFunctions": 39,
+  "privateCreate": false,
+  "publicCreate": false,
+  "publicExecute": 0,
+  "authenticatedBypass": false,
+  "buckets": 3,
+  "orderBucket": {
+    "id": "h7-os",
+    "public": false,
+    "limit": 5242880,
+    "types": [
+      "application/pdf"
+    ]
+  },
+  "orderColumns": [
+    {
+      "name": "base_archivo_id",
+      "authenticated": false,
+      "anon": false,
+      "insert": false,
+      "update": false
+    },
+    {
+      "name": "bytes",
+      "authenticated": true,
+      "anon": false,
+      "insert": false,
+      "update": false
+    },
+    {
+      "name": "confirmado_at",
+      "authenticated": true,
+      "anon": false,
+      "insert": false,
+      "update": false
+    },
+    {
+      "name": "confirmado_por",
+      "authenticated": false,
+      "anon": false,
+      "insert": false,
+      "update": false
+    },
+    {
+      "name": "estado_tecnico",
+      "authenticated": true,
+      "anon": false,
+      "insert": false,
+      "update": false
+    },
+    {
+      "name": "id",
+      "authenticated": true,
+      "anon": false,
+      "insert": false,
+      "update": false
+    },
+    {
+      "name": "iniciado_at",
+      "authenticated": false,
+      "anon": false,
+      "insert": false,
+      "update": false
+    },
+    {
+      "name": "iniciado_por",
+      "authenticated": false,
+      "anon": false,
+      "insert": false,
+      "update": false
+    },
+    {
+      "name": "mime",
+      "authenticated": true,
+      "anon": false,
+      "insert": false,
+      "update": false
+    },
+    {
+      "name": "numero_version",
+      "authenticated": true,
+      "anon": false,
+      "insert": false,
+      "update": false
+    },
+    {
+      "name": "object_key",
+      "authenticated": false,
+      "anon": false,
+      "insert": false,
+      "update": false
+    },
+    {
+      "name": "orden_servicio_id",
+      "authenticated": true,
+      "anon": false,
+      "insert": false,
+      "update": false
+    },
+    {
+      "name": "os_updated_at_esperado",
+      "authenticated": false,
+      "anon": false,
+      "insert": false,
+      "update": false
+    },
+    {
+      "name": "sha256",
+      "authenticated": false,
+      "anon": false,
+      "insert": false,
+      "update": false
+    }
+  ],
+  "orderCommands": [
+    {
+      "name": "abortar_archivo_os",
+      "owner": "postgres",
+      "definer": true,
+      "config": [
+        "search_path=\"\""
+      ],
+      "authenticated": false,
+      "anon": false,
+      "server": true
+    },
+    {
+      "name": "confirmar_archivo_os",
+      "owner": "postgres",
+      "definer": true,
+      "config": [
+        "search_path=\"\""
+      ],
+      "authenticated": false,
+      "anon": false,
+      "server": true
+    },
+    {
+      "name": "consultar_archivo_os",
+      "owner": "postgres",
+      "definer": true,
+      "config": [
+        "search_path=\"\""
+      ],
+      "authenticated": false,
+      "anon": false,
+      "server": true
+    },
+    {
+      "name": "preparar_archivo_os",
+      "owner": "postgres",
+      "definer": true,
+      "config": [
+        "search_path=\"\""
+      ],
+      "authenticated": false,
+      "anon": false,
+      "server": true
+    }
+  ],
+  "documentBucket": {
+    "id": "h6-expediente",
+    "public": false,
+    "limit": 5242880,
+    "types": [
+      "application/pdf",
+      "image/jpeg",
+      "image/png"
+    ]
+  },
+  "documentCommands": [
+    {
+      "name": "abortar_reserva_expediente",
+      "owner": "postgres",
+      "definer": true,
+      "config": [
+        "search_path=\"\""
+      ],
+      "authenticated": false,
+      "anon": false,
+      "server": true
+    },
+    {
+      "name": "confirmar_archivo_expediente",
+      "owner": "postgres",
+      "definer": true,
+      "config": [
+        "search_path=\"\""
+      ],
+      "authenticated": false,
+      "anon": false,
+      "server": true
+    },
+    {
+      "name": "preparar_archivo_expediente",
+      "owner": "postgres",
+      "definer": true,
+      "config": [
+        "search_path=\"\""
+      ],
+      "authenticated": false,
+      "anon": false,
+      "server": true
+    },
+    {
+      "name": "registrar_descarga_expediente",
+      "owner": "postgres",
+      "definer": true,
+      "config": [
+        "search_path=\"\""
+      ],
+      "authenticated": false,
+      "anon": false,
+      "server": true
+    }
+  ],
+  "pdfBucket": {
+    "id": "fichas-matricula",
+    "public": false,
+    "limit": 2097152,
+    "types": [
+      "application/pdf"
+    ]
+  },
+  "storagePolicies": 0,
+  "pdfAudit": {
+    "authenticated": false,
+    "anon": false,
+    "server": true,
+    "owner": "postgres",
+    "definer": true,
+    "config": [
+      "search_path=\"\""
+    ]
+  },
+  "migrations": [
+    "20261022041000",
+    "20261022150000",
+    "20261022160000",
+    "20261023010000",
+    "20261023020000",
+    "20261023030000",
+    "20261028190000",
+    "20261028200000",
+    "20261102010000",
+    "20261102020000",
+    "20261104010000",
+    "20261104020000",
+    "20261104030000",
+    "20261104040000",
+    "20261109010000",
+    "20261109020000",
+    "20261109030000",
+    "20261109040000",
+    "20261109050000",
+    "20261109060000",
+    "20261110010000",
+    "20261112010000",
+    "20261113010000",
+    "20261118010000",
+    "20261118020000",
+    "20261118030000",
+    "20261119010000",
+    "20261119020000",
+    "20261119030000",
+    "20261123010000",
+    "20261123020000",
+    "20261123030000",
+    "20261123040000",
+    "20261123050000",
+    "20261125010000",
+    "20261125020000",
+    "20261125030000",
+    "20261125040000",
+    "20261125050000",
+    "20261125060000",
+    "20261125070000"
+  ]
+}
