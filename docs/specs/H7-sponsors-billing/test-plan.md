@@ -58,3 +58,8 @@ Preservar residuales [requisitos](requirements.md), sin inferir hosted/CPU/memor
 4. Director/Coordinador autorizados, ADMIN solo denegado; error de consulta/exportación no deja descargar parcial. Revisar teclado, foco, ancho reducido y temas. Forced-colors real continúa NO VERIFICADO salvo prueba explícita posterior.
 
 No marcar estos casos humanos PASSED por las pruebas automatizadas. La confirmación funcional previa de OpenRUC/DNI no aprueba automáticamente los reportes nuevos. Sin cierre/merge H7 ni inicio H8.
+
+
+## Estado definitivo autorizado — 26/11/2026
+
+H7 CLOSED / ACEPTADO. TASK-H7-001–011 completadas conforme al [checklist de acceptance](acceptance.md). [Gate 2 humano](gate-2.md) aprobado sobre el candidato 44d60b1; autorización de integración condicionada a CI exacta SUCCESS. Los encabezados y pendientes anteriores describen checkpoints históricos; no reabren Gate 1 ni contradicen esta decisión posterior. Forced-colors real NO VERIFICADO y residuales preservados. H8 no iniciado.

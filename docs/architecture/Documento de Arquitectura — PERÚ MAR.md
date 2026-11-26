@@ -2,13 +2,13 @@
 
 Documento original: 23/11/2026 · Frankz Camasca. Revisión: **26/11/2026 (America/Lima)**.
 
-**Referencia técnica:** `d12ea91344d7384f4cfdf8a4583fc03321acb78b`, rama `feature/h7-sponsors-billing-ui`. La versión original describía `fd230a7`; esta revisión incorpora H7 y la mejora DNI de H3, sin aprobar funcionalidades ni cerrar hitos.
+**Referencia técnica:** `44d60b12fa9f932b48e00e4d7720d0a1bb424b89`, rama `feature/h7-sponsors-billing-ui`. La versión original describía `fd230a7`; esta revisión incorpora H7 y la mejora DNI de H3. El cierre fue autorizado humanamente el 26/11/2026; [acceptance H7](../specs/H7-sponsors-billing/acceptance.md) registra candidato, validaciones y condiciones de integración. No se introducen decisiones arquitectónicas nuevas.
 
 ## 1. Propósito, alcance y audiencia
 
 PERÚ MAR es una aplicación web de gestión académica que registra alumnos, matrículas, pagos y expedientes documentales, construida como una SPA en React sobre Supabase.
 
-H6.2 está integrado; H7 está en construcción y **NO CERRADO**. La mejora DNI corresponde a H3 y conserva sus commits independientes. Cada hito tiene su especificación en `docs/specs/`.
+H6.2 está integrado; H7 está **CLOSED / ACEPTADO**, con integración autorizada condicionada a CI SUCCESS del PR y del merge exacto. La mejora DNI corresponde a H3 y conserva sus commits independientes. Cada hito tiene su especificación en `docs/specs/`.
 
 | Hito | Capacidad que entrega |
 | --- | --- |
@@ -21,9 +21,9 @@ H6.2 está integrado; H7 está en construcción y **NO CERRADO**. La mejora DNI 
 | H6 | Expediente documental: carga, generación y descarga de archivos |
 | H6.1 | Reportes operativos por ciclo |
 | H6.2 | Impresión del expediente y Word individual |
-| H7, en construcción | Patrocinio por Ciclo, OS, facturas, transferencias, PDF OS privado y reportes/CSV |
+| H7, aceptado | Patrocinio por Ciclo, OS, facturas, transferencias, PDF OS privado y reportes/CSV |
 
-**Fuera de alcance.** No hay acceso para alumnos: solo existen roles internos. No hay un despliegue hospedado acreditado, y el [PLAN vigente](../PLAN_MVP.md) mantiene H7 abierto, con revisión humana de reportes/Excel y cierre/CI final pendientes. La confirmación de OpenRUC/domicilio fiscal/JSONB y DNI no aprueba automáticamente los reportes posteriores.
+**Fuera de alcance.** No hay acceso para alumnos: solo existen roles internos. No hay un despliegue hospedado acreditado, y el [PLAN vigente](../PLAN_MVP.md) registra la aceptación humana global de H7 y las confirmaciones de OpenRUC/domicilio fiscal/JSONB y DNI. Los pendientes de producción no se convierten en evidencia hospedada.
 
 **Audiencia.** Quien deba mantener, auditar o desplegar el sistema. El documento describe el SHA técnico indicado arriba; los resultados históricos se mantienen vinculados a sus propias referencias. Los diagramas son Mermaid y se visualizan en GitHub o en un visor Markdown compatible.
 
@@ -443,7 +443,7 @@ El MVP continúa con residuales aceptados que siguen sin resolverse; los más re
 
 **Próximos hitos y evoluciones.**
 
-- **H7, Patrocinadores y facturación.** Implementación en curso; revisión humana de reportes/Excel y cierre/CI final pendientes. Sin Gate2/acceptance ni merge por esta revisión.
+- **H7, Patrocinadores y facturación.** Gate2 humano aprobado; CLOSED / ACEPTADO. PR/merge commit y CI exacta de main obligatorios para declarar INTEGRADO; referencias finales en el informe y PR de integración. H8 no iniciado.
 - **H8, Reportes y operación.** Estados de cuenta, filtros, exportación y consulta de auditoría, sin una plataforma analítica aparte.
 - **H9, Cierre del MVP.** Revisión de permisos, respaldos y restauración, configuración productiva, revisión de secretos y preparación del release.
 - **EVOL-001.** Que el Coordinador solicite un descuento y el Director lo apruebe. Pendiente.
@@ -472,10 +472,10 @@ El MVP continúa con residuales aceptados que siguen sin resolverse; los más re
 
 - [PLAN](../PLAN_MVP.md), [Gate A01](GATE-A01-continuidad-supabase.md), [Gate 1 H7](../specs/H7-sponsors-billing/gate-1.md) y Specs históricas gobiernan autorización/alcance. Los ADR de este documento son etiquetas descriptivas, no decisiones humanas nuevas.
 - [Fuentes/cierre](../../supabase/migrations/20261113010000_h5_current_and_closure_source.sql), [reportes H7](../../supabase/migrations/20261125060000_h7_read_reports.sql), [numeración sin relleno](../../supabase/migrations/20261125070000_h7_document_number_as_entered.sql), [validador PDF](../../supabase/functions/_shared/expediente/validateFile.ts).
-- [Evidencia H7](../specs/H7-sponsors-billing/technical-results.md): 825/825 del bloque inicial y 41/41 DB/API/JWT aisladas de reportes; tras ajustes, 218/218 focalizadas del paquete publicado, lint/tipos/build/diff-check y SQL focalizada de numeración. Son ejecuciones diferentes; no se afirma suite integral nueva ni CI final SUCCESS por esta revisión.
+- [Evidencia H7](../specs/H7-sponsors-billing/technical-results.md): 839/839 Vitest en 50 archivos en el cierre; 192/192 núcleo financiero con reconstrucción/concurrencia/JWT; 41/41 reportes y 52/52 datos tributarios aislados, además de baterías de patrocinio, cobertura OS, disponibilidad de OS y PDF OS. Lint/tipos/Edge/build correctos. La CI completa y las referencias exactas gobiernan la integración; no se hereda SUCCESS de otro SHA.
 - El workflow actual se dispara en ramas feature y PR a main, además de ejecución manual. No asumir ejecución por cualquier push a main ni heredar CI de otro SHA. Revisar el resultado exacto de cada candidato.
 - Los estados iniciales de documentos históricos de operación se leen junto con sus registros posteriores de aceptación y el PLAN vigente. No se reescriben Gates/Specs históricos para simular una aprobación nueva.
 
-**Esta publicación es exclusivamente documental, autorizada el 26/11/2026.** No ejecuta una nueva auditoría ni pruebas funcionales, no incorpora secretos, no cambia arquitectura/código/migraciones, no cierra H7, no crea PR/merge ni inicia H8. Se validan referencias locales, inventarios, bloques Mermaid y diff documental antes de publicar.
+**Actualización de cierre autorizada el 26/11/2026.** Mantiene los ocho diagramas Mermaid y las decisiones arquitectónicas existentes. Vincula el cierre H7 y la mejora H3 a su evidencia; no incorpora secretos, despliega producción ni inicia H8. Los límites de validación y residuales se conservan.
 
 Validaciones documentales de esta revisión: **8/8 bloques Mermaid aceptados por el parser mermaid@11.4.1**, 16 enlaces locales existentes, inventarios contrastados y diff documental sin errores. Es validación sintáctica, no una revisión visual de renderizado ni una nueva batería funcional/CI. El parser se usó solo en .cache ignorado, sin modificar package.json/package-lock ni dependencias del producto.

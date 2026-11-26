@@ -205,3 +205,39 @@ Candidato incorpora TASK-H7-007 y los ajustes humanos posteriores: columnas comp
 Validación final del conjunto: 218/218 PASSED en BillingReports, Billing, OrderDocuments, FichaPdfAction, CycleReports y EnrollmentPages; ESLint del proyecto, TypeScript, build y diff-check correctos. Es una regresión focalizada final, no una nueva ejecución de las 825 pruebas históricas del primer bloque. Se preservan la evidencia DB/API/JWT aislada 41/41 de reportes y la prueba SQL focalizada de ciclo/OS que confirmó preservación de 1/0002, duplicado equivalente, roles, historia y cobertura. Migraciones0600/0700 aplicadas incrementalmente en desarrollo; registros anteriores no reformateados. Bundle >500 kB permanece como advertencia.
 
 Publicación sin skip ci; la CI remota del commit debe evaluarse por su propio SHA y no se declara SUCCESS anticipado. H7 permanece abierto, revisión humana de reportes y Excel pendiente; sin Gate2/acceptance, PR/merge ni H8. Los residuales de hosted, CPU, memoria, forced-colors, exportación sin snapshot y memoria proporcional, dependencia OpenRUC/RUC20 y conciliación/limpieza manual permanecen.
+
+
+## Cierre autorizado y validación integral — 26/11/2026
+
+Candidato funcional aprobado humanamente: `44d60b12fa9f932b48e00e4d7720d0a1bb424b89`; Spec Gate1 `08d8a7a6e3279ff8f36344247de4c270b44f19f0`. El usuario autoriza cerrar e integrar H7, DNI H3 y arquitectura con ocho diagramas, sin repetir pruebas humanas, desplegar ni iniciar H8. [Gate2](gate-2.md) y [acceptance/checklist](acceptance.md) sustituyen los pendientes globales de checkpoints anteriores, sin borrar su historia.
+
+Correcciones técnicas de cierre:
+
+- `accf422561593de13d5a25f645d5212b73935ad7`: inventario exacto actualizado a 45 relaciones públicas (35 tablas/10 vistas), 39 funciones públicas, 41 migraciones y tres buckets privados. Conserva RLS, security_invoker, ausencia de DML directo/CREATE/bypass/execute público, propietarios/search_path y restricciones de comandos serializables. Añade contrato de bucket h7-os, cuatro RPC reservadas a service_role y lectura por columnas de metadatos: object_key/hash no accesibles al cliente. Fixture sintético de metadatos sin filas, secretos ni cuerpos de funciones; ocho pruebas negativas impiden exposiciones, junto al caso positivo y las dos guardas de destino.
+- Regresión del núcleo financiero ajustada al contrato vigente: una OS por factura no anulada, rechazo de reutilización, fixtures distintos para pagos concurrentes y bucket OS privado. No se cambia SQL/producto para conseguir verde.
+- `64ee409afd91d44f3bb5e6e076fa60e20f94ba55`: conserva las 72 referencias académicas activas y exige adicionalmente BANCO / 21 bancos activos; el catálogo total es 13. El runner PDF OS aplica el protocolo solo si no existe en su clon aislado, sin eludir sus pruebas de ACL/RLS/roles/historia.
+- Workflow añade el typecheck Deno congelado de OS/RUC/DNI y las baterías existentes de patrocinio, cobertura OS, disponibilidad, datos tributarios y archivos OS en ambos pases. No se elimina ningún control anterior, ni se usa skip ci.
+
+Resultados locales efectivamente ejecutados en esta ejecución:
+
+| Comprobación | Resultado |
+| --- | --- |
+| Suite Vitest completa, 50 archivos | **839/839 PASSED** |
+| Núcleo H7, reconstrucción de todas las migraciones, JWT ordinario/PostgREST, rollback y barreras concurrentes, regresión H4 | **192/192 PASSED** |
+| Reportes, 501 documentos/paginación/filtros/RLS/dinero/historia | **41/41 PASSED** |
+| Referencia tributaria, compatibilidad/RPC/RLS/auditoría/versiones | **52/52 PASSED** |
+| Patrocinio por Ciclo | **PASSED**, 12 escenarios más invariantes/rollback/backfill ambiguo |
+| Cobertura OS y roster completo, historia/anulación/roles/numeración | **PASSED** |
+| OS facturada: exclusión/rollback/anulación y reutilización/historia/concurrencia | **PASSED** |
+| Archivos OS: protocolo/roles/RLS/grants/versiones/fallos/anulación/historia/OS ajena | **PASSED** |
+| Inventario real local y tests focalizados | **PASSED**,11/11 pruebas |
+| ESLint completo, tsc, Deno congelado OS/RUC/DNI, build y diff-check | **PASSED** |
+| Ocho diagramas Mermaid | **8/8 sintaxis válida**, no se atribuye renderizado visual |
+
+Las bases DB adicionales son temporales y aisladas, con esquemas y referencias/sintéticos; no se reseteó ni copió el conjunto humano local. El workflow de GitHub sí reconstruye su propio stack efímero y repite las regresiones H1–H7, incluido Edge/Storage reales H5/H6, expiración, build-safety y reconstrucción final.
+
+Fallos iniciales conservados como evidencia: CI45856759852 del candidato humano falló por inventario antiguo; CI45858934026 pasó 839/839 y la nueva comprobación del inventario, pero falló al esperar 12 catálogos en H2 (13 reales). No se declaran SUCCESS ni se ocultan. La siguiente CI se evalúa por su SHA exacto y es condición de integración. Los fallos locales iniciales de fixture de facturas/protocolo OS se corrigieron y se repitieron satisfactoriamente.
+
+La aprobación humana es global del candidato; OpenRUC con persistencia y consulta DNI tienen confirmación funcional explícita. No se fabrican subresultados humanos ni nuevas pruebas de Excel/forced-colors. DNI se consolida por separado en H3, sin reabrirlo; Eldni concluye no seleccionado.
+
+Riesgos y configuración pendientes en acceptance: hosted no probado, CPU/memoria no medidas, forced-colors NO VERIFICADO, bundle principal 837.77 kB, CSV sin snapshot/memoria proporcional, OpenRUC externo/RUC20, autorización APIsPERU previa a producción, PDF conservador, conciliación/limpieza manual y purga H9/release. Ninguno se convierte en PASSED.

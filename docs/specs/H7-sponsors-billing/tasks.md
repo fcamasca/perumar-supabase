@@ -34,3 +34,8 @@ Registrar comandos, resultados, SHA/CI/inventario por bloque, sin TEST-H7 PASSED
 Autorización humana expresa para completar el alcance original REQ-H7-013 / DES-H7-007 / TEST-H7-013. No se difiere a H8. Migración aditiva 20261125060000: una vista de lectura `facturacion_reporte` con security_invoker; sin tablas/RPC/Edge/dependencias nuevas ni mutaciones financieras. Candidato técnico probado: 825/825 Vitest y 41/41 DB/API/JWT aislados. Resultados detallados en technical-results.md. El trabajo de consulta DNI permanece en sus commits independientes H3, sin cambios en este bloque.
 
 TASK-H7-007 está lista para revisión funcional humana; TEST-H7-013 tiene evidencia automatizada, no aprobación humana del reporte/Excel. H7 sigue EN CONSTRUCCIÓN / NO CERRADO, sin Gate 2 ni acceptance ni merge. La autorización de cierre anterior queda detenida por instrucción humana mientras se completa esta revisión. El historial anterior registra los estados de cada checkpoint, no describe el estado técnico actual.
+
+
+## Estado definitivo autorizado — 26/11/2026
+
+H7 CLOSED / ACEPTADO. TASK-H7-001–011 completadas conforme al [checklist de acceptance](acceptance.md). [Gate 2 humano](gate-2.md) aprobado sobre el candidato 44d60b1; autorización de integración condicionada a CI exacta SUCCESS. Los encabezados y pendientes anteriores describen checkpoints históricos; no reabren Gate 1 ni contradicen esta decisión posterior. Forced-colors real NO VERIFICADO y residuales preservados. H8 no iniciado.
