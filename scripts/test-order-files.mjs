@@ -28,7 +28,10 @@ try {
   sql(`create table public.order_test_context(value jsonb);${setup}
    insert into public.order_test_context values(jsonb_build_object('actor',actor,'student',a.id,'cycle',c.id,'enrollment',e.id,'coordinator',coordinator));end $$;`)
 
-  sql(readFileSync('supabase/migrations/20261125040000_h7_order_private_files.sql','utf8'))
+  // A current schema clone already contains the protocol; legacy clones apply it once.
+  if (sql("select to_regprocedure('public.preparar_archivo_os(uuid,uuid,timestamp with time zone)') is not null") !== 't') {
+    sql(readFileSync('supabase/migrations/20261125040000_h7_order_private_files.sql','utf8'))
+  }
   sql(readFileSync('tests/sql/order-files.sql','utf8'))
   console.log('OS PDFs: isolated DB protocol, roles/RLS/grants, versions, replacement failure, annulment race/history and cross-OS protection PASSED.')
 } finally {
