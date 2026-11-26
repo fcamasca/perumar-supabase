@@ -7,3 +7,7 @@ H1 incorpora la migración real `20261022041000_h1_security.sql`: tres tablas de
 Después de aprobar el hito correspondiente, cada cambio real se genera con la CLI Supabase fijada, con nombre y versión ordenados. Se revisa y versiona antes de aplicarlo. No se modifica una migración ya aplicada para ocultar un cambio posterior.
 
 La reconstrucción solo puede operar sobre la instancia local desechable de este proyecto, sin link remoto. En H0 recreaba plataforma sin historial propio; en H1 reaplica la migración real de seguridad y los roles iniciales, sin cuentas Auth ni datos de negocio. No es una prueba de restauración ni un backup productivo.
+
+## Preparación hospedada (fuera de hitos cerrados)
+
+Las 41 migraciones históricas permanecen intactas. La primera carga remota requiere autorización de ejecución independiente y el procedimiento de [despliegue hospedado](../../docs/deployment/hosted.md). Aplicar migraciones no equivale a cargar todas las referencias: el procedimiento posterior ejecuta seed.sql y las dos cargas DICAPI en orden, en una transacción con precondiciones. No usar reset remoto ni scripts locales contra Cloud.

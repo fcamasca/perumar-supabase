@@ -1,4 +1,4 @@
-name: H7 billing DNI expediente and security verification
+name: Local regression and hosted repository preparation
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       security-failure:
-        description: 'Ensayo temporal: detectar una asignaciÃ³n ADMIN_SISTEMA indebida a Coordinador'
+        description: 'Ensayo temporal: detectar una asignación ADMIN_SISTEMA indebida a Coordinador'
         type: boolean
         default: false
 
@@ -49,6 +49,8 @@ jobs:
           npm run supabase:reset
           npm run supabase:env
           npm run test:local
+      - name: Hosted procedures in disposable local database
+        run: npm run test:hosted-preparation
       - name: Real Auth and RLS actor matrix
         env:
           H2_PRIVILEGE_FAILURE: ${{ inputs.security-failure || github.ref_name == 'feature/h2-academic-privilege-trial' }}
@@ -103,9 +105,9 @@ jobs:
           path: .cache/h5-results/
           if-no-files-found: ignore
           retention-days: 3
-      - name: Frontend build
+      - name: Local frontend build
         run: npm run build
-      - name: Privileged configuration rejected safely
+      - name: Synthetic local and hosted builds, CSP and privileged configuration rejection
         run: npm run test:build-safety
       - name: Real token expiry and profile restoration
         run: |
