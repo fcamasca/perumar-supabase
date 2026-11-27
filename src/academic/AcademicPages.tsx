@@ -29,6 +29,7 @@ export function academicError(error: { code?: string; message?: string } | null,
     return field ? `El ${field} de ${entity} ya está utilizado, incluso en registros inactivos.` : entity === 'Asignatura' ? 'El nombre de Asignatura ya está utilizado, incluso en registros inactivos.' : entity === 'Curso' ? 'El nombre o sigla de Curso ya está utilizado, incluso en registros inactivos.' : 'La relación o el código ya está registrado.'
   }
   if (error?.code === '23514') {
+    if (error.message === 'Ciclo con matrícula activa: solo Director, promoción y fechas') return 'Este ciclo ya tiene matrículas activas. Solo el Director puede cambiar la promoción y las fechas; los demás datos están bloqueados.'
     if (error.message === 'Materias de Ciclo con matrícula activa no editables') return 'Este Ciclo tiene matrículas activas. Solo el Director puede confirmar cambios en sus asignaturas. No se realizó ningún cambio.'
     if (/Cada Carrera requiere al menos|Seleccione al menos una Materia activa/.test(error.message ?? '')) return 'El Curso debe conservar al menos una Asignatura activa. Asocia primero otra Asignatura activa.'
     if (error.message === 'El Ciclo requiere una Materia activa') return 'El Ciclo debe tener al menos una Asignatura activa.'
