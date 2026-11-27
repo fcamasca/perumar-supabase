@@ -2,6 +2,10 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { changedFiles, selectScope } from './ci-scope.mjs'
 const before='a'.repeat(40),after='b'.repeat(40),push={before,after}
+test('main always requires full regression, even documentation or explicit manual quick',()=>{
+ assert.equal(selectScope('push',{...push,ref:'refs/heads/main'},['docs/deployment/hosted.md']).full,true)
+ assert.equal(selectScope('workflow_dispatch',{ref:'refs/heads/main',inputs:{suite:'quick'}},[]).full,true)
+})
 test('CSS, assets, documentation and empty pushes use quick validation',()=>{
  for(const files of [[],['src/styles.css'],['docs/deployment/ci.md','src/assets/logo.svg'],['README.md','public/icon.png']]) assert.equal(selectScope('push',push,files).full,false)
 })

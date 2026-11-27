@@ -2,7 +2,7 @@ name: Local regression and hosted repository preparation
 
 on:
   push:
-    branches: ['feature/**']
+    branches: ['feature/**', main]
   pull_request:
     branches: [main]
   workflow_dispatch:

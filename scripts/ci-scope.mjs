@@ -11,6 +11,7 @@ export function quickPath(file) {
     || /^(?:README|CHANGELOG)\.md$/.test(file)
 }
 export function selectScope(eventName, event, files) {
+  if (event.ref === 'refs/heads/main') return { full: true, reason: 'Main requires full regression on its exact integrated SHA.' }
   if (eventName === 'pull_request') return { full: true, reason: 'Pull request: full regression before integration.' }
   if (event.inputs?.['security-failure'] === true || event.inputs?.['security-failure'] === 'true'
       || event.ref === 'refs/heads/feature/h2-academic-privilege-trial') return { full: true, reason: 'Security failure trial requires the full actor matrix.' }

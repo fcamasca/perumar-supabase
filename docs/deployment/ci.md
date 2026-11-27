@@ -1,6 +1,6 @@
 # CI segun los archivos modificados
 
-El check `verify` se conserva para no cambiar su nombre en las protecciones de rama. El workflow sigue arrancando en cada push a `feature/**` y en los PR hacia `main`; no se omite el workflow completo con filtros de rutas.
+El check `verify` se conserva para no cambiar su nombre en las protecciones de rama. El workflow arranca en cada push a `feature/**` y `main`, y en los PR hacia `main`; no se omite el workflow completo con filtros de rutas. `main` siempre ejecuta la integral sobre su SHA exacto, incluso con cambios documentales o selección manual quick.
 
 - Siempre: reglas de seleccion, lint, tipos frontend/Edge, pruebas unitarias y builds sinteticos local/hospedado con CSP y rechazo de secretos.
 - Push con cambios exclusivamente en `src/**/*.css`, imagenes/fuentes de `src/assets` o `public`, Markdown de `docs`, README.md o CHANGELOG.md: validacion rapida, sin iniciar Docker/Supabase.
