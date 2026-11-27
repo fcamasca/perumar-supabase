@@ -112,9 +112,11 @@ export function EnrollmentDocuments({
     }),
     [types, setTypes] = useState<{ id: string; nombre: string }[]>([])
   const [fileError, setFileError] = useState('')
-  const [storedPreview, setStoredPreview] = useState<{ name: string; blob: Blob; historical: boolean } | null>(null), [storedPreviewUrl, setStoredPreviewUrl] = useState('')
+  const [storedPreview, setStoredPreview] = useState<{ name: string; blob?: Blob; historical: boolean } | null>(null), [storedPreviewUrl, setStoredPreviewUrl] = useState('')
   const [printing, setPrinting] = useState(false)
   const wordAbort = useRef<AbortController | null>(null)
+  const previewAbort = useRef<AbortController | null>(null)
+  const [previewLoading, setPreviewLoading] = useState(false), [previewError, setPreviewError] = useState('')
   const [originalFile, setOriginalFile] = useState<File | null>(null), [optimizing, setOptimizing] = useState(false), [optimized, setOptimized] = useState(false), [imagePreview, setImagePreview] = useState('')
   const fileHintId = useId(), fileErrorId = useId()
   const [historyDoc, setHistoryDoc] = useState<AppliedDocument | null>(null),
@@ -138,7 +140,7 @@ export function EnrollmentDocuments({
   const eligible =
     enrollmentState === 'ACTIVO' && ['PROGRAMADO', 'EN_CURSO', 'CERRADO'].includes(cycleState)
   useEffect(() => {
-    if (!storedPreview) { setStoredPreviewUrl(''); return }
+    if (!storedPreview?.blob) { setStoredPreviewUrl(''); return }
     const url = URL.createObjectURL(storedPreview.blob)
     setStoredPreviewUrl(url)
     return () => URL.revokeObjectURL(url)
@@ -154,6 +156,7 @@ export function EnrollmentDocuments({
     return () => {
       mounted.current = false
       wordAbort.current?.abort()
+      previewAbort.current?.abort()
     }
   }, [])
   useEffect(() => {
@@ -309,8 +312,8 @@ export function EnrollmentDocuments({
       if (mounted.current) setBusy(false)
     }
   }
-  async function invoke(name: string, body: Record<string, unknown> | FormData) {
-    const r = await client.functions.invoke(name, { body })
+  async function invoke(name: string, body: Record<string, unknown> | FormData, signal?: AbortSignal) {
+    const r = await client.functions.invoke(name, { body, ...(signal ? { signal } : {}) })
     if (r.error) {
       let code = ''
       try {
@@ -389,13 +392,33 @@ export function EnrollmentDocuments({
       } finally { wordAbort.current = null }
     })
   }
+  function closeStoredPreview() {
+    previewAbort.current?.abort()
+    setStoredPreview(null); setPreviewLoading(false); setPreviewError('')
+  }
   async function previewStoredFile(d: AppliedDocument, id: string, historical: boolean) {
     await operation(async () => {
-      const blob = await invoke('expediente-descargar', { documento_id: d.id, archivo_id: id, historico: historical })
-      if (!(blob instanceof Blob) || !['application/pdf', 'image/jpeg', 'image/png'].includes(blob.type))
-        throw new Error('No se recibió un archivo válido para la vista previa.')
-      if (mounted.current) setStoredPreview({ name: d.nombre, blob, historical })
-      return historical ? 'Vista previa histórica preparada.' : 'Vista previa preparada.'
+      const controller = new AbortController(); previewAbort.current = controller
+      let timedOut = false
+      const timeout = setTimeout(() => { timedOut = true; controller.abort() }, 25000)
+      setStoredPreview({ name: d.nombre, historical }); setPreviewLoading(true); setPreviewError('')
+      try {
+        const blob = await invoke('expediente-descargar', { documento_id: d.id, archivo_id: id, historico: historical }, controller.signal)
+        if (timedOut) throw new Error('La vista previa tardó demasiado. Intenta de nuevo.')
+        if (controller.signal.aborted || !mounted.current) return ''
+        if (!(blob instanceof Blob) || !['application/pdf', 'image/jpeg', 'image/png'].includes(blob.type))
+          throw new Error('No se recibió un archivo válido para la vista previa.')
+        setStoredPreview({ name: d.nombre, blob, historical })
+        return ''
+      } catch (error) {
+        if (mounted.current) { setStoredPreview(null); setPreviewLoading(false) }
+        if (timedOut) throw new Error('La vista previa tardó demasiado. Intenta de nuevo.', { cause: error })
+        if (controller.signal.aborted) return ''
+        throw error
+      } finally {
+        clearTimeout(timeout)
+        if (previewAbort.current === controller) previewAbort.current = null
+      }
     })
   }
   async function withdraw(d: AppliedDocument) {
@@ -453,7 +476,7 @@ export function EnrollmentDocuments({
         </p>
       )}
       {!eligible && <p>Solo consulta e historia. No se permiten nuevas modificaciones.</p>}
-      {blocked && <p>Completa o cancela los otros cambios antes de modificar documentos.</p>}
+      {blocked && !busy && <p>Completa o cancela los otros cambios antes de modificar documentos.</p>}
       {message && (
         <p
           role={failure ? 'alert' : 'status'}
@@ -580,12 +603,14 @@ export function EnrollmentDocuments({
         </div>
       )}
       {(page>0||rows.length===30)&&<AcademicPagination page={page} count={rows.length} disabled={busy||loading} onChange={setPage}/>}
-      {storedPreview && <DocumentDialog wide busy={busy} label={`Vista previa: ${storedPreview.name}`} close={() => setStoredPreview(null)}>
-        <PreviewHeader name={storedPreview.name} disabled={busy} close={() => setStoredPreview(null)}/>
+      {storedPreview && <DocumentDialog wide busy={false} label={`Vista previa: ${storedPreview.name}`} close={closeStoredPreview}>
+        <PreviewHeader name={storedPreview.name} close={closeStoredPreview}/>
+        {previewLoading && <p role="status" aria-live="polite">Cargando vista previa…</p>}
+        {previewError && <p role="alert">{previewError}</p>}
         {storedPreview.historical && <p className="help-text">Versión histórica: puede no reflejar los datos actuales.</p>}
-        {storedPreviewUrl && (storedPreview.blob.type === 'application/pdf'
-          ? <iframe title={`Archivo de ${storedPreview.name}`} src={storedPreviewUrl} />
-          : <img alt={`Archivo de ${storedPreview.name}`} src={storedPreviewUrl} />)}
+        {storedPreviewUrl && !previewError && (storedPreview.blob?.type === 'application/pdf'
+          ? <iframe title={`Archivo de ${storedPreview.name}`} src={storedPreviewUrl} onLoad={()=>setPreviewLoading(false)} onError={()=>{setPreviewLoading(false);setPreviewError('No se pudo mostrar la vista previa. Cierra e intenta de nuevo.')}} />
+          : <img alt={`Archivo de ${storedPreview.name}`} src={storedPreviewUrl} onLoad={()=>setPreviewLoading(false)} onError={()=>{setPreviewLoading(false);setPreviewError('No se pudo mostrar la vista previa. Cierra e intenta de nuevo.')}} />)}
       </DocumentDialog>}
       {editing && (
         <DocumentDialog busy={busy || optimizing} close={() => setEditing(null)}>

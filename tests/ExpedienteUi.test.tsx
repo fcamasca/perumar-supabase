@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { CycleDocuments } from '../src/documents/CycleDocuments'
 import { EnrollmentDocuments } from '../src/documents/EnrollmentDocuments'
 import { BulkDocumentRetirement } from '../src/documents/BulkDocumentRetirement'
@@ -207,7 +207,10 @@ it('previews the confirmed file through the authorized read endpoint without gen
     fireEvent.click(await screen.findByRole('button', { name: 'Vista previa' }))
     const dialog = await screen.findByRole('dialog', { name: 'Vista previa: DOCUMENTO DE IDENTIDAD' })
     await waitFor(() => expect(within(dialog).getByTitle('Archivo de DOCUMENTO DE IDENTIDAD')).toHaveAttribute('src', 'blob:stored-preview'))
-    expect(client.functions.invoke).toHaveBeenCalledExactlyOnceWith('expediente-descargar', { body: { documento_id: 'doc', archivo_id: 'confirmed', historico: false } })
+    expect(client.functions.invoke).toHaveBeenCalledExactlyOnceWith('expediente-descargar', { body: { documento_id: 'doc', archivo_id: 'confirmed', historico: false }, signal: expect.any(AbortSignal) })
+    expect(within(dialog).getByRole('status')).toHaveTextContent('Cargando vista previa')
+    fireEvent.load(within(dialog).getByTitle('Archivo de DOCUMENTO DE IDENTIDAD'))
+    expect(within(dialog).queryByRole('status')).not.toBeInTheDocument()
     expect(client.rpc).not.toHaveBeenCalled()
     fireEvent.click(within(dialog).getByRole('button', { name: 'Cerrar vista previa' }))
     expect(revoke).toHaveBeenCalledExactlyOnceWith('blob:stored-preview')
@@ -527,4 +530,39 @@ it('disables Word for generated documents that need regeneration', async () => {
   render(<EnrollmentDocuments allowWord enrollment="enrollment" cycleId="cycle" enrollmentState="ACTIVO" cycleState="PROGRAMADO" />)
   fireEvent.click(await screen.findByRole('button', { name: 'Más acciones de DOCUMENTO DE IDENTIDAD' }))
   expect(screen.getByRole('menuitem', { name: 'Descargar Word (.docx)' })).toBeDisabled(); expect(word).not.toHaveBeenCalled()
+})
+it('opens the loading preview immediately, supports closing and never reopens for a late response', async()=>{
+ tables.matricula_documento=[{...applied,estado:'CARGADO',ultimo_archivo_confirmado_id:'confirmed'}]
+ let finish!:(result:unknown)=>void
+ client.functions.invoke.mockImplementation(()=>new Promise(resolve=>{finish=resolve}))
+ const view=render(<EnrollmentDocuments enrollment="enrollment" cycleId="cycle" enrollmentState="ACTIVO" cycleState="PROGRAMADO"/>)
+ try{
+  fireEvent.click(await screen.findByRole('button',{name:'Vista previa'}))
+  const dialog=screen.getByRole('dialog',{name:'Vista previa: DOCUMENTO DE IDENTIDAD'})
+  expect(within(dialog).getByRole('status')).toHaveTextContent('Cargando vista previa')
+  expect(within(dialog).getByRole('button',{name:'Cerrar vista previa'})).toBeEnabled()
+  const signal=client.functions.invoke.mock.calls[0][1].signal as AbortSignal
+  fireEvent.click(within(dialog).getByRole('button',{name:'Cerrar vista previa'}))
+  expect(signal.aborted).toBe(true)
+  await act(async()=>finish({data:new Blob(['synthetic'],{type:'application/pdf'}),error:null}))
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  expect(client.functions.invoke).toHaveBeenCalledTimes(1);expect(client.rpc).not.toHaveBeenCalled()
+ }finally{view.unmount()}
+})
+it('ends a slow preview with an actionable error and releases the screen without retrying',async()=>{
+ tables.matricula_documento=[{...applied,estado:'CARGADO',ultimo_archivo_confirmado_id:'confirmed'}]
+ client.functions.invoke.mockImplementation((_name,options)=>new Promise((_resolve,reject)=>{options.signal.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')),{once:true})}))
+ const view=render(<EnrollmentDocuments enrollment="enrollment" cycleId="cycle" enrollmentState="ACTIVO" cycleState="PROGRAMADO"/>)
+ try{
+  const trigger=await screen.findByRole('button',{name:'Vista previa'})
+  vi.useFakeTimers();fireEvent.click(trigger)
+  expect(screen.getByRole('dialog')).toHaveTextContent('Cargando vista previa')
+  await act(async()=>{await vi.advanceTimersByTimeAsync(25000)})
+  vi.useRealTimers()
+  expect(await screen.findByRole('alert')).toHaveTextContent('La vista previa tardó demasiado. Intenta de nuevo.')
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  expect(screen.getByRole('button',{name:'Vista previa'})).toBeEnabled()
+  expect(client.functions.invoke).toHaveBeenCalledTimes(1)
+ }finally{vi.useRealTimers();view.unmount()}
 })
