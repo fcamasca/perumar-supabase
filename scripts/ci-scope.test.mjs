@@ -44,6 +44,7 @@ test('CLI writes scope outputs for a real multi-commit push and empty push', asy
   execFileSync(process.execPath,[resolve('scripts/ci-scope.mjs')],{cwd:directory,env:{...process.env,GITHUB_EVENT_NAME:eventName,GITHUB_EVENT_PATH:eventPath,GITHUB_OUTPUT:output,GITHUB_STEP_SUMMARY:join(directory,'summary.md')},stdio:'pipe'})
   return readFileSync(output,'utf8').trim()
  }
+ assert.ok(directory.startsWith(root+sep)&&directory.slice(root.length+1).startsWith('perumar-ci-scope-'),'Unexpected test directory')
  try{
   git(['init']);git(['config','user.name','CI fixture']);git(['config','user.email','ci@example.invalid'])
   writeFileSync(join(directory,'base.txt'),'base');git(['add','base.txt']);git(['commit','-m','base']);const base=git(['rev-parse','HEAD'])
@@ -54,7 +55,6 @@ test('CLI writes scope outputs for a real multi-commit push and empty push', asy
   assert.equal(run('push',{before:head,after:empty}),'full=false')
   assert.equal(run('pull_request',{}),'full=true')
  }finally{
-  if(!directory.startsWith(root+sep)||!directory.slice(root.length+1).startsWith('perumar-ci-scope-'))throw Error('Unexpected test directory')
   rmSync(directory,{recursive:true,force:true})
  }
 })
