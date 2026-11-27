@@ -8,7 +8,7 @@ let exists:boolean,localError:boolean,authenticated:boolean,academic:boolean,tok
 const filters:unknown[][]=[]
 beforeEach(()=>{
  exists=false;localError=false;authenticated=true;academic=true;token='SECRET-FIXTURE';hosted=false;authorized=false;filters.length=0
- vi.stubGlobal('Deno',{env:{get:(k:string)=>({SUPABASE_URL:hosted?'https://project.supabase.co':'http://kong',SUPABASE_ANON_KEY:'anon',APISPERU_TOKEN:token,APISPERU_PRODUCTION_AUTHORIZED:String(authorized)}[k])}})
+ vi.stubGlobal('Deno',{env:{get:(k:string)=>({SUPABASE_URL:hosted?'https://abcdefghijklmnopqrst.supabase.co':'http://kong',SUPABASE_ANON_KEY:'anon',SUPABASE_PUBLISHABLE_KEYS:JSON.stringify({default:'sb_publishable_synthetic0000000000000000'}),APISPERU_TOKEN:token,APISPERU_PRODUCTION_AUTHORIZED:String(authorized)}[k])}})
  vi.spyOn(console,'error').mockImplementation(()=>{})
  createClient.mockImplementation(()=>({auth:{getUser:async()=>({data:{user:authenticated?{id:'actor'}:null},error:null})},from:(table:string)=>{
   const result=()=>({data:table==='app_users'?{active:true}:table==='app_user_roles'?[{role_code:academic?'DIRECTOR_ACADEMICO':'ADMIN_SISTEMA'}]:table==='app_roles'?[{code:'DIRECTOR_ACADEMICO',active:true}]:table==='catalogo_valor'?{id:'dni-type'}:exists?[{id:'inactive-existing'}]:[],error:table==='alumno'&&localError?{message:'PII SQL'}:null})
@@ -42,3 +42,11 @@ it('aborts after five seconds without leaking the token',async()=>{
 })
 it('does not enable production consumption before explicit authorized-use confirmation',async()=>{hosted=true;const blocked=await serveDni(req());expect(blocked.status).toBe(503);expect(await blocked.json()).toEqual({code:'DNI_DISABLED'});expect(upstream).not.toHaveBeenCalled();authorized=true;expect((await serveDni(req())).status).toBe(200)})
 it('missing secret preserves the local result and prevents provider access',async()=>{token='';const res=await serveDni(req());expect(res.status).toBe(503);expect(await res.json()).toEqual({code:'DNI_CONFIG'});expect(upstream).not.toHaveBeenCalled()})
+it('hosted missing new keys fails closed before Auth or provider IO despite a legacy key',async()=>{
+ hosted=true
+ vi.stubGlobal('Deno',{env:{get:(k:string)=>({SUPABASE_URL:'https://abcdefghijklmnopqrst.supabase.co',SUPABASE_ANON_KEY:'anon',APISPERU_TOKEN:token}[k])}})
+ createClient.mockClear()
+ expect((await serveDni(req())).status).toBe(503)
+ expect(createClient).not.toHaveBeenCalled()
+ expect(upstream).not.toHaveBeenCalled()
+})

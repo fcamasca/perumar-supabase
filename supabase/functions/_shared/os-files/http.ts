@@ -1,3 +1,4 @@
+import { runtimeKey, supabaseFetch } from '../runtime-keys.ts'
 import { createClient } from '@supabase/supabase-js'
 import { academicActor } from '../expediente/operation.ts'
 import { DocumentoError, MAX_FILE, identifier, version, object } from '../expediente/contract.ts'
@@ -57,9 +58,9 @@ export async function serveOrderFile(req:Request,kind:'cargar'|'descargar') {
   const auth=req.headers.get('Authorization')
   if(!auth?.startsWith('Bearer '))throw new DocumentoError(401,'DOCUMENT_SESSION')
   const signal=AbortSignal.timeout(15000)
-  const transport={fetch:(input:RequestInfo|URL,init?:RequestInit)=>fetch(input,{...init,signal})}
+  const transport={fetch:(input:RequestInfo|URL,init?:RequestInit)=>supabaseFetch(input, init, signal)}
   const options={db:{retry:false},global:transport,auth:{persistSession:false,autoRefreshToken:false}}
-  const user=createClient(url,Deno.env.get('SUPABASE_ANON_KEY')!,{...options,global:{...transport,headers:{Authorization:auth}}})
+  const user=createClient(url,runtimeKey(url, 'publishable', (name) => Deno.env.get(name)),{...options,global:{...transport,headers:{Authorization:auth}}})
   const actor=await academicActor(user)
   const content=req.headers.get('Content-Type')??''
   let input:{os_id:string;expected_updated_at:string}|{os_id:string;archivo_id:string},file:File|undefined
@@ -85,7 +86,7 @@ export async function serveOrderFile(req:Request,kind:'cargar'|'descargar') {
   }
   // Do not create/use a privileged client until JWT, current role and resource access pass.
   await orderAccess(user,input.os_id)
-  const server=createClient(url,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,options)
+  const server=createClient(url,runtimeKey(url, 'secret', (name) => Deno.env.get(name)),options)
   if(kind==='cargar'&&file&&'expected_updated_at' in input) {
    const result=await uploadOrderFile(user,server,actor,input,file)
    headers.set('Content-Type','application/json')

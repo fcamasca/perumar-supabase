@@ -1,3 +1,4 @@
+import { runtimeKey, supabaseFetch } from '../runtime-keys.ts'
 import { createClient } from '@supabase/supabase-js'
 import {
   DocumentoError,
@@ -85,14 +86,14 @@ export async function serveExpediente(req: Request, kind: 'cargar' | 'generar' |
     if (!auth?.startsWith('Bearer ')) throw new DocumentoError(401, 'DOCUMENT_SESSION')
     const signal = AbortSignal.timeout(15000),
       transport = {
-        fetch: (input: RequestInfo | URL, init?: RequestInit) => fetch(input, { ...init, signal }),
+        fetch: (input: RequestInfo | URL, init?: RequestInit) => supabaseFetch(input, init, signal),
       }
-    const user = createClient(apiUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
+    const user = createClient(apiUrl, runtimeKey(apiUrl, 'publishable', (name) => Deno.env.get(name)), {
       db: { retry: false },
       global: { ...transport, headers: { Authorization: auth } },
       auth: { persistSession: false, autoRefreshToken: false },
     })
-    const server = createClient(apiUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
+    const server = createClient(apiUrl, runtimeKey(apiUrl, 'secret', (name) => Deno.env.get(name)), {
       db: { retry: false },
       global: transport,
       auth: { persistSession: false, autoRefreshToken: false },

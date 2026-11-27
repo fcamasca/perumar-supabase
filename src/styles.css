@@ -656,3 +656,8 @@ form.enrollment-detail-form { max-width:none; margin:1rem 0 0; padding:1rem 0 0;
 
 .file-type-icon {width:1.8rem;height:1.8rem;flex:none}
 .ficha-pdf-action .icon-action > svg {width:1.8rem;height:1.8rem}
+
+/* Keep document actions inside the dialog without a second card. */
+form.document-action-form { margin:1.25rem 0 0; padding:0; border:0; border-radius:0; box-shadow:none; background:transparent; }
+.document-action-form > fieldset:empty { display:none; }
+.document-action-form > .form-actions { border-top:0; padding-top:0; margin-top:0; }

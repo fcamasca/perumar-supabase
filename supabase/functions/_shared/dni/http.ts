@@ -1,3 +1,4 @@
+import { runtimeKey, supabaseFetch } from '../runtime-keys.ts'
 import { createClient } from '@supabase/supabase-js'
 import { academicActor } from '../expediente/operation.ts'
 import { DocumentoError } from '../expediente/contract.ts'
@@ -27,7 +28,7 @@ export async function serveDni(req:Request) {
   if(req.method!=='POST')throw new DniError(405,'DNI_METHOD')
   const auth=req.headers.get('Authorization')
   if(!auth?.startsWith('Bearer '))throw new DniError(401,'DNI_SESSION')
-  const user=createClient(url,Deno.env.get('SUPABASE_ANON_KEY')!,{db:{retry:false},global:{headers:{Authorization:auth},fetch:(input:RequestInfo|URL,init?:RequestInit)=>fetch(input,{...init,signal})},auth:{persistSession:false,autoRefreshToken:false}})
+  const user=createClient(url,runtimeKey(url, 'publishable', (name) => Deno.env.get(name)),{db:{retry:false},global:{headers:{Authorization:auth},fetch:(input:RequestInfo|URL,init?:RequestInit)=>supabaseFetch(input, init, signal)},auth:{persistSession:false,autoRefreshToken:false}})
   await academicActor(user)
   if(!(req.headers.get('Content-Type')??'').startsWith('application/json')||Number(req.headers.get('Content-Length')??0)>512)throw new DniError(422,'DNI_INPUT')
   let data:unknown

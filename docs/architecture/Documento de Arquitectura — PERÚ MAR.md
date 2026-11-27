@@ -1,6 +1,8 @@
 # Documento de Arquitectura — PERÚ MAR
 
-Documento original: 23/11/2026 · Frankz Camasca. Revisión: **26/11/2026 (America/Lima)**.
+Documento original: 23/11/2026 · Frankz Camasca. Revisión: **27/11/2026 (America/Lima)**.
+
+**Estado hospedado vigente:** Supabase perumar-prod y Cloudflare Pages ejecutados; 42 migraciones (41 iniciales más la adición autorizada de asignaturas), ocho funciones ACTIVE v1 con JWT, claves nuevas y buckets privados. H7 está CLOSED / ACEPTADO / INTEGRADO en main `43bc1fc`. El [registro de cierre hospedado](../deployment/closure-2026-11-27.md) prevalece sobre las referencias temporales históricas de esta revisión. La integración de feature/hosted-deployment se acredita exclusivamente con el merge y CI del PR #8; cierre operativo pendiente; respaldo cifrado capturado, recuperación completa no acreditada. **No declarado apto para datos reales.** H8/H9 no iniciados; se mantienen las decisiones y diagramas existentes.
 
 **Referencia técnica:** `44d60b12fa9f932b48e00e4d7720d0a1bb424b89`, rama `feature/h7-sponsors-billing-ui`. La versión original describía `fd230a7`; esta revisión incorpora H7 y la mejora DNI de H3. El cierre fue autorizado humanamente el 26/11/2026; [acceptance H7](../specs/H7-sponsors-billing/acceptance.md) registra candidato, validaciones y condiciones de integración. No se introducen decisiones arquitectónicas nuevas.
 
@@ -8,7 +10,7 @@ Documento original: 23/11/2026 · Frankz Camasca. Revisión: **26/11/2026 (Ameri
 
 PERÚ MAR es una aplicación web de gestión académica que registra alumnos, matrículas, pagos y expedientes documentales, construida como una SPA en React sobre Supabase.
 
-H6.2 está integrado; H7 está **CLOSED / ACEPTADO**, con integración autorizada condicionada a CI SUCCESS del PR y del merge exacto. La mejora DNI corresponde a H3 y conserva sus commits independientes. Cada hito tiene su especificación en `docs/specs/`.
+H6.2 y H7 están integrados; H7 permanece **CLOSED / ACEPTADO / INTEGRADO**. La mejora DNI corresponde a H3 y conserva sus commits independientes. Cada hito tiene su especificación en `docs/specs/`. El cierre hospedado posterior no reabre esos hitos.
 
 | Hito | Capacidad que entrega |
 | --- | --- |
@@ -438,7 +440,7 @@ El MVP continúa con residuales aceptados que siguen sin resolverse; los más re
 | Limpieza física de archivos | Manual: PDFs de H5 y reservas nunca confirmadas de H6. La purga definitiva queda diferida a H9 | `operations.md` de H6 |
 | Compatibilidad de PDF | Conservadora: admite compresión estructural acotada y URI HTTP/HTTPS/mailto seguras; mantiene rechazo de cifrado, formularios, contenido activo y estructuras no verificables. No equivale a antivirus/CDR | `operations.md` de H6 |
 | Reportes CSV y PDF | Sin instantánea transaccional; la memoria de exportación crece con el volumen | `docs/PLAN_MVP.md`, H6.1 |
-| Seguridad | Falta CSP, configuración de Auth alojado y auditoría de dependencias; revisión actual de dependencias pendiente; no se afirma mantenimiento del proveedor sin verificación específica | Sección 6 |
+| Seguridad | CSP hospedada implementada; Auth revisado previamente en Dashboard, recaptura bloqueada por auth_config_read. Revisión actual de dependencias pendiente; no se afirma mantenimiento del proveedor sin verificación específica | Sección 6 y cierre hospedado |
 | Proveedores externos | OpenRUC/RUC20 y condiciones/cuota del proveedor DNI; alternativa manual y autorización de producción por confirmar | H7 OpenRUC / H3 DNI |
 
 **Próximos hitos y evoluciones.**
@@ -473,7 +475,7 @@ El MVP continúa con residuales aceptados que siguen sin resolverse; los más re
 - [PLAN](../PLAN_MVP.md), [Gate A01](GATE-A01-continuidad-supabase.md), [Gate 1 H7](../specs/H7-sponsors-billing/gate-1.md) y Specs históricas gobiernan autorización/alcance. Los ADR de este documento son etiquetas descriptivas, no decisiones humanas nuevas.
 - [Fuentes/cierre](../../supabase/migrations/20261113010000_h5_current_and_closure_source.sql), [reportes H7](../../supabase/migrations/20261125060000_h7_read_reports.sql), [numeración sin relleno](../../supabase/migrations/20261125070000_h7_document_number_as_entered.sql), [validador PDF](../../supabase/functions/_shared/expediente/validateFile.ts).
 - [Evidencia H7](../specs/H7-sponsors-billing/technical-results.md): 839/839 Vitest en 50 archivos en el cierre; 192/192 núcleo financiero con reconstrucción/concurrencia/JWT; 41/41 reportes y 52/52 datos tributarios aislados, además de baterías de patrocinio, cobertura OS, disponibilidad de OS y PDF OS. Lint/tipos/Edge/build correctos. La CI completa y las referencias exactas gobiernan la integración; no se hereda SUCCESS de otro SHA.
-- El workflow actual se dispara en ramas feature y PR a main, además de ejecución manual. No asumir ejecución por cualquier push a main ni heredar CI de otro SHA. Revisar el resultado exacto de cada candidato.
+- El workflow se dispara en ramas feature, PR a main y push a main, además de ejecución manual. Main exige regresión integral sobre su SHA exacto; no heredar CI de otro SHA. Revisar el resultado exacto de cada candidato.
 - Los estados iniciales de documentos históricos de operación se leen junto con sus registros posteriores de aceptación y el PLAN vigente. No se reescriben Gates/Specs históricos para simular una aprobación nueva.
 
 **Actualización de cierre autorizada el 26/11/2026.** Mantiene los ocho diagramas Mermaid y las decisiones arquitectónicas existentes. Vincula el cierre H7 y la mejora H3 a su evidencia; no incorpora secretos, despliega producción ni inicia H8. Los límites de validación y residuales se conservan.

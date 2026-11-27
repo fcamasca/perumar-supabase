@@ -29,6 +29,7 @@ export function academicError(error: { code?: string; message?: string } | null,
     return field ? `El ${field} de ${entity} ya está utilizado, incluso en registros inactivos.` : entity === 'Asignatura' ? 'El nombre de Asignatura ya está utilizado, incluso en registros inactivos.' : entity === 'Curso' ? 'El nombre o sigla de Curso ya está utilizado, incluso en registros inactivos.' : 'La relación o el código ya está registrado.'
   }
   if (error?.code === '23514') {
+    if (error.message === 'Ciclo con matrícula activa: solo Director, promoción y fechas') return 'Este ciclo ya tiene matrículas activas. Solo el Director puede realizar cambios en el ciclo.'
     if (error.message === 'Materias de Ciclo con matrícula activa no editables') return 'Este Ciclo tiene matrículas activas. Solo el Director puede confirmar cambios en sus asignaturas. No se realizó ningún cambio.'
     if (/Cada Carrera requiere al menos|Seleccione al menos una Materia activa/.test(error.message ?? '')) return 'El Curso debe conservar al menos una Asignatura activa. Asocia primero otra Asignatura activa.'
     if (error.message === 'El Ciclo requiere una Materia activa') return 'El Ciclo debe tener al menos una Asignatura activa.'
@@ -235,6 +236,7 @@ export function Ciclos({initialCycleId}:{initialCycleId?:string}={}) {
   const editEpoch = useRef(0)
   const [rows, setRows] = useState<Ciclo[]>([]), [carreras, setCarreras] = useState<Carrera[]>([]), [materias, setMaterias] = useState<Materia[]>([])
   const [departamentos, setDepartamentos] = useState<Ref[]>([]), [provincias, setProvincias] = useState<(Ref & { departamento_id: string })[]>([]), [distritos, setDistritos] = useState<(Ref & { provincia_id: string })[]>([]), [capitanias, setCapitanias] = useState<Ref[]>([]), [motivos, setMotivos] = useState<Valor[]>([])
+  const [subjectChanges, setSubjectChanges] = useState<Record<string, boolean>>({})
   const [selected, setSelected] = useState<Ciclo | null>(null), [draft, setDraft] = useState<CicloDraft>(blankCiclo), [relations, setRelations] = useState<Relacion[]>([]), [inherited, setInherited] = useState<string[]>([]), [additional, setAdditional] = useState<string[]>([])
   const [search, setSearch] = useState(''), [estado, setEstado] = useState(''), [message, setMessage] = useState(''), [busy, setBusy] = useState(false), [revision, setRevision] = useState(0)
   const { ask, dialog } = useConfirmation(busy)
@@ -248,7 +250,9 @@ export function Ciclos({initialCycleId}:{initialCycleId?:string}={}) {
   const canModify = state.roles?.some(role => role === 'DIRECTOR_ACADEMICO' || role === 'COORDINADOR_ACADEMICO') ?? false
   const canEditCycle = (row: Ciclo) => canModify && ['PROGRAMADO', 'EN_CURSO'].includes(row.estado_codigo)
   const editable = canModify && (!selected || canEditCycle(selected))
-  const dirty = !!selected && (Object.keys(blankCiclo).some(key => (draft[key as keyof CicloDraft] ?? '') !== (selected[key as keyof CicloDraft] ?? '')) || additional.length > 0)
+  const dataDirty = !!selected && Object.keys(blankCiclo).some(key => (draft[key as keyof CicloDraft] ?? '') !== (selected[key as keyof CicloDraft] ?? ''))
+  const subjectsDirty = Object.keys(subjectChanges).length > 0
+  const dirty = dataDirty || subjectsDirty
   const [inheritedStatus, setInheritedStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   useEffect(() => {
     let current = true
@@ -310,35 +314,55 @@ export function Ciclos({initialCycleId}:{initialCycleId?:string}={}) {
     setOpen(true); setSubjectSearch(''); setSubjectId(''); if(section !== 1) setShowRetired(false); setRelationsStatus(row ? 'loading' : 'ready'); setHasActiveEnrollments(row ? null : false)
     const request = ++editEpoch.current
     setSelected(row); setDraft(row ? { empresa_patrocinadora_id: row.empresa_patrocinadora_id ?? null, carrera_id: row.carrera_id, fecha_inicio: row.fecha_inicio, fecha_fin: row.fecha_fin, nombre_promocion: row.nombre_promocion ?? '', departamento_id: row.departamento_id, provincia_id: row.provincia_id, distrito_id: row.distrito_id, capitania_id: row.capitania_id } : blankCiclo)
-    setAdditional([]); setRelations([]); setMessage(''); setDestino(''); setMotivoId(''); setDetalle('')
+    setSubjectChanges({}); setAdditional([]); setRelations([]); setMessage(''); setDestino(''); setMotivoId(''); setDetalle('')
     if (row) { const [r,enrolled] = await Promise.all([client.from('ciclo_materia').select('id,materia_id,activo,origen,motivo_inactivacion').eq('ciclo_id', row.id),client.from('matricula').select('id').eq('ciclo_id',row.id).eq('estado_codigo','ACTIVO').limit(1)]); if (request !== editEpoch.current) return; if (!r.error && !enrolled.error) { setRelations(r.data); setHasActiveEnrollments(enrolled.data.length>0); setRelationsStatus('ready') } else { setRelationsStatus('error'); setMessage('No se pudieron consultar asignaturas y matrículas del Ciclo.') } }
   }
   async function save(event: FormEvent) {
     event.preventDefault()
-    if (readOnly || !editable || companyStatus!=='ready' || tariffsDirty || documentsDirty || inheritedStatus === 'loading' || inheritedStatus === 'error') return
+    if (readOnly || !editable || subjectsDirty || companyStatus!=='ready' || tariffsDirty || documentsDirty || inheritedStatus === 'loading' || inheritedStatus === 'error') return
     if (!selected && !materias.some(m => m.active && (inherited.includes(m.id) || additional.includes(m.id)))) { setMessage('Selecciona un Curso con Asignaturas activas o añade al menos una Asignatura activa.'); return }
     if (selected && selected.carrera_id !== draft.carrera_id && await ask({ title: 'Cambiar Curso del Ciclo', confirmLabel: 'Cambiar Curso', description: `${academicLabel(carreras.find(c => c.id === draft.carrera_id)!)}. Las asignaturas heredadas del Curso actual se retirarán del Ciclo. Las asignaturas adicionales se conservarán y se agregarán las asignaturas faltantes de la nuevo Curso. Las retiradas no se reactivarán.` }) === null) return
     setBusy(true)
     const r = await client.rpc('guardar_ciclo', { p: { ...(selected ? { id: selected.id, expected_updated_at: selected.updated_at } : {}), ...draft, nombre_promocion: draft.nombre_promocion || null }, adicionales: additional })
-    setBusy(false); if (r.error) { setMessage(academicError(r.error)); return }; ++editEpoch.current; setOpen(false); setMessage(selected ? 'Ciclo actualizado correctamente.' : 'Ciclo creado correctamente.'); setRevision(x => x + 1)
+    setBusy(false); if (r.error) { setMessage(academicError(r.error)); return }; if (selected) { await edit(r.data as Ciclo, false, 0); setMessage('Datos del Ciclo guardados correctamente.') } else { ++editEpoch.current; setOpen(false); setMessage('Ciclo creado correctamente.') }; setRevision(x => x + 1)
   }
-  async function changeSubject(subject: string, active: boolean, confirmed = false) {
-    if (!selected) return
+  function stageSubject(subject: string, active: boolean) {
+    const original = relations.find(r => r.materia_id === subject)
+    setSubjectChanges(current => {
+      const next = { ...current }
+      if (original ? original.activo === active : !active) delete next[subject]
+      else next[subject] = active
+      return next
+    })
+    setSubjectSearch(''); setSubjectId(''); setMessage('')
+  }
+  async function saveSubjects(confirmed = false) {
+    if (!selected || readOnly || !editable || busy || dataDirty || tariffsDirty || documentsDirty || !subjectsDirty || relationsStatus !== 'ready' || hasActiveEnrollments === null || (hasActiveEnrollments && !director)) return
+    if (hasActiveEnrollments && !confirmed) {
+      if (await ask({ title: 'Guardar asignaturas', description: activeSubjectWarning, confirmLabel: 'Guardar asignaturas', sensitive: true }) === null) return
+      confirmed = true
+    } else if (!confirmed && Object.keys(subjectChanges).some(id => relations.some(r => r.materia_id === id))) {
+      if (await ask({ title: 'Guardar asignaturas', description: 'Se guardarán los cambios de asignaturas de este ciclo. Se conservará su historial.', confirmLabel: 'Guardar asignaturas', sensitive: true }) === null) return
+    }
     setBusy(true); setMessage('')
-    const r = await client.rpc('cambiar_materia_ciclo', { ciclo_id: selected.id, materia_id: subject, expected_updated_at: selected.updated_at, activo: active, ...(confirmed ? {confirmar_matriculas_activas:true} : {}) })
+    const r = await client.rpc('guardar_asignaturas_ciclo', {
+      p_ciclo_id: selected.id, p_expected_updated_at: selected.updated_at,
+      p_cambios: Object.entries(subjectChanges).map(([materia_id, activo]) => ({ materia_id, activo })),
+      p_confirmar_matriculas_activas: confirmed,
+    })
     setBusy(false)
-    if (r.error?.code==='23514' && r.error.message==='Confirmación requerida para asignaturas con matrículas activas' && director && !confirmed) {
+    if (r.error?.code === '23514' && r.error.message === 'Confirmación requerida para asignaturas con matrículas activas' && director && !confirmed) {
       setHasActiveEnrollments(true)
-      if(await ask({title:'Modificar asignaturas con matrículas activas',description:activeSubjectWarning,confirmLabel:'Continuar',sensitive:true})!==null) await changeSubject(subject,active,true)
+      if (await ask({ title: 'Guardar asignaturas', description: activeSubjectWarning, confirmLabel: 'Guardar asignaturas', sensitive: true }) !== null) await saveSubjects(true)
       return
     }
     if (r.error) { setMessage(academicError(r.error)); return }
-    void edit(r.data as Ciclo,false,1); setMessage('Asignaturas del Ciclo actualizadas correctamente.'); setRevision(x=>x+1)
+    await edit(r.data as Ciclo, false, 1)
+    setMessage('Asignaturas del Ciclo guardadas correctamente.'); setRevision(x => x + 1)
   }
-  async function relation(row: Relacion) {
-    if (!selected || readOnly || !editable || dirty || tariffsDirty || documentsDirty || relationsStatus !== 'ready' || (hasActiveEnrollments && !director)) return
-    if (await ask({ title: row.activo ? 'Retirar Asignatura del Ciclo' : 'Reactivar Asignatura del Ciclo', confirmLabel: row.activo ? 'Retirar Asignatura' : 'Reactivar Asignatura', sensitive: row.activo || !!hasActiveEnrollments, description: `${academicLabel(materias.find(m => m.id === row.materia_id)!)}. ${hasActiveEnrollments ? activeSubjectWarning : row.activo ? (row.origen === 'HEREDADA' ? 'Continuará perteneciendo a el Curso, pero dejará de estar activa únicamente en este Ciclo. Se conserva su historial y los cambios del Curso no la reactivarán.' : 'Dejará de estar activa únicamente en este Ciclo, sin borrar su historial.') : 'Se reactivará explícitamente esta relación conservando su origen.'}` }) === null) return
-    await changeSubject(row.materia_id,!row.activo,hasActiveEnrollments===true)
+  function relation(row: Relacion) {
+    if (!selected || readOnly || !editable || busy || dataDirty || tariffsDirty || documentsDirty || relationsStatus !== 'ready' || hasActiveEnrollments === null || (hasActiveEnrollments && !director)) return
+    stageSubject(row.materia_id, !row.activo)
   }
   async function transition(event: FormEvent) {
     event.preventDefault(); if (!selected || !director || !editable || readOnly || dirty || tariffsDirty || documentsDirty) return
@@ -348,19 +372,21 @@ export function Ciclos({initialCycleId}:{initialCycleId?:string}={}) {
   }
   const referenceOptions = (options: Ref[], current: string) => options.filter(x => x.active || x.id === current).map(x => <option key={x.id} value={x.id}>{'sigla' in x ? academicLabel(x as Carrera) : x.nombre}{!x.active ? ' (inactivo histórico)' : ''}</option>)
   function cancelEditing() { setDocumentsReset(v=>v+1); setTariffsReset(v=>v+1); if (selected) void edit(selected, true, tab); else {++editEpoch.current;setOpen(false)} }
-  const previewRelations: Relacion[] = selected ? relations : [
+  const previewRelations: Relacion[] = selected ? [
+    ...relations.map(r => ({ ...r, activo: subjectChanges[r.materia_id] ?? r.activo })),
+    ...Object.entries(subjectChanges).filter(([id]) => !relations.some(r => r.materia_id === id)).map(([id, active]) => ({ id: `pending-${id}`, materia_id: id, activo: active, origen: 'ADICIONAL', motivo_inactivacion: null })),
+  ] : [
     ...materias.filter(m=>m.active && inherited.includes(m.id)).map(m=>({id:`career-${m.id}`,materia_id:m.id,activo:true,origen:'HEREDADA',motivo_inactivacion:null})),
     ...additional.filter(id=>!materias.some(m=>m.id===id && m.active && inherited.includes(id))).map(id=>({id:`additional-${id}`,materia_id:id,activo:true,origen:'ADICIONAL',motivo_inactivacion:null})),
   ]
   const availableSubjects = materias.filter(m=>m.active && !previewRelations.some(r=>r.materia_id===m.id))
   const normalizedSubjectSearch = subjectSearch.normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase()
   const matchingSubjects = normalizedSubjectSearch && !subjectId ? availableSubjects.filter(m=>m.nombre.normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(normalizedSubjectSearch)) : []
-  const canAddSubject = !readOnly && editable && !busy && !dirty && !tariffsDirty && relationsStatus==='ready' && inheritedStatus==='ready' && (!selected || hasActiveEnrollments!==null) && (!hasActiveEnrollments || director)
+  const canAddSubject = !readOnly && editable && !busy && !dataDirty && !tariffsDirty && !documentsDirty && relationsStatus==='ready' && inheritedStatus==='ready' && (!selected || hasActiveEnrollments!==null) && (!hasActiveEnrollments || director)
   async function addSubject() {
     if (!canAddSubject || !availableSubjects.some(m=>m.id===subjectId)) return
     if (!selected) { setAdditional(ids=>[...ids,subjectId]); setSubjectSearch(''); setSubjectId(''); return }
-    if(hasActiveEnrollments && await ask({title:'Agregar asignatura con matrículas activas',description:activeSubjectWarning,confirmLabel:'Agregar Asignatura',sensitive:true})===null) return
-    await changeSubject(subjectId,true,hasActiveEnrollments===true)
+    stageSubject(subjectId, true)
   }
 
   const cycleSubjects = <>
@@ -368,7 +394,8 @@ export function Ciclos({initialCycleId}:{initialCycleId?:string}={}) {
     <p className="help-text">Las asignaturas del Curso se incorporan automáticamente al crear el Ciclo. Puedes agregar asignaturas adicionales o retirar una asignatura únicamente de este Ciclo.</p>
     {hasActiveEnrollments && <p role="note" className="help-text">{director ? 'Este Ciclo tiene matrículas activas. Cambiar sus asignaturas requiere tu confirmación.' : 'Este Ciclo tiene matrículas activas. Solo el Director puede modificar sus asignaturas.'}</p>}
     {!selected && <p className="help-text">Esta lista se guardará al crear el Ciclo.</p>}
-    {!readOnly && dirty && <p className="help-text">Guarda o cancela los cambios del Ciclo para modificar sus asignaturas.</p>}
+    {!readOnly && dataDirty && <p className="help-text">Guarda o cancela los cambios de Datos para modificar las asignaturas.</p>}
+    {selected && subjectsDirty && <p role="status">Hay cambios de asignaturas sin guardar.</p>}
     {(relationsStatus==='loading' || inheritedStatus==='loading') && <p role="status">Cargando asignaturas del Ciclo…</p>}
     {(relationsStatus==='error' || inheritedStatus==='error') && <p role="alert">No se pudieron consultar las asignaturas. Vuelve a abrir la ficha antes de modificarlas.</p>}
     {inheritedStatus==='idle' && <p>Selecciona un Curso para ver sus Asignaturas.</p>}
@@ -378,16 +405,20 @@ export function Ciclos({initialCycleId}:{initialCycleId?:string}={}) {
       {canAddSubject && normalizedSubjectSearch && !subjectId && <div className="cycle-subject-results"><ul aria-label="Resultados de asignaturas adicionales">{matchingSubjects.slice(0,8).map(m=><li key={m.id}><button type="button" onClick={()=>{setSubjectId(m.id);setSubjectSearch(m.nombre)}}>{m.nombre}</button></li>)}</ul><p className="help-text" role="status">{matchingSubjects.length ? matchingSubjects.length>8 ? 'Se muestran 8 resultados. Escribe más para precisar la búsqueda.' : `${matchingSubjects.length} coincidencias` : 'No hay asignaturas activas disponibles que coincidan.'}</p></div>}
     </div>}
     {relationsStatus==='ready' && inheritedStatus!=='loading' && inheritedStatus!=='error' && <div className="table-scroll"><table aria-label="Asignaturas del Ciclo"><thead><tr><th scope="col">Asignatura</th><th scope="col">Origen</th><th scope="col">Estado</th><th scope="col">Acción</th></tr></thead><tbody>
-      {previewRelations.filter(r=>showRetired || r.activo).map(r=>{const m=materias.find(m=>m.id===r.materia_id);return <tr key={r.id}><td>{m?.nombre ?? 'Referencia no disponible'}</td><td>{r.origen==='HEREDADA'?'Curso':'Adicional'}</td><td><span title={!r.activo ? r.motivo_inactivacion==='CAMBIO_CARRERA'?'Retirada por cambio de Curso':'Retirada manualmente':undefined}>{r.activo?'Activa':'Retirada'}</span></td><td>{!readOnly && editable ? selected ? <button type="button" className="secondary" disabled={busy || dirty || tariffsDirty || documentsDirty || relationsStatus!=='ready' || (!!hasActiveEnrollments && !director)} onClick={()=>void relation(r)}>{r.activo?'Retirar':'Reactivar'}</button> : r.origen==='ADICIONAL' ? <button type="button" className="secondary" disabled={busy} onClick={()=>setAdditional(ids=>ids.filter(id=>id!==r.materia_id))}>Quitar</button> : 'Al crear el Ciclo' : 'Solo consulta'}</td></tr>})}
-      {!previewRelations.some(r=>showRetired || r.activo) && <tr><td colSpan={4}>{showRetired?'No hay asignaturas registradas.':'No hay asignaturas activas en este Ciclo.'}</td></tr>}
+      {previewRelations.filter(r=>showRetired || r.activo || Object.hasOwn(subjectChanges,r.materia_id)).map(r=>{const m=materias.find(m=>m.id===r.materia_id);return <tr key={r.id}><td>{m?.nombre ?? 'Referencia no disponible'}</td><td>{r.origen==='HEREDADA'?'Curso':'Adicional'}</td><td><span title={!r.activo ? r.motivo_inactivacion==='CAMBIO_CARRERA'?'Retirada por cambio de Curso':'Retirada manualmente':undefined}>{r.activo?'Activa':'Retirada'}{Object.hasOwn(subjectChanges,r.materia_id)?' (sin guardar)':''}</span></td><td>{!readOnly && editable ? selected ? <button type="button" className="secondary" disabled={busy || dataDirty || tariffsDirty || documentsDirty || relationsStatus!=='ready' || hasActiveEnrollments===null || (!!hasActiveEnrollments && !director)} onClick={()=>void relation(r)}>{r.activo?'Retirar':'Reactivar'}</button> : r.origen==='ADICIONAL' ? <button type="button" className="secondary" disabled={busy} onClick={()=>setAdditional(ids=>ids.filter(id=>id!==r.materia_id))}>Quitar</button> : 'Al crear el Ciclo' : 'Solo consulta'}</td></tr>})}
+      {!previewRelations.some(r=>showRetired || r.activo || Object.hasOwn(subjectChanges,r.materia_id)) && <tr><td colSpan={4}>{showRetired?'No hay asignaturas registradas.':'No hay asignaturas activas en este Ciclo.'}</td></tr>}
     </tbody></table></div>}
     {selected && <label className="show-retired-subjects"><input type="checkbox" checked={showRetired} onChange={e=>setShowRetired(e.currentTarget.checked)}/>Mostrar retiradas</label>}
+    {selected && !readOnly && <div className="form-actions">
+      <button type="button" className="secondary" disabled={busy || !subjectsDirty} onClick={()=>{setSubjectChanges({});setSubjectSearch('');setSubjectId('');setMessage('')}}>Cancelar cambios</button>
+      <button type="button" disabled={!canAddSubject || !subjectsDirty || documentsBusy || tariffsBusy} onClick={()=>void saveSubjects()}>Guardar asignaturas</button>
+    </div>}
   </>
   if(open) return <section className="academic-record cycle-record">{dialog}<AcademicRecordHeader title={selected ? 'Ficha de Ciclo' : 'Nuevo Ciclo'} name={selected?.codigo_ciclo} status={selected && <StatusBadge value={selected.estado_codigo}/>} editing={!readOnly} busy={busy||enrollmentPanelOpen||tariffsBusy||documentsBusy} backLabel="Volver a ciclos" editLabel="Editar Ciclo" onBack={()=>{++editEpoch.current;setOpen(false)}} onEdit={readOnly && selected && canEditCycle(selected) ? ()=>setReadOnly(false) : undefined}/><Notice message={message}/>
     {selected && !editable && <p>{['PROGRAMADO','EN_CURSO'].includes(selected.estado_codigo) ? 'Solo consulta. Tu acceso no permite modificar este Ciclo.' : 'Solo consulta. Los datos académicos del Ciclo ya no admiten cambios. El expediente conserva sus acciones autorizadas.'}</p>}
     <AcademicTabs id="cycle-sections" names={selected ? ['Datos','Asignaturas','Tarifas','Matrículas','Estado','Documentos','Reportes'] : ['Datos','Asignaturas']} active={tab} disabled={busy||enrollmentPanelOpen||tariffsBusy||documentsBusy} onChange={setTab}/>
     <div hidden={tab>=2}><InlineForm id={cycleFormId} className="academic-record-form" key={`${selected?.id ?? 'new'}-${readOnly}`} aria-describedby={message ? 'academic-message' : undefined} onInvalidField={field=>setTab(Number(field.closest<HTMLElement>('[data-academic-tab]')?.dataset.academicTab ?? 0))} onSubmit={event=>void save(event)}>
-      <div hidden={tab!==0} data-academic-tab="0" role="tabpanel" tabIndex={0} id="cycle-sections-panel-0" aria-labelledby="cycle-sections-tab-0" className="student-section-panel cycle-data-panel"><fieldset className="cycle-data" disabled={busy}><legend>Datos del Ciclo</legend><fieldset className="academic-fields" aria-label="Datos principales">
+      <div hidden={tab!==0} data-academic-tab="0" role="tabpanel" tabIndex={0} id="cycle-sections-panel-0" aria-labelledby="cycle-sections-tab-0" className="student-section-panel cycle-data-panel"><fieldset className="cycle-data" disabled={busy||subjectsDirty}><legend>Datos del Ciclo</legend><fieldset className="academic-fields" aria-label="Datos principales">
         <label><span className="field-label">Curso{!readOnly && ' *'}</span>{readOnly ? <input aria-label="Curso" readOnly value={academicLabel(carreras.find(c=>c.id===draft.carrera_id))}/> : <select aria-label="Curso" required value={draft.carrera_id} onChange={e=>setDraft({...draft,carrera_id:formTextValue(e.currentTarget)})}><option value="">Seleccionar</option>{referenceOptions(carreras,draft.carrera_id)}</select>}</label>
         <label><span className="field-label">Empresa patrocinadora</span>{readOnly?<input aria-label="Empresa patrocinadora" readOnly value={draft.empresa_patrocinadora_id ? companies.find(c=>c.id===draft.empresa_patrocinadora_id)?.razon_social ?? 'No disponible' : 'Sin patrocinador'}/>:<select aria-label="Empresa patrocinadora" disabled={companyStatus!=='ready'} value={draft.empresa_patrocinadora_id??''} onChange={e=>setDraft({...draft,empresa_patrocinadora_id:e.target.value||null})}><option value="">Sin patrocinador</option>{draft.empresa_patrocinadora_id&&!companies.some(c=>c.id===draft.empresa_patrocinadora_id)&&<option value={draft.empresa_patrocinadora_id}>Empresa seleccionada</option>}{companies.map(c=><option key={c.id} value={c.id}>{c.razon_social} · {c.ruc}</option>)}</select>}<small>Se aplica a todas las matrículas del Ciclo.</small></label>
         {companyStatus==='loading'&&<p role="status">Consultando empresas…</p>}{companyStatus==='error'&&<p role="alert">No se pudieron consultar empresas. Vuelve a abrir el Ciclo antes de guardar.</p>}
@@ -399,7 +430,11 @@ export function Ciclos({initialCycleId}:{initialCycleId?:string}={}) {
         <label><span className="field-label">Provincia{!readOnly && ' *'}</span>{readOnly?<input aria-label="Provincia" readOnly value={provincias.find(x=>x.id===draft.provincia_id)?.nombre ?? 'Referencia no disponible'}/>:<select aria-label="Provincia" required value={draft.provincia_id} onChange={e=>setDraft({...draft,provincia_id:formTextValue(e.currentTarget),distrito_id:''})}><option value="">Seleccionar</option>{referenceOptions(provincias.filter(x=>x.departamento_id===draft.departamento_id),draft.provincia_id)}</select>}</label>
         <label><span className="field-label">Distrito{!readOnly && ' *'}</span>{readOnly?<input aria-label="Distrito" readOnly value={distritos.find(x=>x.id===draft.distrito_id)?.nombre ?? 'Referencia no disponible'}/>:<select aria-label="Distrito" required value={draft.distrito_id} onChange={e=>setDraft({...draft,distrito_id:formTextValue(e.currentTarget)})}><option value="">Seleccionar</option>{referenceOptions(distritos,draft.distrito_id)}</select>}</label>
         <label><span className="field-label">Capitanía{!readOnly && ' *'}</span>{readOnly?<input aria-label="Capitanía" readOnly value={capitanias.find(x=>x.id===draft.capitania_id)?.nombre ?? 'Referencia no disponible'}/>:<select aria-label="Capitanía" required value={draft.capitania_id} onChange={e=>setDraft({...draft,capitania_id:formTextValue(e.currentTarget)})}><option value="">Seleccionar</option>{referenceOptions(capitanias,draft.capitania_id)}</select>}</label>
-      </fieldset></fieldset></div>
+      </fieldset></fieldset>
+      {selected && !readOnly && <div className="form-actions">
+        <button type="button" className="secondary" disabled={busy||subjectsDirty||tariffsBusy||documentsBusy} onClick={()=>void edit(selected,false,0)}>Cancelar cambios</button>
+        <button type="submit" disabled={busy||subjectsDirty||companyStatus!=='ready'||tariffsBusy||tariffsDirty||documentsDirty||documentsBusy||inheritedStatus==='loading'||inheritedStatus==='error'}>Guardar datos</button>
+      </div>}</div>
       <div hidden={tab!==1} data-academic-tab="1" role="tabpanel" tabIndex={0} id="cycle-sections-panel-1" aria-labelledby="cycle-sections-tab-1" className="student-section-panel cycle-subject-panel">{cycleSubjects}</div>
 
     </InlineForm></div>
@@ -413,7 +448,7 @@ export function Ciclos({initialCycleId}:{initialCycleId?:string}={}) {
     </InlineForm></> : <p>{!editable ? 'Este Ciclo permanece solo para consulta.' : director?'Para cambiar el estado, selecciona Editar Ciclo.':'Solo el Director puede cambiar el estado.'}</p>}</div>}
     {selected&&<div hidden={tab!==5} role="tabpanel" tabIndex={0} id="cycle-sections-panel-5" aria-labelledby="cycle-sections-tab-5" className="student-section-panel"><CycleDocuments key={`${selected.id}-${documentsReset}`} cycle={selected} blocked={dirty||busy||tariffsDirty||tariffsBusy} onDirtyChange={setDocumentsDirty} onBusyChange={setDocumentsBusy}/></div>}
     {selected&&tab===6&&<div role="tabpanel" tabIndex={0} id="cycle-sections-panel-6" aria-labelledby="cycle-sections-tab-6" className="student-section-panel"><CycleReports key={selected.id} cycle={selected.id} cycleCode={selected.codigo_ciclo}/></div>}
-    {!readOnly&&<div className="form-actions cycle-record-actions"><button type="button" className="secondary" disabled={busy||tariffsBusy||documentsBusy||enrollmentPanelOpen} onClick={cancelEditing}>{selected?'Cancelar':'Cancelar / descartar formulario'}</button><button type="submit" form={cycleFormId} disabled={busy||companyStatus!=='ready'||tariffsBusy||tariffsDirty||documentsDirty||documentsBusy||enrollmentPanelOpen||inheritedStatus==='loading'||inheritedStatus==='error'}>Guardar Ciclo</button>{tariffsDirty&&<small>Guarda o cancela primero los cambios de Tarifas.</small>}</div>}
+    {!selected&&!readOnly&&<div className="form-actions cycle-record-actions"><button type="button" className="secondary" disabled={busy||tariffsBusy||documentsBusy||enrollmentPanelOpen} onClick={cancelEditing}>{selected?'Cancelar':'Cancelar / descartar formulario'}</button><button type="submit" form={cycleFormId} disabled={busy||companyStatus!=='ready'||tariffsBusy||tariffsDirty||documentsDirty||documentsBusy||enrollmentPanelOpen||inheritedStatus==='loading'||inheritedStatus==='error'}>Crear ciclo</button>{tariffsDirty&&<small>Guarda o cancela primero los cambios de Tarifas.</small>}</div>}
 
   </section>
   return <section>{dialog}<h2>Ciclos</h2><div className="filters academic-toolbar" role="search" aria-label="Búsqueda de ciclos"><AcademicSearch label="Buscar Ciclo por código o Curso" placeholder="Código de Ciclo o nombre de Curso" value={search} onChange={text=>{setSearch(text);setPage(0)}}/><label>Estado del listado<select value={estado} onChange={e=>{setEstado(e.currentTarget.value);setPage(0)}}><option value="">Todos</option>{['PROGRAMADO','EN_CURSO','CERRADO','DESIERTO','ANULADO'].map(x=><option key={x} value={x}>{x.replaceAll('_',' ')}</option>)}</select></label><div className="record-header-actions">{canModify&&<AcademicAction label="Crear Ciclo" createFor="Ciclos" icon="new" disabled={busy} onClick={()=>void edit(null)}/>}</div></div><Notice message={message}/>{loading&&<p role="status">Cargando ciclos…</p>}
