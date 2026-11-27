@@ -1,7 +1,7 @@
-# Primer despliegue hospedado — procedimiento preparado, no ejecutado
+# Primer despliegue hospedado — procedimiento y estado efectivo
 
 Base: main `43bc1fcfa986b046aa0db8801d9e4b7dba4585c7`. Rama: feature/hosted-deployment.
-Fase 1 modifica únicamente el repositorio. H7 permanece CLOSED / ACEPTADO / INTEGRADO. No inicia H8/H9, no autoriza infraestructura, migraciones remotas, publicación ni merge.
+El despliegue de Supabase y Pages fue ejecutado mediante autorizaciones posteriores. El cierre e integración están autorizados el 27/11/2026, sujetos a CI integral del candidato, PR y merge exacto. H7 permanece CLOSED / ACEPTADO / INTEGRADO; H8/H9 no iniciados. El estado efectivo, sus diferencias respecto del candidato inicial y los pendientes se registran en [cierre hospedado](closure-2026-11-27.md). Este documento conserva el procedimiento inicial como referencia; no repetir sus precondiciones de destino vacío sobre producción.
 
 ## 1. Validación y separación de entornos
 

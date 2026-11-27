@@ -708,6 +708,8 @@ El PLAN vigente debe reflejar el estado real del proyecto.
 
 # 13. Estado vigente
 
+**Actualización hospedada — 27/11/2026.** H7 permanece CLOSED / ACEPTADO / INTEGRADO en main `43bc1fc` (PR #7). Supabase perumar-prod y Pages están desplegados: ocho funciones v1, nuevas API Keys, APIsPERU bloqueado y 42 migraciones actuales, conservando las 41 originales. El usuario autoriza integrar feature/hosted-deployment mediante merge commit condicionado a CI integral del candidato/PR y SHA exacto de main. La integración todavía no se ha ejecutado. [Inventario, pruebas humanas efectivas y pendientes](deployment/closure-2026-11-27.md). Respaldo PostgreSQL y 24 objetos capturados/cifrados; recuperación completa y custodia externa pendientes. **No declarado apto para datos reales. H8/H9 no iniciados.** Los registros históricos inferiores se conservan como trazabilidad y se leen con esta actualización.
+
 | Hito | Estado |
 |---|---|
 | H0 Bootstrap | ACEPTADO — Gate 2 aprobado 21/10/2026 |
