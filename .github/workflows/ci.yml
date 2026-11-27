@@ -7,6 +7,11 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
+      suite:
+        description: 'Suite to run (full by default)'
+        type: choice
+        options: [full, quick]
+        default: full
       security-failure:
         description: 'Ensayo temporal: detectar una asignación ADMIN_SISTEMA indebida a Coordinador'
         type: boolean
@@ -23,10 +28,16 @@ jobs:
       - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
         with:
           node-version-file: .nvmrc
           cache: npm
+      - name: Select regression scope
+        id: scope
+        run: node scripts/ci-scope.mjs
+      - name: Test CI scope rules
+        run: node --test scripts/ci-scope.test.mjs
       - name: Fixed npm and clean install
         run: |
           npm install --global npm@10.9.0
@@ -43,30 +54,39 @@ jobs:
           npm run typecheck:edge:dni
           npm test
       - name: Start isolated local platform
+        if: steps.scope.outputs.full == 'true'
         run: npm run supabase:start
       - name: Local configuration and integration
+        if: steps.scope.outputs.full == 'true'
         run: |
           npm run supabase:reset
           npm run supabase:env
           npm run test:local
       - name: Hosted procedures in disposable local database
+        if: steps.scope.outputs.full == 'true'
         run: npm run test:hosted-preparation
       - name: Real Auth and RLS actor matrix
+        if: steps.scope.outputs.full == 'true'
         env:
           H2_PRIVILEGE_FAILURE: ${{ inputs.security-failure || github.ref_name == 'feature/h2-academic-privilege-trial' }}
         run: npm run test:security
       - name: Real academic invariants and audit rollback
+        if: steps.scope.outputs.full == 'true'
         run: npm run test:academic
       - name: Enrollment invariants, rollback and concurrency
+        if: steps.scope.outputs.full == 'true'
         run: npm run test:enrollment
       - name: Payments invariants, real concurrency and ordinary JWT matrix
+        if: steps.scope.outputs.full == 'true'
         run: |
           npm run test:payments:rollback
           npm run test:payments:isolated
           npm run test:payments
       - name: Expediente isolated DB API locks and history
+        if: steps.scope.outputs.full == 'true'
         run: npm run test:expediente:isolated
       - name: H7 core full rebuild ordinary JWT and real concurrency
+        if: steps.scope.outputs.full == 'true'
         run: |
           npm run test:billing:core
           npm run test:billing:reports
@@ -76,6 +96,7 @@ jobs:
           node scripts/test-company-tax.mjs
           node scripts/test-order-files.mjs
       - name: Enrollment PDF real Edge, private Storage and actor matrix
+        if: steps.scope.outputs.full == 'true'
         run: |
           sudo apt-get update -qq
           sudo apt-get install --yes poppler-utils
@@ -83,12 +104,13 @@ jobs:
           npm run test:pdf
           node scripts/test-pdf-layout.mjs
       - name: Expediente real Edge private Storage and versions
+        if: steps.scope.outputs.full == 'true'
         run: |
           npm run test:expediente
           node scripts/test-expediente-layout.mjs
           node scripts/test-cycle-report-pdf-layout.mjs
       - name: Synthetic expediente evidence
-        if: always()
+        if: always() && steps.scope.outputs.full == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: h6-synthetic-document-evidence
@@ -98,7 +120,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 3
       - name: Synthetic PDF evidence
-        if: always()
+        if: always() && steps.scope.outputs.full == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: h5-synthetic-pdf-evidence
@@ -106,14 +128,17 @@ jobs:
           if-no-files-found: ignore
           retention-days: 3
       - name: Local frontend build
+        if: steps.scope.outputs.full == 'true'
         run: npm run build
       - name: Synthetic local and hosted builds, CSP and privileged configuration rejection
         run: npm run test:build-safety
       - name: Real token expiry and profile restoration
+        if: steps.scope.outputs.full == 'true'
         run: |
           npm run test:expiry
           git diff --exit-code -- supabase/config.toml
       - name: Rebuild local database and repeat integration
+        if: steps.scope.outputs.full == 'true'
         run: |
           npm run supabase:reset
           npm run test:local
@@ -138,5 +163,5 @@ jobs:
           node scripts/test-expediente-layout.mjs
           node scripts/test-cycle-report-pdf-layout.mjs
       - name: Stop local platform
-        if: always()
+        if: always() && steps.scope.outputs.full == 'true'
         run: npm run supabase:stop
