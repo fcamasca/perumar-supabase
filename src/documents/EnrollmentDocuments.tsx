@@ -594,14 +594,14 @@ export function EnrollmentDocuments({
             {editing.nombre}
           </h2>
           <p className="help-text">
-            Se conservarán las versiones anteriores. La operación no se reintenta automáticamente.
+            {editing.origen === 'SUBIDO' ? 'El archivo se guardará en el expediente.' : 'Se creará un PDF con los datos del alumno.'}
           </p>
           {message && failure && (
             <p role="alert" className="validation-message">
               {message}
             </p>
           )}
-          <InlineForm onSubmit={() => void submit()}>
+          <InlineForm className="document-action-form" onSubmit={() => void submit()}>
             <fieldset disabled={busy || optimizing}>
               {editing.origen === 'SUBIDO' ? (
                 <>
@@ -695,12 +695,7 @@ export function EnrollmentDocuments({
                     />
                   </label>
                 </>
-              ) : (
-                <p>
-                  La fecha y edad corresponden a esta generación. La fuente vigente o fotografía
-                  final se determina en el servidor.
-                </p>
-              )}
+              ) : null}
             </fieldset>
             <div className="form-actions">
               <button
@@ -713,14 +708,14 @@ export function EnrollmentDocuments({
               </button>
               <button disabled={busy || optimizing || (editing.origen === 'SUBIDO' && !!fileError)}>
                 {busy
-                  ? 'Procesando…'
+                  ? editing.origen === 'SUBIDO' ? 'Guardando…' : 'Generando PDF…'
                   : editing.origen === 'SUBIDO'
                     ? 'Confirmar carga'
-                    : 'Confirmar generación'}
+                    : 'Generar PDF'}
               </button>
             </div>
           </InlineForm>
-          <button
+          {failure && <button
             type="button"
             className="secondary"
             disabled={busy || optimizing}
@@ -729,8 +724,8 @@ export function EnrollmentDocuments({
               setFilePage(0)
             }}
           >
-            Consultar resultado de la operación
-          </button>
+            Ver versiones
+          </button>}
         </DocumentDialog>
       )}
       {historyDoc && (
