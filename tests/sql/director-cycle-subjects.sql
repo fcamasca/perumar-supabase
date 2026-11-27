@@ -40,6 +40,35 @@ do $$ declare actor uuid:=gen_random_uuid(); coordinator uuid:=gen_random_uuid()
  begin update public.ciclo set carrera_id=(select id from public.carrera where id<>career.id limit 1) where id=c.id;raise exception 'Course restriction bypassed';exception when check_violation then null;end;
  if original is distinct from (select to_jsonb(x) from public.matricula x where id=e.id) or charges is distinct from (select jsonb_agg(to_jsonb(mc) order by mc.id) from public.matricula_cargo mc where matricula_id=e.id) then raise exception 'Enrollment history changed';end if;
  if (select count(*) from public.auditoria where registro_id in (select id from public.ciclo_materia where ciclo_id=c.id) and motivo='Director confirma cambio de asignaturas del Ciclo con matrículas activas')<>3 then raise exception 'Missing confirmed audit';end if;
+ -- The tab saves a delta in one transaction using the unchanged single-row guard.
+ declare saved_version timestamptz:=c.updated_at; audit_count bigint; snapshot jsonb; begin
+  select jsonb_agg(to_jsonb(cm) order by cm.id) into snapshot from public.ciclo_materia cm where ciclo_id=c.id;
+  select count(*) into audit_count from public.auditoria;
+  begin perform public.guardar_asignaturas_ciclo(c.id,c.updated_at,jsonb_build_array(jsonb_build_object('materia_id',m.id,'activo',false)),false);raise exception 'Unconfirmed batch accepted';exception when check_violation then null;end;
+  perform set_config('request.jwt.claim.sub',coordinator::text,true);
+  begin perform public.guardar_asignaturas_ciclo(c.id,c.updated_at,jsonb_build_array(jsonb_build_object('materia_id',m.id,'activo',false)),true);raise exception 'Coordinator batch accepted';exception when insufficient_privilege then null;end;
+  perform set_config('request.jwt.claim.sub','',true);
+  begin perform public.guardar_asignaturas_ciclo(c.id,c.updated_at,jsonb_build_array(jsonb_build_object('materia_id',m.id,'activo',false)),false);raise exception 'No-session batch accepted';exception when insufficient_privilege then null;end;
+  perform set_config('request.jwt.claim.sub',actor::text,true);
+  begin
+   perform public.guardar_asignaturas_ciclo(c.id,c.updated_at,jsonb_build_array(jsonb_build_object('materia_id',m.id,'activo',false),jsonb_build_object('materia_id','ffffffff-ffff-4fff-8fff-ffffffffffff','activo',false)),true);
+   raise exception 'Invalid second change accepted';
+  exception when check_violation then null;end;
+  if snapshot is distinct from (select jsonb_agg(to_jsonb(cm) order by cm.id) from public.ciclo_materia cm where ciclo_id=c.id)
+   or saved_version is distinct from (select updated_at from public.ciclo where id=c.id)
+   or audit_count<>(select count(*) from public.auditoria) then raise exception 'Batch failure was not atomic';end if;
+  begin perform public.guardar_asignaturas_ciclo(c.id,c.updated_at,'[]',true);raise exception 'Empty batch accepted';exception when invalid_parameter_value then null;end;
+  begin perform public.guardar_asignaturas_ciclo(c.id,c.updated_at,jsonb_build_array(jsonb_build_object('materia_id',m.id,'activo',false),jsonb_build_object('materia_id',m.id,'activo',true)),true);raise exception 'Duplicate batch accepted';exception when invalid_parameter_value then null;end;
+  begin perform public.guardar_asignaturas_ciclo(c.id,c.updated_at,jsonb_build_array(jsonb_build_object('materia_id',m.id,'activo','false')),true);raise exception 'String boolean accepted';exception when invalid_parameter_value then null;end;
+  c:=public.guardar_asignaturas_ciclo(c.id,c.updated_at,jsonb_build_array(jsonb_build_object('materia_id',m.id,'activo',false),jsonb_build_object('materia_id',extra.id,'activo',false)),true);
+  if exists(select 1 from public.ciclo_materia where ciclo_id=c.id and activo) then raise exception 'Batch retirement missing';end if;
+  begin perform public.guardar_asignaturas_ciclo(c.id,saved_version,jsonb_build_array(jsonb_build_object('materia_id',m.id,'activo',true)),true);raise exception 'Stale batch accepted';exception when sqlstate 'PT409' then null;end;
+  c:=public.guardar_asignaturas_ciclo(c.id,c.updated_at,jsonb_build_array(jsonb_build_object('materia_id',m.id,'activo',true),jsonb_build_object('materia_id',extra.id,'activo',true)),true);
+  if not exists(select 1 from public.ciclo_materia where id=rel and origen='HEREDADA' and activo) then raise exception 'Batch lost original relation';end if;
+  if original is distinct from (select to_jsonb(x) from public.matricula x where id=e.id) or charges is distinct from (select jsonb_agg(to_jsonb(mc) order by mc.id) from public.matricula_cargo mc where matricula_id=e.id) then raise exception 'Batch changed enrollment history';end if;
+  if has_function_privilege('anon','public.guardar_asignaturas_ciclo(uuid,timestamptz,jsonb,boolean)','EXECUTE')
+   or not has_function_privilege('authenticated','public.guardar_asignaturas_ciclo(uuid,timestamptz,jsonb,boolean)','EXECUTE') then raise exception 'Unexpected batch grants';end if;
+ end;
  c:=public.cambiar_estado_ciclo(c.id,c.updated_at,'EN_CURSO');
  c:=public.cambiar_estado_ciclo(c.id,c.updated_at,'CERRADO');
  begin perform public.cambiar_materia_ciclo(c.id,m.id,c.updated_at,false,true);raise exception 'Terminal accepted';exception when sqlstate 'PT409' then null;end;

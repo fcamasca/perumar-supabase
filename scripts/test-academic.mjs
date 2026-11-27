@@ -123,6 +123,7 @@ try {
       ['cambiar_active_carrera', { ...fields(carrera), active: false, motivo: 'DENIED' }],
       ['guardar_ciclo', { p: cicloPayload(ciclo) }],
       ['cambiar_materia_ciclo', { ciclo_id: ciclo.id, materia_id: m1.id, expected_updated_at: ciclo.updated_at, activo: false }],
+      ['guardar_asignaturas_ciclo', { p_ciclo_id: ciclo.id, p_expected_updated_at: ciclo.updated_at, p_cambios: [{ materia_id: m1.id, activo: false }] }],
       ['cambiar_estado_ciclo', { ...fields(ciclo), destino: 'EN_CURSO' }],
     ]
     for (const client of [A, clients.N, clients.F, clients.I, publicClient(fixture.config)]) {
@@ -167,6 +168,21 @@ try {
     assert.equal(cm.find(x => x.materia_id === m4.id).activo, true)
     assert.equal(cm.length, 4)
     ciclo = await rpc(O, 'cambiar_materia_ciclo', { ciclo_id: ciclo.id, materia_id: m1.id, expected_updated_at: ciclo.updated_at, activo: true })
+  })
+  await scenario('Cycle subjects atomic batch through ordinary JWT', async () => {
+    const args = changes => ({ p_ciclo_id: ciclo.id, p_expected_updated_at: ciclo.updated_at, p_cambios: changes })
+    const relations = async () => checked(await O.from('ciclo_materia').select('*').eq('ciclo_id', ciclo.id).order('id'), 'batch relations')
+    const before = await relations(), old = ciclo
+    const auditCount = Number(inspectDatabase('select count(*) from public.auditoria;'))
+    rejected(await O.rpc('guardar_asignaturas_ciclo', args([{ materia_id: m2.id, activo: true }, { materia_id: 'ffffffff-ffff-4fff-8fff-ffffffffffff', activo: false }])), 'batch must roll back on its second change')
+    assert.deepEqual(await relations(), before)
+    assert.equal((await byId('ciclo', ciclo.id)).updated_at, old.updated_at)
+    assert.equal(Number(inspectDatabase('select count(*) from public.auditoria;')), auditCount)
+    ciclo = await rpc(O, 'guardar_asignaturas_ciclo', args([{ materia_id: m1.id, activo: false }, { materia_id: m2.id, activo: true }]))
+    assert.equal((await relations()).find(r => r.materia_id === m1.id).activo, false)
+    rejected(await O.rpc('guardar_asignaturas_ciclo', { ...args([{ materia_id: m1.id, activo: true }]), p_expected_updated_at: old.updated_at }), 'batch stale version')
+    ciclo = await rpc(O, 'guardar_asignaturas_ciclo', args([{ materia_id: m1.id, activo: true }, { materia_id: m2.id, activo: false }]))
+    assert.deepEqual((await relations()).map(({ id, materia_id, origen, activo }) => ({ id, materia_id, origen, activo })), before.map(({ id, materia_id, origen, activo }) => ({ id, materia_id, origen, activo })))
   })
   await scenario('TEST-H2-007/028/030/031 states-history-and-no-delete', async () => {
     rejected(await O.rpc('cambiar_estado_ciclo', { ...fields(ciclo), destino: 'EN_CURSO' }), 'coordinator transition')

@@ -32,12 +32,17 @@ try {
   const loader = include('supabase/reference/load-hosted-catalogs.sql')
   assert.notEqual(sql(loader).status, 0, 'Must reject missing migration history')
   const migrations = readdirSync('supabase/migrations').filter(file => /^\d.*\.sql$/.test(file)).sort()
-  assert.equal(migrations.length, 41)
-  for (const file of migrations) {
+  assert.equal(migrations.length, 42)
+  for (const file of migrations.slice(0, 41)) {
     checked(readFileSync('supabase/migrations/' + file, 'utf8'))
     checked(`insert into supabase_migrations.schema_migrations values('${file.split('_')[0]}');`)
   }
   assert.equal(checked('select count(*) from public.carrera;'), '0', 'DICAPI load must await base reference catalogs')
+  // Confirm the original history is still accepted, without loading anything yet.
+  checked(readFileSync('supabase/reference/load-hosted-catalogs.sql', 'utf8').split('\\ir ../seed.sql')[0] + '\nrollback;')
+  assert.equal(migrations[41], '20261126010000_cycle_subject_batch_save.sql')
+  checked(readFileSync('supabase/migrations/' + migrations[41], 'utf8'))
+  checked("insert into supabase_migrations.schema_migrations values('20261126010000');")
   checked(loader)
   const fingerprint = () => checked(`select json_build_object('catalogs',(select count(*) from public.catalogo_valor),'courses',(select count(*) from public.carrera),'subjects',(select count(*) from public.carrera_materia),'districts',(select count(*) from public.distrito));`)
   const before = fingerprint()
@@ -46,6 +51,7 @@ try {
   assert.equal(checked("select count(*) from pg_trigger where tgname in ('materia_audit','carrera_audit','carrera_materia_audit') and tgenabled='O';"), '3', 'All audit triggers must remain enabled')
   assert.equal(checked('select count(*) from public.alumno;'), '0')
   assert.equal(checked('select count(*) from auth.users;'), '0')
+  checked(readFileSync('tests/sql/director-cycle-subjects.sql', 'utf8'))
   const bootstrap = readFileSync('supabase/reference/bootstrap-hosted-user.sql', 'utf8')
   const id = randomUUID()
   const params = { auth_user_id: id, role_code: 'COORDINADOR_ACADEMICO' }
@@ -63,7 +69,7 @@ try {
   assert.notEqual(sql(bootstrap, { ...params, role_code: 'ADMIN_SISTEMA' }).status, 0, 'Must not reactivate profile')
   assert.equal(checked('select active from public.app_users;'), 'f')
   assert.equal(checked('select count(*) from public.app_user_roles;'), '2')
-  console.log('Hosted preparation: 41 migrations, ordered official catalogs, repeat rejection, audit triggers and secure user bootstrap PASSED in isolated local database.')
+  console.log('Hosted preparation: 41 original migrations plus atomic subjects migration, ordered official catalogs, repeat rejection, audit triggers and secure user bootstrap PASSED in isolated local database.')
 } finally {
   if (created) docker(['exec', container, 'dropdb', '-U', 'postgres', database])
 }
